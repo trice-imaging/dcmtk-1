@@ -1,4 +1,4 @@
-.TH "dcmdjpeg" 1 "Thu Sep 24 2015" "Version 3.6.1" "OFFIS DCMTK" \" -*- nroff -*-
+.TH "dcmdjpeg" 1 "Thu Jan 14 2021" "Version 3.6.6" "OFFIS DCMTK" \" -*- nroff -*-
 .nh
 .SH NAME
 dcmdjpeg \- Decode JPEG-compressed DICOM file
@@ -110,9 +110,11 @@ color space conversion:
   # and convert to RGB.
 
   +cn   --conv-never
-          never convert color space
+          never convert YCbCr to RGB
 
-  # Never convert color space during decompression.
+  # Never convert color space from YCbCr to RGB during decompression.
+  # Note that a conversion from YBR_FULL_422 to YBR_FULL will still take
+  # place if the source images has been compressed with subsampling.
 
 planar configuration:
 
@@ -164,7 +166,24 @@ workaround options for incorrect JPEG encodings:
   # This flag enables a correct decompression of such faulty images, but
   # at the same time will cause an incorrect decompression of correctly
   # compressed images. Use with care.
-.fi
+
+  +wi   --workaround-incpl
+          enable workaround for incomplete JPEG data
+
+  # This option causes dcmjpeg to ignore incomplete JPEG data
+  # at the end of a compressed fragment and to start decompressing
+  # the next frame from the next fragment (if any). This permits
+  # images with incomplete JPEG data to be decoded.
+
+  +wc   --workaround-cornell
+          enable workaround for 16-bit JPEG lossless
+          Cornell images with Huffman table overflow
+
+  # One of the first open-source implementations of lossless JPEG
+  # compression, the "Cornell" library, has a well-known bug that leads
+  # to invalid values in the Huffmann table when images with 16 bit/sample
+  # are compressed. This flag enables a workaround that permits such
+  # images to be decoded correctly..fi
 .PP
 .SS "output options"
 .PP
@@ -280,4 +299,4 @@ The default behavior should be preferred and the \fIDCMDICTPATH\fP environment v
 \fBdcmcjpeg\fP(1)
 .SH "COPYRIGHT"
 .PP
-Copyright (C) 2001-2014 by OFFIS e\&.V\&., Escherweg 2, 26121 Oldenburg, Germany\&.
+Copyright (C) 2001-2019 by OFFIS e\&.V\&., Escherweg 2, 26121 Oldenburg, Germany\&.

@@ -3,8 +3,8 @@
 ** It was generated automatically by:
 **
 **   User: joergr
-**   Host: thinkpad
-**   Date: 2015-09-18 11:18:13
+**   Host: thinkpad2
+**   Date: 2022-01-26 12:58:28
 **   Prog: /home/joergr/Source/dcmtk-full/public/dcmdata/libsrc/mkdictbi
 **
 **   From: ../data/dicom.dic
@@ -13,7 +13,7 @@
 */
 
 #include "dcmtk/dcmdata/dcdict.h"
-#ifdef ENABLE_BUILTIN_DICTIONARY
+#if DCM_DICT_DEFAULT == DCM_DICT_DEFAULT_USE_BUILTIN
 #include "dcmtk/dcmdata/dcdicent.h"
 
 struct DBI_SimpleEntry {
@@ -256,6 +256,46 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_AE, "ReceivingApplicationEntityTitle", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0002, 0x0026, 0x0002, 0x0026,
+      EVR_UR, "SourcePresentationAddress", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0002, 0x0027, 0x0002, 0x0027,
+      EVR_UR, "SendingPresentationAddress", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0002, 0x0028, 0x0002, 0x0028,
+      EVR_UR, "ReceivingPresentationAddress", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0002, 0x0031, 0x0002, 0x0031,
+      EVR_OB, "RTVMetaInformationVersion", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0002, 0x0032, 0x0002, 0x0032,
+      EVR_UI, "RTVCommunicationSOPClassUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0002, 0x0033, 0x0002, 0x0033,
+      EVR_UI, "RTVCommunicationSOPInstanceUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0002, 0x0035, 0x0002, 0x0035,
+      EVR_OB, "RTVSourceIdentifier", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0002, 0x0036, 0x0002, 0x0036,
+      EVR_OB, "RTVFlowIdentifier", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0002, 0x0037, 0x0002, 0x0037,
+      EVR_UL, "RTVFlowRTPSamplingRate", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0002, 0x0038, 0x0002, 0x0038,
+      EVR_FD, "RTVFlowActualFrameDuration", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0002, 0x0100, 0x0002, 0x0100,
       EVR_UI, "PrivateInformationCreatorUID", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -384,6 +424,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "AEGIS_DICOM_2.00" }
 #endif
+  , { 0x0006, 0x0001, 0x0006, 0x0001,
+      EVR_SQ, "CurrentFrameFunctionalGroupsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0008, 0x0001, 0x0008, 0x0001,
       EVR_UL, "RETIRED_LengthToEnd", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -520,6 +564,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_AE, "RetrieveAETitle", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0008, 0x0055, 0x0008, 0x0055,
+      EVR_AE, "StationAETitle", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0008, 0x0056, 0x0008, 0x0056,
       EVR_CS, "InstanceAvailability", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -538,6 +586,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0008, 0x0062, 0x0008, 0x0062,
       EVR_UI, "SOPClassesInStudy", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x0063, 0x0008, 0x0063,
+      EVR_SQ, "AnatomicRegionsInStudyCodeSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0008, 0x0064, 0x0008, 0x0064,
@@ -624,6 +676,14 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_LT, "ExtendedCodeMeaning", 1, 1, "DICOM/DICOS",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0008, 0x0109, 0x0008, 0x0109,
+      EVR_SQ, "CodingSchemeResourcesSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x010a, 0x0008, 0x010a,
+      EVR_CS, "CodingSchemeURLType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0008, 0x010b, 0x0008, 0x010b,
       EVR_CS, "ContextGroupExtensionFlag", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -634,6 +694,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0008, 0x010d, 0x0008, 0x010d,
       EVR_UI, "ContextGroupExtensionCreatorUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x010e, 0x0008, 0x010e,
+      EVR_UR, "CodingSchemeURL", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0008, 0x010f, 0x0008, 0x010f,
@@ -680,8 +744,32 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_SQ, "EquivalentCodeSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0008, 0x0122, 0x0008, 0x0122,
+      EVR_LO, "MappingResourceName", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x0123, 0x0008, 0x0123,
+      EVR_SQ, "ContextGroupIdentificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x0124, 0x0008, 0x0124,
+      EVR_SQ, "MappingResourceIdentificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0008, 0x0201, 0x0008, 0x0201,
       EVR_SH, "TimezoneOffsetFromUTC", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x0220, 0x0008, 0x0220,
+      EVR_SQ, "ResponsibleGroupCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x0221, 0x0008, 0x0221,
+      EVR_CS, "EquipmentModality", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x0222, 0x0008, 0x0222,
+      EVR_LO, "ManufacturerRelatedModelGroup", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0008, 0x0300, 0x0008, 0x0300,
@@ -716,6 +804,42 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_CS, "DeidentificationAction", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0008, 0x0308, 0x0008, 0x0308,
+      EVR_US, "PrivateDataElement", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x0309, 0x0008, 0x0309,
+      EVR_UL, "PrivateDataElementValueMultiplicity", 1, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x030a, 0x0008, 0x030a,
+      EVR_CS, "PrivateDataElementValueRepresentation", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x030b, 0x0008, 0x030b,
+      EVR_UL, "PrivateDataElementNumberOfItems", 1, 2, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x030c, 0x0008, 0x030c,
+      EVR_UC, "PrivateDataElementName", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x030d, 0x0008, 0x030d,
+      EVR_UC, "PrivateDataElementKeyword", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x030e, 0x0008, 0x030e,
+      EVR_UT, "PrivateDataElementDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x030f, 0x0008, 0x030f,
+      EVR_UT, "PrivateDataElementEncoding", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x0310, 0x0008, 0x0310,
+      EVR_SQ, "PrivateDataElementDefinitionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0008, 0x1000, 0x0008, 0x1000,
       EVR_AE, "RETIRED_NetworkID", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -742,6 +866,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0008, 0x1040, 0x0008, 0x1040,
       EVR_LO, "InstitutionalDepartmentName", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x1041, 0x0008, 0x1041,
+      EVR_SQ, "InstitutionalDepartmentTypeCodeSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0008, 0x1048, 0x0008, 0x1048,
@@ -848,6 +976,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_UI, "ReferencedSOPInstanceUID", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0008, 0x1156, 0x0008, 0x1156,
+      EVR_SQ, "DefinitionSourceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0008, 0x115a, 0x0008, 0x115a,
       EVR_UI, "SOPClassesSupported", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -898,6 +1030,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0008, 0x1199, 0x0008, 0x1199,
       EVR_SQ, "ReferencedSOPSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x119a, 0x0008, 0x119a,
+      EVR_SQ, "OtherFailuresSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0008, 0x1200, 0x0008, 0x1200,
@@ -1005,7 +1141,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0008, 0x2229, 0x0008, 0x2229,
-      EVR_SQ, "AnatomicStructureSpaceOrRegionSequence", 1, 1, "DICOM",
+      EVR_SQ, "RETIRED_AnatomicStructureSpaceOrRegionSequence", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0008, 0x2230, 0x0008, 0x2230,
@@ -1066,6 +1202,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0008, 0x3001, 0x0008, 0x3001,
       EVR_SQ, "AlternateRepresentationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0008, 0x3002, 0x0008, 0x3002,
+      EVR_UI, "AvailableTransferSyntaxUID", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0008, 0x3010, 0x0008, 0x3010,
@@ -1966,12 +2106,36 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_SQ, "IssuerOfPatientIDQualifiersSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0010, 0x0026, 0x0010, 0x0026,
+      EVR_SQ, "SourcePatientGroupIdentificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0027, 0x0010, 0x0027,
+      EVR_SQ, "GroupOfPatientsIdentificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0028, 0x0010, 0x0028,
+      EVR_US, "SubjectRelativePositionInImage", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0010, 0x0030, 0x0010, 0x0030,
       EVR_DA, "PatientBirthDate", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0010, 0x0032, 0x0010, 0x0032,
       EVR_TM, "PatientBirthTime", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0033, 0x0010, 0x0033,
+      EVR_LO, "PatientBirthDateInAlternativeCalendar", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0034, 0x0010, 0x0034,
+      EVR_LO, "PatientDeathDateInAlternativeCalendar", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0035, 0x0010, 0x0035,
+      EVR_CS, "PatientAlternativeCalendar", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0010, 0x0040, 0x0010, 0x0040,
@@ -1998,8 +2162,56 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_SQ, "QualityControlSubjectTypeCodeSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0010, 0x0212, 0x0010, 0x0212,
+      EVR_UC, "StrainDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0213, 0x0010, 0x0213,
+      EVR_LO, "StrainNomenclature", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0214, 0x0010, 0x0214,
+      EVR_LO, "StrainStockNumber", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0215, 0x0010, 0x0215,
+      EVR_SQ, "StrainSourceRegistryCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0216, 0x0010, 0x0216,
+      EVR_SQ, "StrainStockSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0217, 0x0010, 0x0217,
+      EVR_LO, "StrainSource", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0218, 0x0010, 0x0218,
+      EVR_UT, "StrainAdditionalInformation", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0219, 0x0010, 0x0219,
+      EVR_SQ, "StrainCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0221, 0x0010, 0x0221,
+      EVR_SQ, "GeneticModificationsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0222, 0x0010, 0x0222,
+      EVR_UC, "GeneticModificationsDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0223, 0x0010, 0x0223,
+      EVR_LO, "GeneticModificationsNomenclature", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x0229, 0x0010, 0x0229,
+      EVR_SQ, "GeneticModificationsCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0010, 0x1000, 0x0010, 0x1000,
-      EVR_LO, "OtherPatientIDs", 1, -1, "DICOM",
+      EVR_LO, "RETIRED_OtherPatientIDs", 1, -1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0010, 0x1001, 0x0010, 0x1001,
@@ -2024,6 +2236,18 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0010, 0x1021, 0x0010, 0x1021,
       EVR_SQ, "PatientSizeCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x1022, 0x0010, 0x1022,
+      EVR_DS, "PatientBodyMassIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x1023, 0x0010, 0x1023,
+      EVR_DS, "MeasuredAPDimension", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0010, 0x1024, 0x0010, 0x1024,
+      EVR_DS, "MeasuredLateralDimension", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0010, 0x1030, 0x0010, 0x1030,
@@ -2051,7 +2275,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0010, 0x1090, 0x0010, 0x1090,
-      EVR_LO, "MedicalRecordLocator", 1, 1, "DICOM",
+      EVR_LO, "RETIRED_MedicalRecordLocator", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0010, 0x1100, 0x0010, 0x1100,
@@ -2620,6 +2844,14 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_ST, "ClinicalTrialTimePointDescription", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0012, 0x0052, 0x0012, 0x0052,
+      EVR_FD, "LongitudinalTemporalOffsetFromEvent", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0012, 0x0053, 0x0012, 0x0053,
+      EVR_CS, "LongitudinalTemporalEventType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0012, 0x0060, 0x0012, 0x0060,
       EVR_LO, "ClinicalTrialCoordinatingCenterName", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -2662,6 +2894,14 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0012, 0x0085, 0x0012, 0x0085,
       EVR_CS, "ConsentForDistributionFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0012, 0x0086, 0x0012, 0x0086,
+      EVR_DA, "EthicsCommitteeApprovalEffectivenessStartDate", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0012, 0x0087, 0x0012, 0x0087,
+      EVR_DA, "EthicsCommitteeApprovalEffectivenessEndDate", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
 #ifdef ENABLE_PRIVATE_TAGS
@@ -2803,19 +3043,19 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       "SIEMENS CM VA0  CMS" }
 #endif
   , { 0x0014, 0x0023, 0x0014, 0x0023,
-      EVR_ST, "RETIRED_CADFileFormat", 1, -1, "DICOM/retired",
+      EVR_ST, "RETIRED_CADFileFormat", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0014, 0x0024, 0x0014, 0x0024,
-      EVR_ST, "RETIRED_ComponentReferenceSystem", 1, -1, "DICOM/retired",
+      EVR_ST, "RETIRED_ComponentReferenceSystem", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0014, 0x0025, 0x0014, 0x0025,
-      EVR_ST, "ComponentManufacturingProcedure", 1, -1, "DICOM/DICONDE",
+      EVR_ST, "ComponentManufacturingProcedure", 1, 1, "DICOM/DICONDE",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0014, 0x0028, 0x0014, 0x0028,
-      EVR_ST, "ComponentManufacturer", 1, -1, "DICOM/DICONDE",
+      EVR_ST, "ComponentManufacturer", 1, 1, "DICOM/DICONDE",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0014, 0x0030, 0x0014, 0x0030,
@@ -2831,15 +3071,15 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0014, 0x0042, 0x0014, 0x0042,
-      EVR_ST, "MaterialGrade", 1, -1, "DICOM/DICONDE",
+      EVR_ST, "MaterialGrade", 1, 1, "DICOM/DICONDE",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0014, 0x0044, 0x0014, 0x0044,
-      EVR_ST, "MaterialPropertiesDescription", 1, -1, "DICOM/DICONDE",
+      EVR_ST, "MaterialPropertiesDescription", 1, 1, "DICOM/DICONDE",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0014, 0x0045, 0x0014, 0x0045,
-      EVR_ST, "RETIRED_MaterialPropertiesFileFormatRetired", 1, -1, "DICOM/retired",
+      EVR_ST, "RETIRED_MaterialPropertiesFileFormatRetired", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0014, 0x0046, 0x0014, 0x0046,
@@ -2860,6 +3100,42 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0014, 0x0056, 0x0014, 0x0056,
       EVR_DS, "InnerDiameter", 1, 1, "DICOM/DICONDE",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0014, 0x0100, 0x0014, 0x0100,
+      EVR_LO, "ComponentWelderIDs", 1, -1, "DICOM/DICONDE",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0014, 0x0101, 0x0014, 0x0101,
+      EVR_CS, "SecondaryApprovalStatus", 1, 1, "DICOM/DICONDE",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0014, 0x0102, 0x0014, 0x0102,
+      EVR_DA, "SecondaryReviewDate", 1, 1, "DICOM/DICONDE",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0014, 0x0103, 0x0014, 0x0103,
+      EVR_TM, "SecondaryReviewTime", 1, 1, "DICOM/DICONDE",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0014, 0x0104, 0x0014, 0x0104,
+      EVR_PN, "SecondaryReviewerName", 1, 1, "DICOM/DICONDE",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0014, 0x0105, 0x0014, 0x0105,
+      EVR_ST, "RepairID", 1, 1, "DICOM/DICONDE",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0014, 0x0106, 0x0014, 0x0106,
+      EVR_SQ, "MultipleComponentApprovalSequence", 1, 1, "DICOM/DICONDE",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0014, 0x0107, 0x0014, 0x0107,
+      EVR_CS, "OtherApprovalStatus", 1, -1, "DICOM/DICONDE",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0014, 0x0108, 0x0014, 0x0108,
+      EVR_CS, "OtherSecondaryApprovalStatus", 1, -1, "DICOM/DICONDE",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0014, 0x1010, 0x0014, 0x1010,
@@ -3064,6 +3340,14 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0014, 0x3099, 0x0014, 0x3099,
       EVR_LT, "CalibrationNotes", 1, 1, "DICOM/DICONDE",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0014, 0x3100, 0x0014, 0x3100,
+      EVR_LT, "LinearityCorrectionTechnique", 1, 1, "DICOM/DICONDE",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0014, 0x3101, 0x0014, 0x3101,
+      EVR_LT, "BeamHardeningCorrectionTechnique", 1, 1, "DICOM/DICONDE",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0014, 0x4002, 0x0014, 0x4002,
@@ -3387,15 +3671,15 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0014, 0x40a0, 0x0014, 0x40a0,
-      EVR_LO, "ImageQualityIndicatorType", 1, 1, "DICOM/DICONDE",
+      EVR_LO, "ImageQualityIndicatorType", 1, -1, "DICOM/DICONDE",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0014, 0x40a1, 0x0014, 0x40a1,
-      EVR_LO, "ImageQualityIndicatorMaterial", 1, 1, "DICOM/DICONDE",
+      EVR_LO, "ImageQualityIndicatorMaterial", 1, -1, "DICOM/DICONDE",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0014, 0x40a2, 0x0014, 0x40a2,
-      EVR_LO, "ImageQualityIndicatorSize", 1, 1, "DICOM/DICONDE",
+      EVR_LO, "ImageQualityIndicatorSize", 1, -1, "DICOM/DICONDE",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0014, 0x5002, 0x0014, 0x5002,
@@ -3547,6 +3831,448 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_DS, "CardiacCalibrationRatio", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DLX_EXAMS_01" }
+#endif
+  , { 0x0016, 0x0001, 0x0016, 0x0001,
+      EVR_DS, "WhitePoint", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0002, 0x0016, 0x0002,
+      EVR_DS, "PrimaryChromaticities", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0003, 0x0016, 0x0003,
+      EVR_UT, "BatteryLevel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0004, 0x0016, 0x0004,
+      EVR_DS, "ExposureTimeInSeconds", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0005, 0x0016, 0x0005,
+      EVR_DS, "FNumber", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0006, 0x0016, 0x0006,
+      EVR_IS, "OECFRows", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0007, 0x0016, 0x0007,
+      EVR_IS, "OECFColumns", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0008, 0x0016, 0x0008,
+      EVR_UC, "OECFColumnNames", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0009, 0x0016, 0x0009,
+      EVR_DS, "OECFValues", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x000a, 0x0016, 0x000a,
+      EVR_IS, "SpatialFrequencyResponseRows", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x000b, 0x0016, 0x000b,
+      EVR_IS, "SpatialFrequencyResponseColumns", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x000c, 0x0016, 0x000c,
+      EVR_UC, "SpatialFrequencyResponseColumnNames", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x000d, 0x0016, 0x000d,
+      EVR_DS, "SpatialFrequencyResponseValues", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x000e, 0x0016, 0x000e,
+      EVR_IS, "ColorFilterArrayPatternRows", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x000f, 0x0016, 0x000f,
+      EVR_IS, "ColorFilterArrayPatternColumns", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0010, 0x0016, 0x0010,
+      EVR_DS, "ColorFilterArrayPatternValues", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0011, 0x0016, 0x0011,
+      EVR_US, "FlashFiringStatus", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0012, 0x0016, 0x0012,
+      EVR_US, "FlashReturnStatus", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0013, 0x0016, 0x0013,
+      EVR_US, "FlashMode", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0014, 0x0016, 0x0014,
+      EVR_US, "FlashFunctionPresent", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0015, 0x0016, 0x0015,
+      EVR_US, "FlashRedEyeMode", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0016, 0x0016, 0x0016,
+      EVR_US, "ExposureProgram", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0017, 0x0016, 0x0017,
+      EVR_UT, "SpectralSensitivity", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0018, 0x0016, 0x0018,
+      EVR_IS, "PhotographicSensitivity", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0019, 0x0016, 0x0019,
+      EVR_IS, "SelfTimerMode", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x001a, 0x0016, 0x001a,
+      EVR_US, "SensitivityType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x001b, 0x0016, 0x001b,
+      EVR_IS, "StandardOutputSensitivity", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x001c, 0x0016, 0x001c,
+      EVR_IS, "RecommendedExposureIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x001d, 0x0016, 0x001d,
+      EVR_IS, "ISOSpeed", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x001e, 0x0016, 0x001e,
+      EVR_IS, "ISOSpeedLatitudeyyy", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x001f, 0x0016, 0x001f,
+      EVR_IS, "ISOSpeedLatitudezzz", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0020, 0x0016, 0x0020,
+      EVR_UT, "EXIFVersion", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0021, 0x0016, 0x0021,
+      EVR_DS, "ShutterSpeedValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0022, 0x0016, 0x0022,
+      EVR_DS, "ApertureValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0023, 0x0016, 0x0023,
+      EVR_DS, "BrightnessValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0024, 0x0016, 0x0024,
+      EVR_DS, "ExposureBiasValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0025, 0x0016, 0x0025,
+      EVR_DS, "MaxApertureValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0026, 0x0016, 0x0026,
+      EVR_DS, "SubjectDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0027, 0x0016, 0x0027,
+      EVR_US, "MeteringMode", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0028, 0x0016, 0x0028,
+      EVR_US, "LightSource", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0029, 0x0016, 0x0029,
+      EVR_DS, "FocalLength", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x002a, 0x0016, 0x002a,
+      EVR_IS, "SubjectArea", 2, 4, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x002b, 0x0016, 0x002b,
+      EVR_OB, "MakerNote", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0030, 0x0016, 0x0030,
+      EVR_DS, "Temperature", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0031, 0x0016, 0x0031,
+      EVR_DS, "Humidity", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0032, 0x0016, 0x0032,
+      EVR_DS, "Pressure", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0033, 0x0016, 0x0033,
+      EVR_DS, "WaterDepth", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0034, 0x0016, 0x0034,
+      EVR_DS, "Acceleration", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0035, 0x0016, 0x0035,
+      EVR_DS, "CameraElevationAngle", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0036, 0x0016, 0x0036,
+      EVR_DS, "FlashEnergy", 1, 2, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0037, 0x0016, 0x0037,
+      EVR_IS, "SubjectLocation", 2, 2, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0038, 0x0016, 0x0038,
+      EVR_DS, "PhotographicExposureIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0039, 0x0016, 0x0039,
+      EVR_US, "SensingMethod", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x003a, 0x0016, 0x003a,
+      EVR_US, "FileSource", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x003b, 0x0016, 0x003b,
+      EVR_US, "SceneType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0041, 0x0016, 0x0041,
+      EVR_US, "CustomRendered", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0042, 0x0016, 0x0042,
+      EVR_US, "ExposureMode", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0043, 0x0016, 0x0043,
+      EVR_US, "WhiteBalance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0044, 0x0016, 0x0044,
+      EVR_DS, "DigitalZoomRatio", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0045, 0x0016, 0x0045,
+      EVR_IS, "FocalLengthIn35mmFilm", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0046, 0x0016, 0x0046,
+      EVR_US, "SceneCaptureType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0047, 0x0016, 0x0047,
+      EVR_US, "GainControl", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0048, 0x0016, 0x0048,
+      EVR_US, "Contrast", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0049, 0x0016, 0x0049,
+      EVR_US, "Saturation", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x004a, 0x0016, 0x004a,
+      EVR_US, "Sharpness", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x004b, 0x0016, 0x004b,
+      EVR_OB, "DeviceSettingDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x004c, 0x0016, 0x004c,
+      EVR_US, "SubjectDistanceRange", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x004d, 0x0016, 0x004d,
+      EVR_UT, "CameraOwnerName", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x004e, 0x0016, 0x004e,
+      EVR_DS, "LensSpecification", 4, 4, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x004f, 0x0016, 0x004f,
+      EVR_UT, "LensMake", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0050, 0x0016, 0x0050,
+      EVR_UT, "LensModel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0051, 0x0016, 0x0051,
+      EVR_UT, "LensSerialNumber", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0061, 0x0016, 0x0061,
+      EVR_CS, "InteroperabilityIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0062, 0x0016, 0x0062,
+      EVR_OB, "InteroperabilityVersion", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0070, 0x0016, 0x0070,
+      EVR_OB, "GPSVersionID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0071, 0x0016, 0x0071,
+      EVR_CS, "GPSLatitudeRef", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0072, 0x0016, 0x0072,
+      EVR_DS, "GPSLatitude", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0073, 0x0016, 0x0073,
+      EVR_CS, "GPSLongitudeRef", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0074, 0x0016, 0x0074,
+      EVR_DS, "GPSLongitude", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0075, 0x0016, 0x0075,
+      EVR_US, "GPSAltitudeRef", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0076, 0x0016, 0x0076,
+      EVR_DS, "GPSAltitude", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0077, 0x0016, 0x0077,
+      EVR_DT, "GPSTimeStamp", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0078, 0x0016, 0x0078,
+      EVR_UT, "GPSSatellites", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0079, 0x0016, 0x0079,
+      EVR_CS, "GPSStatus", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x007a, 0x0016, 0x007a,
+      EVR_CS, "GPSMeasureMode", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x007b, 0x0016, 0x007b,
+      EVR_DS, "GPSDOP", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x007c, 0x0016, 0x007c,
+      EVR_CS, "GPSSpeedRef", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x007d, 0x0016, 0x007d,
+      EVR_DS, "GPSSpeed", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x007e, 0x0016, 0x007e,
+      EVR_CS, "GPSTrackRef", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x007f, 0x0016, 0x007f,
+      EVR_DS, "GPSTrack", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0080, 0x0016, 0x0080,
+      EVR_CS, "GPSImgDirectionRef", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0081, 0x0016, 0x0081,
+      EVR_DS, "GPSImgDirection", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0082, 0x0016, 0x0082,
+      EVR_UT, "GPSMapDatum", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0083, 0x0016, 0x0083,
+      EVR_CS, "GPSDestLatitudeRef", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0084, 0x0016, 0x0084,
+      EVR_DS, "GPSDestLatitude", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0085, 0x0016, 0x0085,
+      EVR_CS, "GPSDestLongitudeRef", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0086, 0x0016, 0x0086,
+      EVR_DS, "GPSDestLongitude", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0087, 0x0016, 0x0087,
+      EVR_CS, "GPSDestBearingRef", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0088, 0x0016, 0x0088,
+      EVR_DS, "GPSDestBearing", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x0089, 0x0016, 0x0089,
+      EVR_CS, "GPSDestDistanceRef", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x008a, 0x0016, 0x008a,
+      EVR_DS, "GPSDestDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x008b, 0x0016, 0x008b,
+      EVR_OB, "GPSProcessingMethod", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x008c, 0x0016, 0x008c,
+      EVR_OB, "GPSAreaInformation", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x008d, 0x0016, 0x008d,
+      EVR_DT, "GPSDateStamp", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x008e, 0x0016, 0x008e,
+      EVR_IS, "GPSDifferential", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x1001, 0x0016, 0x1001,
+      EVR_CS, "LightSourcePolarization", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x1002, 0x0016, 0x1002,
+      EVR_DS, "EmitterColorTemperature", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x1003, 0x0016, 0x1003,
+      EVR_CS, "ContactMethod", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x1004, 0x0016, 0x1004,
+      EVR_CS, "ImmersionMedia", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0016, 0x1005, 0x0016, 0x1005,
+      EVR_DS, "OpticalMagnificationFactor", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+#ifdef ENABLE_PRIVATE_TAGS
   , { 0x0017, 0x0000, 0x0017, 0x0000,
       EVR_LO, "ExtendedBodyPart", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -3798,6 +4524,18 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0018, 0x1008, 0x0018, 0x1008,
       EVR_LO, "GantryID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x1009, 0x0018, 0x1009,
+      EVR_UT, "UniqueDeviceIdentifier", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x100a, 0x0018, 0x100a,
+      EVR_SQ, "UDISequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x100b, 0x0018, 0x100b,
+      EVR_UI, "ManufacturerDeviceClassUID", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0018, 0x1010, 0x0018, 0x1010,
@@ -4220,8 +4958,88 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_DS, "CompressionForce", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0018, 0x11a3, 0x0018, 0x11a3,
+      EVR_DS, "CompressionPressure", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0018, 0x11a4, 0x0018, 0x11a4,
       EVR_LO, "PaddleDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11a5, 0x0018, 0x11a5,
+      EVR_DS, "CompressionContactArea", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11b0, 0x0018, 0x11b0,
+      EVR_LO, "AcquisitionMode", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11b1, 0x0018, 0x11b1,
+      EVR_LO, "DoseModeName", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11b2, 0x0018, 0x11b2,
+      EVR_CS, "AcquiredSubtractionMaskFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11b3, 0x0018, 0x11b3,
+      EVR_CS, "FluoroscopyPersistenceFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11b4, 0x0018, 0x11b4,
+      EVR_CS, "FluoroscopyLastImageHoldPersistenceFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11b5, 0x0018, 0x11b5,
+      EVR_IS, "UpperLimitNumberOfPersistentFluoroscopyFrames", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11b6, 0x0018, 0x11b6,
+      EVR_CS, "ContrastBolusAutoInjectionTriggerFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11b7, 0x0018, 0x11b7,
+      EVR_FD, "ContrastBolusInjectionDelay", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11b8, 0x0018, 0x11b8,
+      EVR_SQ, "XAAcquisitionPhaseDetailsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11b9, 0x0018, 0x11b9,
+      EVR_FD, "XAAcquisitionFrameRate", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11ba, 0x0018, 0x11ba,
+      EVR_SQ, "XAPlaneDetailsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11bb, 0x0018, 0x11bb,
+      EVR_LO, "AcquisitionFieldOfViewLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11bc, 0x0018, 0x11bc,
+      EVR_SQ, "XRayFilterDetailsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11bd, 0x0018, 0x11bd,
+      EVR_FD, "XAAcquisitionDuration", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11be, 0x0018, 0x11be,
+      EVR_CS, "ReconstructionPipelineType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11bf, 0x0018, 0x11bf,
+      EVR_SQ, "ImageFilterDetailsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11c0, 0x0018, 0x11c0,
+      EVR_CS, "AppliedMaskSubtractionFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x11c1, 0x0018, 0x11c1,
+      EVR_SQ, "RequestedSeriesDescriptionCodeSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0018, 0x1200, 0x0018, 0x1200,
@@ -4234,6 +5052,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0018, 0x1202, 0x0018, 0x1202,
       EVR_DT, "DateTimeOfLastCalibration", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x1203, 0x0018, 0x1203,
+      EVR_DT, "CalibrationDateTime", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0018, 0x1210, 0x0018, 0x1210,
@@ -4270,6 +5092,14 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0018, 0x1261, 0x0018, 0x1261,
       EVR_LO, "PhosphorType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x1271, 0x0018, 0x1271,
+      EVR_FD, "WaterEquivalentDiameter", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x1272, 0x0018, 0x1272,
+      EVR_SQ, "WaterEquivalentDiameterCalculationMethodCodeSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0018, 0x1300, 0x0018, 0x1300,
@@ -4309,7 +5139,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0018, 0x1320, 0x0018, 0x1320,
-      EVR_FL, "B1rms", 1, 1, "CP_1461",
+      EVR_FL, "B1rms", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0018, 0x1400, 0x0018, 0x1400,
@@ -4450,6 +5280,42 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0018, 0x1624, 0x0018, 0x1624,
       EVR_US, "ShutterPresentationColorCIELabValue", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x1630, 0x0018, 0x1630,
+      EVR_CS, "OutlineShapeType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x1631, 0x0018, 0x1631,
+      EVR_FD, "OutlineLeftVerticalEdge", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x1632, 0x0018, 0x1632,
+      EVR_FD, "OutlineRightVerticalEdge", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x1633, 0x0018, 0x1633,
+      EVR_FD, "OutlineUpperHorizontalEdge", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x1634, 0x0018, 0x1634,
+      EVR_FD, "OutlineLowerHorizontalEdge", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x1635, 0x0018, 0x1635,
+      EVR_FD, "CenterOfCircularOutline", 2, 2, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x1636, 0x0018, 0x1636,
+      EVR_FD, "DiameterOfCircularOutline", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x1637, 0x0018, 0x1637,
+      EVR_UL, "NumberOfPolygonalVertices", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x1638, 0x0018, 0x1638,
+      EVR_OF, "VerticesOfThePolygonalOutline", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0018, 0x1700, 0x0018, 0x1700,
@@ -4594,6 +5460,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0018, 0x5010, 0x0018, 0x5010,
       EVR_LO, "TransducerData", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x5011, 0x0018, 0x5011,
+      EVR_SQ, "TransducerIdentificationSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0018, 0x5012, 0x0018, 0x5012,
@@ -4850,6 +5720,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0018, 0x6060, 0x0018, 0x6060,
       EVR_FL, "RWaveTimeVector", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x6070, 0x0018, 0x6070,
+      EVR_US, "ActiveImageAreaOverlayGroup", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0018, 0x7000, 0x0018, 0x7000,
@@ -5765,11 +6639,11 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0018, 0x9323, 0x0018, 0x9323,
-      EVR_CS, "ExposureModulationType", 1, 1, "DICOM",
+      EVR_CS, "ExposureModulationType", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0018, 0x9324, 0x0018, 0x9324,
-      EVR_FD, "EstimatedDoseSaving", 1, 1, "DICOM",
+      EVR_FD, "RETIRED_EstimatedDoseSaving", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0018, 0x9325, 0x0018, 0x9325,
@@ -5862,6 +6736,150 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0018, 0x9360, 0x0018, 0x9360,
       EVR_SQ, "CTAdditionalXRaySourceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9361, 0x0018, 0x9361,
+      EVR_CS, "MultienergyCTAcquisition", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9362, 0x0018, 0x9362,
+      EVR_SQ, "MultienergyCTAcquisitionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9363, 0x0018, 0x9363,
+      EVR_SQ, "MultienergyCTProcessingSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9364, 0x0018, 0x9364,
+      EVR_SQ, "MultienergyCTCharacteristicsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9365, 0x0018, 0x9365,
+      EVR_SQ, "MultienergyCTXRaySourceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9366, 0x0018, 0x9366,
+      EVR_US, "XRaySourceIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9367, 0x0018, 0x9367,
+      EVR_UC, "XRaySourceID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9368, 0x0018, 0x9368,
+      EVR_CS, "MultienergySourceTechnique", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9369, 0x0018, 0x9369,
+      EVR_DT, "SourceStartDateTime", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x936a, 0x0018, 0x936a,
+      EVR_DT, "SourceEndDateTime", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x936b, 0x0018, 0x936b,
+      EVR_US, "SwitchingPhaseNumber", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x936c, 0x0018, 0x936c,
+      EVR_DS, "SwitchingPhaseNominalDuration", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x936d, 0x0018, 0x936d,
+      EVR_DS, "SwitchingPhaseTransitionDuration", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x936e, 0x0018, 0x936e,
+      EVR_DS, "EffectiveBinEnergy", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x936f, 0x0018, 0x936f,
+      EVR_SQ, "MultienergyCTXRayDetectorSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9370, 0x0018, 0x9370,
+      EVR_US, "XRayDetectorIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9371, 0x0018, 0x9371,
+      EVR_UC, "XRayDetectorID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9372, 0x0018, 0x9372,
+      EVR_CS, "MultienergyDetectorType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9373, 0x0018, 0x9373,
+      EVR_ST, "XRayDetectorLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9374, 0x0018, 0x9374,
+      EVR_DS, "NominalMaxEnergy", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9375, 0x0018, 0x9375,
+      EVR_DS, "NominalMinEnergy", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9376, 0x0018, 0x9376,
+      EVR_US, "ReferencedXRayDetectorIndex", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9377, 0x0018, 0x9377,
+      EVR_US, "ReferencedXRaySourceIndex", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9378, 0x0018, 0x9378,
+      EVR_US, "ReferencedPathIndex", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9379, 0x0018, 0x9379,
+      EVR_SQ, "MultienergyCTPathSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x937a, 0x0018, 0x937a,
+      EVR_US, "MultienergyCTPathIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x937b, 0x0018, 0x937b,
+      EVR_UT, "MultienergyAcquisitionDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x937c, 0x0018, 0x937c,
+      EVR_FD, "MonoenergeticEnergyEquivalent", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x937d, 0x0018, 0x937d,
+      EVR_SQ, "MaterialCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x937e, 0x0018, 0x937e,
+      EVR_CS, "DecompositionMethod", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x937f, 0x0018, 0x937f,
+      EVR_UT, "DecompositionDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9380, 0x0018, 0x9380,
+      EVR_SQ, "DecompositionAlgorithmIdentificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9381, 0x0018, 0x9381,
+      EVR_SQ, "DecompositionMaterialSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9382, 0x0018, 0x9382,
+      EVR_SQ, "MaterialAttenuationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9383, 0x0018, 0x9383,
+      EVR_DS, "PhotonEnergy", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9384, 0x0018, 0x9384,
+      EVR_DS, "XRayMassAttenuationCoefficient", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0018, 0x9401, 0x0018, 0x9401,
@@ -6264,6 +7282,22 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_FD, "DiffusionBValueZZ", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0018, 0x9621, 0x0018, 0x9621,
+      EVR_SQ, "FunctionalMRSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9622, 0x0018, 0x9622,
+      EVR_CS, "FunctionalSettlingPhaseFramesPresent", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9623, 0x0018, 0x9623,
+      EVR_DT, "FunctionalSyncPulse", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9624, 0x0018, 0x9624,
+      EVR_CS, "SettlingPhaseFrame", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0018, 0x9701, 0x0018, 0x9701,
       EVR_DT, "DecayCorrectionDateTime", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -6490,6 +7524,242 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0018, 0x9810, 0x0018, 0x9810,
       EVR_xs, "ZeroVelocityPixelValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9900, 0x0018, 0x9900,
+      EVR_LO, "ReferenceLocationLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9901, 0x0018, 0x9901,
+      EVR_UT, "ReferenceLocationDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9902, 0x0018, 0x9902,
+      EVR_SQ, "ReferenceBasisCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9903, 0x0018, 0x9903,
+      EVR_SQ, "ReferenceGeometryCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9904, 0x0018, 0x9904,
+      EVR_DS, "OffsetDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9905, 0x0018, 0x9905,
+      EVR_CS, "OffsetDirection", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9906, 0x0018, 0x9906,
+      EVR_SQ, "PotentialScheduledProtocolCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9907, 0x0018, 0x9907,
+      EVR_SQ, "PotentialRequestedProcedureCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9908, 0x0018, 0x9908,
+      EVR_UC, "PotentialReasonsForProcedure", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9909, 0x0018, 0x9909,
+      EVR_SQ, "PotentialReasonsForProcedureCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x990a, 0x0018, 0x990a,
+      EVR_UC, "PotentialDiagnosticTasks", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x990b, 0x0018, 0x990b,
+      EVR_SQ, "ContraindicationsCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x990c, 0x0018, 0x990c,
+      EVR_SQ, "ReferencedDefinedProtocolSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x990d, 0x0018, 0x990d,
+      EVR_SQ, "ReferencedPerformedProtocolSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x990e, 0x0018, 0x990e,
+      EVR_SQ, "PredecessorProtocolSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x990f, 0x0018, 0x990f,
+      EVR_UT, "ProtocolPlanningInformation", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9910, 0x0018, 0x9910,
+      EVR_UT, "ProtocolDesignRationale", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9911, 0x0018, 0x9911,
+      EVR_SQ, "PatientSpecificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9912, 0x0018, 0x9912,
+      EVR_SQ, "ModelSpecificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9913, 0x0018, 0x9913,
+      EVR_SQ, "ParametersSpecificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9914, 0x0018, 0x9914,
+      EVR_SQ, "InstructionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9915, 0x0018, 0x9915,
+      EVR_US, "InstructionIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9916, 0x0018, 0x9916,
+      EVR_LO, "InstructionText", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9917, 0x0018, 0x9917,
+      EVR_UT, "InstructionDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9918, 0x0018, 0x9918,
+      EVR_CS, "InstructionPerformedFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9919, 0x0018, 0x9919,
+      EVR_DT, "InstructionPerformedDateTime", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x991a, 0x0018, 0x991a,
+      EVR_UT, "InstructionPerformanceComment", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x991b, 0x0018, 0x991b,
+      EVR_SQ, "PatientPositioningInstructionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x991c, 0x0018, 0x991c,
+      EVR_SQ, "PositioningMethodCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x991d, 0x0018, 0x991d,
+      EVR_SQ, "PositioningLandmarkSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x991e, 0x0018, 0x991e,
+      EVR_UI, "TargetFrameOfReferenceUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x991f, 0x0018, 0x991f,
+      EVR_SQ, "AcquisitionProtocolElementSpecificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9920, 0x0018, 0x9920,
+      EVR_SQ, "AcquisitionProtocolElementSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9921, 0x0018, 0x9921,
+      EVR_US, "ProtocolElementNumber", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9922, 0x0018, 0x9922,
+      EVR_LO, "ProtocolElementName", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9923, 0x0018, 0x9923,
+      EVR_UT, "ProtocolElementCharacteristicsSummary", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9924, 0x0018, 0x9924,
+      EVR_UT, "ProtocolElementPurpose", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9930, 0x0018, 0x9930,
+      EVR_CS, "AcquisitionMotion", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9931, 0x0018, 0x9931,
+      EVR_SQ, "AcquisitionStartLocationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9932, 0x0018, 0x9932,
+      EVR_SQ, "AcquisitionEndLocationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9933, 0x0018, 0x9933,
+      EVR_SQ, "ReconstructionProtocolElementSpecificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9934, 0x0018, 0x9934,
+      EVR_SQ, "ReconstructionProtocolElementSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9935, 0x0018, 0x9935,
+      EVR_SQ, "StorageProtocolElementSpecificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9936, 0x0018, 0x9936,
+      EVR_SQ, "StorageProtocolElementSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9937, 0x0018, 0x9937,
+      EVR_LO, "RequestedSeriesDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9938, 0x0018, 0x9938,
+      EVR_US, "SourceAcquisitionProtocolElementNumber", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9939, 0x0018, 0x9939,
+      EVR_US, "SourceAcquisitionBeamNumber", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x993a, 0x0018, 0x993a,
+      EVR_US, "SourceReconstructionProtocolElementNumber", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x993b, 0x0018, 0x993b,
+      EVR_SQ, "ReconstructionStartLocationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x993c, 0x0018, 0x993c,
+      EVR_SQ, "ReconstructionEndLocationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x993d, 0x0018, 0x993d,
+      EVR_SQ, "ReconstructionAlgorithmSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x993e, 0x0018, 0x993e,
+      EVR_SQ, "ReconstructionTargetCenterLocationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9941, 0x0018, 0x9941,
+      EVR_UT, "ImageFilterDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9942, 0x0018, 0x9942,
+      EVR_FD, "CTDIvolNotificationTrigger", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9943, 0x0018, 0x9943,
+      EVR_FD, "DLPNotificationTrigger", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9944, 0x0018, 0x9944,
+      EVR_CS, "AutoKVPSelectionType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9945, 0x0018, 0x9945,
+      EVR_FD, "AutoKVPUpperBound", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9946, 0x0018, 0x9946,
+      EVR_FD, "AutoKVPLowerBound", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0018, 0x9947, 0x0018, 0x9947,
+      EVR_CS, "ProtocolDefinedPatientPosition", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0018, 0xa001, 0x0018, 0xa001,
@@ -9606,7 +10876,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00a7, 0x0019, 0x00a7,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData0", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00a7, 0x0019, 0x00a7,
@@ -9626,7 +10896,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00a8, 0x0019, 0x00a8,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData1", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00a8, 0x0019, 0x00a8,
@@ -9650,7 +10920,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00a9, 0x0019, 0x00a9,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData2", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00a9, 0x0019, 0x00a9,
@@ -9670,7 +10940,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00aa, 0x0019, 0x00aa,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData3", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00aa, 0x0019, 0x00aa,
@@ -9690,7 +10960,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00ab, 0x0019, 0x00ab,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData4", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00ab, 0x0019, 0x00ab,
@@ -9710,7 +10980,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00ac, 0x0019, 0x00ac,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData5", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00ac, 0x0019, 0x00ac,
@@ -9730,7 +11000,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00ad, 0x0019, 0x00ad,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData6", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00ad, 0x0019, 0x00ad,
@@ -9750,7 +11020,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00ae, 0x0019, 0x00ae,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData7", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00ae, 0x0019, 0x00ae,
@@ -9762,7 +11032,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00af, 0x0019, 0x00af,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData8", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00af, 0x0019, 0x00af,
@@ -9778,7 +11048,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00b0, 0x0019, 0x00b0,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData9", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00b0, 0x0019, 0x00b0,
@@ -9806,7 +11076,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00b1, 0x0019, 0x00b1,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData10", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00b1, 0x0019, 0x00b1,
@@ -9826,7 +11096,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00b2, 0x0019, 0x00b2,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData11", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00b3, 0x0019, 0x00b3,
@@ -9842,7 +11112,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00b3, 0x0019, 0x00b3,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData12", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00b4, 0x0019, 0x00b4,
@@ -9858,7 +11128,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00b4, 0x0019, 0x00b4,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData13", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00b5, 0x0019, 0x00b5,
@@ -9874,7 +11144,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00b5, 0x0019, 0x00b5,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData14", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00b6, 0x0019, 0x00b6,
@@ -9886,7 +11156,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "DIDI TO PCR 1.1" }
   , { 0x0019, 0x00b6, 0x0019, 0x00b6,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData15", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00b7, 0x0019, 0x00b7,
@@ -9894,7 +11164,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "SIEMENS RA PLANE A" }
   , { 0x0019, 0x00b7, 0x0019, 0x00b7,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData16", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00b8, 0x0019, 0x00b8,
@@ -9902,7 +11172,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "SIEMENS RA PLANE A" }
   , { 0x0019, 0x00b8, 0x0019, 0x00b8,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData17", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00b9, 0x0019, 0x00b9,
@@ -9910,11 +11180,11 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "SIEMENS RA PLANE A" }
   , { 0x0019, 0x00b9, 0x0019, 0x00b9,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData18", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00ba, 0x0019, 0x00ba,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData19", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00bb, 0x0019, 0x00bb,
@@ -9922,7 +11192,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "SIEMENS RA PLANE A" }
   , { 0x0019, 0x00bb, 0x0019, 0x00bb,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData20", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00bc, 0x0019, 0x00bc,
@@ -9930,7 +11200,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "SIEMENS RA PLANE A" }
   , { 0x0019, 0x00bc, 0x0019, 0x00bc,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData21", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00bd, 0x0019, 0x00bd,
@@ -9938,7 +11208,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "SIEMENS RA PLANE A" }
   , { 0x0019, 0x00bd, 0x0019, 0x00bd,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData22", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00bd, 0x0019, 0x00bd,
@@ -10338,7 +11608,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "SIEMENS RA PLANE A" }
   , { 0x0019, 0x00df, 0x0019, 0x00df,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData23", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00e0, 0x0019, 0x00e0,
@@ -10350,7 +11620,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "SIEMENS RA PLANE A" }
   , { 0x0019, 0x00e0, 0x0019, 0x00e0,
-      EVR_DS, "UserData", 1, 1, "PrivateTag",
+      EVR_DS, "UserData24", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "GEMS_ACQU_01" }
   , { 0x0019, 0x00e1, 0x0019, 0x00e1,
@@ -10912,6 +12182,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0020, 0x1020, 0x0020, 0x1020,
       EVR_LO, "RETIRED_Reference", 1, -1, "DICOM/retired",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0020, 0x103f, 0x0020, 0x103f,
+      EVR_LO, "TargetPositionReferenceIndicator", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0020, 0x1040, 0x0020, 0x1040,
@@ -12608,6 +13882,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_SQ, "SourceOfOphthalmicAxialLengthCodeSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0022, 0x1036, 0x0022, 0x1036,
+      EVR_SQ, "SourceOfCornealSizeDataCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0022, 0x1037, 0x0022, 0x1037,
       EVR_FL, "TargetRefraction", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -12622,6 +13900,34 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0022, 0x1044, 0x0022, 0x1044,
       EVR_SQ, "OphthalmicUltrasoundMethodCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1045, 0x0022, 0x1045,
+      EVR_SQ, "SurgicallyInducedAstigmatismSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1046, 0x0022, 0x1046,
+      EVR_CS, "TypeOfOpticalCorrection", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1047, 0x0022, 0x1047,
+      EVR_SQ, "ToricIOLPowerSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1048, 0x0022, 0x1048,
+      EVR_SQ, "PredictedToricErrorSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1049, 0x0022, 0x1049,
+      EVR_CS, "PreSelectedForImplantation", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x104a, 0x0022, 0x104a,
+      EVR_SQ, "ToricIOLPowerForExactEmmetropiaSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x104b, 0x0022, 0x104b,
+      EVR_SQ, "ToricIOLPowerForExactTargetRefractionSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0022, 0x1050, 0x0022, 0x1050,
@@ -12706,6 +14012,18 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0022, 0x1128, 0x0022, 0x1128,
       EVR_SQ, "AnteriorChamberDepthSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x112a, 0x0022, 0x112a,
+      EVR_SQ, "CalculationCommentSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x112b, 0x0022, 0x112b,
+      EVR_CS, "CalculationCommentType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x112c, 0x0022, 0x112c,
+      EVR_LT, "CalculationComment", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0022, 0x1130, 0x0022, 0x1130,
@@ -12934,6 +14252,82 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0022, 0x1531, 0x0022, 0x1531,
       EVR_OF, "TwoDimensionalToThreeDimensionalMapData", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1612, 0x0022, 0x1612,
+      EVR_SQ, "DerivationAlgorithmSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1615, 0x0022, 0x1615,
+      EVR_SQ, "OphthalmicImageTypeCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1616, 0x0022, 0x1616,
+      EVR_LO, "OphthalmicImageTypeDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1618, 0x0022, 0x1618,
+      EVR_SQ, "ScanPatternTypeCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1620, 0x0022, 0x1620,
+      EVR_SQ, "ReferencedSurfaceMeshIdentificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1622, 0x0022, 0x1622,
+      EVR_CS, "OphthalmicVolumetricPropertiesFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1624, 0x0022, 0x1624,
+      EVR_FL, "OphthalmicAnatomicReferencePointXCoordinate", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1626, 0x0022, 0x1626,
+      EVR_FL, "OphthalmicAnatomicReferencePointYCoordinate", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1628, 0x0022, 0x1628,
+      EVR_SQ, "OphthalmicEnFaceImageQualityRatingSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1630, 0x0022, 0x1630,
+      EVR_DS, "QualityThreshold", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1640, 0x0022, 0x1640,
+      EVR_SQ, "OCTBscanAnalysisAcquisitionParametersSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1642, 0x0022, 0x1642,
+      EVR_UL, "NumberOfBscansPerFrame", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1643, 0x0022, 0x1643,
+      EVR_FL, "BscanSlabThickness", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1644, 0x0022, 0x1644,
+      EVR_FL, "DistanceBetweenBscanSlabs", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1645, 0x0022, 0x1645,
+      EVR_FL, "BscanCycleTime", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1646, 0x0022, 0x1646,
+      EVR_FL, "BscanCycleTimeVector", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1649, 0x0022, 0x1649,
+      EVR_FL, "AscanRate", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1650, 0x0022, 0x1650,
+      EVR_FL, "BscanRate", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0022, 0x1658, 0x0022, 0x1658,
+      EVR_UL, "SurfaceMeshZPixelOffset", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
 #ifdef ENABLE_PRIVATE_TAGS
@@ -14777,7 +16171,19 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0028, 0x1224, 0x0028, 0x1224,
-      EVR_OW, "SegmentedAlphaPaletteColorLookupTableData", 1, 1, "Supplement_156",
+      EVR_OW, "SegmentedAlphaPaletteColorLookupTableData", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0028, 0x1230, 0x0028, 0x1230,
+      EVR_SQ, "StoredValueColorRangeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0028, 0x1231, 0x0028, 0x1231,
+      EVR_FD, "MinimumStoredValueMapped", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0028, 0x1232, 0x0028, 0x1232,
+      EVR_FD, "MaximumStoredValueMapped", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0028, 0x1300, 0x0028, 0x1300,
@@ -14861,7 +16267,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0028, 0x2002, 0x0028, 0x2002,
-      EVR_CS, "ColorSpace", 1, 1, "CP_1454",
+      EVR_CS, "ColorSpace", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0028, 0x2110, 0x0028, 0x2110,
@@ -16902,6 +18308,18 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_SQ, "RequestedProcedureCodeSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0032, 0x1065, 0x0032, 0x1065,
+      EVR_SQ, "RequestedLateralityCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0032, 0x1066, 0x0032, 0x1066,
+      EVR_UT, "ReasonForVisit", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0032, 0x1067, 0x0032, 0x1067,
+      EVR_SQ, "ReasonForVisitCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0032, 0x1070, 0x0032, 0x1070,
       EVR_LO, "RequestedContrastAgent", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -16935,6 +18353,56 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_LT, "PatientStudyUID", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "SIEMENS RIS" }
+#endif
+  , { 0x0034, 0x0001, 0x0034, 0x0001,
+      EVR_SQ, "FlowIdentifierSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0034, 0x0002, 0x0034, 0x0002,
+      EVR_OB, "FlowIdentifier", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0034, 0x0003, 0x0034, 0x0003,
+      EVR_UI, "FlowTransferSyntaxUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0034, 0x0004, 0x0034, 0x0004,
+      EVR_UL, "FlowRTPSamplingRate", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0034, 0x0005, 0x0034, 0x0005,
+      EVR_OB, "SourceIdentifier", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0034, 0x0007, 0x0034, 0x0007,
+      EVR_OB, "FrameOriginTimestamp", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0034, 0x0008, 0x0034, 0x0008,
+      EVR_CS, "IncludesImagingSubject", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0034, 0x0009, 0x0034, 0x0009,
+      EVR_SQ, "FrameUsefulnessGroupSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0034, 0x000a, 0x0034, 0x000a,
+      EVR_SQ, "RealTimeBulkDataFlowSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0034, 0x000b, 0x0034, 0x000b,
+      EVR_SQ, "CameraPositionGroupSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0034, 0x000c, 0x0034, 0x000c,
+      EVR_CS, "IncludesInformation", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0034, 0x000d, 0x0034, 0x000d,
+      EVR_SQ, "TimeOfFrameGroupSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+#ifdef ENABLE_PRIVATE_TAGS
   , { 0x0037, 0x0010, 0x0037, 0x0010,
       EVR_LO, "ReferringDepartment", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -17254,6 +18722,34 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_CS, "ChannelMode", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x003a, 0x0310, 0x003a, 0x0310,
+      EVR_UI, "MultiplexGroupUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x003a, 0x0311, 0x003a, 0x0311,
+      EVR_DS, "PowerlineFrequency", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x003a, 0x0312, 0x003a, 0x0312,
+      EVR_SQ, "ChannelImpedanceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x003a, 0x0313, 0x003a, 0x0313,
+      EVR_DS, "ImpedanceValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x003a, 0x0314, 0x003a, 0x0314,
+      EVR_DT, "ImpedanceMeasurementDateTime", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x003a, 0x0315, 0x003a, 0x0315,
+      EVR_DS, "ImpedanceMeasurementFrequency", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x003a, 0x0316, 0x003a, 0x0316,
+      EVR_CS, "ImpedanceMeasurementCurrentType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0040, 0x0001, 0x0040, 0x0001,
       EVR_AE, "ScheduledStationAETitle", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -17443,11 +18939,11 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x0300, 0x0040, 0x0300,
-      EVR_US, "TotalTimeOfFluoroscopy", 1, 1, "DICOM",
+      EVR_US, "RETIRED_TotalTimeOfFluoroscopy", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x0301, 0x0040, 0x0301,
-      EVR_US, "TotalNumberOfExposures", 1, 1, "DICOM",
+      EVR_US, "RETIRED_TotalNumberOfExposures", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x0302, 0x0040, 0x0302,
@@ -17467,7 +18963,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x030e, 0x0040, 0x030e,
-      EVR_SQ, "ExposureDoseSequence", 1, 1, "DICOM",
+      EVR_SQ, "RETIRED_ExposureDoseSequence", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x0310, 0x0040, 0x0310,
@@ -17616,6 +19112,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0040, 0x06fa, 0x0040, 0x06fa,
       EVR_LO, "RETIRED_SlideIdentifier", 1, 1, "DICOM/retired",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0040, 0x0710, 0x0040, 0x0710,
+      EVR_SQ, "WholeSlideMicroscopyImageFrameTypeSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x071a, 0x0040, 0x071a,
@@ -17803,7 +19303,11 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x4007, 0x0040, 0x4007,
-      EVR_SQ, "PerformedProcessingApplicationsCodeSequence", 1, 1, "DICOM",
+      EVR_SQ, "RETIRED_PerformedProcessingApplicationsCodeSequence", 1, 1, "DICOM/retired",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0040, 0x4008, 0x0040, 0x4008,
+      EVR_DT, "ScheduledProcedureStepExpirationDateTime", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x4009, 0x0040, 0x4009,
@@ -17835,7 +19339,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x4020, 0x0040, 0x4020,
-      EVR_CS, "InputAvailabilityFlag", 1, 1, "DICOM",
+      EVR_CS, "RETIRED_InputAvailabilityFlag", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x4021, 0x0040, 0x4021,
@@ -17923,27 +19427,31 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x4070, 0x0040, 0x4070,
-      EVR_SQ, "OutputDestinationSequence", 1, 1, "CP_1441",
+      EVR_SQ, "OutputDestinationSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x4071, 0x0040, 0x4071,
-      EVR_SQ, "DICOMStorageSequence", 1, 1, "CP_1441",
+      EVR_SQ, "DICOMStorageSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x4072, 0x0040, 0x4072,
-      EVR_SQ, "STOWRSStorageSequence", 1, 1, "CP_1441",
+      EVR_SQ, "STOWRSStorageSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x4073, 0x0040, 0x4073,
-      EVR_UR, "StorageURL", 1, 1, "CP_1441",
+      EVR_UR, "StorageURL", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x4074, 0x0040, 0x4074,
-      EVR_SQ, "XDSStorageSequence", 1, 1, "CP_1441",
+      EVR_SQ, "XDSStorageSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x8302, 0x0040, 0x8302,
       EVR_DS, "EntranceDoseInmGy", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0040, 0x8303, 0x0040, 0x8303,
+      EVR_CS, "EntranceDoseDerivation", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x9092, 0x0040, 0x9092,
@@ -17975,11 +19483,11 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x9213, 0x0040, 0x9213,
-      EVR_FD, "DoubleFloatRealWorldValueLastValueMapped", 1, 1, "CP_1458",
+      EVR_FD, "DoubleFloatRealWorldValueLastValueMapped", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x9214, 0x0040, 0x9214,
-      EVR_FD, "DoubleFloatRealWorldValueFirstValueMapped", 1, 1, "CP_1458",
+      EVR_FD, "DoubleFloatRealWorldValueFirstValueMapped", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0x9216, 0x0040, 0x9216,
@@ -18044,6 +19552,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0040, 0xa032, 0x0040, 0xa032,
       EVR_DT, "ObservationDateTime", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0040, 0xa033, 0x0040, 0xa033,
+      EVR_DT, "ObservationStartDateTime", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0xa040, 0x0040, 0xa040,
@@ -18187,7 +19699,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0xa136, 0x0040, 0xa136,
-      EVR_US, "ReferencedFrameNumbers", 1, -1, "DICOM",
+      EVR_US, "RETIRED_ReferencedFrameNumbers", 1, -1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0xa138, 0x0040, 0xa138,
@@ -18424,6 +19936,38 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0040, 0xa744, 0x0040, 0xa744,
       EVR_SQ, "RETIRED_LanguageCodeSequenceTrial", 1, 1, "DICOM/retired",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0040, 0xa801, 0x0040, 0xa801,
+      EVR_SQ, "TabulatedValuesSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0040, 0xa802, 0x0040, 0xa802,
+      EVR_UL, "NumberOfTableRows", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0040, 0xa803, 0x0040, 0xa803,
+      EVR_UL, "NumberOfTableColumns", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0040, 0xa804, 0x0040, 0xa804,
+      EVR_UL, "TableRowNumber", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0040, 0xa805, 0x0040, 0xa805,
+      EVR_UL, "TableColumnNumber", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0040, 0xa806, 0x0040, 0xa806,
+      EVR_SQ, "TableRowDefinitionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0040, 0xa807, 0x0040, 0xa807,
+      EVR_SQ, "TableColumnDefinitionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0040, 0xa808, 0x0040, 0xa808,
+      EVR_SQ, "CellValuesSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0040, 0xa992, 0x0040, 0xa992,
@@ -18710,6 +20254,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0042, 0x0014, 0x0042, 0x0014,
       EVR_LO, "ListOfMIMETypes", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0042, 0x0015, 0x0042, 0x0015,
+      EVR_UL, "EncapsulatedDocumentLength", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
 #ifdef ENABLE_PRIVATE_TAGS
@@ -19262,6 +20810,50 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_SQ, "SubstanceAdministrationParameterSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0044, 0x0100, 0x0044, 0x0100,
+      EVR_SQ, "ApprovalSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0044, 0x0101, 0x0044, 0x0101,
+      EVR_SQ, "AssertionCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0044, 0x0102, 0x0044, 0x0102,
+      EVR_UI, "AssertionUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0044, 0x0103, 0x0044, 0x0103,
+      EVR_SQ, "AsserterIdentificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0044, 0x0104, 0x0044, 0x0104,
+      EVR_DT, "AssertionDateTime", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0044, 0x0105, 0x0044, 0x0105,
+      EVR_DT, "AssertionExpirationDateTime", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0044, 0x0106, 0x0044, 0x0106,
+      EVR_UT, "AssertionComments", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0044, 0x0107, 0x0044, 0x0107,
+      EVR_SQ, "RelatedAssertionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0044, 0x0108, 0x0044, 0x0108,
+      EVR_UI, "ReferencedAssertionUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0044, 0x0109, 0x0044, 0x0109,
+      EVR_SQ, "ApprovalSubjectSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0044, 0x010a, 0x0044, 0x010a,
+      EVR_SQ, "OrganizationalRoleCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
 #ifdef ENABLE_PRIVATE_TAGS
   , { 0x0045, 0x0004, 0x0045, 0x0004,
       EVR_CS, "AES", 1, 1, "PrivateTag",
@@ -19464,6 +21056,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_FD, "CornealSize", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0046, 0x0047, 0x0046, 0x0047,
+      EVR_SQ, "CornealSizeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0046, 0x0050, 0x0046, 0x0050,
       EVR_SQ, "AutorefractionRightEyeSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -19554,6 +21150,42 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0046, 0x0106, 0x0046, 0x0106,
       EVR_FD, "ViewingDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0046, 0x0110, 0x0046, 0x0110,
+      EVR_SQ, "CorneaMeasurementsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0046, 0x0111, 0x0046, 0x0111,
+      EVR_SQ, "SourceOfCorneaMeasurementDataCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0046, 0x0112, 0x0046, 0x0112,
+      EVR_SQ, "SteepCornealAxisSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0046, 0x0113, 0x0046, 0x0113,
+      EVR_SQ, "FlatCornealAxisSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0046, 0x0114, 0x0046, 0x0114,
+      EVR_FD, "CornealPower", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0046, 0x0115, 0x0046, 0x0115,
+      EVR_FD, "CornealAxis", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0046, 0x0116, 0x0046, 0x0116,
+      EVR_SQ, "CorneaMeasurementMethodCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0046, 0x0117, 0x0046, 0x0117,
+      EVR_FL, "RefractiveIndexOfCornea", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0046, 0x0118, 0x0046, 0x0118,
+      EVR_FL, "RefractiveIndexOfAqueousHumor", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0046, 0x0121, 0x0046, 0x0121,
@@ -20023,15 +21655,15 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0048, 0x0200, 0x0048, 0x0200,
-      EVR_SQ, "ReferencedImageNavigationSequence", 1, 1, "DICOM",
+      EVR_SQ, "RETIRED_ReferencedImageNavigationSequence", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0048, 0x0201, 0x0048, 0x0201,
-      EVR_US, "TopLeftHandCornerOfLocalizerArea", 2, 2, "DICOM",
+      EVR_US, "RETIRED_TopLeftHandCornerOfLocalizerArea", 2, 2, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0048, 0x0202, 0x0048, 0x0202,
-      EVR_US, "BottomRightHandCornerOfLocalizerArea", 2, 2, "DICOM",
+      EVR_US, "RETIRED_BottomRightHandCornerOfLocalizerArea", 2, 2, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0048, 0x0207, 0x0048, 0x0207,
@@ -20052,6 +21684,14 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0048, 0x0301, 0x0048, 0x0301,
       EVR_CS, "PixelOriginInterpretation", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0048, 0x0302, 0x0048, 0x0302,
+      EVR_UL, "NumberOfOpticalPaths", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0048, 0x0303, 0x0048, 0x0303,
+      EVR_UL, "TotalPixelMatrixFocalPlanes", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0050, 0x0004, 0x0050, 0x0004,
@@ -20116,6 +21756,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0050, 0x0020, 0x0050, 0x0020,
       EVR_LO, "DeviceDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0050, 0x0021, 0x0050, 0x0021,
+      EVR_ST, "LongDeviceDescription", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
 #ifdef ENABLE_PRIVATE_TAGS
@@ -20610,12 +22254,16 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_ST, "SegmentDescription", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0062, 0x0007, 0x0062, 0x0007,
+      EVR_SQ, "SegmentationAlgorithmIdentificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0062, 0x0008, 0x0062, 0x0008,
       EVR_CS, "SegmentAlgorithmType", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0062, 0x0009, 0x0062, 0x0009,
-      EVR_LO, "SegmentAlgorithmName", 1, 1, "DICOM",
+      EVR_LO, "SegmentAlgorithmName", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0062, 0x000a, 0x0062, 0x000a,
@@ -20652,6 +22300,18 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0062, 0x0012, 0x0062, 0x0012,
       EVR_SQ, "UsedSegmentsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0062, 0x0013, 0x0062, 0x0013,
+      EVR_CS, "SegmentsOverlap", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0062, 0x0020, 0x0062, 0x0020,
+      EVR_UT, "TrackingID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0062, 0x0021, 0x0062, 0x0021,
+      EVR_UI, "TrackingUID", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0064, 0x0002, 0x0064, 0x0002,
@@ -20790,16 +22450,20 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_OF, "VectorCoordinateData", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0066, 0x0022, 0x0066, 0x0022,
+      EVR_OD, "DoublePointCoordinatesData", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0066, 0x0023, 0x0066, 0x0023,
-      EVR_OW, "TrianglePointIndexList", 1, 1, "DICOM",
+      EVR_OW, "RETIRED_TrianglePointIndexList", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0066, 0x0024, 0x0066, 0x0024,
-      EVR_OW, "EdgePointIndexList", 1, 1, "DICOM",
+      EVR_OW, "RETIRED_EdgePointIndexList", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0066, 0x0025, 0x0066, 0x0025,
-      EVR_OW, "VertexPointIndexList", 1, 1, "DICOM",
+      EVR_OW, "RETIRED_VertexPointIndexList", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0066, 0x0026, 0x0066, 0x0026,
@@ -20815,7 +22479,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0066, 0x0029, 0x0066, 0x0029,
-      EVR_OW, "PrimitivePointIndexList", 1, 1, "DICOM",
+      EVR_OW, "RETIRED_PrimitivePointIndexList", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0066, 0x002a, 0x0066, 0x002a,
@@ -20875,19 +22539,83 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0066, 0x0040, 0x0066, 0x0040,
-      EVR_UL, "LongPrimitivePointIndexList", 1, -1, "DICOM",
+      EVR_OL, "LongPrimitivePointIndexList", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0066, 0x0041, 0x0066, 0x0041,
-      EVR_UL, "LongTrianglePointIndexList", 3, -1, "DICOM",
+      EVR_OL, "LongTrianglePointIndexList", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0066, 0x0042, 0x0066, 0x0042,
-      EVR_UL, "LongEdgePointIndexList", 2, -1, "DICOM",
+      EVR_OL, "LongEdgePointIndexList", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0066, 0x0043, 0x0066, 0x0043,
-      EVR_UL, "LongVertexPointIndexList", 1, -1, "DICOM",
+      EVR_OL, "LongVertexPointIndexList", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0101, 0x0066, 0x0101,
+      EVR_SQ, "TrackSetSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0102, 0x0066, 0x0102,
+      EVR_SQ, "TrackSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0103, 0x0066, 0x0103,
+      EVR_OW, "RecommendedDisplayCIELabValueList", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0104, 0x0066, 0x0104,
+      EVR_SQ, "TrackingAlgorithmIdentificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0105, 0x0066, 0x0105,
+      EVR_UL, "TrackSetNumber", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0106, 0x0066, 0x0106,
+      EVR_LO, "TrackSetLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0107, 0x0066, 0x0107,
+      EVR_UT, "TrackSetDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0108, 0x0066, 0x0108,
+      EVR_SQ, "TrackSetAnatomicalTypeCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0121, 0x0066, 0x0121,
+      EVR_SQ, "MeasurementsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0124, 0x0066, 0x0124,
+      EVR_SQ, "TrackSetStatisticsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0125, 0x0066, 0x0125,
+      EVR_OF, "FloatingPointValues", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0129, 0x0066, 0x0129,
+      EVR_OL, "TrackPointIndexList", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0130, 0x0066, 0x0130,
+      EVR_SQ, "TrackStatisticsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0132, 0x0066, 0x0132,
+      EVR_SQ, "MeasurementValuesSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0133, 0x0066, 0x0133,
+      EVR_SQ, "DiffusionAcquisitionCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0066, 0x0134, 0x0066, 0x0134,
+      EVR_SQ, "DiffusionModelCodeSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0068, 0x6210, 0x0068, 0x6210,
@@ -20963,7 +22691,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0068, 0x62f0, 0x0068, 0x62f0,
-      EVR_FD, "ViewOrientationModifier", 9, 9, "DICOM",
+      EVR_SQ, "ViewOrientationModifierCodeSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0068, 0x62f2, 0x0068, 0x62f2,
@@ -21168,6 +22896,90 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0068, 0x6620, 0x0068, 0x6620,
       EVR_FD, "ThreeDPlaneNormal", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0068, 0x7001, 0x0068, 0x7001,
+      EVR_CS, "ModelModification", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0068, 0x7002, 0x0068, 0x7002,
+      EVR_CS, "ModelMirroring", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0068, 0x7003, 0x0068, 0x7003,
+      EVR_SQ, "ModelUsageCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0068, 0x7004, 0x0068, 0x7004,
+      EVR_UI, "ModelGroupUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0068, 0x7005, 0x0068, 0x7005,
+      EVR_UR, "RelativeURIReferenceWithinEncapsulatedDocument", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x0001, 0x006a, 0x0001,
+      EVR_CS, "AnnotationCoordinateType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x0002, 0x006a, 0x0002,
+      EVR_SQ, "AnnotationGroupSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x0003, 0x006a, 0x0003,
+      EVR_UI, "AnnotationGroupUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x0005, 0x006a, 0x0005,
+      EVR_LO, "AnnotationGroupLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x0006, 0x006a, 0x0006,
+      EVR_UT, "AnnotationGroupDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x0007, 0x006a, 0x0007,
+      EVR_CS, "AnnotationGroupGenerationType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x0008, 0x006a, 0x0008,
+      EVR_SQ, "AnnotationGroupAlgorithmIdentificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x0009, 0x006a, 0x0009,
+      EVR_SQ, "AnnotationPropertyCategoryCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x000a, 0x006a, 0x000a,
+      EVR_SQ, "AnnotationPropertyTypeCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x000b, 0x006a, 0x000b,
+      EVR_SQ, "AnnotationPropertyTypeModifierCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x000c, 0x006a, 0x000c,
+      EVR_UL, "NumberOfAnnotations", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x000d, 0x006a, 0x000d,
+      EVR_CS, "AnnotationAppliesToAllOpticalPaths", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x000e, 0x006a, 0x000e,
+      EVR_SH, "ReferencedOpticalPathIdentifier", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x000f, 0x006a, 0x000f,
+      EVR_CS, "AnnotationAppliesToAllZPlanes", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x0010, 0x006a, 0x0010,
+      EVR_FD, "CommonZCoordinateValue", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x006a, 0x0011, 0x006a, 0x0011,
+      EVR_OL, "AnnotationIndexList", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x0001, 0x0070, 0x0001,
@@ -21530,6 +23342,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_SQ, "MatrixSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0070, 0x030b, 0x0070, 0x030b,
+      EVR_FD, "FrameOfReferenceToDisplayedCoordinateSystemTransformationMatrix", 16, 16, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0070, 0x030c, 0x0070, 0x030c,
       EVR_CS, "FrameOfReferenceTransformationMatrixType", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -21566,12 +23382,20 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_UI, "FiducialUID", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0070, 0x031b, 0x0070, 0x031b,
+      EVR_UI, "ReferencedFiducialUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0070, 0x031c, 0x0070, 0x031c,
       EVR_SQ, "FiducialSetSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x031e, 0x0070, 0x031e,
       EVR_SQ, "FiducialSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x031f, 0x0070, 0x031f,
+      EVR_SQ, "FiducialsPropertyCategoryCodeSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x0401, 0x0070, 0x0401,
@@ -21595,187 +23419,315 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1101, 0x0070, 0x1101,
-      EVR_UI, "PresentationDisplayCollectionUID", 1, 1, "Supplement_156",
+      EVR_UI, "PresentationDisplayCollectionUID", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1102, 0x0070, 0x1102,
-      EVR_UI, "PresentationSequenceCollectionUID", 1, 1, "Supplement_156",
+      EVR_UI, "PresentationSequenceCollectionUID", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1103, 0x0070, 0x1103,
-      EVR_US, "PresentationSequencePositionIndex", 1, 1, "Supplement_156",
+      EVR_US, "PresentationSequencePositionIndex", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1104, 0x0070, 0x1104,
-      EVR_SQ, "RenderedImageReferenceSequence", 1, 1, "Supplement_156",
+      EVR_SQ, "RenderedImageReferenceSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1201, 0x0070, 0x1201,
-      EVR_SQ, "VolumetricPresentationStateInputSequence", 1, 1, "Supplement_156",
+      EVR_SQ, "VolumetricPresentationStateInputSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1202, 0x0070, 0x1202,
-      EVR_CS, "PresentationInputType", 1, 1, "Supplement_156",
+      EVR_CS, "PresentationInputType", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1203, 0x0070, 0x1203,
-      EVR_US, "InputSequencePositionIndex", 1, 1, "Supplement_156",
+      EVR_US, "InputSequencePositionIndex", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1204, 0x0070, 0x1204,
-      EVR_CS, "Crop", 1, 1, "Supplement_156",
+      EVR_CS, "Crop", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1205, 0x0070, 0x1205,
-      EVR_US, "CroppingSpecificationIndex", 1, -1, "Supplement_156",
+      EVR_US, "CroppingSpecificationIndex", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1206, 0x0070, 0x1206,
-      EVR_CS, "CompositingMethod", 1, 1, "Supplement_156",
+      EVR_CS, "RETIRED_CompositingMethod", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1207, 0x0070, 0x1207,
-      EVR_US, "VolumetricPresentationInputNumber", 1, 1, "Supplement_156",
+      EVR_US, "VolumetricPresentationInputNumber", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1208, 0x0070, 0x1208,
-      EVR_CS, "ImageVolumeGeometry", 1, 1, "Supplement_156",
+      EVR_CS, "ImageVolumeGeometry", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1209, 0x0070, 0x1209,
+      EVR_UI, "VolumetricPresentationInputSetUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x120a, 0x0070, 0x120a,
+      EVR_SQ, "VolumetricPresentationInputSetSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x120b, 0x0070, 0x120b,
+      EVR_CS, "GlobalCrop", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x120c, 0x0070, 0x120c,
+      EVR_US, "GlobalCroppingSpecificationIndex", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x120d, 0x0070, 0x120d,
+      EVR_CS, "RenderingMethod", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1301, 0x0070, 0x1301,
-      EVR_SQ, "VolumeCroppingSequence", 1, 1, "Supplement_156",
+      EVR_SQ, "VolumeCroppingSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1302, 0x0070, 0x1302,
-      EVR_CS, "VolumeCroppingMethod", 1, 1, "Supplement_156",
+      EVR_CS, "VolumeCroppingMethod", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1303, 0x0070, 0x1303,
-      EVR_FD, "BoundingBoxCrop", 6, 6, "Supplement_156",
+      EVR_FD, "BoundingBoxCrop", 6, 6, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1304, 0x0070, 0x1304,
-      EVR_SQ, "ObliqueCroppingPlaneSequence", 1, 1, "Supplement_156",
+      EVR_SQ, "ObliqueCroppingPlaneSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1305, 0x0070, 0x1305,
-      EVR_FD, "ObliqueCroppingPlane", 4, 4, "Supplement_156",
+      EVR_FD, "Plane", 4, 4, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1306, 0x0070, 0x1306,
-      EVR_FD, "ObliqueCroppingPlaneNormal", 3, 3, "Supplement_156",
+      EVR_FD, "PlaneNormal", 3, 3, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1309, 0x0070, 0x1309,
-      EVR_US, "CroppingSpecificationNumber", 1, 1, "Supplement_156",
+      EVR_US, "CroppingSpecificationNumber", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1501, 0x0070, 0x1501,
-      EVR_CS, "MultiPlanarReconstructionStyle", 1, 1, "Supplement_156",
+      EVR_CS, "MultiPlanarReconstructionStyle", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1502, 0x0070, 0x1502,
-      EVR_CS, "MPRThicknessType", 1, 1, "Supplement_156",
+      EVR_CS, "MPRThicknessType", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1503, 0x0070, 0x1503,
-      EVR_FD, "MPRSlabThickness", 1, 1, "Supplement_156",
+      EVR_FD, "MPRSlabThickness", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1505, 0x0070, 0x1505,
-      EVR_FD, "MPRTopLeftHandCorner", 3, 3, "Supplement_156",
+      EVR_FD, "MPRTopLeftHandCorner", 3, 3, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1507, 0x0070, 0x1507,
-      EVR_FD, "MPRViewWidthDirection", 3, 3, "Supplement_156",
+      EVR_FD, "MPRViewWidthDirection", 3, 3, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1508, 0x0070, 0x1508,
-      EVR_FD, "MPRViewWidth", 1, 1, "Supplement_156",
+      EVR_FD, "MPRViewWidth", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x150c, 0x0070, 0x150c,
-      EVR_FL, "NumberOfVolumetricCurvePoints", 1, 1, "Supplement_156",
+      EVR_UL, "NumberOfVolumetricCurvePoints", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x150d, 0x0070, 0x150d,
-      EVR_OD, "VolumetricCurvePoints", 1, 1, "Supplement_156",
+      EVR_OD, "VolumetricCurvePoints", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1511, 0x0070, 0x1511,
-      EVR_FD, "MPRViewHeightDirection", 3, 3, "Supplement_156",
+      EVR_FD, "MPRViewHeightDirection", 3, 3, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1512, 0x0070, 0x1512,
-      EVR_FD, "MPRViewHeight", 1, 1, "Supplement_156",
+      EVR_FD, "MPRViewHeight", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1602, 0x0070, 0x1602,
+      EVR_CS, "RenderProjection", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1603, 0x0070, 0x1603,
+      EVR_FD, "ViewpointPosition", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1604, 0x0070, 0x1604,
+      EVR_FD, "ViewpointLookAtPoint", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1605, 0x0070, 0x1605,
+      EVR_FD, "ViewpointUpDirection", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1606, 0x0070, 0x1606,
+      EVR_FD, "RenderFieldOfView", 6, 6, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1607, 0x0070, 0x1607,
+      EVR_FD, "SamplingStepSize", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1701, 0x0070, 0x1701,
+      EVR_CS, "ShadingStyle", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1702, 0x0070, 0x1702,
+      EVR_FD, "AmbientReflectionIntensity", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1703, 0x0070, 0x1703,
+      EVR_FD, "LightDirection", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1704, 0x0070, 0x1704,
+      EVR_FD, "DiffuseReflectionIntensity", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1705, 0x0070, 0x1705,
+      EVR_FD, "SpecularReflectionIntensity", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1706, 0x0070, 0x1706,
+      EVR_FD, "Shininess", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1801, 0x0070, 0x1801,
-      EVR_SQ, "PresentationStateClassificationComponentSequence", 1, 1, "Supplement_156",
+      EVR_SQ, "PresentationStateClassificationComponentSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1802, 0x0070, 0x1802,
-      EVR_CS, "ComponentType", 1, 1, "Supplement_156",
+      EVR_CS, "ComponentType", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1803, 0x0070, 0x1803,
-      EVR_SQ, "ComponentInputSequence", 1, 1, "Supplement_156",
+      EVR_SQ, "ComponentInputSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1804, 0x0070, 0x1804,
-      EVR_US, "VolumetricPresentationInputIndex", 1, 1, "Supplement_156",
+      EVR_US, "VolumetricPresentationInputIndex", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1805, 0x0070, 0x1805,
-      EVR_SQ, "PresentationStateCompositorComponentSequence", 1, 1, "Supplement_156",
+      EVR_SQ, "PresentationStateCompositorComponentSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1806, 0x0070, 0x1806,
-      EVR_SQ, "WeightingTransferFunctionSequence", 1, 1, "Supplement_156",
+      EVR_SQ, "WeightingTransferFunctionSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1807, 0x0070, 0x1807,
-      EVR_US, "WeightingLookupTableDescriptor", 3, 3, "Supplement_156",
+      EVR_US, "WeightingLookupTableDescriptor", 3, 3, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1808, 0x0070, 0x1808,
-      EVR_OB, "WeightingLookupTableData", 1, 1, "Supplement_156",
+      EVR_OB, "WeightingLookupTableData", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1901, 0x0070, 0x1901,
-      EVR_SQ, "VolumetricAnnotationSequence", 1, 1, "Supplement_156",
+      EVR_SQ, "VolumetricAnnotationSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1903, 0x0070, 0x1903,
-      EVR_SQ, "ReferencedStructuredContextSequence", 1, 1, "Supplement_156",
+      EVR_SQ, "ReferencedStructuredContextSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1904, 0x0070, 0x1904,
-      EVR_UI, "ReferencedContentItem", 1, 1, "Supplement_156",
+      EVR_UI, "ReferencedContentItem", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1905, 0x0070, 0x1905,
-      EVR_SQ, "VolumetricPresentationInputAnnotationSequence", 1, 1, "Supplement_156",
+      EVR_SQ, "VolumetricPresentationInputAnnotationSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1907, 0x0070, 0x1907,
-      EVR_CS, "AnnotationClipping", 1, 1, "Supplement_156",
+      EVR_CS, "AnnotationClipping", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1a01, 0x0070, 0x1a01,
-      EVR_CS, "PresentationAnimationStyle", 1, 1, "Supplement_156",
+      EVR_CS, "PresentationAnimationStyle", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1a03, 0x0070, 0x1a03,
-      EVR_FD, "RecommendedAnimationRate", 1, 1, "Supplement_156",
+      EVR_FD, "RecommendedAnimationRate", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1a04, 0x0070, 0x1a04,
-      EVR_SQ, "AnimationCurveSequence", 1, 1, "Supplement_156",
+      EVR_SQ, "AnimationCurveSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0070, 0x1a05, 0x0070, 0x1a05,
-      EVR_FD, "AnimationStepSize", 1, 1, "Supplement_156",
+      EVR_FD, "AnimationStepSize", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1a06, 0x0070, 0x1a06,
+      EVR_FD, "SwivelRange", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1a07, 0x0070, 0x1a07,
+      EVR_OD, "VolumetricCurveUpDirections", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1a08, 0x0070, 0x1a08,
+      EVR_SQ, "VolumeStreamSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1a09, 0x0070, 0x1a09,
+      EVR_LO, "RGBATransferFunctionDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1b01, 0x0070, 0x1b01,
+      EVR_SQ, "AdvancedBlendingSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1b02, 0x0070, 0x1b02,
+      EVR_US, "BlendingInputNumber", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1b03, 0x0070, 0x1b03,
+      EVR_SQ, "BlendingDisplayInputSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1b04, 0x0070, 0x1b04,
+      EVR_SQ, "BlendingDisplaySequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1b06, 0x0070, 0x1b06,
+      EVR_CS, "BlendingMode", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1b07, 0x0070, 0x1b07,
+      EVR_CS, "TimeSeriesBlending", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1b08, 0x0070, 0x1b08,
+      EVR_CS, "GeometryForDisplay", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1b11, 0x0070, 0x1b11,
+      EVR_SQ, "ThresholdSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1b12, 0x0070, 0x1b12,
+      EVR_SQ, "ThresholdValueSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1b13, 0x0070, 0x1b13,
+      EVR_CS, "ThresholdType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0070, 0x1b14, 0x0070, 0x1b14,
+      EVR_FD, "ThresholdValue", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0072, 0x0002, 0x0072, 0x0002,
@@ -21886,48 +23838,100 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_LO, "SelectorAttributePrivateCreator", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0072, 0x005e, 0x0072, 0x005e,
+      EVR_AE, "SelectorAEValue", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0072, 0x005f, 0x0072, 0x005f,
+      EVR_AS, "SelectorASValue", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0072, 0x0060, 0x0072, 0x0060,
       EVR_AT, "SelectorATValue", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0072, 0x0061, 0x0072, 0x0061,
+      EVR_DA, "SelectorDAValue", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0072, 0x0062, 0x0072, 0x0062,
       EVR_CS, "SelectorCSValue", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0072, 0x0063, 0x0072, 0x0063,
+      EVR_DT, "SelectorDTValue", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0072, 0x0064, 0x0072, 0x0064,
       EVR_IS, "SelectorISValue", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0072, 0x0065, 0x0072, 0x0065,
+      EVR_OB, "SelectorOBValue", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0072, 0x0066, 0x0072, 0x0066,
       EVR_LO, "SelectorLOValue", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0072, 0x0067, 0x0072, 0x0067,
+      EVR_OF, "SelectorOFValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0072, 0x0068, 0x0072, 0x0068,
       EVR_LT, "SelectorLTValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0072, 0x0069, 0x0072, 0x0069,
+      EVR_OW, "SelectorOWValue", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0072, 0x006a, 0x0072, 0x006a,
       EVR_PN, "SelectorPNValue", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0072, 0x006b, 0x0072, 0x006b,
+      EVR_TM, "SelectorTMValue", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0072, 0x006c, 0x0072, 0x006c,
       EVR_SH, "SelectorSHValue", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0072, 0x006d, 0x0072, 0x006d,
+      EVR_UN, "SelectorUNValue", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0072, 0x006e, 0x0072, 0x006e,
       EVR_ST, "SelectorSTValue", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0072, 0x006f, 0x0072, 0x006f,
+      EVR_UC, "SelectorUCValue", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0072, 0x0070, 0x0072, 0x0070,
       EVR_UT, "SelectorUTValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0072, 0x0071, 0x0072, 0x0071,
+      EVR_UR, "SelectorURValue", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0072, 0x0072, 0x0072, 0x0072,
       EVR_DS, "SelectorDSValue", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0072, 0x0073, 0x0072, 0x0073,
+      EVR_OD, "SelectorODValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0072, 0x0074, 0x0072, 0x0074,
       EVR_FD, "SelectorFDValue", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0072, 0x0075, 0x0072, 0x0075,
+      EVR_OL, "SelectorOLValue", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0072, 0x0076, 0x0072, 0x0076,
@@ -21956,6 +23960,18 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0072, 0x0080, 0x0072, 0x0080,
       EVR_SQ, "SelectorCodeSequenceValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0072, 0x0081, 0x0072, 0x0081,
+      EVR_OV, "SelectorOVValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0072, 0x0082, 0x0072, 0x0082,
+      EVR_SV, "SelectorSVValue", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0072, 0x0083, 0x0072, 0x0083,
+      EVR_UV, "SelectorUVValue", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0072, 0x0100, 0x0072, 0x0100,
@@ -22234,6 +24250,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_ST, "ProcedureStepProgressDescription", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0074, 0x1007, 0x0074, 0x1007,
+      EVR_SQ, "ProcedureStepProgressParametersSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0074, 0x1008, 0x0074, 0x1008,
       EVR_SQ, "ProcedureStepCommunicationsURISequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -22446,6 +24466,62 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_FD, "DoubleExposureFieldDelta", 4, 4, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0074, 0x1401, 0x0074, 0x1401,
+      EVR_SQ, "BrachyTaskSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0074, 0x1402, 0x0074, 0x1402,
+      EVR_DS, "ContinuationStartTotalReferenceAirKerma", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0074, 0x1403, 0x0074, 0x1403,
+      EVR_DS, "ContinuationEndTotalReferenceAirKerma", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0074, 0x1404, 0x0074, 0x1404,
+      EVR_IS, "ContinuationPulseNumber", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0074, 0x1405, 0x0074, 0x1405,
+      EVR_SQ, "ChannelDeliveryOrderSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0074, 0x1406, 0x0074, 0x1406,
+      EVR_IS, "ReferencedChannelNumber", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0074, 0x1407, 0x0074, 0x1407,
+      EVR_DS, "StartCumulativeTimeWeight", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0074, 0x1408, 0x0074, 0x1408,
+      EVR_DS, "EndCumulativeTimeWeight", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0074, 0x1409, 0x0074, 0x1409,
+      EVR_SQ, "OmittedChannelSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0074, 0x140a, 0x0074, 0x140a,
+      EVR_CS, "ReasonForChannelOmission", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0074, 0x140b, 0x0074, 0x140b,
+      EVR_LO, "ReasonForChannelOmissionDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0074, 0x140c, 0x0074, 0x140c,
+      EVR_IS, "ChannelDeliveryOrderIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0074, 0x140d, 0x0074, 0x140d,
+      EVR_SQ, "ChannelDeliveryContinuationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0074, 0x140e, 0x0074, 0x140e,
+      EVR_SQ, "OmittedApplicationSetupSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0076, 0x0001, 0x0076, 0x0001,
       EVR_LO, "ImplantAssemblyTemplateName", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -22491,7 +24567,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0076, 0x0034, 0x0076, 0x0034,
-      EVR_CS, "ComponentTypeCodeSequence", 1, 1, "DICOM",
+      EVR_SQ, "ComponentTypeCodeSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0076, 0x0036, 0x0076, 0x0036,
@@ -22647,11 +24723,11 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0080, 0x0010, 0x0080, 0x0010,
-      EVR_OF, "UValueData", 1, -1, "DICOM",
+      EVR_OF, "UValueData", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0080, 0x0011, 0x0080, 0x0011,
-      EVR_OF, "VValueData", 1, -1, "DICOM",
+      EVR_OF, "VValueData", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x0080, 0x0012, 0x0080, 0x0012,
@@ -22660,6 +24736,102 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0080, 0x0013, 0x0080, 0x0013,
       EVR_SQ, "ReferencedSurfaceDataSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0001, 0x0082, 0x0001,
+      EVR_CS, "AssessmentSummary", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0003, 0x0082, 0x0003,
+      EVR_UT, "AssessmentSummaryDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0004, 0x0082, 0x0004,
+      EVR_SQ, "AssessedSOPInstanceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0005, 0x0082, 0x0005,
+      EVR_SQ, "ReferencedComparisonSOPInstanceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0006, 0x0082, 0x0006,
+      EVR_UL, "NumberOfAssessmentObservations", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0007, 0x0082, 0x0007,
+      EVR_SQ, "AssessmentObservationsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0008, 0x0082, 0x0008,
+      EVR_CS, "ObservationSignificance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x000a, 0x0082, 0x000a,
+      EVR_UT, "ObservationDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x000c, 0x0082, 0x000c,
+      EVR_SQ, "StructuredConstraintObservationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0010, 0x0082, 0x0010,
+      EVR_SQ, "AssessedAttributeValueSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0016, 0x0082, 0x0016,
+      EVR_LO, "AssessmentSetID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0017, 0x0082, 0x0017,
+      EVR_SQ, "AssessmentRequesterSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0018, 0x0082, 0x0018,
+      EVR_LO, "SelectorAttributeName", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0019, 0x0082, 0x0019,
+      EVR_LO, "SelectorAttributeKeyword", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0021, 0x0082, 0x0021,
+      EVR_SQ, "AssessmentTypeCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0022, 0x0082, 0x0022,
+      EVR_SQ, "ObservationBasisCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0023, 0x0082, 0x0023,
+      EVR_LO, "AssessmentLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0032, 0x0082, 0x0032,
+      EVR_CS, "ConstraintType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0033, 0x0082, 0x0033,
+      EVR_UT, "SpecificationSelectionGuidance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0034, 0x0082, 0x0034,
+      EVR_SQ, "ConstraintValueSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0035, 0x0082, 0x0035,
+      EVR_SQ, "RecommendedDefaultValueSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0036, 0x0082, 0x0036,
+      EVR_CS, "ConstraintViolationSignificance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0037, 0x0082, 0x0037,
+      EVR_UT, "ConstraintViolationCondition", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0082, 0x0038, 0x0082, 0x0038,
+      EVR_CS, "ModifiableConstraintFlag", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
 #ifdef ENABLE_PRIVATE_TAGS
@@ -22876,6 +25048,14 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_SQ, "ModifiedAttributesSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x0400, 0x0551, 0x0400, 0x0551,
+      EVR_SQ, "NonconformingModifiedAttributesSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0400, 0x0552, 0x0400, 0x0552,
+      EVR_OB, "NonconformingDataElementValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x0400, 0x0561, 0x0400, 0x0561,
       EVR_SQ, "OriginalAttributesSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -22894,6 +25074,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x0400, 0x0565, 0x0400, 0x0565,
       EVR_CS, "ReasonForTheAttributeModification", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0400, 0x0600, 0x0400, 0x0600,
+      EVR_CS, "InstanceOriginStatus", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
 #ifdef ENABLE_PRIVATE_TAGS
@@ -23825,7 +26009,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x2100, 0x0140, 0x2100, 0x0140,
-      EVR_AE, "RETIRED_DestinationAE", 1, 1, "DICOM/retired",
+      EVR_AE, "DestinationAE", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x2100, 0x0160, 0x2100, 0x0160,
@@ -24244,6 +26428,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_CS, "ROIGenerationAlgorithm", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x3006, 0x0037, 0x3006, 0x0037,
+      EVR_SQ, "ROIDerivationAlgorithmIdentificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x3006, 0x0038, 0x3006, 0x0038,
       EVR_LO, "ROIGenerationDescription", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -24261,11 +26449,11 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x3006, 0x0044, 0x3006, 0x0044,
-      EVR_DS, "ContourSlabThickness", 1, 1, "DICOM",
+      EVR_DS, "RETIRED_ContourSlabThickness", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x3006, 0x0045, 0x3006, 0x0045,
-      EVR_DS, "ContourOffsetVector", 3, 3, "DICOM",
+      EVR_DS, "RETIRED_ContourOffsetVector", 3, 3, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x3006, 0x0046, 0x3006, 0x0046,
@@ -24277,7 +26465,11 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x3006, 0x0049, 0x3006, 0x0049,
-      EVR_IS, "AttachedContours", 1, -1, "DICOM",
+      EVR_IS, "RETIRED_AttachedContours", 1, -1, "DICOM/retired",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3006, 0x004a, 0x3006, 0x004a,
+      EVR_SQ, "SourcePixelPlanesCharacteristicsSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x3006, 0x0050, 0x3006, 0x0050,
@@ -24345,7 +26537,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x3006, 0x00b9, 0x3006, 0x00b9,
-      EVR_SQ, "AdditionalRTROIIdentificationCodeSequence", 1, 1, "DICOM",
+      EVR_SQ, "RETIRED_AdditionalRTROIIdentificationCodeSequence", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x3006, 0x00c0, 0x3006, 0x00c0,
@@ -24366,6 +26558,18 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x3006, 0x00c8, 0x3006, 0x00c8,
       EVR_LO, "FrameOfReferenceTransformationComment", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3006, 0x00c9, 0x3006, 0x00c9,
+      EVR_SQ, "PatientLocationCoordinatesSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3006, 0x00ca, 0x3006, 0x00ca,
+      EVR_SQ, "PatientLocationCoordinatesCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3006, 0x00cb, 0x3006, 0x00cb,
+      EVR_SQ, "PatientSupportPositionSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x3008, 0x0010, 0x3008, 0x0010,
@@ -24524,6 +26728,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_ST, "OverrideReason", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x3008, 0x0067, 0x3008, 0x0067,
+      EVR_US, "ParameterValueNumber", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x3008, 0x0068, 0x3008, 0x0068,
       EVR_SQ, "CorrectedParameterSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -24586,6 +26794,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x3008, 0x00d0, 0x3008, 0x00d0,
       EVR_SQ, "RecordedBlockSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3008, 0x00d1, 0x3008, 0x00d1,
+      EVR_SQ, "RecordedBlockSlabSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x3008, 0x00e0, 0x3008, 0x00e0,
@@ -24773,7 +26985,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x000b, 0x300a, 0x000b,
-      EVR_LO, "TreatmentSites", 1, -1, "DICOM",
+      EVR_LO, "RETIRED_TreatmentSites", 1, -1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x000c, 0x300a, 0x000c,
@@ -24961,7 +27173,11 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x0082, 0x300a, 0x0082,
-      EVR_DS, "BeamDoseSpecificationPoint", 3, 3, "DICOM",
+      EVR_DS, "RETIRED_BeamDoseSpecificationPoint", 3, 3, "DICOM/retired",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0083, 0x300a, 0x0083,
+      EVR_UI, "ReferencedDoseReferenceUID", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x0084, 0x300a, 0x0084,
@@ -24973,15 +27189,15 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x0088, 0x300a, 0x0088,
-      EVR_FL, "RETIRED_BeamDosePointDepth", 1, 1, "DICOM/retired",
+      EVR_FL, "BeamDosePointDepth", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x0089, 0x300a, 0x0089,
-      EVR_FL, "RETIRED_BeamDosePointEquivalentDepth", 1, 1, "DICOM/retired",
+      EVR_FL, "BeamDosePointEquivalentDepth", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x008a, 0x300a, 0x008a,
-      EVR_FL, "RETIRED_BeamDosePointSSD", 1, 1, "DICOM/retired",
+      EVR_FL, "BeamDosePointSSD", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x008b, 0x300a, 0x008b,
@@ -24993,15 +27209,35 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x008d, 0x300a, 0x008d,
-      EVR_FL, "AverageBeamDosePointDepth", 1, 1, "DICOM",
+      EVR_FL, "RETIRED_AverageBeamDosePointDepth", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x008e, 0x300a, 0x008e,
-      EVR_FL, "AverageBeamDosePointEquivalentDepth", 1, 1, "DICOM",
+      EVR_FL, "RETIRED_AverageBeamDosePointEquivalentDepth", 1, 1, "DICOM/retired",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x008f, 0x300a, 0x008f,
-      EVR_FL, "AverageBeamDosePointSSD", 1, 1, "DICOM",
+      EVR_FL, "RETIRED_AverageBeamDosePointSSD", 1, 1, "DICOM/retired",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0090, 0x300a, 0x0090,
+      EVR_CS, "BeamDoseType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0091, 0x300a, 0x0091,
+      EVR_DS, "AlternateBeamDose", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0092, 0x300a, 0x0092,
+      EVR_CS, "AlternateBeamDoseType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0093, 0x300a, 0x0093,
+      EVR_CS, "DepthValueAveragingFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0094, 0x300a, 0x0094,
+      EVR_DS, "BeamDosePointSourceToExternalContourDistance", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x00a0, 0x300a, 0x00a0,
@@ -25413,7 +27649,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x0131, 0x300a, 0x0131,
-      EVR_FL, "AverageBeamDosePointSourceToExternalContourSurfaceDistance", 1, 1, "DICOM",
+      EVR_FL, "AverageBeamDosePointSourceToExternalContourDistance", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x0132, 0x300a, 0x0132,
@@ -25458,6 +27694,30 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x300a, 0x014e, 0x300a, 0x014e,
       EVR_FL, "GantryPitchAngleTolerance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0150, 0x300a, 0x0150,
+      EVR_CS, "FixationEye", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0151, 0x300a, 0x0151,
+      EVR_DS, "ChairHeadFramePosition", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0152, 0x300a, 0x0152,
+      EVR_DS, "HeadFixationAngleTolerance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0153, 0x300a, 0x0153,
+      EVR_DS, "ChairHeadFramePositionTolerance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0154, 0x300a, 0x0154,
+      EVR_DS, "FixationLightAzimuthalAngleTolerance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0155, 0x300a, 0x0155,
+      EVR_DS, "FixationLightPolarAngleTolerance", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x0180, 0x300a, 0x0180,
@@ -25712,6 +27972,22 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_DS, "BrachyAccessoryDeviceNominalTransmission", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x300a, 0x0271, 0x300a, 0x0271,
+      EVR_DS, "ChannelEffectiveLength", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0272, 0x300a, 0x0272,
+      EVR_DS, "ChannelInnerLength", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0273, 0x300a, 0x0273,
+      EVR_SH, "AfterloaderChannelID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0274, 0x300a, 0x0274,
+      EVR_DS, "SourceApplicatorTipLength", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x300a, 0x0280, 0x300a, 0x0280,
       EVR_SQ, "ChannelSequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -25774,6 +28050,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x300a, 0x02a0, 0x300a, 0x02a0,
       EVR_DS, "SourceApplicatorStepSize", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x02a1, 0x300a, 0x02a1,
+      EVR_IS, "ApplicatorShapeReferencedROINumber", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x02a2, 0x300a, 0x02a2,
@@ -25888,6 +28168,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_CS, "ScanMode", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x300a, 0x0309, 0x300a, 0x0309,
+      EVR_CS, "ModulatedScanModeType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x300a, 0x030a, 0x300a, 0x030a,
       EVR_FL, "VirtualSourceAxisDistances", 2, 2, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -25996,6 +28280,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_LO, "PatientSupportAccessoryCode", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x300a, 0x0355, 0x300a, 0x0355,
+      EVR_LO, "TrayAccessoryCode", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x300a, 0x0356, 0x300a, 0x0356,
       EVR_FL, "FixationLightAzimuthalAngle", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -26060,16 +28348,32 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_FL, "IsocenterToRangeModulatorDistance", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x300a, 0x038f, 0x300a, 0x038f,
+      EVR_FL, "ScanSpotTimeOffset", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x300a, 0x0390, 0x300a, 0x0390,
       EVR_SH, "ScanSpotTuneID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0391, 0x300a, 0x0391,
+      EVR_IS, "ScanSpotPrescribedIndices", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x0392, 0x300a, 0x0392,
       EVR_IS, "NumberOfScanSpotPositions", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x300a, 0x0393, 0x300a, 0x0393,
+      EVR_CS, "ScanSpotReordered", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x300a, 0x0394, 0x300a, 0x0394,
       EVR_FL, "ScanSpotPositionMap", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0395, 0x300a, 0x0395,
+      EVR_CS, "ScanSpotReorderingAllowed", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x0396, 0x300a, 0x0396,
@@ -26078,6 +28382,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x300a, 0x0398, 0x300a, 0x0398,
       EVR_FL, "ScanningSpotSize", 2, 2, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0399, 0x300a, 0x0399,
+      EVR_FL, "ScanSpotSizesDelivered", 2, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300a, 0x039a, 0x300a, 0x039a,
@@ -26152,6 +28460,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_FL, "SourceToGeneralAccessoryDistance", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x300a, 0x0426, 0x300a, 0x0426,
+      EVR_DS, "IsocenterToGeneralAccessoryDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x300a, 0x0431, 0x300a, 0x0431,
       EVR_SQ, "ApplicatorGeometrySequence", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -26206,6 +28518,878 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x300a, 0x0453, 0x300a, 0x0453,
       EVR_SQ, "DeviceMotionParameterCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0501, 0x300a, 0x0501,
+      EVR_FL, "DistalDepthFraction", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0502, 0x300a, 0x0502,
+      EVR_FL, "DistalDepth", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0503, 0x300a, 0x0503,
+      EVR_FL, "NominalRangeModulationFractions", 2, 2, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0504, 0x300a, 0x0504,
+      EVR_FL, "NominalRangeModulatedRegionDepths", 2, 2, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0505, 0x300a, 0x0505,
+      EVR_SQ, "DepthDoseParametersSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0506, 0x300a, 0x0506,
+      EVR_SQ, "DeliveredDepthDoseParametersSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0507, 0x300a, 0x0507,
+      EVR_FL, "DeliveredDistalDepthFraction", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0508, 0x300a, 0x0508,
+      EVR_FL, "DeliveredDistalDepth", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0509, 0x300a, 0x0509,
+      EVR_FL, "DeliveredNominalRangeModulationFractions", 2, 2, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0510, 0x300a, 0x0510,
+      EVR_FL, "DeliveredNominalRangeModulatedRegionDepths", 2, 2, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0511, 0x300a, 0x0511,
+      EVR_CS, "DeliveredReferenceDoseDefinition", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0512, 0x300a, 0x0512,
+      EVR_CS, "ReferenceDoseDefinition", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0600, 0x300a, 0x0600,
+      EVR_US, "RTControlPointIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0601, 0x300a, 0x0601,
+      EVR_US, "RadiationGenerationModeIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0602, 0x300a, 0x0602,
+      EVR_US, "ReferencedDefinedDeviceIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0603, 0x300a, 0x0603,
+      EVR_US, "RadiationDoseIdentificationIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0604, 0x300a, 0x0604,
+      EVR_US, "NumberOfRTControlPoints", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0605, 0x300a, 0x0605,
+      EVR_US, "ReferencedRadiationGenerationModeIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0606, 0x300a, 0x0606,
+      EVR_US, "TreatmentPositionIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0607, 0x300a, 0x0607,
+      EVR_US, "ReferencedDeviceIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0608, 0x300a, 0x0608,
+      EVR_LO, "TreatmentPositionGroupLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0609, 0x300a, 0x0609,
+      EVR_UI, "TreatmentPositionGroupUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x060a, 0x300a, 0x060a,
+      EVR_SQ, "TreatmentPositionGroupSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x060b, 0x300a, 0x060b,
+      EVR_US, "ReferencedTreatmentPositionIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x060c, 0x300a, 0x060c,
+      EVR_US, "ReferencedRadiationDoseIdentificationIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x060d, 0x300a, 0x060d,
+      EVR_FD, "RTAccessoryHolderWaterEquivalentThickness", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x060e, 0x300a, 0x060e,
+      EVR_US, "ReferencedRTAccessoryHolderDeviceIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x060f, 0x300a, 0x060f,
+      EVR_CS, "RTAccessoryHolderSlotExistenceFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0610, 0x300a, 0x0610,
+      EVR_SQ, "RTAccessoryHolderSlotSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0611, 0x300a, 0x0611,
+      EVR_LO, "RTAccessoryHolderSlotID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0612, 0x300a, 0x0612,
+      EVR_FD, "RTAccessoryHolderSlotDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0613, 0x300a, 0x0613,
+      EVR_FD, "RTAccessorySlotDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0614, 0x300a, 0x0614,
+      EVR_SQ, "RTAccessoryHolderDefinitionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0615, 0x300a, 0x0615,
+      EVR_LO, "RTAccessoryDeviceSlotID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0616, 0x300a, 0x0616,
+      EVR_SQ, "RTRadiationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0617, 0x300a, 0x0617,
+      EVR_SQ, "RadiationDoseSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0618, 0x300a, 0x0618,
+      EVR_SQ, "RadiationDoseIdentificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0619, 0x300a, 0x0619,
+      EVR_LO, "RadiationDoseIdentificationLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x061a, 0x300a, 0x061a,
+      EVR_CS, "ReferenceDoseType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x061b, 0x300a, 0x061b,
+      EVR_CS, "PrimaryDoseValueIndicator", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x061c, 0x300a, 0x061c,
+      EVR_SQ, "DoseValuesSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x061d, 0x300a, 0x061d,
+      EVR_CS, "DoseValuePurpose", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x061e, 0x300a, 0x061e,
+      EVR_FD, "ReferenceDosePointCoordinates", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x061f, 0x300a, 0x061f,
+      EVR_SQ, "RadiationDoseValuesParametersSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0620, 0x300a, 0x0620,
+      EVR_SQ, "MetersetToDoseMappingSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0621, 0x300a, 0x0621,
+      EVR_SQ, "ExpectedInVivoMeasurementValuesSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0622, 0x300a, 0x0622,
+      EVR_US, "ExpectedInVivoMeasurementValueIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0623, 0x300a, 0x0623,
+      EVR_LO, "RadiationDoseInVivoMeasurementLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0624, 0x300a, 0x0624,
+      EVR_FD, "RadiationDoseCentralAxisDisplacement", 2, 2, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0625, 0x300a, 0x0625,
+      EVR_FD, "RadiationDoseValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0626, 0x300a, 0x0626,
+      EVR_FD, "RadiationDoseSourceToSkinDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0627, 0x300a, 0x0627,
+      EVR_FD, "RadiationDoseMeasurementPointCoordinates", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0628, 0x300a, 0x0628,
+      EVR_FD, "RadiationDoseSourceToExternalContourDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0629, 0x300a, 0x0629,
+      EVR_SQ, "RTToleranceSetSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x062a, 0x300a, 0x062a,
+      EVR_LO, "RTToleranceSetLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x062b, 0x300a, 0x062b,
+      EVR_SQ, "AttributeToleranceValuesSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x062c, 0x300a, 0x062c,
+      EVR_FD, "ToleranceValue", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x062d, 0x300a, 0x062d,
+      EVR_SQ, "PatientSupportPositionToleranceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x062e, 0x300a, 0x062e,
+      EVR_FD, "TreatmentTimeLimit", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x062f, 0x300a, 0x062f,
+      EVR_SQ, "CArmPhotonElectronControlPointSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0630, 0x300a, 0x0630,
+      EVR_SQ, "ReferencedRTRadiationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0631, 0x300a, 0x0631,
+      EVR_SQ, "ReferencedRTInstanceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0632, 0x300a, 0x0632,
+      EVR_SQ, "RETIRED_ReferencedRTPatientSetupSequence", 1, 1, "DICOM/retired",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0634, 0x300a, 0x0634,
+      EVR_FD, "SourceToPatientSurfaceDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0635, 0x300a, 0x0635,
+      EVR_SQ, "TreatmentMachineSpecialModeCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0636, 0x300a, 0x0636,
+      EVR_US, "IntendedNumberOfFractions", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0637, 0x300a, 0x0637,
+      EVR_CS, "RTRadiationSetIntent", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0638, 0x300a, 0x0638,
+      EVR_CS, "RTRadiationPhysicalAndGeometricContentDetailFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0639, 0x300a, 0x0639,
+      EVR_CS, "RTRecordFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x063a, 0x300a, 0x063a,
+      EVR_SQ, "TreatmentDeviceIdentificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x063b, 0x300a, 0x063b,
+      EVR_SQ, "ReferencedRTPhysicianIntentSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x063c, 0x300a, 0x063c,
+      EVR_FD, "CumulativeMeterset", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x063d, 0x300a, 0x063d,
+      EVR_FD, "DeliveryRate", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x063e, 0x300a, 0x063e,
+      EVR_SQ, "DeliveryRateUnitSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x063f, 0x300a, 0x063f,
+      EVR_SQ, "TreatmentPositionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0640, 0x300a, 0x0640,
+      EVR_FD, "RadiationSourceAxisDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0641, 0x300a, 0x0641,
+      EVR_US, "NumberOfRTBeamLimitingDevices", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0642, 0x300a, 0x0642,
+      EVR_FD, "RTBeamLimitingDeviceProximalDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0643, 0x300a, 0x0643,
+      EVR_FD, "RTBeamLimitingDeviceDistalDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0644, 0x300a, 0x0644,
+      EVR_SQ, "ParallelRTBeamDelimiterDeviceOrientationLabelCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0645, 0x300a, 0x0645,
+      EVR_FD, "BeamModifierOrientationAngle", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0646, 0x300a, 0x0646,
+      EVR_SQ, "FixedRTBeamDelimiterDeviceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0647, 0x300a, 0x0647,
+      EVR_SQ, "ParallelRTBeamDelimiterDeviceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0648, 0x300a, 0x0648,
+      EVR_US, "NumberOfParallelRTBeamDelimiters", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0649, 0x300a, 0x0649,
+      EVR_FD, "ParallelRTBeamDelimiterBoundaries", 2, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x064a, 0x300a, 0x064a,
+      EVR_FD, "ParallelRTBeamDelimiterPositions", 2, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x064b, 0x300a, 0x064b,
+      EVR_FD, "RTBeamLimitingDeviceOffset", 2, 2, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x064c, 0x300a, 0x064c,
+      EVR_SQ, "RTBeamDelimiterGeometrySequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x064d, 0x300a, 0x064d,
+      EVR_SQ, "RTBeamLimitingDeviceDefinitionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x064e, 0x300a, 0x064e,
+      EVR_CS, "ParallelRTBeamDelimiterOpeningMode", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x064f, 0x300a, 0x064f,
+      EVR_CS, "ParallelRTBeamDelimiterLeafMountingSide", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0650, 0x300a, 0x0650,
+      EVR_UI, "RETIRED_PatientSetupUID", 1, 1, "DICOM/retired",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0651, 0x300a, 0x0651,
+      EVR_SQ, "WedgeDefinitionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0652, 0x300a, 0x0652,
+      EVR_FD, "RadiationBeamWedgeAngle", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0653, 0x300a, 0x0653,
+      EVR_FD, "RadiationBeamWedgeThinEdgeDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0654, 0x300a, 0x0654,
+      EVR_FD, "RadiationBeamEffectiveWedgeAngle", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0655, 0x300a, 0x0655,
+      EVR_US, "NumberOfWedgePositions", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0656, 0x300a, 0x0656,
+      EVR_SQ, "RTBeamLimitingDeviceOpeningSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0657, 0x300a, 0x0657,
+      EVR_US, "NumberOfRTBeamLimitingDeviceOpenings", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0658, 0x300a, 0x0658,
+      EVR_SQ, "RadiationDosimeterUnitSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0659, 0x300a, 0x0659,
+      EVR_SQ, "RTDeviceDistanceReferenceLocationCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x065a, 0x300a, 0x065a,
+      EVR_SQ, "RadiationDeviceConfigurationAndCommissioningKeySequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x065b, 0x300a, 0x065b,
+      EVR_SQ, "PatientSupportPositionParameterSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x065c, 0x300a, 0x065c,
+      EVR_CS, "PatientSupportPositionSpecificationMethod", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x065d, 0x300a, 0x065d,
+      EVR_SQ, "PatientSupportPositionDeviceParameterSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x065e, 0x300a, 0x065e,
+      EVR_US, "DeviceOrderIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x065f, 0x300a, 0x065f,
+      EVR_US, "PatientSupportPositionParameterOrderIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0660, 0x300a, 0x0660,
+      EVR_SQ, "PatientSupportPositionDeviceToleranceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0661, 0x300a, 0x0661,
+      EVR_US, "PatientSupportPositionToleranceOrderIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0662, 0x300a, 0x0662,
+      EVR_SQ, "CompensatorDefinitionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0663, 0x300a, 0x0663,
+      EVR_CS, "CompensatorMapOrientation", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0664, 0x300a, 0x0664,
+      EVR_OF, "CompensatorProximalThicknessMap", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0665, 0x300a, 0x0665,
+      EVR_OF, "CompensatorDistalThicknessMap", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0666, 0x300a, 0x0666,
+      EVR_FD, "CompensatorBasePlaneOffset", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0667, 0x300a, 0x0667,
+      EVR_SQ, "CompensatorShapeFabricationCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0668, 0x300a, 0x0668,
+      EVR_SQ, "CompensatorShapeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0669, 0x300a, 0x0669,
+      EVR_FD, "RadiationBeamCompensatorMillingToolDiameter", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x066a, 0x300a, 0x066a,
+      EVR_SQ, "BlockDefinitionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x066b, 0x300a, 0x066b,
+      EVR_OF, "BlockEdgeData", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x066c, 0x300a, 0x066c,
+      EVR_CS, "BlockOrientation", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x066d, 0x300a, 0x066d,
+      EVR_FD, "RadiationBeamBlockThickness", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x066e, 0x300a, 0x066e,
+      EVR_FD, "RadiationBeamBlockSlabThickness", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x066f, 0x300a, 0x066f,
+      EVR_SQ, "BlockEdgeDataSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0670, 0x300a, 0x0670,
+      EVR_US, "NumberOfRTAccessoryHolders", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0671, 0x300a, 0x0671,
+      EVR_SQ, "GeneralAccessoryDefinitionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0672, 0x300a, 0x0672,
+      EVR_US, "NumberOfGeneralAccessories", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0673, 0x300a, 0x0673,
+      EVR_SQ, "BolusDefinitionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0674, 0x300a, 0x0674,
+      EVR_US, "NumberOfBoluses", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0675, 0x300a, 0x0675,
+      EVR_UI, "EquipmentFrameOfReferenceUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0676, 0x300a, 0x0676,
+      EVR_ST, "EquipmentFrameOfReferenceDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0677, 0x300a, 0x0677,
+      EVR_SQ, "EquipmentReferencePointCoordinatesSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0678, 0x300a, 0x0678,
+      EVR_SQ, "EquipmentReferencePointCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0679, 0x300a, 0x0679,
+      EVR_FD, "RTBeamLimitingDeviceAngle", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x067a, 0x300a, 0x067a,
+      EVR_FD, "SourceRollAngle", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x067b, 0x300a, 0x067b,
+      EVR_SQ, "RadiationGenerationModeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x067c, 0x300a, 0x067c,
+      EVR_SH, "RadiationGenerationModeLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x067d, 0x300a, 0x067d,
+      EVR_ST, "RadiationGenerationModeDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x067e, 0x300a, 0x067e,
+      EVR_SQ, "RadiationGenerationModeMachineCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x067f, 0x300a, 0x067f,
+      EVR_SQ, "RadiationTypeCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0680, 0x300a, 0x0680,
+      EVR_DS, "NominalEnergy", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0681, 0x300a, 0x0681,
+      EVR_DS, "MinimumNominalEnergy", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0682, 0x300a, 0x0682,
+      EVR_DS, "MaximumNominalEnergy", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0683, 0x300a, 0x0683,
+      EVR_SQ, "RadiationFluenceModifierCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0684, 0x300a, 0x0684,
+      EVR_SQ, "EnergyUnitCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0685, 0x300a, 0x0685,
+      EVR_US, "NumberOfRadiationGenerationModes", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0686, 0x300a, 0x0686,
+      EVR_SQ, "PatientSupportDevicesSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0687, 0x300a, 0x0687,
+      EVR_US, "NumberOfPatientSupportDevices", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0688, 0x300a, 0x0688,
+      EVR_FD, "RTBeamModifierDefinitionDistance", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0689, 0x300a, 0x0689,
+      EVR_SQ, "BeamAreaLimitSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x068a, 0x300a, 0x068a,
+      EVR_SQ, "ReferencedRTPrescriptionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0700, 0x300a, 0x0700,
+      EVR_UI, "TreatmentSessionUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0701, 0x300a, 0x0701,
+      EVR_CS, "RTRadiationUsage", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0702, 0x300a, 0x0702,
+      EVR_SQ, "ReferencedRTRadiationSetSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0703, 0x300a, 0x0703,
+      EVR_SQ, "ReferencedRTRadiationRecordSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0704, 0x300a, 0x0704,
+      EVR_US, "RTRadiationSetDeliveryNumber", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0705, 0x300a, 0x0705,
+      EVR_US, "ClinicalFractionNumber", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0706, 0x300a, 0x0706,
+      EVR_CS, "RTTreatmentFractionCompletionStatus", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0707, 0x300a, 0x0707,
+      EVR_CS, "RTRadiationSetUsage", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0708, 0x300a, 0x0708,
+      EVR_CS, "TreatmentDeliveryContinuationFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0709, 0x300a, 0x0709,
+      EVR_CS, "TreatmentRecordContentOrigin", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0714, 0x300a, 0x0714,
+      EVR_CS, "RTTreatmentTerminationStatus", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0715, 0x300a, 0x0715,
+      EVR_SQ, "RTTreatmentTerminationReasonCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0716, 0x300a, 0x0716,
+      EVR_SQ, "MachineSpecificTreatmentTerminationCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0722, 0x300a, 0x0722,
+      EVR_SQ, "RTRadiationSalvageRecordControlPointSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0723, 0x300a, 0x0723,
+      EVR_CS, "StartingMetersetValueKnownFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0730, 0x300a, 0x0730,
+      EVR_ST, "TreatmentTerminationDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0731, 0x300a, 0x0731,
+      EVR_SQ, "TreatmentToleranceViolationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0732, 0x300a, 0x0732,
+      EVR_CS, "TreatmentToleranceViolationCategory", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0733, 0x300a, 0x0733,
+      EVR_SQ, "TreatmentToleranceViolationAttributeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0734, 0x300a, 0x0734,
+      EVR_ST, "TreatmentToleranceViolationDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0735, 0x300a, 0x0735,
+      EVR_ST, "TreatmentToleranceViolationIdentification", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0736, 0x300a, 0x0736,
+      EVR_DT, "TreatmentToleranceViolationDateTime", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x073a, 0x300a, 0x073a,
+      EVR_DT, "RecordedRTControlPointDateTime", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x073b, 0x300a, 0x073b,
+      EVR_US, "ReferencedRadiationRTControlPointIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x073e, 0x300a, 0x073e,
+      EVR_SQ, "AlternateValueSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x073f, 0x300a, 0x073f,
+      EVR_SQ, "ConfirmationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0740, 0x300a, 0x0740,
+      EVR_SQ, "InterlockSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0741, 0x300a, 0x0741,
+      EVR_DT, "InterlockDateTime", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0742, 0x300a, 0x0742,
+      EVR_ST, "InterlockDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0743, 0x300a, 0x0743,
+      EVR_SQ, "InterlockOriginatingDeviceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0744, 0x300a, 0x0744,
+      EVR_SQ, "InterlockCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0745, 0x300a, 0x0745,
+      EVR_SQ, "InterlockResolutionCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0746, 0x300a, 0x0746,
+      EVR_SQ, "InterlockResolutionUserSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0760, 0x300a, 0x0760,
+      EVR_DT, "OverrideDateTime", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0761, 0x300a, 0x0761,
+      EVR_SQ, "TreatmentToleranceViolationTypeCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0762, 0x300a, 0x0762,
+      EVR_SQ, "TreatmentToleranceViolationCauseCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0772, 0x300a, 0x0772,
+      EVR_SQ, "MeasuredMetersetToDoseMappingSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0773, 0x300a, 0x0773,
+      EVR_US, "ReferencedExpectedInVivoMeasurementValueIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0774, 0x300a, 0x0774,
+      EVR_SQ, "DoseMeasurementDeviceCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0780, 0x300a, 0x0780,
+      EVR_SQ, "AdditionalParameterRecordingInstanceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0783, 0x300a, 0x0783,
+      EVR_ST, "InterlockOriginDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0784, 0x300a, 0x0784,
+      EVR_SQ, "RTPatientPositionScopeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0785, 0x300a, 0x0785,
+      EVR_UI, "ReferencedTreatmentPositionGroupUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0786, 0x300a, 0x0786,
+      EVR_US, "RadiationOrderIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0787, 0x300a, 0x0787,
+      EVR_SQ, "OmittedRadiationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0788, 0x300a, 0x0788,
+      EVR_SQ, "ReasonForOmissionCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0789, 0x300a, 0x0789,
+      EVR_SQ, "RTDeliveryStartPatientPositionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x078a, 0x300a, 0x078a,
+      EVR_SQ, "RTTreatmentPreparationPatientPositionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x078b, 0x300a, 0x078b,
+      EVR_SQ, "ReferencedRTTreatmentPreparationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x078c, 0x300a, 0x078c,
+      EVR_SQ, "ReferencedPatientSetupPhotoSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x078d, 0x300a, 0x078d,
+      EVR_SQ, "PatientTreatmentPreparationMethodCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x078e, 0x300a, 0x078e,
+      EVR_LT, "PatientTreatmentPreparationProcedureParameterDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x078f, 0x300a, 0x078f,
+      EVR_SQ, "PatientTreatmentPreparationDeviceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0790, 0x300a, 0x0790,
+      EVR_SQ, "PatientTreatmentPreparationProcedureSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0791, 0x300a, 0x0791,
+      EVR_SQ, "PatientTreatmentPreparationProcedureCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0792, 0x300a, 0x0792,
+      EVR_LT, "PatientTreatmentPreparationMethodDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0793, 0x300a, 0x0793,
+      EVR_SQ, "PatientTreatmentPreparationProcedureParameterSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0794, 0x300a, 0x0794,
+      EVR_LT, "PatientSetupPhotoDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0795, 0x300a, 0x0795,
+      EVR_US, "PatientTreatmentPreparationProcedureIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0796, 0x300a, 0x0796,
+      EVR_US, "ReferencedPatientSetupProcedureIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0797, 0x300a, 0x0797,
+      EVR_SQ, "RTRadiationTaskSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0798, 0x300a, 0x0798,
+      EVR_SQ, "RTPatientPositionDisplacementSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x0799, 0x300a, 0x0799,
+      EVR_SQ, "RTPatientPositionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x079a, 0x300a, 0x079a,
+      EVR_LO, "DisplacementReferenceLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x079b, 0x300a, 0x079b,
+      EVR_FD, "DisplacementMatrix", 16, 16, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x079c, 0x300a, 0x079c,
+      EVR_SQ, "PatientSupportDisplacementSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x079d, 0x300a, 0x079d,
+      EVR_SQ, "DisplacementReferenceLocationCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300a, 0x079e, 0x300a, 0x079e,
+      EVR_CS, "RTRadiationSetDeliveryUsage", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x300c, 0x0002, 0x300c, 0x0002,
@@ -26344,6 +29528,66 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_LO, "ReasonForOmissionDescription", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
+  , { 0x300c, 0x0114, 0x300c, 0x0114,
+      EVR_SQ, "PrescriptionOverviewSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300c, 0x0115, 0x300c, 0x0115,
+      EVR_FL, "TotalPrescriptionDose", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300c, 0x0116, 0x300c, 0x0116,
+      EVR_SQ, "PlanOverviewSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300c, 0x0117, 0x300c, 0x0117,
+      EVR_US, "PlanOverviewIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300c, 0x0118, 0x300c, 0x0118,
+      EVR_US, "ReferencedPlanOverviewIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300c, 0x0119, 0x300c, 0x0119,
+      EVR_US, "NumberOfFractionsIncluded", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300c, 0x0120, 0x300c, 0x0120,
+      EVR_SQ, "DoseCalibrationConditionsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300c, 0x0121, 0x300c, 0x0121,
+      EVR_FD, "AbsorbedDoseToMetersetRatio", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300c, 0x0122, 0x300c, 0x0122,
+      EVR_FD, "DelineatedRadiationFieldSize", 2, 2, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300c, 0x0123, 0x300c, 0x0123,
+      EVR_CS, "DoseCalibrationConditionsVerifiedFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300c, 0x0124, 0x300c, 0x0124,
+      EVR_FD, "CalibrationReferencePointDepth", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300c, 0x0125, 0x300c, 0x0125,
+      EVR_SQ, "GatingBeamHoldTransitionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300c, 0x0126, 0x300c, 0x0126,
+      EVR_CS, "BeamHoldTransition", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300c, 0x0127, 0x300c, 0x0127,
+      EVR_DT, "BeamHoldTransitionDateTime", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x300c, 0x0128, 0x300c, 0x0128,
+      EVR_SQ, "BeamHoldOriginatingDeviceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x300e, 0x0002, 0x300e, 0x0002,
       EVR_CS, "ApprovalStatus", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -26358,6 +29602,594 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x300e, 0x0008, 0x300e, 0x0008,
       EVR_PN, "ReviewerName", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0001, 0x3010, 0x0001,
+      EVR_SQ, "RadiobiologicalDoseEffectSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0002, 0x3010, 0x0002,
+      EVR_CS, "RadiobiologicalDoseEffectFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0003, 0x3010, 0x0003,
+      EVR_SQ, "EffectiveDoseCalculationMethodCategoryCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0004, 0x3010, 0x0004,
+      EVR_SQ, "EffectiveDoseCalculationMethodCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0005, 0x3010, 0x0005,
+      EVR_LO, "EffectiveDoseCalculationMethodDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0006, 0x3010, 0x0006,
+      EVR_UI, "ConceptualVolumeUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0007, 0x3010, 0x0007,
+      EVR_SQ, "OriginatingSOPInstanceReferenceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0008, 0x3010, 0x0008,
+      EVR_SQ, "ConceptualVolumeConstituentSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0009, 0x3010, 0x0009,
+      EVR_SQ, "EquivalentConceptualVolumeInstanceReferenceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x000a, 0x3010, 0x000a,
+      EVR_SQ, "EquivalentConceptualVolumesSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x000b, 0x3010, 0x000b,
+      EVR_UI, "ReferencedConceptualVolumeUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x000c, 0x3010, 0x000c,
+      EVR_UT, "ConceptualVolumeCombinationExpression", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x000d, 0x3010, 0x000d,
+      EVR_US, "ConceptualVolumeConstituentIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x000e, 0x3010, 0x000e,
+      EVR_CS, "ConceptualVolumeCombinationFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x000f, 0x3010, 0x000f,
+      EVR_ST, "ConceptualVolumeCombinationDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0010, 0x3010, 0x0010,
+      EVR_CS, "ConceptualVolumeSegmentationDefinedFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0011, 0x3010, 0x0011,
+      EVR_SQ, "ConceptualVolumeSegmentationReferenceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0012, 0x3010, 0x0012,
+      EVR_SQ, "ConceptualVolumeConstituentSegmentationReferenceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0013, 0x3010, 0x0013,
+      EVR_UI, "ConstituentConceptualVolumeUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0014, 0x3010, 0x0014,
+      EVR_SQ, "DerivationConceptualVolumeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0015, 0x3010, 0x0015,
+      EVR_UI, "SourceConceptualVolumeUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0016, 0x3010, 0x0016,
+      EVR_SQ, "ConceptualVolumeDerivationAlgorithmSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0017, 0x3010, 0x0017,
+      EVR_ST, "ConceptualVolumeDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0018, 0x3010, 0x0018,
+      EVR_SQ, "SourceConceptualVolumeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0019, 0x3010, 0x0019,
+      EVR_SQ, "AuthorIdentificationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x001a, 0x3010, 0x001a,
+      EVR_LO, "ManufacturerModelVersion", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x001b, 0x3010, 0x001b,
+      EVR_UC, "DeviceAlternateIdentifier", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x001c, 0x3010, 0x001c,
+      EVR_CS, "DeviceAlternateIdentifierType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x001d, 0x3010, 0x001d,
+      EVR_LT, "DeviceAlternateIdentifierFormat", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x001e, 0x3010, 0x001e,
+      EVR_LO, "SegmentationCreationTemplateLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x001f, 0x3010, 0x001f,
+      EVR_UI, "SegmentationTemplateUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0020, 0x3010, 0x0020,
+      EVR_US, "ReferencedSegmentReferenceIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0021, 0x3010, 0x0021,
+      EVR_SQ, "SegmentReferenceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0022, 0x3010, 0x0022,
+      EVR_US, "SegmentReferenceIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0023, 0x3010, 0x0023,
+      EVR_SQ, "DirectSegmentReferenceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0024, 0x3010, 0x0024,
+      EVR_SQ, "CombinationSegmentReferenceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0025, 0x3010, 0x0025,
+      EVR_SQ, "ConceptualVolumeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0026, 0x3010, 0x0026,
+      EVR_SQ, "SegmentedRTAccessoryDeviceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0027, 0x3010, 0x0027,
+      EVR_SQ, "SegmentCharacteristicsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0028, 0x3010, 0x0028,
+      EVR_SQ, "RelatedSegmentCharacteristicsSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0029, 0x3010, 0x0029,
+      EVR_US, "SegmentCharacteristicsPrecedence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x002a, 0x3010, 0x002a,
+      EVR_SQ, "RTSegmentAnnotationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x002b, 0x3010, 0x002b,
+      EVR_SQ, "SegmentAnnotationCategoryCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x002c, 0x3010, 0x002c,
+      EVR_SQ, "SegmentAnnotationTypeCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x002d, 0x3010, 0x002d,
+      EVR_LO, "DeviceLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x002e, 0x3010, 0x002e,
+      EVR_SQ, "DeviceTypeCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x002f, 0x3010, 0x002f,
+      EVR_SQ, "SegmentAnnotationTypeModifierCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0030, 0x3010, 0x0030,
+      EVR_SQ, "PatientEquipmentRelationshipCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0031, 0x3010, 0x0031,
+      EVR_UI, "ReferencedFiducialsUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0032, 0x3010, 0x0032,
+      EVR_SQ, "PatientTreatmentOrientationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0033, 0x3010, 0x0033,
+      EVR_SH, "UserContentLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0034, 0x3010, 0x0034,
+      EVR_LO, "UserContentLongLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0035, 0x3010, 0x0035,
+      EVR_SH, "EntityLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0036, 0x3010, 0x0036,
+      EVR_LO, "EntityName", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0037, 0x3010, 0x0037,
+      EVR_ST, "EntityDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0038, 0x3010, 0x0038,
+      EVR_LO, "EntityLongLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0039, 0x3010, 0x0039,
+      EVR_US, "DeviceIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x003a, 0x3010, 0x003a,
+      EVR_US, "RTTreatmentPhaseIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x003b, 0x3010, 0x003b,
+      EVR_UI, "RTTreatmentPhaseUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x003c, 0x3010, 0x003c,
+      EVR_US, "RTPrescriptionIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x003d, 0x3010, 0x003d,
+      EVR_US, "RTSegmentAnnotationIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x003e, 0x3010, 0x003e,
+      EVR_US, "BasisRTTreatmentPhaseIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x003f, 0x3010, 0x003f,
+      EVR_US, "RelatedRTTreatmentPhaseIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0040, 0x3010, 0x0040,
+      EVR_US, "ReferencedRTTreatmentPhaseIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0041, 0x3010, 0x0041,
+      EVR_US, "ReferencedRTPrescriptionIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0042, 0x3010, 0x0042,
+      EVR_US, "ReferencedParentRTPrescriptionIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0043, 0x3010, 0x0043,
+      EVR_ST, "ManufacturerDeviceIdentifier", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0044, 0x3010, 0x0044,
+      EVR_SQ, "InstanceLevelReferencedPerformedProcedureStepSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0045, 0x3010, 0x0045,
+      EVR_CS, "RTTreatmentPhaseIntentPresenceFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0046, 0x3010, 0x0046,
+      EVR_CS, "RadiotherapyTreatmentType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0047, 0x3010, 0x0047,
+      EVR_CS, "TeletherapyRadiationType", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0048, 0x3010, 0x0048,
+      EVR_CS, "BrachytherapySourceType", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0049, 0x3010, 0x0049,
+      EVR_SQ, "ReferencedRTTreatmentPhaseSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x004a, 0x3010, 0x004a,
+      EVR_SQ, "ReferencedDirectSegmentInstanceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x004b, 0x3010, 0x004b,
+      EVR_SQ, "IntendedRTTreatmentPhaseSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x004c, 0x3010, 0x004c,
+      EVR_DA, "IntendedPhaseStartDate", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x004d, 0x3010, 0x004d,
+      EVR_DA, "IntendedPhaseEndDate", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x004e, 0x3010, 0x004e,
+      EVR_SQ, "RTTreatmentPhaseIntervalSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x004f, 0x3010, 0x004f,
+      EVR_CS, "TemporalRelationshipIntervalAnchor", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0050, 0x3010, 0x0050,
+      EVR_FD, "MinimumNumberOfIntervalDays", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0051, 0x3010, 0x0051,
+      EVR_FD, "MaximumNumberOfIntervalDays", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0052, 0x3010, 0x0052,
+      EVR_UI, "PertinentSOPClassesInStudy", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0053, 0x3010, 0x0053,
+      EVR_UI, "PertinentSOPClassesInSeries", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0054, 0x3010, 0x0054,
+      EVR_LO, "RTPrescriptionLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0055, 0x3010, 0x0055,
+      EVR_SQ, "RTPhysicianIntentPredecessorSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0056, 0x3010, 0x0056,
+      EVR_LO, "RTTreatmentApproachLabel", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0057, 0x3010, 0x0057,
+      EVR_SQ, "RTPhysicianIntentSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0058, 0x3010, 0x0058,
+      EVR_US, "RTPhysicianIntentIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0059, 0x3010, 0x0059,
+      EVR_CS, "RTTreatmentIntentType", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x005a, 0x3010, 0x005a,
+      EVR_UT, "RTPhysicianIntentNarrative", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x005b, 0x3010, 0x005b,
+      EVR_SQ, "RTProtocolCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x005c, 0x3010, 0x005c,
+      EVR_ST, "ReasonForSuperseding", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x005d, 0x3010, 0x005d,
+      EVR_SQ, "RTDiagnosisCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x005e, 0x3010, 0x005e,
+      EVR_US, "ReferencedRTPhysicianIntentIndex", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x005f, 0x3010, 0x005f,
+      EVR_SQ, "RTPhysicianIntentInputInstanceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0060, 0x3010, 0x0060,
+      EVR_SQ, "RTAnatomicPrescriptionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0061, 0x3010, 0x0061,
+      EVR_UT, "PriorTreatmentDoseDescription", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0062, 0x3010, 0x0062,
+      EVR_SQ, "PriorTreatmentReferenceSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0063, 0x3010, 0x0063,
+      EVR_CS, "DosimetricObjectiveEvaluationScope", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0064, 0x3010, 0x0064,
+      EVR_SQ, "TherapeuticRoleCategoryCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0065, 0x3010, 0x0065,
+      EVR_SQ, "TherapeuticRoleTypeCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0066, 0x3010, 0x0066,
+      EVR_US, "ConceptualVolumeOptimizationPrecedence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0067, 0x3010, 0x0067,
+      EVR_SQ, "ConceptualVolumeCategoryCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0068, 0x3010, 0x0068,
+      EVR_CS, "ConceptualVolumeBlockingConstraint", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0069, 0x3010, 0x0069,
+      EVR_SQ, "ConceptualVolumeTypeCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x006a, 0x3010, 0x006a,
+      EVR_SQ, "ConceptualVolumeTypeModifierCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x006b, 0x3010, 0x006b,
+      EVR_SQ, "RTPrescriptionSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x006c, 0x3010, 0x006c,
+      EVR_SQ, "DosimetricObjectiveSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x006d, 0x3010, 0x006d,
+      EVR_SQ, "DosimetricObjectiveTypeCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x006e, 0x3010, 0x006e,
+      EVR_UI, "DosimetricObjectiveUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x006f, 0x3010, 0x006f,
+      EVR_UI, "ReferencedDosimetricObjectiveUID", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0070, 0x3010, 0x0070,
+      EVR_SQ, "DosimetricObjectiveParameterSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0071, 0x3010, 0x0071,
+      EVR_SQ, "ReferencedDosimetricObjectivesSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0073, 0x3010, 0x0073,
+      EVR_CS, "AbsoluteDosimetricObjectiveFlag", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0074, 0x3010, 0x0074,
+      EVR_FD, "DosimetricObjectiveWeight", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0075, 0x3010, 0x0075,
+      EVR_CS, "DosimetricObjectivePurpose", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0076, 0x3010, 0x0076,
+      EVR_SQ, "PlanningInputInformationSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0077, 0x3010, 0x0077,
+      EVR_LO, "TreatmentSite", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0078, 0x3010, 0x0078,
+      EVR_SQ, "TreatmentSiteCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0079, 0x3010, 0x0079,
+      EVR_SQ, "FractionPatternSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x007a, 0x3010, 0x007a,
+      EVR_UT, "TreatmentTechniqueNotes", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x007b, 0x3010, 0x007b,
+      EVR_UT, "PrescriptionNotes", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x007c, 0x3010, 0x007c,
+      EVR_IS, "NumberOfIntervalFractions", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x007d, 0x3010, 0x007d,
+      EVR_US, "NumberOfFractions", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x007e, 0x3010, 0x007e,
+      EVR_US, "IntendedDeliveryDuration", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x007f, 0x3010, 0x007f,
+      EVR_UT, "FractionationNotes", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0080, 0x3010, 0x0080,
+      EVR_SQ, "RTTreatmentTechniqueCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0081, 0x3010, 0x0081,
+      EVR_SQ, "PrescriptionNotesSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0082, 0x3010, 0x0082,
+      EVR_SQ, "FractionBasedRelationshipSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0083, 0x3010, 0x0083,
+      EVR_CS, "FractionBasedRelationshipIntervalAnchor", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0084, 0x3010, 0x0084,
+      EVR_FD, "MinimumHoursBetweenFractions", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0085, 0x3010, 0x0085,
+      EVR_TM, "IntendedFractionStartTime", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0086, 0x3010, 0x0086,
+      EVR_LT, "IntendedStartDayOfWeek", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0087, 0x3010, 0x0087,
+      EVR_SQ, "WeekdayFractionPatternSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0088, 0x3010, 0x0088,
+      EVR_SQ, "DeliveryTimeStructureCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0089, 0x3010, 0x0089,
+      EVR_SQ, "TreatmentSiteModifierCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0090, 0x3010, 0x0090,
+      EVR_CS, "RoboticBaseLocationIndicator", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0091, 0x3010, 0x0091,
+      EVR_SQ, "RoboticPathNodeSetCodeSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0092, 0x3010, 0x0092,
+      EVR_UL, "RoboticNodeIdentifier", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0093, 0x3010, 0x0093,
+      EVR_FD, "RTTreatmentSourceCoordinates", 3, 3, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0094, 0x3010, 0x0094,
+      EVR_FD, "RadiationSourceCoordinateSystemYawAngle", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0095, 0x3010, 0x0095,
+      EVR_FD, "RadiationSourceCoordinateSystemRollAngle", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0096, 0x3010, 0x0096,
+      EVR_FD, "RadiationSourceCoordinateSystemPitchAngle", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0097, 0x3010, 0x0097,
+      EVR_SQ, "RoboticPathControlPointSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0098, 0x3010, 0x0098,
+      EVR_SQ, "TomotherapeuticControlPointSequence", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x0099, 0x3010, 0x0099,
+      EVR_FD, "TomotherapeuticLeafOpenDurations", 1, -1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x3010, 0x009a, 0x3010, 0x009a,
+      EVR_FD, "TomotherapeuticLeafInitialClosedDurations", 1, -1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
 #ifdef ENABLE_PRIVATE_TAGS
@@ -26685,7 +30517,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x4010, 0x1029, 0x4010, 0x1029,
-      EVR_LO, "ThreatDetectionAlgorithmandVersion", 1, -1, "DICOM/DICOS",
+      EVR_LO, "ThreatDetectionAlgorithmAndVersion", 1, -1, "DICOM/DICOS",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x4010, 0x102a, 0x4010, 0x102a,
@@ -27004,6 +30836,14 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "SIEMENS MED" }
 #endif
+  , { 0x7fe0, 0x0001, 0x7fe0, 0x0001,
+      EVR_OV, "ExtendedOffsetTable", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x7fe0, 0x0002, 0x7fe0, 0x0002,
+      EVR_OV, "ExtendedOffsetTableLengths", 1, 1, "DICOM",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      NULL }
   , { 0x7fe0, 0x0008, 0x7fe0, 0x0008,
       EVR_OF, "FloatPixelData", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -27013,7 +30853,7 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x7fe0, 0x0010, 0x7fe0, 0x0010,
-      EVR_ox, "PixelData", 1, 1, "DICOM",
+      EVR_px, "PixelData", 1, 1, "DICOM",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
   , { 0x7fe0, 0x0020, 0x7fe0, 0x0020,
@@ -27041,6 +30881,10 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_ox, "PixelData", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       "SPI-P Release 1" }
+  , { 0x7fe1, 0x1060, 0x7fe1, 0x1060,
+      EVR_px, "IllegalPrivatePixelSequence", 1, 1, "PrivateTag",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
+      "GEMS_Ultrasound_MovieGroup_001" }
   , { 0x7fe3, 0x0000, 0x7fe3, 0x0000,
       EVR_LT, "ImageGraphicsFormatCode", 1, 1, "PrivateTag",
       DcmDictRange_Unspecified, DcmDictRange_Unspecified,
@@ -27202,9 +31046,13 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_ox, "OverlayData", 1, 1, "DICOM",
       DcmDictRange_Even, DcmDictRange_Unspecified,
       NULL }
-  , { 0x0009, 0x0000, 0xffff, 0x0000,
-      EVR_UL, "PrivateGroupLength", 1, 1, "PRIVATE",
-      DcmDictRange_Odd, DcmDictRange_Unspecified,
+  , { 0x0020, 0x3100, 0x0020, 0x31ff,
+      EVR_CS, "RETIRED_SourceImageIDs", 1, -1, "DICOM/retired",
+      DcmDictRange_Unspecified, DcmDictRange_Even,
+      NULL }
+  , { 0x5000, 0x0005, 0x50ff, 0x0005,
+      EVR_US, "RETIRED_CurveDimensions", 1, 1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
       NULL }
   , { 0x5000, 0x0010, 0x50ff, 0x0010,
       EVR_US, "RETIRED_NumberOfPoints", 1, 1, "DICOM/retired",
@@ -27224,86 +31072,6 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       NULL }
   , { 0x5000, 0x0040, 0x50ff, 0x0040,
       EVR_SH, "RETIRED_AxisLabels", 1, -1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x6000, 0x0012, 0x60ff, 0x0012,
-      EVR_US, "RETIRED_OverlayPlanes", 1, 1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x6000, 0x0052, 0x60ff, 0x0052,
-      EVR_US, "RETIRED_OverlayPlaneOrigin", 1, 1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x6000, 0x0060, 0x60ff, 0x0060,
-      EVR_CS, "RETIRED_OverlayCompressionCode", 1, 1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x6000, 0x0061, 0x60ff, 0x0061,
-      EVR_SH, "RETIRED_OverlayCompressionOriginator", 1, 1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x6000, 0x0062, 0x60ff, 0x0062,
-      EVR_SH, "RETIRED_OverlayCompressionLabel", 1, 1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x6000, 0x0063, 0x60ff, 0x0063,
-      EVR_CS, "RETIRED_OverlayCompressionDescription", 1, 1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x6000, 0x0066, 0x60ff, 0x0066,
-      EVR_AT, "RETIRED_OverlayCompressionStepPointers", 1, -1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x6000, 0x0068, 0x60ff, 0x0068,
-      EVR_US, "RETIRED_OverlayRepeatInterval", 1, 1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x6000, 0x0069, 0x60ff, 0x0069,
-      EVR_US, "RETIRED_OverlayBitsGrouped", 1, 1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x7f00, 0x0010, 0x7fff, 0x0010,
-      EVR_ox, "RETIRED_VariablePixelData", 1, 1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x7f00, 0x0011, 0x7fff, 0x0011,
-      EVR_US, "RETIRED_VariableNextDataGroup", 1, 1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x7f00, 0x0020, 0x7fff, 0x0020,
-      EVR_OW, "RETIRED_VariableCoefficientsSDVN", 1, 1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x7f00, 0x0030, 0x7fff, 0x0030,
-      EVR_OW, "RETIRED_VariableCoefficientsSDHN", 1, 1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x7f00, 0x0040, 0x7fff, 0x0040,
-      EVR_OW, "RETIRED_VariableCoefficientsSDDN", 1, 1, "DICOM/retired",
-      DcmDictRange_Even, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x0009, 0x0010, 0xffff, 0x00ff,
-      EVR_LO, "PrivateCreator", 1, 1, "PRIVATE",
-      DcmDictRange_Odd, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x0001, 0x0000, 0x0007, 0x0000,
-      EVR_UL, "IllegalGroupLength", 1, 1, "ILLEGAL",
-      DcmDictRange_Odd, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x0001, 0x0010, 0x0007, 0x00ff,
-      EVR_LO, "IllegalPrivateCreator", 1, 1, "ILLEGAL",
-      DcmDictRange_Odd, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x0000, 0x0000, 0xffff, 0x0000,
-      EVR_UL, "GenericGroupLength", 1, 1, "GENERIC",
-      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
-      NULL }
-  , { 0x0020, 0x3100, 0x0020, 0x31ff,
-      EVR_CS, "RETIRED_SourceImageIDs", 1, -1, "DICOM/retired",
-      DcmDictRange_Unspecified, DcmDictRange_Even,
-      NULL }
-  , { 0x5000, 0x0005, 0x50ff, 0x0005,
-      EVR_US, "RETIRED_CurveDimensions", 1, 1, "DICOM/retired",
       DcmDictRange_Even, DcmDictRange_Unspecified,
       NULL }
   , { 0x5000, 0x0103, 0x50ff, 0x0103,
@@ -27386,6 +31154,42 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
       EVR_ox, "RETIRED_CurveData", 1, 1, "DICOM/retired",
       DcmDictRange_Even, DcmDictRange_Unspecified,
       NULL }
+  , { 0x6000, 0x0012, 0x60ff, 0x0012,
+      EVR_US, "RETIRED_OverlayPlanes", 1, 1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x6000, 0x0052, 0x60ff, 0x0052,
+      EVR_US, "RETIRED_OverlayPlaneOrigin", 1, 1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x6000, 0x0060, 0x60ff, 0x0060,
+      EVR_CS, "RETIRED_OverlayCompressionCode", 1, 1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x6000, 0x0061, 0x60ff, 0x0061,
+      EVR_SH, "RETIRED_OverlayCompressionOriginator", 1, 1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x6000, 0x0062, 0x60ff, 0x0062,
+      EVR_SH, "RETIRED_OverlayCompressionLabel", 1, 1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x6000, 0x0063, 0x60ff, 0x0063,
+      EVR_CS, "RETIRED_OverlayCompressionDescription", 1, 1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x6000, 0x0066, 0x60ff, 0x0066,
+      EVR_AT, "RETIRED_OverlayCompressionStepPointers", 1, -1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x6000, 0x0068, 0x60ff, 0x0068,
+      EVR_US, "RETIRED_OverlayRepeatInterval", 1, 1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x6000, 0x0069, 0x60ff, 0x0069,
+      EVR_US, "RETIRED_OverlayBitsGrouped", 1, 1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
   , { 0x6000, 0x0110, 0x60ff, 0x0110,
       EVR_CS, "RETIRED_OverlayFormat", 1, 1, "DICOM/retired",
       DcmDictRange_Even, DcmDictRange_Unspecified,
@@ -27445,6 +31249,46 @@ static const DBI_SimpleEntry simpleBuiltinDict[] = {
   , { 0x6000, 0x4000, 0x60ff, 0x4000,
       EVR_LT, "RETIRED_OverlayComments", 1, 1, "DICOM/retired",
       DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x7f00, 0x0010, 0x7fff, 0x0010,
+      EVR_ox, "RETIRED_VariablePixelData", 1, 1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x7f00, 0x0011, 0x7fff, 0x0011,
+      EVR_US, "RETIRED_VariableNextDataGroup", 1, 1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x7f00, 0x0020, 0x7fff, 0x0020,
+      EVR_OW, "RETIRED_VariableCoefficientsSDVN", 1, 1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x7f00, 0x0030, 0x7fff, 0x0030,
+      EVR_OW, "RETIRED_VariableCoefficientsSDHN", 1, 1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x7f00, 0x0040, 0x7fff, 0x0040,
+      EVR_OW, "RETIRED_VariableCoefficientsSDDN", 1, 1, "DICOM/retired",
+      DcmDictRange_Even, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0009, 0x0000, 0xffff, 0x0000,
+      EVR_UL, "PrivateGroupLength", 1, 1, "PRIVATE",
+      DcmDictRange_Odd, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0009, 0x0010, 0xffff, 0x00ff,
+      EVR_LO, "PrivateCreator", 1, 1, "PRIVATE",
+      DcmDictRange_Odd, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0001, 0x0000, 0x0007, 0x0000,
+      EVR_UL, "IllegalGroupLength", 1, 1, "ILLEGAL",
+      DcmDictRange_Odd, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0001, 0x0010, 0x0007, 0x00ff,
+      EVR_LO, "IllegalPrivateCreator", 1, 1, "ILLEGAL",
+      DcmDictRange_Odd, DcmDictRange_Unspecified,
+      NULL }
+  , { 0x0000, 0x0000, 0xffff, 0x0000,
+      EVR_UL, "GenericGroupLength", 1, 1, "GENERIC",
+      DcmDictRange_Unspecified, DcmDictRange_Unspecified,
       NULL }
 #ifdef ENABLE_PRIVATE_TAGS
   , { 0x7001, 0x0004, 0x70ff, 0x0004,
@@ -27581,7 +31425,7 @@ DcmDataDictionary::loadBuiltinDictionary()
 }
 
 
-#else // WITH_BUILTIN_DICTIONARY
+#else // DCM_DICT_DEFAULT == DCM_DICT_DEFAULT_USE_BUILTIN
 void
 DcmDataDictionary::loadBuiltinDictionary()
 {
@@ -27589,10 +31433,11 @@ DcmDataDictionary::loadBuiltinDictionary()
  ** Empty Stub.
  **
  ** We don't want a populated built-in data dictionary. In order to enable it,
- ** define WITH_BUILTIN_DICTIONARY. To re-create the builtin dictionary from
- ** a textfile like dicom.dic, use dcmdata/libsrc/mkdictbi.
+ ** define DCM_DICT_DEFAULT == DCM_DICT_DEFAULT_USE_BUILTIN (1).
+ ** To re-create the builtin dictionary from a textfile like dicom.dic,
+ ** use dcmdata/libsrc/mkdictbi.
 */
 }
 
-#endif // WITH_BUILTIN_DICTIONARY
+#endif // DCM_DICT_DEFAULT == DCM_DICT_DEFAULT_USE_BUILTIN
 

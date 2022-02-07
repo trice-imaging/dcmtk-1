@@ -29,7 +29,7 @@
 #include <iomanip>
 #include <cassert>
 #include <cerrno>
-#if defined (UNICODE)
+#if defined (DCMTK_OFLOG_UNICODE)
 #include <cwchar>
 #endif
 
@@ -41,7 +41,7 @@
 #include <sys/time.h>
 #endif
 
-#if defined (DCMTK_LOG4CPLUS_HAVE_SYS_TIMEB_H)
+#if defined(DCMTK_LOG4CPLUS_HAVE_SYS_TIMEB_H) && defined(DCMTK_LOG4CPLUS_HAVE_FTIME) && !defined (DCMTK_LOG4CPLUS_HAVE_CLOCK_GETTIME) && !defined(DCMTK_LOG4CPLUS_HAVE_GETTIMEOFDAY) && !defined(_WIN32)
 #include <sys/timeb.h>
 #endif
 
@@ -51,6 +51,10 @@
 
 #if defined(DCMTK_LOG4CPLUS_HAVE_LOCALTIME_R) && !defined(DCMTK_LOG4CPLUS_SINGLE_THREADED)
 #define DCMTK_LOG4CPLUS_NEED_LOCALTIME_R
+#endif
+
+#ifdef MAX
+#undef MAX
 #endif
 
 #define MAX(a, b) ((a) < (b) ? (b) : (a))
@@ -65,7 +69,7 @@ const int ONE_SEC_IN_USEC = 1000000;
 using STD_NAMESPACE mktime;
 using STD_NAMESPACE gmtime;
 using STD_NAMESPACE localtime;
-#if defined (UNICODE)
+#if defined (DCMTK_OFLOG_UNICODE)
 using STD_NAMESPACE wcsftime;
 #else
 using STD_NAMESPACE strftime;
@@ -200,7 +204,7 @@ Time::localtime(tm* t) const
 }
 
 
-namespace 
+namespace
 {
 
 
@@ -234,7 +238,7 @@ build_q_value (log4cplus::tstring & q_str, long tv_usec)
 
 
 static
-void 
+void
 build_uc_q_value (log4cplus::tstring & uc_q_str, long tv_usec,
     log4cplus::tstring & tmp)
 {
@@ -257,19 +261,19 @@ Time::getFormattedTime(const log4cplus::tstring& fmt_orig, bool use_gmtime) cons
     if (fmt_orig.empty () || fmt_orig[0] == 0)
         return log4cplus::tstring ();
 
-    tm time;
-    
+    tm time = {};
+
     if (use_gmtime)
         gmtime(&time);
-    else 
+    else
         localtime(&time);
-    
+
     enum State
     {
         TEXT,
         PERCENT_SIGN
     };
-    
+
     internal::gft_scratch_pad & gft_sp = internal::get_gft_scratch_pad ();
     gft_sp.reset ();
 
@@ -277,8 +281,8 @@ Time::getFormattedTime(const log4cplus::tstring& fmt_orig, bool use_gmtime) cons
     gft_sp.ret.reserve (OFstatic_cast(size_t, OFstatic_cast(double, gft_sp.fmt.size ()) * 1.35));
     State state = TEXT;
 
-    // Walk the format string and process all occurences of %q and %Q.
-    
+    // Walk the format string and process all occurrences of %q and %Q.
+
     for (log4cplus::tstring::const_iterator fmt_it = gft_sp.fmt.begin ();
          fmt_it != gft_sp.fmt.end (); ++fmt_it)
     {
@@ -292,7 +296,7 @@ Time::getFormattedTime(const log4cplus::tstring& fmt_orig, bool use_gmtime) cons
                 gft_sp.ret.append(1, *fmt_it);
         }
         break;
-            
+
         case PERCENT_SIGN:
         {
             switch (*fmt_it)
@@ -308,7 +312,7 @@ Time::getFormattedTime(const log4cplus::tstring& fmt_orig, bool use_gmtime) cons
                 state = TEXT;
             }
             break;
-            
+
             case DCMTK_LOG4CPLUS_TEXT ('Q'):
             {
                 if (! gft_sp.uc_q_str_valid)
@@ -356,7 +360,7 @@ Time::getFormattedTime(const log4cplus::tstring& fmt_orig, bool use_gmtime) cons
     // Limit how far can the buffer grow. This is necessary so that we
     // catch bad format string. Some implementations of strftime() signal
     // both too small buffer and invalid format string by returning 0
-    // without changing errno. 
+    // without changing errno.
     size_t const buffer_size_max
         = MAX(OFstatic_cast(size_t, 1024), buffer_size * 16);
 
@@ -364,7 +368,7 @@ Time::getFormattedTime(const log4cplus::tstring& fmt_orig, bool use_gmtime) cons
     {
         gft_sp.buffer.resize (buffer_size);
         errno = 0;
-#ifdef UNICODE
+#ifdef DCMTK_OFLOG_UNICODE
         len = wcsftime(&gft_sp.buffer[0], buffer_size,
             gft_sp.fmt.c_str(), &time);
 #else
@@ -382,7 +386,7 @@ Time::getFormattedTime(const log4cplus::tstring& fmt_orig, bool use_gmtime) cons
                     + convertIntegerToString (eno), true);
             }
         }
-    } 
+    }
     while (len == 0);
 
     return tstring (&*gft_sp.buffer.begin (), len);
@@ -424,7 +428,7 @@ Time::operator/=(long rhs)
 {
     long rem_secs = OFstatic_cast(long, tv_sec % rhs);
     tv_sec /= rhs;
-    
+
     tv_usec /= rhs;
     tv_usec += OFstatic_cast(long, (rem_secs * ONE_SEC_IN_USEC) / rhs);
 
@@ -483,7 +487,7 @@ bool
 operator<(const Time& lhs, const Time& rhs)
 {
     return (   (lhs.sec() < rhs.sec())
-            || (   (lhs.sec() == rhs.sec()) 
+            || (   (lhs.sec() == rhs.sec())
                 && (lhs.usec() < rhs.usec())) );
 }
 
@@ -499,7 +503,7 @@ bool
 operator>(const Time& lhs, const Time& rhs)
 {
     return (   (lhs.sec() > rhs.sec())
-            || (   (lhs.sec() == rhs.sec()) 
+            || (   (lhs.sec() == rhs.sec())
                 && (lhs.usec() > rhs.usec())) );
 }
 

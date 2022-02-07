@@ -2,6 +2,7 @@
 *.o
 *.so
 *.a
+build
 
 # Ignore all Makefiles except the top-level one
 Makefile
@@ -33,6 +34,8 @@ doxygen/dcmtk.tag
 */tests/tests
 config/arith
 config/lzwtest.tif
+dcmdata/apps/cda2dcm
+dcmdata/apps/dcm2json
 dcmdata/apps/dcm2pdf
 dcmdata/apps/dcm2xml
 dcmdata/apps/dcmconv
@@ -45,10 +48,12 @@ dcmdata/apps/dcmodify
 dcmdata/apps/dump2dcm
 dcmdata/apps/img2dcm
 dcmdata/apps/pdf2dcm
+dcmdata/apps/stl2dcm
 dcmdata/apps/xml2dcm
 dcmdata/libsrc/mkdeftag
 dcmdata/libsrc/mkdictbi
 dcmimage/apps/dcm2pnm
+dcmimage/apps/dcmicmp
 dcmimage/apps/dcmquant
 dcmimage/apps/dcmscale
 dcmimgle/apps/dcmdspfn
@@ -94,7 +99,3 @@ dcmsr/apps/xml2dsr
 dcmsr/tests/mkreport
 dcmwlm/apps/wlmscpfs
 dcmwlm/tests/wltest
-dcmwlm/wwwapps/preplock
-dcmwlm/wwwapps/readoviw
-dcmwlm/wwwapps/readwlst
-dcmwlm/wwwapps/writwlst

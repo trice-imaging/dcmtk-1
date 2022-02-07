@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1993-2012, OFFIS e.V.
+ *  Copyright (C) 1993-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,6 +22,9 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 #include "dcmtk/dcmqrdb/dcmqrptb.h"
 #include "dcmtk/dcmqrdb/dcmqropt.h"
+#include "dcmtk/ofstd/ofstdinc.h"
+#include <ctime>
+
 
 /** helper class that describes entries in the process slot table. Internal use only.
  */
@@ -103,6 +106,7 @@ DcmQueryRetrieveProcessSlot::DcmQueryRetrieveProcessSlot(
 
 OFBool DcmQueryRetrieveProcessSlot::isProcessWithWriteAccess(const char *calledAETitle) const
 {
+  (void) startTime_;
   return (hasStorageAbility_ && calledAETitle && calledAETitle_ == calledAETitle);
 }
 
@@ -128,10 +132,10 @@ void DcmQueryRetrieveProcessTable::addProcessToTable(int pid, T_ASC_Association 
     DIC_AE       calledAETitle;
     OFBool hasStorageAbility = OFFalse;
 
-    ASC_getPresentationAddresses(assoc->params, peerName, NULL);
-    ASC_getAPTitles(assoc->params, callingAETitle, calledAETitle, NULL);
+    ASC_getPresentationAddresses(assoc->params, peerName, sizeof(peerName), NULL, 0);
+    ASC_getAPTitles(assoc->params, callingAETitle, sizeof(callingAETitle), calledAETitle, sizeof(calledAETitle), NULL, 0);
 
-    for (int i=0; i<numberOfAllDcmStorageSOPClassUIDs; i++)
+    for (int i=0; i<numberOfDcmAllStorageSOPClassUIDs; i++)
     {
       if (ASC_findAcceptedPresentationContextID(assoc, dcmAllStorageSOPClassUIDs[i]))
       {

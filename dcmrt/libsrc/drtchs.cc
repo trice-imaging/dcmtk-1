@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTChannelSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -21,7 +21,10 @@
 
 DRTChannelSequence::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
+    AfterloaderChannelID(DCM_AfterloaderChannelID),
     BrachyControlPointSequence(emptyDefaultItem /*emptyDefaultSequence*/),
+    ChannelEffectiveLength(DCM_ChannelEffectiveLength),
+    ChannelInnerLength(DCM_ChannelInnerLength),
     ChannelLength(DCM_ChannelLength),
     ChannelNumber(DCM_ChannelNumber),
     ChannelShieldSequence(emptyDefaultItem /*emptyDefaultSequence*/),
@@ -39,6 +42,7 @@ DRTChannelSequence::Item::Item(const OFBool emptyDefaultItem)
     SourceApplicatorName(DCM_SourceApplicatorName),
     SourceApplicatorNumber(DCM_SourceApplicatorNumber),
     SourceApplicatorStepSize(DCM_SourceApplicatorStepSize),
+    SourceApplicatorTipLength(DCM_SourceApplicatorTipLength),
     SourceApplicatorType(DCM_SourceApplicatorType),
     SourceApplicatorWallNominalThickness(DCM_SourceApplicatorWallNominalThickness),
     SourceApplicatorWallNominalTransmission(DCM_SourceApplicatorWallNominalTransmission),
@@ -51,7 +55,10 @@ DRTChannelSequence::Item::Item(const OFBool emptyDefaultItem)
 
 DRTChannelSequence::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
+    AfterloaderChannelID(copy.AfterloaderChannelID),
     BrachyControlPointSequence(copy.BrachyControlPointSequence),
+    ChannelEffectiveLength(copy.ChannelEffectiveLength),
+    ChannelInnerLength(copy.ChannelInnerLength),
     ChannelLength(copy.ChannelLength),
     ChannelNumber(copy.ChannelNumber),
     ChannelShieldSequence(copy.ChannelShieldSequence),
@@ -69,6 +76,7 @@ DRTChannelSequence::Item::Item(const Item &copy)
     SourceApplicatorName(copy.SourceApplicatorName),
     SourceApplicatorNumber(copy.SourceApplicatorNumber),
     SourceApplicatorStepSize(copy.SourceApplicatorStepSize),
+    SourceApplicatorTipLength(copy.SourceApplicatorTipLength),
     SourceApplicatorType(copy.SourceApplicatorType),
     SourceApplicatorWallNominalThickness(copy.SourceApplicatorWallNominalThickness),
     SourceApplicatorWallNominalTransmission(copy.SourceApplicatorWallNominalTransmission),
@@ -89,7 +97,10 @@ DRTChannelSequence::Item &DRTChannelSequence::Item::operator=(const Item &copy)
     if (this != &copy)
     {
         EmptyDefaultItem = copy.EmptyDefaultItem;
+        AfterloaderChannelID = copy.AfterloaderChannelID;
         BrachyControlPointSequence = copy.BrachyControlPointSequence;
+        ChannelEffectiveLength = copy.ChannelEffectiveLength;
+        ChannelInnerLength = copy.ChannelInnerLength;
         ChannelLength = copy.ChannelLength;
         ChannelNumber = copy.ChannelNumber;
         ChannelShieldSequence = copy.ChannelShieldSequence;
@@ -107,6 +118,7 @@ DRTChannelSequence::Item &DRTChannelSequence::Item::operator=(const Item &copy)
         SourceApplicatorName = copy.SourceApplicatorName;
         SourceApplicatorNumber = copy.SourceApplicatorNumber;
         SourceApplicatorStepSize = copy.SourceApplicatorStepSize;
+        SourceApplicatorTipLength = copy.SourceApplicatorTipLength;
         SourceApplicatorType = copy.SourceApplicatorType;
         SourceApplicatorWallNominalThickness = copy.SourceApplicatorWallNominalThickness;
         SourceApplicatorWallNominalTransmission = copy.SourceApplicatorWallNominalTransmission;
@@ -134,6 +146,7 @@ void DRTChannelSequence::Item::clear()
         SourceApplicatorType.clear();
         SourceApplicatorName.clear();
         SourceApplicatorLength.clear();
+        SourceApplicatorTipLength.clear();
         SourceApplicatorManufacturer.clear();
         MaterialID.clear();
         SourceApplicatorWallNominalThickness.clear();
@@ -142,6 +155,9 @@ void DRTChannelSequence::Item::clear()
         ReferencedROINumber.clear();
         TransferTubeNumber.clear();
         TransferTubeLength.clear();
+        ChannelEffectiveLength.clear();
+        ChannelInnerLength.clear();
+        AfterloaderChannelID.clear();
         ChannelShieldSequence.clear();
         ReferencedSourceNumber.clear();
         NumberOfControlPoints.clear();
@@ -164,6 +180,7 @@ OFBool DRTChannelSequence::Item::isEmpty()
            SourceApplicatorType.isEmpty() &&
            SourceApplicatorName.isEmpty() &&
            SourceApplicatorLength.isEmpty() &&
+           SourceApplicatorTipLength.isEmpty() &&
            SourceApplicatorManufacturer.isEmpty() &&
            MaterialID.isEmpty() &&
            SourceApplicatorWallNominalThickness.isEmpty() &&
@@ -172,6 +189,9 @@ OFBool DRTChannelSequence::Item::isEmpty()
            ReferencedROINumber.isEmpty() &&
            TransferTubeNumber.isEmpty() &&
            TransferTubeLength.isEmpty() &&
+           ChannelEffectiveLength.isEmpty() &&
+           ChannelInnerLength.isEmpty() &&
+           AfterloaderChannelID.isEmpty() &&
            ChannelShieldSequence.isEmpty() &&
            ReferencedSourceNumber.isEmpty() &&
            NumberOfControlPoints.isEmpty() &&
@@ -204,6 +224,7 @@ OFCondition DRTChannelSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, SourceApplicatorType, "1", "1C", "ChannelSequence");
         getAndCheckElementFromDataset(item, SourceApplicatorName, "1", "3", "ChannelSequence");
         getAndCheckElementFromDataset(item, SourceApplicatorLength, "1", "1C", "ChannelSequence");
+        getAndCheckElementFromDataset(item, SourceApplicatorTipLength, "1", "2C", "ChannelSequence");
         getAndCheckElementFromDataset(item, SourceApplicatorManufacturer, "1", "3", "ChannelSequence");
         getAndCheckElementFromDataset(item, MaterialID, "1", "3", "ChannelSequence");
         getAndCheckElementFromDataset(item, SourceApplicatorWallNominalThickness, "1", "3", "ChannelSequence");
@@ -212,6 +233,9 @@ OFCondition DRTChannelSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, ReferencedROINumber, "1", "2C", "ChannelSequence");
         getAndCheckElementFromDataset(item, TransferTubeNumber, "1", "2", "ChannelSequence");
         getAndCheckElementFromDataset(item, TransferTubeLength, "1", "2C", "ChannelSequence");
+        getAndCheckElementFromDataset(item, ChannelEffectiveLength, "1", "3", "ChannelSequence");
+        getAndCheckElementFromDataset(item, ChannelInnerLength, "1", "2C", "ChannelSequence");
+        getAndCheckElementFromDataset(item, AfterloaderChannelID, "1", "3", "ChannelSequence");
         ChannelShieldSequence.read(item, "1-n", "3", "ChannelSequence");
         getAndCheckElementFromDataset(item, ReferencedSourceNumber, "1", "1", "ChannelSequence");
         getAndCheckElementFromDataset(item, NumberOfControlPoints, "1", "1", "ChannelSequence");
@@ -240,6 +264,7 @@ OFCondition DRTChannelSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmCodeString(SourceApplicatorType), "1", "1C", "ChannelSequence");
         addElementToDataset(result, item, new DcmLongString(SourceApplicatorName), "1", "3", "ChannelSequence");
         addElementToDataset(result, item, new DcmDecimalString(SourceApplicatorLength), "1", "1C", "ChannelSequence");
+        addElementToDataset(result, item, new DcmDecimalString(SourceApplicatorTipLength), "1", "2C", "ChannelSequence");
         addElementToDataset(result, item, new DcmLongString(SourceApplicatorManufacturer), "1", "3", "ChannelSequence");
         addElementToDataset(result, item, new DcmShortString(MaterialID), "1", "3", "ChannelSequence");
         addElementToDataset(result, item, new DcmDecimalString(SourceApplicatorWallNominalThickness), "1", "3", "ChannelSequence");
@@ -248,6 +273,9 @@ OFCondition DRTChannelSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmIntegerString(ReferencedROINumber), "1", "2C", "ChannelSequence");
         addElementToDataset(result, item, new DcmIntegerString(TransferTubeNumber), "1", "2", "ChannelSequence");
         addElementToDataset(result, item, new DcmDecimalString(TransferTubeLength), "1", "2C", "ChannelSequence");
+        addElementToDataset(result, item, new DcmDecimalString(ChannelEffectiveLength), "1", "3", "ChannelSequence");
+        addElementToDataset(result, item, new DcmDecimalString(ChannelInnerLength), "1", "2C", "ChannelSequence");
+        addElementToDataset(result, item, new DcmShortString(AfterloaderChannelID), "1", "3", "ChannelSequence");
         if (result.good()) result = ChannelShieldSequence.write(item, "1-n", "3", "ChannelSequence");
         addElementToDataset(result, item, new DcmIntegerString(ReferencedSourceNumber), "1", "1", "ChannelSequence");
         addElementToDataset(result, item, new DcmIntegerString(NumberOfControlPoints), "1", "1", "ChannelSequence");
@@ -255,6 +283,51 @@ OFCondition DRTChannelSequence::Item::write(DcmItem &item)
         if (result.good()) result = BrachyControlPointSequence.write(item, "1-n", "1", "ChannelSequence");
     }
     return result;
+}
+
+
+OFCondition DRTChannelSequence::Item::getAfterloaderChannelID(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(AfterloaderChannelID, value, pos);
+}
+
+
+OFCondition DRTChannelSequence::Item::getChannelEffectiveLength(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(ChannelEffectiveLength, value, pos);
+}
+
+
+OFCondition DRTChannelSequence::Item::getChannelEffectiveLength(Float64 &value, const unsigned long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return OFconst_cast(DcmDecimalString &, ChannelEffectiveLength).getFloat64(value, pos);
+}
+
+
+OFCondition DRTChannelSequence::Item::getChannelInnerLength(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(ChannelInnerLength, value, pos);
+}
+
+
+OFCondition DRTChannelSequence::Item::getChannelInnerLength(Float64 &value, const unsigned long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return OFconst_cast(DcmDecimalString &, ChannelInnerLength).getFloat64(value, pos);
 }
 
 
@@ -510,6 +583,24 @@ OFCondition DRTChannelSequence::Item::getSourceApplicatorStepSize(Float64 &value
 }
 
 
+OFCondition DRTChannelSequence::Item::getSourceApplicatorTipLength(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(SourceApplicatorTipLength, value, pos);
+}
+
+
+OFCondition DRTChannelSequence::Item::getSourceApplicatorTipLength(Float64 &value, const unsigned long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return OFconst_cast(DcmDecimalString &, SourceApplicatorTipLength).getFloat64(value, pos);
+}
+
+
 OFCondition DRTChannelSequence::Item::getSourceApplicatorType(OFString &value, const signed long pos) const
 {
     if (EmptyDefaultItem)
@@ -597,6 +688,45 @@ OFCondition DRTChannelSequence::Item::getTransferTubeNumber(Sint32 &value, const
         return EC_IllegalCall;
     else
         return OFconst_cast(DcmIntegerString &, TransferTubeNumber).getSint32(value, pos);
+}
+
+
+OFCondition DRTChannelSequence::Item::setAfterloaderChannelID(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmShortString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = AfterloaderChannelID.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTChannelSequence::Item::setChannelEffectiveLength(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmDecimalString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = ChannelEffectiveLength.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTChannelSequence::Item::setChannelInnerLength(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmDecimalString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = ChannelInnerLength.putOFStringArray(value);
+    }
+    return result;
 }
 
 
@@ -808,6 +938,19 @@ OFCondition DRTChannelSequence::Item::setSourceApplicatorStepSize(const OFString
 }
 
 
+OFCondition DRTChannelSequence::Item::setSourceApplicatorTipLength(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmDecimalString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = SourceApplicatorTipLength.putOFStringArray(value);
+    }
+    return result;
+}
+
+
 OFCondition DRTChannelSequence::Item::setSourceApplicatorType(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -989,7 +1132,7 @@ OFBool DRTChannelSequence::isValid() const
 }
 
 
-unsigned long DRTChannelSequence::getNumberOfItems() const
+size_t DRTChannelSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -1019,12 +1162,12 @@ OFCondition DRTChannelSequence::gotoNextItem()
 }
 
 
-OFCondition DRTChannelSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTChannelSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -1039,12 +1182,12 @@ OFCondition DRTChannelSequence::gotoItem(const unsigned long num, OFListIterator
 }
 
 
-OFCondition DRTChannelSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTChannelSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -1059,7 +1202,7 @@ OFCondition DRTChannelSequence::gotoItem(const unsigned long num, OFListConstIte
 }
 
 
-OFCondition DRTChannelSequence::gotoItem(const unsigned long num)
+OFCondition DRTChannelSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -1095,7 +1238,7 @@ const DRTChannelSequence::Item &DRTChannelSequence::getCurrentItem() const
 }
 
 
-OFCondition DRTChannelSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTChannelSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -1105,7 +1248,7 @@ OFCondition DRTChannelSequence::getItem(const unsigned long num, Item *&item)
 }
 
 
-DRTChannelSequence::Item &DRTChannelSequence::getItem(const unsigned long num)
+DRTChannelSequence::Item &DRTChannelSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -1115,7 +1258,7 @@ DRTChannelSequence::Item &DRTChannelSequence::getItem(const unsigned long num)
 }
 
 
-const DRTChannelSequence::Item &DRTChannelSequence::getItem(const unsigned long num) const
+const DRTChannelSequence::Item &DRTChannelSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -1125,13 +1268,13 @@ const DRTChannelSequence::Item &DRTChannelSequence::getItem(const unsigned long 
 }
 
 
-DRTChannelSequence::Item &DRTChannelSequence::operator[](const unsigned long num)
+DRTChannelSequence::Item &DRTChannelSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTChannelSequence::Item &DRTChannelSequence::operator[](const unsigned long num) const
+const DRTChannelSequence::Item &DRTChannelSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -1154,7 +1297,7 @@ OFCondition DRTChannelSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTChannelSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTChannelSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -1177,7 +1320,7 @@ OFCondition DRTChannelSequence::insertItem(const unsigned long pos, Item *&item)
 }
 
 
-OFCondition DRTChannelSequence::removeItem(const unsigned long pos)
+OFCondition DRTChannelSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

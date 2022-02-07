@@ -1,12 +1,12 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2021, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class CID10013_CTAcquisitionType
  *
- *  Generated automatically from DICOM PS 3.16-2015c
- *  File created on 2015-08-23 15:25:14 by J. Riesmeier
+ *  Generated automatically from DICOM PS 3.16-2021d
+ *  File created on 2021-09-13 09:26:40 by J. Riesmeier
  *
  */
 
@@ -18,7 +18,7 @@
 
 // general information on CID 10013 (CT Acquisition Type)
 #define CONTEXT_GROUP_NUMBER  "10013"
-#define CONTEXT_GROUP_VERSION "20071031"
+#define CONTEXT_GROUP_VERSION "20160314"
 #define CONTEXT_GROUP_UID     "1.2.840.10008.6.1.545"
 #define CONTEXT_GROUP_TYPE    OFTrue  /* extensible */
 
@@ -150,10 +150,11 @@ CID10013_CTAcquisitionType::CodeList &CID10013_CTAcquisitionType::getCodes()
         Codes = new CodeList();
         /* and initialize it by adding the coded entries */
         Codes->insert(OFMake_pair(SequencedAcquisition, DSRBasicCodedEntry("113804", "DCM", "Sequenced Acquisition")));
-        Codes->insert(OFMake_pair(SpiralAcquisition, DSRBasicCodedEntry("P5-08001", "SRT", "Spiral Acquisition")));
+        Codes->insert(OFMake_pair(SpiralAcquisition, DSRBasicCodedEntry("116152004", "SCT", "Spiral Acquisition")));
         Codes->insert(OFMake_pair(ConstantAngleAcquisition, DSRBasicCodedEntry("113805", "DCM", "Constant Angle Acquisition")));
         Codes->insert(OFMake_pair(StationaryAcquisition, DSRBasicCodedEntry("113806", "DCM", "Stationary Acquisition")));
         Codes->insert(OFMake_pair(FreeAcquisition, DSRBasicCodedEntry("113807", "DCM", "Free Acquisition")));
+        Codes->insert(OFMake_pair(ConeBeamAcquisition, DSRBasicCodedEntry("702569007", "SCT", "Cone Beam Acquisition")));
     }
     /* should never be NULL */
     return *Codes;

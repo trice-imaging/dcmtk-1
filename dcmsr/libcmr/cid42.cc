@@ -1,12 +1,12 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2021, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class CID42_NumericValueQualifier
  *
- *  Generated automatically from DICOM PS 3.16-2015c
- *  File created on 2015-08-23 15:25:00 by J. Riesmeier
+ *  Generated automatically from DICOM PS 3.16-2021d
+ *  File created on 2021-09-13 09:26:29 by J. Riesmeier
  *
  */
 
@@ -156,9 +156,9 @@ CID42_NumericValueQualifier::CodeList &CID42_NumericValueQualifier::getCodes()
         Codes->insert(OFMake_pair(Underflow, DSRBasicCodedEntry("114004", "DCM", "Underflow")));
         Codes->insert(OFMake_pair(Overflow, DSRBasicCodedEntry("114005", "DCM", "Overflow")));
         Codes->insert(OFMake_pair(MeasurementFailure, DSRBasicCodedEntry("114006", "DCM", "Measurement failure")));
-        Codes->insert(OFMake_pair(MeasurementNotAttempted, DSRBasicCodedEntry("114007", "DCM", "Measurement not attempted")));
         Codes->insert(OFMake_pair(CalculationFailure, DSRBasicCodedEntry("114008", "DCM", "Calculation failure")));
         Codes->insert(OFMake_pair(ValueOutOfRange, DSRBasicCodedEntry("114009", "DCM", "Value out of range")));
+        Codes->insert(OFMake_pair(MeasurementNotAttempted, DSRBasicCodedEntry("114007", "DCM", "Measurement not attempted")));
         Codes->insert(OFMake_pair(ValueUnknown, DSRBasicCodedEntry("114010", "DCM", "Value unknown")));
         Codes->insert(OFMake_pair(ValueIndeterminate, DSRBasicCodedEntry("114011", "DCM", "Value indeterminate")));
     }

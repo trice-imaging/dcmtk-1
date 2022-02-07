@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2010, OFFIS e.V.
+ *  Copyright (C) 1996-2016, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -57,7 +57,7 @@ DiOverlayData::~DiOverlayData()
 {
     if (Planes != NULL)
     {
-        register unsigned int i;
+        unsigned int i;
         for (i = 0; i < ArrayEntries; ++i)
             delete Planes[i];
     }

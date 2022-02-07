@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2011, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were partly developed by
@@ -78,12 +78,6 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#define INCLUDE_CCTYPE
-#include "dcmtk/ofstd/ofstdinc.h"
-
 #ifdef HAVE_UNIX_H
 #if defined(macintosh) && defined (HAVE_WINSOCK_H)
 /* unix.h defines timeval incompatible with winsock.h */
@@ -102,6 +96,7 @@
 #include <stat.h>
 #endif
 
+#include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/dcmnet/diutil.h"
 #include "dcmtk/dcmdata/dcdatset.h"
 #include "dcmtk/dcmdata/dcfilefo.h"
@@ -122,7 +117,7 @@ DU_stripTrailingSpaces(char *s)
 
     if (s)
     {
-        n = strlen(s);
+        n = OFstatic_cast(int, strlen(s));
         for (i = n - 1; i >= 0 && isspace(TO_UCHAR(s[i])); i--)
             s[i] = '\0';
     }
@@ -134,7 +129,7 @@ DU_stripLeadingSpaces(char *s)
     int i, j, n;
 
     if (s == NULL) return;
-    n = strlen(s);
+    n = OFstatic_cast(int, strlen(s));
     if (n == 0) return;
     if (!isspace(TO_UCHAR(s[0]))) return; /* no leading space */
 
@@ -162,7 +157,7 @@ DU_stripLeadingAndTrailingSpaces(char *s)
 #undef TO_UCHAR
 
 OFBool
-DU_getStringDOElement(DcmItem *obj, DcmTagKey t, char *s)
+DU_getStringDOElement(DcmItem *obj, DcmTagKey t, char *s, size_t bufsize)
 {
     DcmByteString *elem;
     DcmStack stack;
@@ -176,7 +171,8 @@ DU_getStringDOElement(DcmItem *obj, DcmTagKey t, char *s)
             s[0] = '\0';
         } else {
             ec =  elem->getString(aString);
-            strcpy(s, aString);
+            if (ec == EC_Normal)
+                OFStandard::strlcpy(s, aString, bufsize);
         }
     }
     return (ec == EC_Normal);
@@ -189,7 +185,7 @@ DU_putStringDOElement(DcmItem *obj, DcmTagKey t, const char *s)
     DcmElement *e = NULL;
     DcmTag tag(t);
 
-    ec = newDicomElement(e, tag);
+    ec = DcmItem::newDicomElement(e, tag);
     if (ec == EC_Normal && s != NULL) {
         ec = e->putString(s);
     }
@@ -223,7 +219,7 @@ DU_putShortDOElement(DcmItem *obj, DcmTagKey t, Uint16 us)
     DcmElement *e = NULL;
     DcmTag tag(t);
 
-    ec = newDicomElement(e, tag);
+    ec = DcmItem::newDicomElement(e, tag);
     if (ec == EC_Normal) {
         ec = e->putUint16(us);
     }
@@ -237,20 +233,22 @@ OFBool
 DU_findSOPClassAndInstanceInDataSet(
   DcmItem *obj,
   char* sopClass,
+  size_t sopClassSize,
   char* sopInstance,
+  size_t sopInstanceSize,
   OFBool tolerateSpacePaddedUIDs)
 {
-    OFBool result = (DU_getStringDOElement(obj, DCM_SOPClassUID, sopClass) &&
-        DU_getStringDOElement(obj, DCM_SOPInstanceUID, sopInstance));
+    OFBool result = (DU_getStringDOElement(obj, DCM_SOPClassUID, sopClass, sopClassSize) &&
+        DU_getStringDOElement(obj, DCM_SOPInstanceUID, sopInstance, sopInstanceSize));
 
     if (tolerateSpacePaddedUIDs)
     {
         /* gracefully correct space-padded UID strings */
         int slength;
 
-        if ((0 < (slength=strlen(sopClass)))&&(sopClass[slength-1]==' '))
+        if ((0 < (slength=OFstatic_cast(int, strlen(sopClass))))&&(sopClass[slength-1]==' '))
             sopClass[slength-1]=0;
-        if ((0 < (slength=strlen(sopInstance)))&&(sopInstance[slength-1]==' '))
+        if ((0 < (slength=OFstatic_cast(int, strlen(sopInstance))))&&(sopInstance[slength-1]==' '))
             sopInstance[slength-1]=0;
     }
     return result;
@@ -260,7 +258,9 @@ OFBool
 DU_findSOPClassAndInstanceInFile(
   const char *fname,
   char* sopClass,
+  size_t sopClassSize,
   char* sopInstance,
+  size_t sopInstanceSize,
   OFBool tolerateSpacePaddedUIDs)
 {
     DcmFileFormat ff;
@@ -269,11 +269,11 @@ DU_findSOPClassAndInstanceInFile(
 
     /* look in the meta-header first */
     OFBool found = DU_findSOPClassAndInstanceInDataSet(
-        ff.getMetaInfo(), sopClass, sopInstance, tolerateSpacePaddedUIDs);
+        ff.getMetaInfo(), sopClass, sopClassSize, sopInstance, sopInstanceSize, tolerateSpacePaddedUIDs);
 
     if (!found) {
         found = DU_findSOPClassAndInstanceInDataSet(
-            ff.getDataset(), sopClass, sopInstance, tolerateSpacePaddedUIDs);
+            ff.getDataset(), sopClass, sopClassSize, sopInstance, sopInstanceSize, tolerateSpacePaddedUIDs);
     }
 
     return found;
@@ -302,6 +302,9 @@ DU_cstoreStatusString(Uint16 statusCode)
       case STATUS_Success:
           s = "Success";
           break;
+      case STATUS_STORE_Refused_SOPClassNotSupported:
+          s = "Refused: SOPClassNotSupported";
+          break;
       case STATUS_STORE_Warning_CoercionOfDataElements:
           s = "Warning: CoercionOfDataElements";
           break;
@@ -318,9 +321,6 @@ DU_cstoreStatusString(Uint16 statusCode)
     switch (statusCode & 0xff00) {      /* high byte significant */
       case STATUS_STORE_Refused_OutOfResources:   /* high byte */
           s = "Refused: OutOfResources";
-          break;
-      case STATUS_STORE_Refused_SOPClassNotSupported:     /* high byte */
-          s = "Error: SOPClassNotSupported";
           break;
       case STATUS_STORE_Error_DataSetDoesNotMatchSOPClass:        /* high byte */
           s = "Error: DataSetDoesNotMatchSOPClass";
@@ -853,4 +853,38 @@ DU_neventReportStatusString(Uint16 statusCode)
         s = staticBuf;
     }
     return s;
+}
+
+void DU_logSelectResult(int selectReturnValue)
+{
+  if (selectReturnValue < 0)
+  {
+#ifdef HAVE_WINSOCK_H
+    LPVOID errBuf = NULL;
+    OFString err;
+    // Obtain an error string from system error code
+    if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+      NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), OFreinterpret_cast(LPTSTR, &errBuf), 0, NULL) > 0)
+    {
+      err = (OFstatic_cast(const char *, errBuf));
+    } else
+      err = "Unknown Winsock error code";
+    LocalFree(errBuf);
+    DCMNET_DEBUG("Windows Socket error while waiting for incoming network data: " << err);
+#else
+    // POSIX interface
+    char buf[256];
+    DCMNET_DEBUG("Error while waiting for incoming network data: " << OFStandard::strerror(errno, buf, 256));
+#endif
+  }
+  else if (selectReturnValue == 0)
+  {
+    DCMNET_TRACE("Timeout while waiting for incoming network data");
+  }
+  else
+  {
+    // This function is only meant to be used for return values <= 0, handle
+    // normal case anyway
+    DCMNET_TRACE("Receiving data via select()");
+  }
 }

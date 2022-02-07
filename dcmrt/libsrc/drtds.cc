@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTDeviceSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -38,10 +38,15 @@ DRTDeviceSequence::Item::Item(const OFBool emptyDefaultItem)
     DeviceLength(DCM_DeviceLength),
     DeviceSerialNumber(DCM_DeviceSerialNumber),
     DeviceVolume(DCM_DeviceVolume),
+    EquivalentCodeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     InterMarkerDistance(DCM_InterMarkerDistance),
+    LongCodeValue(DCM_LongCodeValue),
     Manufacturer(DCM_Manufacturer),
     ManufacturerModelName(DCM_ManufacturerModelName),
-    MappingResource(DCM_MappingResource)
+    MappingResource(DCM_MappingResource),
+    MappingResourceName(DCM_MappingResourceName),
+    MappingResourceUID(DCM_MappingResourceUID),
+    URNCodeValue(DCM_URNCodeValue)
 {
 }
 
@@ -65,10 +70,15 @@ DRTDeviceSequence::Item::Item(const Item &copy)
     DeviceLength(copy.DeviceLength),
     DeviceSerialNumber(copy.DeviceSerialNumber),
     DeviceVolume(copy.DeviceVolume),
+    EquivalentCodeSequence(copy.EquivalentCodeSequence),
     InterMarkerDistance(copy.InterMarkerDistance),
+    LongCodeValue(copy.LongCodeValue),
     Manufacturer(copy.Manufacturer),
     ManufacturerModelName(copy.ManufacturerModelName),
-    MappingResource(copy.MappingResource)
+    MappingResource(copy.MappingResource),
+    MappingResourceName(copy.MappingResourceName),
+    MappingResourceUID(copy.MappingResourceUID),
+    URNCodeValue(copy.URNCodeValue)
 {
 }
 
@@ -100,10 +110,15 @@ DRTDeviceSequence::Item &DRTDeviceSequence::Item::operator=(const Item &copy)
         DeviceLength = copy.DeviceLength;
         DeviceSerialNumber = copy.DeviceSerialNumber;
         DeviceVolume = copy.DeviceVolume;
+        EquivalentCodeSequence = copy.EquivalentCodeSequence;
         InterMarkerDistance = copy.InterMarkerDistance;
+        LongCodeValue = copy.LongCodeValue;
         Manufacturer = copy.Manufacturer;
         ManufacturerModelName = copy.ManufacturerModelName;
         MappingResource = copy.MappingResource;
+        MappingResourceName = copy.MappingResourceName;
+        MappingResourceUID = copy.MappingResourceUID;
+        URNCodeValue = copy.URNCodeValue;
     }
     return *this;
 }
@@ -118,9 +133,14 @@ void DRTDeviceSequence::Item::clear()
         CodingSchemeDesignator.clear();
         CodingSchemeVersion.clear();
         CodeMeaning.clear();
+        LongCodeValue.clear();
+        URNCodeValue.clear();
+        EquivalentCodeSequence.clear();
         ContextIdentifier.clear();
         ContextUID.clear();
         MappingResource.clear();
+        MappingResourceUID.clear();
+        MappingResourceName.clear();
         ContextGroupVersion.clear();
         ContextGroupExtensionFlag.clear();
         ContextGroupLocalVersion.clear();
@@ -145,9 +165,14 @@ OFBool DRTDeviceSequence::Item::isEmpty()
            CodingSchemeDesignator.isEmpty() &&
            CodingSchemeVersion.isEmpty() &&
            CodeMeaning.isEmpty() &&
+           LongCodeValue.isEmpty() &&
+           URNCodeValue.isEmpty() &&
+           EquivalentCodeSequence.isEmpty() &&
            ContextIdentifier.isEmpty() &&
            ContextUID.isEmpty() &&
            MappingResource.isEmpty() &&
+           MappingResourceUID.isEmpty() &&
+           MappingResourceName.isEmpty() &&
            ContextGroupVersion.isEmpty() &&
            ContextGroupExtensionFlag.isEmpty() &&
            ContextGroupLocalVersion.isEmpty() &&
@@ -178,13 +203,18 @@ OFCondition DRTDeviceSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, CodeValue, "1", "1", "DeviceSequence");
-        getAndCheckElementFromDataset(item, CodingSchemeDesignator, "1", "1", "DeviceSequence");
+        getAndCheckElementFromDataset(item, CodeValue, "1", "1C", "DeviceSequence");
+        getAndCheckElementFromDataset(item, CodingSchemeDesignator, "1", "1C", "DeviceSequence");
         getAndCheckElementFromDataset(item, CodingSchemeVersion, "1", "1C", "DeviceSequence");
         getAndCheckElementFromDataset(item, CodeMeaning, "1", "1", "DeviceSequence");
+        getAndCheckElementFromDataset(item, LongCodeValue, "1", "1C", "DeviceSequence");
+        getAndCheckElementFromDataset(item, URNCodeValue, "1", "1C", "DeviceSequence");
+        EquivalentCodeSequence.read(item, "1-n", "3", "DeviceSequence");
         getAndCheckElementFromDataset(item, ContextIdentifier, "1", "3", "DeviceSequence");
         getAndCheckElementFromDataset(item, ContextUID, "1", "3", "DeviceSequence");
         getAndCheckElementFromDataset(item, MappingResource, "1", "1C", "DeviceSequence");
+        getAndCheckElementFromDataset(item, MappingResourceUID, "1", "3", "DeviceSequence");
+        getAndCheckElementFromDataset(item, MappingResourceName, "1", "3", "DeviceSequence");
         getAndCheckElementFromDataset(item, ContextGroupVersion, "1", "1C", "DeviceSequence");
         getAndCheckElementFromDataset(item, ContextGroupExtensionFlag, "1", "3", "DeviceSequence");
         getAndCheckElementFromDataset(item, ContextGroupLocalVersion, "1", "1C", "DeviceSequence");
@@ -211,13 +241,18 @@ OFCondition DRTDeviceSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmShortString(CodeValue), "1", "1", "DeviceSequence");
-        addElementToDataset(result, item, new DcmShortString(CodingSchemeDesignator), "1", "1", "DeviceSequence");
+        addElementToDataset(result, item, new DcmShortString(CodeValue), "1", "1C", "DeviceSequence");
+        addElementToDataset(result, item, new DcmShortString(CodingSchemeDesignator), "1", "1C", "DeviceSequence");
         addElementToDataset(result, item, new DcmShortString(CodingSchemeVersion), "1", "1C", "DeviceSequence");
         addElementToDataset(result, item, new DcmLongString(CodeMeaning), "1", "1", "DeviceSequence");
+        addElementToDataset(result, item, new DcmUnlimitedCharacters(LongCodeValue), "1", "1C", "DeviceSequence");
+        addElementToDataset(result, item, new DcmUniversalResourceIdentifierOrLocator(URNCodeValue), "1", "1C", "DeviceSequence");
+        if (result.good()) result = EquivalentCodeSequence.write(item, "1-n", "3", "DeviceSequence");
         addElementToDataset(result, item, new DcmCodeString(ContextIdentifier), "1", "3", "DeviceSequence");
         addElementToDataset(result, item, new DcmUniqueIdentifier(ContextUID), "1", "3", "DeviceSequence");
         addElementToDataset(result, item, new DcmCodeString(MappingResource), "1", "1C", "DeviceSequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(MappingResourceUID), "1", "3", "DeviceSequence");
+        addElementToDataset(result, item, new DcmLongString(MappingResourceName), "1", "3", "DeviceSequence");
         addElementToDataset(result, item, new DcmDateTime(ContextGroupVersion), "1", "1C", "DeviceSequence");
         addElementToDataset(result, item, new DcmCodeString(ContextGroupExtensionFlag), "1", "3", "DeviceSequence");
         addElementToDataset(result, item, new DcmDateTime(ContextGroupLocalVersion), "1", "1C", "DeviceSequence");
@@ -435,6 +470,15 @@ OFCondition DRTDeviceSequence::Item::getInterMarkerDistance(Float64 &value, cons
 }
 
 
+OFCondition DRTDeviceSequence::Item::getLongCodeValue(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(LongCodeValue, value, pos);
+}
+
+
 OFCondition DRTDeviceSequence::Item::getManufacturer(OFString &value, const signed long pos) const
 {
     if (EmptyDefaultItem)
@@ -459,6 +503,33 @@ OFCondition DRTDeviceSequence::Item::getMappingResource(OFString &value, const s
         return EC_IllegalCall;
     else
         return getStringValueFromElement(MappingResource, value, pos);
+}
+
+
+OFCondition DRTDeviceSequence::Item::getMappingResourceName(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(MappingResourceName, value, pos);
+}
+
+
+OFCondition DRTDeviceSequence::Item::getMappingResourceUID(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(MappingResourceUID, value, pos);
+}
+
+
+OFCondition DRTDeviceSequence::Item::getURNCodeValue(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(URNCodeValue, value, pos);
 }
 
 
@@ -696,6 +767,19 @@ OFCondition DRTDeviceSequence::Item::setInterMarkerDistance(const OFString &valu
 }
 
 
+OFCondition DRTDeviceSequence::Item::setLongCodeValue(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmUnlimitedCharacters::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = LongCodeValue.putOFStringArray(value);
+    }
+    return result;
+}
+
+
 OFCondition DRTDeviceSequence::Item::setManufacturer(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -730,6 +814,45 @@ OFCondition DRTDeviceSequence::Item::setMappingResource(const OFString &value, c
         result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
             result = MappingResource.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTDeviceSequence::Item::setMappingResourceName(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = MappingResourceName.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTDeviceSequence::Item::setMappingResourceUID(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmUniqueIdentifier::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = MappingResourceUID.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTDeviceSequence::Item::setURNCodeValue(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmUniversalResourceIdentifierOrLocator::checkStringValue(value) : EC_Normal;
+        if (result.good())
+            result = URNCodeValue.putOFStringArray(value);
     }
     return result;
 }
@@ -838,7 +961,7 @@ OFBool DRTDeviceSequence::isValid() const
 }
 
 
-unsigned long DRTDeviceSequence::getNumberOfItems() const
+size_t DRTDeviceSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -868,12 +991,12 @@ OFCondition DRTDeviceSequence::gotoNextItem()
 }
 
 
-OFCondition DRTDeviceSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTDeviceSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -888,12 +1011,12 @@ OFCondition DRTDeviceSequence::gotoItem(const unsigned long num, OFListIterator(
 }
 
 
-OFCondition DRTDeviceSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTDeviceSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -908,7 +1031,7 @@ OFCondition DRTDeviceSequence::gotoItem(const unsigned long num, OFListConstIter
 }
 
 
-OFCondition DRTDeviceSequence::gotoItem(const unsigned long num)
+OFCondition DRTDeviceSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -944,7 +1067,7 @@ const DRTDeviceSequence::Item &DRTDeviceSequence::getCurrentItem() const
 }
 
 
-OFCondition DRTDeviceSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTDeviceSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -954,7 +1077,7 @@ OFCondition DRTDeviceSequence::getItem(const unsigned long num, Item *&item)
 }
 
 
-DRTDeviceSequence::Item &DRTDeviceSequence::getItem(const unsigned long num)
+DRTDeviceSequence::Item &DRTDeviceSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -964,7 +1087,7 @@ DRTDeviceSequence::Item &DRTDeviceSequence::getItem(const unsigned long num)
 }
 
 
-const DRTDeviceSequence::Item &DRTDeviceSequence::getItem(const unsigned long num) const
+const DRTDeviceSequence::Item &DRTDeviceSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -974,13 +1097,13 @@ const DRTDeviceSequence::Item &DRTDeviceSequence::getItem(const unsigned long nu
 }
 
 
-DRTDeviceSequence::Item &DRTDeviceSequence::operator[](const unsigned long num)
+DRTDeviceSequence::Item &DRTDeviceSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTDeviceSequence::Item &DRTDeviceSequence::operator[](const unsigned long num) const
+const DRTDeviceSequence::Item &DRTDeviceSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -1003,7 +1126,7 @@ OFCondition DRTDeviceSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTDeviceSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTDeviceSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -1026,7 +1149,7 @@ OFCondition DRTDeviceSequence::insertItem(const unsigned long pos, Item *&item)
 }
 
 
-OFCondition DRTDeviceSequence::removeItem(const unsigned long pos)
+OFCondition DRTDeviceSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

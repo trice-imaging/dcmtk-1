@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2014, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,17 +21,19 @@
 
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
-
+#include "dcmtk/dcmdata/dcvrfl.h"
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofstd.h"
-#include "dcmtk/dcmdata/dcvrfl.h"
-
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
-
+#include "dcmtk/ofstd/ofmath.h"
+#include "dcmtk/dcmdata/dcjson.h"
 
 // ********************************
+
+
+DcmFloatingPointSingle::DcmFloatingPointSingle(const DcmTag &tag)
+  : DcmElement(tag, 0)
+{
+}
 
 
 DcmFloatingPointSingle::DcmFloatingPointSingle(const DcmTag &tag,
@@ -73,9 +75,20 @@ int DcmFloatingPointSingle::compare(const DcmElement& rhs) const
     myThis = OFconst_cast(DcmFloatingPointSingle*, this);
     myRhs = OFstatic_cast(DcmFloatingPointSingle*, OFconst_cast(DcmElement*, &rhs));
 
+    /* compare number of values */
+    unsigned long thisNumValues = myThis->getNumberOfValues();
+    unsigned long rhsNumValues = myRhs->getNumberOfValues();
+    if (thisNumValues < rhsNumValues)
+    {
+        return -1;
+    }
+    else if (thisNumValues > rhsNumValues)
+    {
+        return 1;
+    }
+
     // iterate over all components and test equality */
-    unsigned long thisVM = myThis->getVM();
-    for (unsigned long count = 0; count < thisVM; count++)
+    for (unsigned long count = 0; count < thisNumValues; count++)
     {
         Float32 val = 0;
         if (myThis->getFloat32(val, count).good())
@@ -92,22 +105,7 @@ int DcmFloatingPointSingle::compare(const DcmElement& rhs) const
                     return -1;
                 }
             }
-            else
-            {
-                break; // values equal until this point (rhs shorter)
-            }
       }
-  }
-
-  /* we get here if all values are equal. Now look at the number of components. */
-  unsigned long rhsVM = myRhs->getVM();
-  if (thisVM < rhsVM)
-  {
-      return -1;
-  }
-  else if (thisVM > rhsVM)
-  {
-      return 1;
   }
 
   /* all values as well as VM equal: objects are equal */
@@ -146,14 +144,20 @@ OFCondition DcmFloatingPointSingle::checkValue(const OFString &vm,
 
 unsigned long DcmFloatingPointSingle::getVM()
 {
-    return getLengthField() / OFstatic_cast(unsigned long, sizeof(Float32));
+    return getNumberOfValues();
+}
+
+
+unsigned long DcmFloatingPointSingle::getNumberOfValues()
+{
+    return OFstatic_cast(unsigned long, getLengthField() / sizeof(Float32));
 }
 
 
 // ********************************
 
 
-void DcmFloatingPointSingle::print(STD_NAMESPACE ostream&out,
+void DcmFloatingPointSingle::print(STD_NAMESPACE ostream &out,
                                    const size_t flags,
                                    const int level,
                                    const char * /*pixelFileName*/,
@@ -166,43 +170,51 @@ void DcmFloatingPointSingle::print(STD_NAMESPACE ostream&out,
         errorFlag = getFloat32Array(floatVals);
         if (floatVals != NULL)
         {
-            const unsigned long count = getLengthField() / OFstatic_cast(unsigned long, sizeof(Float32)) /* do not use getVM()! */;
-            const unsigned long maxLength = (flags & DCMTypes::PF_shortenLongTagValues) ?
-                DCM_OptPrintLineLength : OFstatic_cast(unsigned long, -1);
-            unsigned long printedLength = 0;
-            unsigned long newLength = 0;
-            char buffer[64];
-            /* print line start with tag and VR */
-            printInfoLineStart(out, flags, level);
-            /* print multiple values */
-            for (unsigned int i = 0; i < count; i++, floatVals++)
+            /* do not use getVM() because derived classes might always return 1 */
+            const unsigned long count = getNumberOfValues();
+            /* double-check length field for valid value */
+            if (count > 0)
             {
-                /* check whether first value is printed (omit delimiter) */
-                if (i == 0)
-                    OFStandard::ftoa(buffer, sizeof(buffer), *floatVals, 0, 0, 8 /* FLT_DIG + 2 for DICOM FL */);
-                else
+                const unsigned long maxLength = (flags & DCMTypes::PF_shortenLongTagValues) ?
+                    DCM_OptPrintLineLength : OFstatic_cast(unsigned long, -1) /*unlimited*/;
+                unsigned long printedLength = 0;
+                unsigned long newLength = 0;
+                char buffer[64];
+                /* print line start with tag and VR */
+                printInfoLineStart(out, flags, level);
+                /* print multiple values */
+                for (unsigned int i = 0; i < count; i++, floatVals++)
                 {
-                    buffer[0] = '\\';
-                    OFStandard::ftoa(buffer + 1, sizeof(buffer) - 1, *floatVals, 0, 0, 8 /* FLT_DIG + 2 for DICOM FL */);
-                }
-                /* check whether current value sticks to the length limit */
-                newLength = printedLength + OFstatic_cast(unsigned long, strlen(buffer));
-                if ((newLength <= maxLength) && ((i + 1 == count) || (newLength + 3 <= maxLength)))
-                {
-                    out << buffer;
-                    printedLength = newLength;
-                } else {
-                    /* check whether output has been truncated */
-                    if (i + 1 < count)
+                    /* check whether first value is printed (omit delimiter) */
+                    if (i == 0)
+                        OFStandard::ftoa(buffer, sizeof(buffer), *floatVals, 0, 0, 9 /* FLT_DECIMAL_DIG for DICOM FL */);
+                    else
                     {
-                        out << "...";
-                        printedLength += 3;
+                        buffer[0] = '\\';
+                        OFStandard::ftoa(buffer + 1, sizeof(buffer) - 1, *floatVals, 0, 0, 9 /* FLT_DECIMAL_DIG for DICOM FL */);
                     }
-                    break;
+                    /* check whether current value sticks to the length limit */
+                    newLength = printedLength + OFstatic_cast(unsigned long, strlen(buffer));
+                    if ((newLength <= maxLength) && ((i + 1 == count) || (newLength + 3 <= maxLength)))
+                    {
+                        out << buffer;
+                        printedLength = newLength;
+                    } else {
+                        /* check whether output has been truncated */
+                        if (i + 1 < count)
+                        {
+                            out << "...";
+                            printedLength += 3;
+                        }
+                        break;
+                    }
                 }
+                /* print line end with length, VM and tag name */
+                printInfoLineEnd(out, flags, printedLength);
+            } else {
+                /* count can be zero if we have an invalid element with less than four bytes length */
+                printInfoLine(out, flags, level, "(invalid value)");
             }
-            /* print line end with length, VM and tag name */
-            printInfoLineEnd(out, flags, printedLength);
         } else
             printInfoLine(out, flags, level, "(no value available)" );
     } else
@@ -224,7 +236,8 @@ OFCondition DcmFloatingPointSingle::getFloat32(Float32 &floatVal,
     {
         if (floatValues == NULL)
             errorFlag = EC_IllegalCall;
-        else if (pos >= getLengthField() / sizeof(Float32) /* do not use getVM()! */)
+        /* do not use getVM() because derived classes might always return 1 */
+        else if (pos >= getNumberOfValues())
             errorFlag = EC_IllegalParameter;
         else
             floatVal = floatValues[pos];
@@ -257,7 +270,7 @@ OFCondition DcmFloatingPointSingle::getOFString(OFString &value,
     {
         /* ... and convert it to a character string */
         char buffer[64];
-        OFStandard::ftoa(buffer, sizeof(buffer), floatVal, 0, 0, 8 /* FLT_DIG + 2 for DICOM FL */);
+        OFStandard::ftoa(buffer, sizeof(buffer), floatVal, 0, 0, 9 /* FLT_DECIMAL_DIG for DICOM FL */);
         /* assign result */
         value = buffer;
     }
@@ -360,4 +373,78 @@ OFCondition DcmFloatingPointSingle::verify(const OFBool autocorrect)
     } else
         errorFlag = EC_Normal;
     return errorFlag;
+}
+
+
+OFBool DcmFloatingPointSingle::matches(const DcmElement& candidate,
+                                       const OFBool enableWildCardMatching) const
+{
+  OFstatic_cast(void,enableWildCardMatching);
+  if (ident() == candidate.ident())
+  {
+    // some const casts to call the getter functions, I do not modify the values, I promise!
+    DcmFloatingPointSingle& key = OFconst_cast(DcmFloatingPointSingle&,*this);
+    DcmElement& can = OFconst_cast(DcmElement&,candidate);
+    Float32 a, b;
+    for( unsigned long ui = 0; ui < key.getVM(); ++ui )
+      for( unsigned long uj = 0; uj < can.getVM(); ++uj )
+        if( key.getFloat32( a, ui ).good() && can.getFloat32( b, uj ).good() && a == b )
+          return OFTrue;
+    return key.getVM() == 0;
+  }
+  return OFFalse;
+}
+
+// ********************************
+
+OFCondition DcmFloatingPointSingle::writeJson(STD_NAMESPACE ostream &out,
+                                              DcmJsonFormat &format)
+{
+    /* always write JSON Opener */
+    writeJsonOpener(out, format);
+    /* write element value (if non-empty) */
+    if (!isEmpty())
+    {
+        OFCondition status;
+        const unsigned long vm = getVM();
+
+        if (! format.getJsonExtensionEnabled())
+        {
+          // check if any values is 'inf' or 'nan', and return an error in this case
+          // since the JSON extension that would allow us to write these is not enabled
+          Float32 f = 0.0;
+          for (unsigned long valNo = 1; valNo < vm; ++valNo)
+          {
+            status = getFloat32(f, valNo);
+            if (status.bad()) return status;
+            if ((OFMath::isinf)(f) || (OFMath::isnan)(f)) return EC_CannotWriteJsonNumber;
+          }
+        }
+
+        OFString value;
+        if (format.asBulkDataURI(getTag(), value))
+        {
+            format.printBulkDataURIPrefix(out);
+            DcmJsonFormat::printString(out, value);
+        }
+        else
+        {
+            status = getOFString(value, 0L);
+            if (status.bad()) return status;
+            format.printValuePrefix(out);
+            DcmJsonFormat::printNumberDecimal(out, value);
+            for (unsigned long valNo = 1; valNo < vm; ++valNo)
+            {
+                status = getOFString(value, valNo);
+                if (status.bad()) return status;
+                format.printNextArrayElementPrefix(out);
+                DcmJsonFormat::printNumberDecimal(out, value);
+            }
+            format.printValueSuffix(out);
+        }
+    }
+    /* write JSON Closer  */
+    writeJsonCloser(out, format);
+    /* always report success */
+    return EC_Normal;
 }

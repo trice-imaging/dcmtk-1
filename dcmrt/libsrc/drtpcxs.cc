@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTProtocolContextSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -29,6 +29,7 @@ DRTProtocolContextSequence::Item::Item(const OFBool emptyDefaultItem)
     FloatingPointValue(DCM_FloatingPointValue),
     MeasurementUnitsCodeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     NumericValue(DCM_NumericValue),
+    ObservationDateTime(DCM_ObservationDateTime),
     PersonName(DCM_PersonName),
     RationalDenominatorValue(DCM_RationalDenominatorValue),
     RationalNumeratorValue(DCM_RationalNumeratorValue),
@@ -51,6 +52,7 @@ DRTProtocolContextSequence::Item::Item(const Item &copy)
     FloatingPointValue(copy.FloatingPointValue),
     MeasurementUnitsCodeSequence(copy.MeasurementUnitsCodeSequence),
     NumericValue(copy.NumericValue),
+    ObservationDateTime(copy.ObservationDateTime),
     PersonName(copy.PersonName),
     RationalDenominatorValue(copy.RationalDenominatorValue),
     RationalNumeratorValue(copy.RationalNumeratorValue),
@@ -81,6 +83,7 @@ DRTProtocolContextSequence::Item &DRTProtocolContextSequence::Item::operator=(co
         FloatingPointValue = copy.FloatingPointValue;
         MeasurementUnitsCodeSequence = copy.MeasurementUnitsCodeSequence;
         NumericValue = copy.NumericValue;
+        ObservationDateTime = copy.ObservationDateTime;
         PersonName = copy.PersonName;
         RationalDenominatorValue = copy.RationalDenominatorValue;
         RationalNumeratorValue = copy.RationalNumeratorValue;
@@ -100,6 +103,7 @@ void DRTProtocolContextSequence::Item::clear()
     {
         /* clear all DICOM attributes */
         ValueType.clear();
+        ObservationDateTime.clear();
         ConceptNameCodeSequence.clear();
         DateTime.clear();
         Date.clear();
@@ -122,6 +126,7 @@ void DRTProtocolContextSequence::Item::clear()
 OFBool DRTProtocolContextSequence::Item::isEmpty()
 {
     return ValueType.isEmpty() &&
+           ObservationDateTime.isEmpty() &&
            ConceptNameCodeSequence.isEmpty() &&
            DateTime.isEmpty() &&
            Date.isEmpty() &&
@@ -154,6 +159,7 @@ OFCondition DRTProtocolContextSequence::Item::read(DcmItem &item)
         /* re-initialize object */
         clear();
         getAndCheckElementFromDataset(item, ValueType, "1", "1", "ProtocolContextSequence");
+        getAndCheckElementFromDataset(item, ObservationDateTime, "1", "3", "ProtocolContextSequence");
         ConceptNameCodeSequence.read(item, "1-n", "1", "ProtocolContextSequence");
         getAndCheckElementFromDataset(item, DateTime, "1", "1C", "ProtocolContextSequence");
         getAndCheckElementFromDataset(item, Date, "1", "1C", "ProtocolContextSequence");
@@ -182,6 +188,7 @@ OFCondition DRTProtocolContextSequence::Item::write(DcmItem &item)
     {
         result = EC_Normal;
         addElementToDataset(result, item, new DcmCodeString(ValueType), "1", "1", "ProtocolContextSequence");
+        addElementToDataset(result, item, new DcmDateTime(ObservationDateTime), "1", "3", "ProtocolContextSequence");
         if (result.good()) result = ConceptNameCodeSequence.write(item, "1-n", "1", "ProtocolContextSequence");
         addElementToDataset(result, item, new DcmDateTime(DateTime), "1", "1C", "ProtocolContextSequence");
         addElementToDataset(result, item, new DcmDate(Date), "1", "1C", "ProtocolContextSequence");
@@ -253,6 +260,15 @@ OFCondition DRTProtocolContextSequence::Item::getNumericValue(OFVector<Float64> 
         return EC_IllegalCall;
     else
         return OFconst_cast(DcmDecimalString &, NumericValue).getFloat64Vector(value);
+}
+
+
+OFCondition DRTProtocolContextSequence::Item::getObservationDateTime(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(ObservationDateTime, value, pos);
 }
 
 
@@ -362,6 +378,19 @@ OFCondition DRTProtocolContextSequence::Item::setNumericValue(const OFString &va
         result = (check) ? DcmDecimalString::checkStringValue(value, "1-n") : EC_Normal;
         if (result.good())
             result = NumericValue.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTProtocolContextSequence::Item::setObservationDateTime(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmDateTime::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = ObservationDateTime.putOFStringArray(value);
     }
     return result;
 }
@@ -553,7 +582,7 @@ OFBool DRTProtocolContextSequence::isValid() const
 }
 
 
-unsigned long DRTProtocolContextSequence::getNumberOfItems() const
+size_t DRTProtocolContextSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -583,12 +612,12 @@ OFCondition DRTProtocolContextSequence::gotoNextItem()
 }
 
 
-OFCondition DRTProtocolContextSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTProtocolContextSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -603,12 +632,12 @@ OFCondition DRTProtocolContextSequence::gotoItem(const unsigned long num, OFList
 }
 
 
-OFCondition DRTProtocolContextSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTProtocolContextSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -623,7 +652,7 @@ OFCondition DRTProtocolContextSequence::gotoItem(const unsigned long num, OFList
 }
 
 
-OFCondition DRTProtocolContextSequence::gotoItem(const unsigned long num)
+OFCondition DRTProtocolContextSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -659,7 +688,7 @@ const DRTProtocolContextSequence::Item &DRTProtocolContextSequence::getCurrentIt
 }
 
 
-OFCondition DRTProtocolContextSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTProtocolContextSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -669,7 +698,7 @@ OFCondition DRTProtocolContextSequence::getItem(const unsigned long num, Item *&
 }
 
 
-DRTProtocolContextSequence::Item &DRTProtocolContextSequence::getItem(const unsigned long num)
+DRTProtocolContextSequence::Item &DRTProtocolContextSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -679,7 +708,7 @@ DRTProtocolContextSequence::Item &DRTProtocolContextSequence::getItem(const unsi
 }
 
 
-const DRTProtocolContextSequence::Item &DRTProtocolContextSequence::getItem(const unsigned long num) const
+const DRTProtocolContextSequence::Item &DRTProtocolContextSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -689,13 +718,13 @@ const DRTProtocolContextSequence::Item &DRTProtocolContextSequence::getItem(cons
 }
 
 
-DRTProtocolContextSequence::Item &DRTProtocolContextSequence::operator[](const unsigned long num)
+DRTProtocolContextSequence::Item &DRTProtocolContextSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTProtocolContextSequence::Item &DRTProtocolContextSequence::operator[](const unsigned long num) const
+const DRTProtocolContextSequence::Item &DRTProtocolContextSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -718,7 +747,7 @@ OFCondition DRTProtocolContextSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTProtocolContextSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTProtocolContextSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -741,7 +770,7 @@ OFCondition DRTProtocolContextSequence::insertItem(const unsigned long pos, Item
 }
 
 
-OFCondition DRTProtocolContextSequence::removeItem(const unsigned long pos)
+OFCondition DRTProtocolContextSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

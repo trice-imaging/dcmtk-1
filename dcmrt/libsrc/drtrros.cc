@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTRTROIObservationsSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -21,7 +21,6 @@
 
 DRTRTROIObservationsSequence::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
-    AdditionalRTROIIdentificationCodeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     MaterialID(DCM_MaterialID),
     ObservationNumber(DCM_ObservationNumber),
     ROIInterpreter(DCM_ROIInterpreter),
@@ -40,7 +39,6 @@ DRTRTROIObservationsSequence::Item::Item(const OFBool emptyDefaultItem)
 
 DRTRTROIObservationsSequence::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
-    AdditionalRTROIIdentificationCodeSequence(copy.AdditionalRTROIIdentificationCodeSequence),
     MaterialID(copy.MaterialID),
     ObservationNumber(copy.ObservationNumber),
     ROIInterpreter(copy.ROIInterpreter),
@@ -67,7 +65,6 @@ DRTRTROIObservationsSequence::Item &DRTRTROIObservationsSequence::Item::operator
     if (this != &copy)
     {
         EmptyDefaultItem = copy.EmptyDefaultItem;
-        AdditionalRTROIIdentificationCodeSequence = copy.AdditionalRTROIIdentificationCodeSequence;
         MaterialID = copy.MaterialID;
         ObservationNumber = copy.ObservationNumber;
         ROIInterpreter = copy.ROIInterpreter;
@@ -97,7 +94,6 @@ void DRTRTROIObservationsSequence::Item::clear()
         RTRelatedROISequence.clear();
         SegmentedPropertyCategoryCodeSequence.clear();
         RTROIIdentificationCodeSequence.clear();
-        AdditionalRTROIIdentificationCodeSequence.clear();
         RelatedRTROIObservationsSequence.clear();
         RTROIInterpretedType.clear();
         ROIInterpreter.clear();
@@ -116,7 +112,6 @@ OFBool DRTRTROIObservationsSequence::Item::isEmpty()
            RTRelatedROISequence.isEmpty() &&
            SegmentedPropertyCategoryCodeSequence.isEmpty() &&
            RTROIIdentificationCodeSequence.isEmpty() &&
-           AdditionalRTROIIdentificationCodeSequence.isEmpty() &&
            RelatedRTROIObservationsSequence.isEmpty() &&
            RTROIInterpretedType.isEmpty() &&
            ROIInterpreter.isEmpty() &&
@@ -145,7 +140,6 @@ OFCondition DRTRTROIObservationsSequence::Item::read(DcmItem &item)
         RTRelatedROISequence.read(item, "1-n", "3", "RTROIObservationsSequence");
         SegmentedPropertyCategoryCodeSequence.read(item, "1-n", "3", "RTROIObservationsSequence");
         RTROIIdentificationCodeSequence.read(item, "1-n", "3", "RTROIObservationsSequence");
-        AdditionalRTROIIdentificationCodeSequence.read(item, "1-n", "3", "RTROIObservationsSequence");
         RelatedRTROIObservationsSequence.read(item, "1-n", "3", "RTROIObservationsSequence");
         getAndCheckElementFromDataset(item, RTROIInterpretedType, "1", "2", "RTROIObservationsSequence");
         getAndCheckElementFromDataset(item, ROIInterpreter, "1", "2", "RTROIObservationsSequence");
@@ -170,7 +164,6 @@ OFCondition DRTRTROIObservationsSequence::Item::write(DcmItem &item)
         if (result.good()) result = RTRelatedROISequence.write(item, "1-n", "3", "RTROIObservationsSequence");
         if (result.good()) result = SegmentedPropertyCategoryCodeSequence.write(item, "1-n", "3", "RTROIObservationsSequence");
         if (result.good()) result = RTROIIdentificationCodeSequence.write(item, "1-n", "3", "RTROIObservationsSequence");
-        if (result.good()) result = AdditionalRTROIIdentificationCodeSequence.write(item, "1-n", "3", "RTROIObservationsSequence");
         if (result.good()) result = RelatedRTROIObservationsSequence.write(item, "1-n", "3", "RTROIObservationsSequence");
         addElementToDataset(result, item, new DcmCodeString(RTROIInterpretedType), "1", "2", "RTROIObservationsSequence");
         addElementToDataset(result, item, new DcmPersonName(ROIInterpreter), "1", "2", "RTROIObservationsSequence");
@@ -456,7 +449,7 @@ OFBool DRTRTROIObservationsSequence::isValid() const
 }
 
 
-unsigned long DRTRTROIObservationsSequence::getNumberOfItems() const
+size_t DRTRTROIObservationsSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -486,12 +479,12 @@ OFCondition DRTRTROIObservationsSequence::gotoNextItem()
 }
 
 
-OFCondition DRTRTROIObservationsSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTRTROIObservationsSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -506,12 +499,12 @@ OFCondition DRTRTROIObservationsSequence::gotoItem(const unsigned long num, OFLi
 }
 
 
-OFCondition DRTRTROIObservationsSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTRTROIObservationsSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -526,7 +519,7 @@ OFCondition DRTRTROIObservationsSequence::gotoItem(const unsigned long num, OFLi
 }
 
 
-OFCondition DRTRTROIObservationsSequence::gotoItem(const unsigned long num)
+OFCondition DRTRTROIObservationsSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -562,7 +555,7 @@ const DRTRTROIObservationsSequence::Item &DRTRTROIObservationsSequence::getCurre
 }
 
 
-OFCondition DRTRTROIObservationsSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTRTROIObservationsSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -572,7 +565,7 @@ OFCondition DRTRTROIObservationsSequence::getItem(const unsigned long num, Item 
 }
 
 
-DRTRTROIObservationsSequence::Item &DRTRTROIObservationsSequence::getItem(const unsigned long num)
+DRTRTROIObservationsSequence::Item &DRTRTROIObservationsSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -582,7 +575,7 @@ DRTRTROIObservationsSequence::Item &DRTRTROIObservationsSequence::getItem(const 
 }
 
 
-const DRTRTROIObservationsSequence::Item &DRTRTROIObservationsSequence::getItem(const unsigned long num) const
+const DRTRTROIObservationsSequence::Item &DRTRTROIObservationsSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -592,13 +585,13 @@ const DRTRTROIObservationsSequence::Item &DRTRTROIObservationsSequence::getItem(
 }
 
 
-DRTRTROIObservationsSequence::Item &DRTRTROIObservationsSequence::operator[](const unsigned long num)
+DRTRTROIObservationsSequence::Item &DRTRTROIObservationsSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTRTROIObservationsSequence::Item &DRTRTROIObservationsSequence::operator[](const unsigned long num) const
+const DRTRTROIObservationsSequence::Item &DRTRTROIObservationsSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -621,7 +614,7 @@ OFCondition DRTRTROIObservationsSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTRTROIObservationsSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTRTROIObservationsSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -644,7 +637,7 @@ OFCondition DRTRTROIObservationsSequence::insertItem(const unsigned long pos, It
 }
 
 
-OFCondition DRTRTROIObservationsSequence::removeItem(const unsigned long pos)
+OFCondition DRTRTROIObservationsSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

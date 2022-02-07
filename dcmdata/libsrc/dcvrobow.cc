@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2014, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,19 +25,22 @@
 #include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofuuid.h"
+#include "dcmtk/ofstd/offile.h"
 
+#include "dcmtk/dcmdata/dcjson.h"
 #include "dcmtk/dcmdata/dcvrobow.h"
 #include "dcmtk/dcmdata/dcdeftag.h"
 #include "dcmtk/dcmdata/dcswap.h"
 #include "dcmtk/dcmdata/dcuid.h"      /* for UID generation */
 
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
-
-
 // ********************************
+
+
+DcmOtherByteOtherWord::DcmOtherByteOtherWord(const DcmTag &tag)
+: DcmElement(tag, 0)
+, compactAfterTransfer(OFFalse)
+{
+}
 
 
 DcmOtherByteOtherWord::DcmOtherByteOtherWord(const DcmTag &tag,
@@ -82,37 +85,22 @@ int DcmOtherByteOtherWord::compare(const DcmElement& rhs) const
     myThis = OFconst_cast(DcmOtherByteOtherWord*, this);
     myRhs =  OFstatic_cast(DcmOtherByteOtherWord*, OFconst_cast(DcmElement*, &rhs));
 
+    /* compare length */
     unsigned long thisLength = myThis->getLength();
     unsigned long rhsLength= myRhs->getLength();
-    Uint8* thisData = OFstatic_cast(Uint8*, myThis->getValue());
-    Uint8* rhsData = OFstatic_cast(Uint8*, myRhs->getValue());
-    unsigned long maxLength = (thisLength > rhsLength) ? rhsLength : thisLength;
-    /* iterate over all components and test equality */
-    for (unsigned long count = 0; count < maxLength; count++)
-    {
-        if (thisData[count] > rhsData[count])
-        {
-            return 1;
-        }
-        else if (thisData[count] < rhsData[count])
-        {
-            return -1;
-        }
-        /* otherwise they are equal, continue comparison */
-    }
-
-    /* we get here if all values are equal. Now look at the number of components. */
     if (thisLength < rhsLength)
     {
-        return -1;
+      return -1;
     }
     else if (thisLength > rhsLength)
     {
-        return 1;
+      return 1;
     }
-
-    /* all values as well as VM equal: objects are equal */
-    return 0;
+    /* finally, check equality of values. getValue() makes sure byte
+     * swapping is applied as necessary. */
+    void* thisData = myThis->getValue();
+    void* rhsData = myRhs->getValue();
+    return memcmp(thisData, rhsData, thisLength);
 }
 
 
@@ -151,6 +139,17 @@ unsigned long DcmOtherByteOtherWord::getVM()
 }
 
 
+unsigned long DcmOtherByteOtherWord::getNumberOfValues()
+{
+    const DcmEVR evr = getTag().getEVR();
+    unsigned long result = OFstatic_cast(unsigned long, getLengthField());
+    /* check whether values are stored as 16 bit */
+    if ((evr == EVR_OW) || (evr == EVR_lt))
+        result /= 2;
+    return result;
+}
+
+
 OFCondition DcmOtherByteOtherWord::setVR(DcmEVR vr)
 {
     setTagVR(vr);
@@ -161,7 +160,7 @@ OFCondition DcmOtherByteOtherWord::setVR(DcmEVR vr)
 // ********************************
 
 
-void DcmOtherByteOtherWord::print(STD_NAMESPACE ostream&out,
+void DcmOtherByteOtherWord::print(STD_NAMESPACE ostream &out,
                                   const size_t flags,
                                   const int level,
                                   const char * /*pixelFileName*/,
@@ -180,43 +179,50 @@ void DcmOtherByteOtherWord::print(STD_NAMESPACE ostream&out,
         /* check data */
         if ((wordValues != NULL) || (byteValues != NULL))
         {
-            /* determine number of values to be printed */
-            const unsigned int vrSize = (evr == EVR_OW || evr == EVR_lt) ? 4 : 2;
-            const unsigned long count = (evr == EVR_OW || evr == EVR_lt) ? (getLengthField() / 2) : getLengthField();
-            unsigned long expectedLength = count * (vrSize + 1) - 1;
-            const unsigned long printCount =
-                ((expectedLength > DCM_OptPrintLineLength) && (flags & DCMTypes::PF_shortenLongTagValues)) ?
-                (DCM_OptPrintLineLength - 3 /* for "..." */ + 1 /* for last "\" */) / (vrSize + 1) : count;
-            unsigned long printedLength = printCount * (vrSize + 1) - 1;
-            /* print line start with tag and VR */
-            printInfoLineStart(out, flags, level);
-            /* print multiple values */
-            if (printCount > 0)
+            const unsigned long count = getNumberOfValues();
+            /* double-check length field for valid value */
+            if (count > 0)
             {
-                out << STD_NAMESPACE hex << STD_NAMESPACE setfill('0');
-                if (evr == EVR_OW || evr == EVR_lt)
+                /* determine number of values to be printed */
+                const unsigned int vrSize = (evr == EVR_OW || evr == EVR_lt) ? 4 : 2;
+                unsigned long expectedLength = count * (vrSize + 1) - 1;
+                const unsigned long printCount =
+                    ((expectedLength > DCM_OptPrintLineLength) && (flags & DCMTypes::PF_shortenLongTagValues)) ?
+                    (DCM_OptPrintLineLength - 3 /* for "..." */ + 1 /* for last "\" */) / (vrSize + 1) : count;
+                unsigned long printedLength = printCount * (vrSize + 1) - 1;
+                /* print line start with tag and VR */
+                printInfoLineStart(out, flags, level);
+                /* print multiple values */
+                if (printCount > 0)
                 {
-                    /* print word values in hex mode */
-                    out << STD_NAMESPACE setw(vrSize) << (*(wordValues++));
-                    for (unsigned long i = 1; i < printCount; i++)
-                        out << "\\" << STD_NAMESPACE setw(vrSize) << (*(wordValues++));
-                } else {
-                    /* print byte values in hex mode */
-                    out << STD_NAMESPACE setw(vrSize) << OFstatic_cast(int, *(byteValues++));
-                    for (unsigned long i = 1; i < printCount; i++)
-                        out << "\\" << STD_NAMESPACE setw(vrSize) << OFstatic_cast(int, *(byteValues++));
+                    out << STD_NAMESPACE hex << STD_NAMESPACE setfill('0');
+                    if (evr == EVR_OW || evr == EVR_lt)
+                    {
+                        /* print word values in hex mode */
+                        out << STD_NAMESPACE setw(vrSize) << (*(wordValues++));
+                        for (unsigned long i = 1; i < printCount; i++)
+                            out << "\\" << STD_NAMESPACE setw(vrSize) << (*(wordValues++));
+                    } else {
+                        /* print byte values in hex mode */
+                        out << STD_NAMESPACE setw(vrSize) << OFstatic_cast(int, *(byteValues++));
+                        for (unsigned long i = 1; i < printCount; i++)
+                            out << "\\" << STD_NAMESPACE setw(vrSize) << OFstatic_cast(int, *(byteValues++));
+                    }
+                    /* reset i/o manipulators */
+                    out << STD_NAMESPACE dec << STD_NAMESPACE setfill(' ');
                 }
-                /* reset i/o manipulators */
-                out << STD_NAMESPACE dec << STD_NAMESPACE setfill(' ');
+                /* print trailing "..." if data has been truncated */
+                if (printCount < count)
+                {
+                    out << "...";
+                    printedLength += 3;
+                }
+                /* print line end with length, VM and tag name */
+                printInfoLineEnd(out, flags, printedLength);
+            } else {
+                /* count can be zero if we have an invalid OW element with less than two bytes length */
+                printInfoLine(out, flags, level, "(invalid value)");
             }
-            /* print trailing "..." if data has been truncated */
-            if (printCount < count)
-            {
-                out << "...";
-                printedLength += 3;
-            }
-            /* print line end with length, VM and tag name */
-            printInfoLineEnd(out, flags, printedLength);
         } else
             printInfoLine(out, flags, level, "(no value available)");
     } else
@@ -224,7 +230,7 @@ void DcmOtherByteOtherWord::print(STD_NAMESPACE ostream&out,
 }
 
 
-void DcmOtherByteOtherWord::printPixel(STD_NAMESPACE ostream&out,
+void DcmOtherByteOtherWord::printPixel(STD_NAMESPACE ostream &out,
                                        const size_t flags,
                                        const int level,
                                        const char *pixelFileName,
@@ -262,13 +268,21 @@ void DcmOtherByteOtherWord::printPixel(STD_NAMESPACE ostream&out,
                     {
                         swapIfNecessary(EBO_LittleEndian, gLocalByteOrder, data, getLengthField(), sizeof(Uint16));
                         setByteOrder(EBO_LittleEndian);
-                        fwrite(data, sizeof(Uint16), OFstatic_cast(size_t, getLengthField() / sizeof(Uint16)), file);
+                        const size_t tobewritten = OFstatic_cast(size_t, getLengthField() / sizeof(Uint16));
+                        const size_t written = fwrite(data, sizeof(Uint16), tobewritten, file);
+                        if (written != tobewritten)
+                            DCMDATA_WARN("DcmOtherByteOtherWord: Some bytes were not written: " << (tobewritten - written));
                     }
                 } else {
                     Uint8 *data = NULL;
                     getUint8Array(data);
                     if (data != NULL)
-                        fwrite(data, sizeof(Uint8), OFstatic_cast(size_t, getLengthField()), file);
+                    {
+                        const size_t tobewritten = OFstatic_cast(size_t, getLengthField());
+                        const size_t written = fwrite(data, sizeof(Uint8), tobewritten, file);
+                        if (written != tobewritten)
+                            DCMDATA_WARN("DcmOtherByteOtherWord: Some bytes were not written: " << (tobewritten - written));
+                    }
                 }
                 fclose(file);
             } else {
@@ -380,7 +394,14 @@ OFCondition DcmOtherByteOtherWord::createUint16Array(const Uint32 numWords,
 {
     /* check value representation */
     if ((getTag().getEVR() == EVR_OW) || (getTag().getEVR() == EVR_lt))
-        errorFlag = createEmptyValue(OFstatic_cast(Uint32, sizeof(Uint16) * OFstatic_cast(size_t, numWords)));
+    {
+        Uint32 bytesRequired = 0;
+        OFBool size_fits = OFStandard::safeMult(numWords, OFstatic_cast(Uint32, sizeof(Uint16)), bytesRequired);
+        if (size_fits)
+            errorFlag = createEmptyValue(bytesRequired);
+        else
+            errorFlag = EC_CorruptedData;
+    }
     else
         errorFlag = EC_CorruptedData;
     if (errorFlag.good())
@@ -477,7 +498,7 @@ OFCondition DcmOtherByteOtherWord::getUint8(Uint8 &byteVal,
     }
     /* clear value in case of error */
     if (errorFlag.bad())
-	    byteVal = 0;
+        byteVal = 0;
     return errorFlag;
 }
 
@@ -513,7 +534,7 @@ OFCondition DcmOtherByteOtherWord::getUint16(Uint16 &wordVal,
     }
     /* clear value in case of error */
     if (errorFlag.bad())
-	    wordVal = 0;
+        wordVal = 0;
     return errorFlag;
 }
 
@@ -782,13 +803,17 @@ OFCondition DcmOtherByteOtherWord::writeXML(STD_NAMESPACE ostream &out,
                     if (getUint16Array(wordValues).good() && (wordValues != NULL))
                     {
                         const unsigned long count = getLengthField() / OFstatic_cast(unsigned long, sizeof(Uint16));
-                        out << STD_NAMESPACE hex << STD_NAMESPACE setfill('0');
-                        /* print word values in hex mode */
-                        out << STD_NAMESPACE setw(4) << (*(wordValues++));
-                        for (unsigned long i = 1; i < count; i++)
-                            out << "\\" << STD_NAMESPACE setw(4) << (*(wordValues++));
-                        /* reset i/o manipulators */
-                        out << STD_NAMESPACE dec << STD_NAMESPACE setfill(' ');
+                        /* count can be zero if we have an invalid element with less than two bytes length */
+                        if (count > 0)
+                        {
+                            out << STD_NAMESPACE hex << STD_NAMESPACE setfill('0');
+                            /* print word values in hex mode */
+                            out << STD_NAMESPACE setw(4) << (*(wordValues++));
+                            for (unsigned long i = 1; i < count; i++)
+                                out << "\\" << STD_NAMESPACE setw(4) << (*(wordValues++));
+                            /* reset i/o manipulators */
+                            out << STD_NAMESPACE dec << STD_NAMESPACE setfill(' ');
+                        }
                     }
                 } else {
                     /* get and check 8 bit data */
@@ -810,6 +835,42 @@ OFCondition DcmOtherByteOtherWord::writeXML(STD_NAMESPACE ostream &out,
         /* XML end tag: </element> */
         writeXMLEndTag(out, flags);
     }
+    /* always report success */
+    return EC_Normal;
+}
+
+
+// ********************************
+
+
+OFCondition DcmOtherByteOtherWord::writeJson(STD_NAMESPACE ostream &out,
+                                             DcmJsonFormat &format)
+{
+    /* write JSON Opener */
+    writeJsonOpener(out, format);
+    /* for an empty value field, we do not need to do anything */
+    if (getLengthField() > 0)
+    {
+        OFString value;
+        if (format.asBulkDataURI(getTag(), value))
+        {
+            /* return defined BulkDataURI */
+            format.printBulkDataURIPrefix(out);
+            DcmJsonFormat::printString(out, value);
+        }
+        else
+        {
+            /* encode binary data as Base64 */
+            format.printInlineBinaryPrefix(out);
+            out << "\"";
+            /* adjust byte order to little endian */
+            Uint8 *byteValues = OFstatic_cast(Uint8 *, getValue(EBO_LittleEndian));
+            OFStandard::encodeBase64(out, byteValues, OFstatic_cast(size_t, getLengthField()));
+            out << "\"";
+        }
+    }
+    /* write JSON Closer */
+    writeJsonCloser(out, format);
     /* always report success */
     return EC_Normal;
 }

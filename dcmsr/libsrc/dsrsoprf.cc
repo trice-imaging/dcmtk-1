@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2015, OFFIS e.V.
+ *  Copyright (C) 2002-2016, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,6 +28,11 @@
 #include "dcmtk/dcmsr/dsrxmld.h"
 
 #include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcuid.h"
+#include "dcmtk/dcmdata/dcvrae.h"
+#include "dcmtk/dcmdata/dcvrcs.h"
+#include "dcmtk/dcmdata/dcvrsh.h"
+#include "dcmtk/dcmdata/dcvrui.h"
 
 
 // --- DSRSOPInstanceReferenceList::InstanceStruct ---
@@ -767,7 +772,8 @@ void DSRSOPInstanceReferenceList::StudyStruct::removeIncompleteItems()
 DSRSOPInstanceReferenceList::DSRSOPInstanceReferenceList(const DcmTagKey &sequence)
   : SequenceTag(sequence),
     StudyList(),
-    Iterator()
+    Iterator(),
+    SpecificCharacterSet()
 {
     /* initialize list cursor */
     Iterator = StudyList.end();
@@ -794,10 +800,12 @@ void DSRSOPInstanceReferenceList::clear()
     /* make sure that the list is empty */
     StudyList.clear();
     Iterator = StudyList.end();
+    /* also clear other members */
+    SpecificCharacterSet.clear();
 }
 
 
-OFBool DSRSOPInstanceReferenceList::empty() const
+OFBool DSRSOPInstanceReferenceList::isEmpty() const
 {
     return StudyList.empty();
 }
@@ -965,6 +973,16 @@ OFCondition DSRSOPInstanceReferenceList::writeXML(STD_NAMESPACE ostream &stream,
         }
         iter++;
     }
+    return result;
+}
+
+
+OFCondition DSRSOPInstanceReferenceList::setSpecificCharacterSet(const OFString &value,
+                                                                 const OFBool check)
+{
+    OFCondition result = (check) ? DcmCodeString::checkStringValue(value, "1-n") : EC_Normal;
+    if (result.good())
+        SpecificCharacterSet = value;
     return result;
 }
 
@@ -1319,6 +1337,21 @@ const OFString &DSRSOPInstanceReferenceList::getSOPClassUID(OFString &stringValu
 }
 
 
+const OFString &DSRSOPInstanceReferenceList::getSOPClassName(OFString &stringValue,
+                                                             const OFString &defaultName) const
+{
+    OFString sopClassUID;
+    /* retrieve SOP class UID of current entry */
+    if (!getSOPClassUID(sopClassUID).empty())
+    {
+        /* lookup name associated with the SOP class UID */
+        stringValue = dcmFindNameOfUID(sopClassUID.c_str(), defaultName.c_str());
+    } else
+        stringValue.clear();
+    return stringValue;
+}
+
+
 const OFString &DSRSOPInstanceReferenceList::getRetrieveAETitle(OFString &stringValue) const
 {
     /* check whether current series is valid */
@@ -1429,7 +1462,7 @@ OFCondition DSRSOPInstanceReferenceList::setStorageMediaFileSetID(const OFString
     if (series != NULL)
     {
         /* set the value (if valid) */
-        result = (check) ? DcmShortString::checkStringValue(value, "1") : EC_Normal;
+        result = (check) ? DcmShortString::checkStringValue(value, "1", SpecificCharacterSet) : EC_Normal;
         if (result.good())
             series->StorageMediaFileSetID = value;
     }

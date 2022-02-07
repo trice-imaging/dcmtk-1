@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2013, OFFIS e.V.
+ *  Copyright (C) 1994-2017, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,6 +23,7 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #include "dcmtk/dcmdata/dcvrsh.h"
+#include "dcmtk/dcmdata/dcjson.h"
 
 
 // ********************************
@@ -34,7 +35,6 @@ DcmShortString::DcmShortString(const DcmTag &tag,
 {
     setMaxLength(16);
     setNonSignificantChars(" \\");
-    setDelimiterChars("\\");
 }
 
 
@@ -86,7 +86,8 @@ OFCondition DcmShortString::checkValue(const OFString &vm,
     {
         OFString charset;
         /* try to determine the value of the SpecificCharacterSet element */
-        getSpecificCharacterSet(charset);
+        if (getSpecificCharacterSet(charset) == EC_CorruptedData)
+            charset = "UNKNOWN";
         l_error = DcmShortString::checkStringValue(strVal, vm, charset);
     }
     return l_error;
@@ -115,4 +116,48 @@ OFCondition DcmShortString::checkStringValue(const OFString &value,
                                              const OFString &charset)
 {
     return DcmByteString::checkStringValue(value, vm, "lo", 12, 0 /* maxLen: no check */, charset);
+}
+
+
+// ********************************
+
+
+OFCondition DcmShortString::writeJson(STD_NAMESPACE ostream &out,
+                                     DcmJsonFormat &format)
+{
+    /* always write JSON Opener */
+    DcmElement::writeJsonOpener(out, format);
+    /* write element value (if non-empty) */
+    if (!isEmpty())
+    {
+        OFString value;
+        OFCondition status = getOFString(value, 0L);
+        if (status.bad())
+            return status;
+        format.printValuePrefix(out);
+        DcmJsonFormat::printValueString(out, value);
+        const unsigned long vm = getVM();
+        for (unsigned long valNo = 1; valNo < vm; ++valNo)
+        {
+            status = getOFString(value, valNo);
+            if (status.bad())
+                return status;
+            format.printNextArrayElementPrefix(out);
+            DcmJsonFormat::printValueString(out, value);
+        }
+        format.printValueSuffix(out);
+    }
+    /* write JSON Closer  */
+    DcmElement::writeJsonCloser(out, format);
+    /* always report success */
+    return EC_Normal;
+}
+
+
+// ********************************
+
+
+const OFString& DcmShortString::getDelimiterChars() const
+{
+    return DcmVR(EVR_SH).getDelimiterChars();
 }

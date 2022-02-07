@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2015, OFFIS e.V.
+ *  Copyright (C) 1994-2019, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,6 +25,8 @@
 #include "dcmtk/dcmdata/dcspchrs.h"   /* for class DcmSpecificCharacterSet */
 #include "dcmtk/dcmdata/dcitem.h"     /* for class DcmItem */
 #include "dcmtk/dcmdata/dcdeftag.h"   /* for tag definitions */
+#include "dcmtk/dcmdata/dcjson.h"     /* json helper classes */
+#include "dcmtk/dcmdata/dcmatch.h"
 
 //
 // This implementation does not support 16 bit character sets. Since 8 bit
@@ -45,14 +47,12 @@
 
 
 DcmCharString::DcmCharString(const DcmTag &tag, const Uint32 len)
-  : DcmByteString(tag, len),
-    delimiterChars()
+  : DcmByteString(tag, len)
 {
 }
 
 DcmCharString::DcmCharString(const DcmCharString &old)
-  : DcmByteString(old),
-    delimiterChars(old.delimiterChars)
+  : DcmByteString(old)
 {
 }
 
@@ -63,13 +63,7 @@ DcmCharString::~DcmCharString(void)
 
 DcmCharString &DcmCharString::operator=(const DcmCharString &obj)
 {
-    if (this != &obj)
-    {
-        DcmByteString::operator=(obj);
-
-        /* copy member variables */
-        delimiterChars = obj.delimiterChars;
-    }
+    DcmByteString::operator=(obj);
     return *this;
 }
 
@@ -98,6 +92,7 @@ OFCondition DcmCharString::verify(const OFBool autocorrect)
     /* check for non-empty string */
     if ((str != NULL) && (len > 0))
     {
+        const unsigned long vm = getVM();
         /* check whether there is anything to verify at all */
         if (maxLen != DCM_UndefinedLength)
         {
@@ -110,7 +105,7 @@ OFCondition DcmCharString::verify(const OFBool autocorrect)
             {
                 ++vmNum;
                 /* search for next component separator */
-                const size_t posEnd = value.find('\\', posStart);
+                const size_t posEnd = (vm > 1) ? value.find('\\', posStart) : OFString_npos;
                 const size_t fieldLen = (posEnd == OFString_npos) ? value.length() - posStart : posEnd - posStart;
                 /* check size limit for each string component */
                 if (fieldLen > maxLen)
@@ -121,9 +116,9 @@ OFCondition DcmCharString::verify(const OFBool autocorrect)
                     errorFlag = EC_MaximumLengthViolated;
                     if (autocorrect)
                     {
-                        /*  We are currently not removing any characters since we do not know
-                         *  whether a character consists of one or more bytes.  This will be
-                         *  fixed in a future version.
+                        /*  TODO: We are currently not removing any characters since we do not
+                         *        know whether a character consists of one or more bytes.
+                         *        This will be fixed in a future version.
                          */
                         DCMDATA_DEBUG("DcmCharString::verify() not correcting value length since "
                             << "multi-byte character sets are not yet supported, so cannot decide");
@@ -147,20 +142,13 @@ OFCondition DcmCharString::verify(const OFBool autocorrect)
 
 OFBool DcmCharString::containsExtendedCharacters(const OFBool /*checkAllStrings*/)
 {
+    OFBool result = OFFalse;
     char *str = NULL;
     Uint32 len = 0;
     /* determine length in order to support possibly embedded NULL bytes */
-    if (getString(str, len).good() && (str != NULL))
-    {
-        const char *p = str;
-        for (Uint32 i = 0; i < len; i++)
-        {
-            /* check for 8 bit characters */
-            if (OFstatic_cast(unsigned char, *p++) > 127)
-                return OFTrue;
-        }
-    }
-    return OFFalse;
+    if (getString(str, len).good())
+        result = DcmByteString::containsExtendedCharacters(str, len);
+    return result;
 }
 
 
@@ -180,7 +168,7 @@ OFCondition DcmCharString::convertCharacterSet(DcmSpecificCharacterSet &converte
     {
         OFString resultStr;
         // convert string to selected character string and replace the element value
-        status = converter.convertString(str, len, resultStr, delimiterChars);
+        status = converter.convertString(str, len, resultStr, getDelimiterChars());
         if (status.good())
         {
             // check whether the value has changed during the conversion (slows down the process?)
@@ -228,4 +216,89 @@ OFCondition DcmCharString::getSpecificCharacterSet(OFString &charset)
             << " " << getTag() << " uses character set \"" << charset << "\"");
     }
     return status;
+}
+
+
+// ********************************
+
+
+OFCondition DcmCharString::writeJson(STD_NAMESPACE ostream &out,
+    DcmJsonFormat &format)
+{
+    /* always write JSON Opener */
+    DcmElement::writeJsonOpener(out, format);
+    /* write element value (if non-empty) */
+    if (!isEmpty())
+    {
+        OFString value;
+        if (format.asBulkDataURI(getTag(), value))
+        {
+            format.printBulkDataURIPrefix(out);
+            DcmJsonFormat::printString(out, value);
+        }
+        else
+        {
+            OFCondition status = getOFString(value, 0L);
+            if (status.bad())
+                return status;
+            format.printValuePrefix(out);
+            DcmJsonFormat::printValueString(out, value);
+            const unsigned long vm = getVM();
+            for (unsigned long valNo = 1; valNo < vm; ++valNo)
+            {
+                status = getOFString(value, valNo);
+                if (status.bad())
+                    return status;
+                format.printNextArrayElementPrefix(out);
+                DcmJsonFormat::printValueString(out, value);
+            }
+            format.printValueSuffix(out);
+        }
+    }
+    /* write JSON Closer  */
+    DcmElement::writeJsonCloser(out, format);
+    /* always report success */
+    return EC_Normal;
+}
+
+
+// ********************************
+
+
+const OFString& DcmCharString::getDelimiterChars() const
+{
+    return DcmVR(EVR_UN).getDelimiterChars();
+}
+
+
+OFBool DcmCharString::isUniversalMatch(const OFBool normalize,
+                                       const OFBool enableWildCardMatching)
+{
+  if(!isEmpty(normalize))
+  {
+    if(enableWildCardMatching)
+    {
+      OFString value;
+      for(unsigned long valNo = 0; valNo < getVM(); ++valNo)
+      {
+        getOFString(value, valNo, normalize);
+        if(value.find_first_not_of( '*' ) != OFString_npos)
+          return OFFalse;
+      }
+    }
+    else
+      return OFFalse;
+  }
+  return OFTrue;
+}
+
+
+OFBool DcmCharString::matches(const OFString& key,
+                              const OFString& candidate,
+                              const OFBool enableWildCardMatching) const
+{
+  if (enableWildCardMatching)
+    return DcmAttributeMatching::wildCardMatching(key.c_str(), key.length(), candidate.c_str(), candidate.length());
+  else
+    return DcmByteString::matches(key, candidate, OFFalse);
 }

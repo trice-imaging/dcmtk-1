@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2016, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,6 +28,9 @@
 #include "dcmtk/dcmsr/dsrreftn.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
 #include "dcmtk/dcmsr/dsriodcc.h"
+
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcuid.h"
 
 
 DSRDocumentTree::DSRDocumentTree(const E_DocumentType documentType)
@@ -80,6 +83,14 @@ OFBool DSRDocumentTree::isValid() const
 }
 
 
+OFCondition DSRDocumentTree::print(STD_NAMESPACE ostream &stream,
+                                   const size_t flags)
+{
+    /* call the inherited method (hide additional parameters) */
+    return DSRDocumentSubTree::print(stream, flags);
+}
+
+
 OFCondition DSRDocumentTree::read(DcmItem &dataset,
                                   const E_DocumentType documentType,
                                   const size_t flags)
@@ -121,7 +132,7 @@ OFCondition DSRDocumentTree::read(DcmItem &dataset,
                         /* ... and let the node read the rest of the document */
                         result = node->read(dataset, ConstraintChecker, flags);
                         /* check and update by-reference relationships (if applicable) */
-                        checkByReferenceRelationships(CM_updateNodeID, flags);
+                        checkByReferenceRelationships<DSRDocumentTreeNodeCursor>(CM_updateNodeID, flags & CB_maskReadFlags);
                     } else
                         result = SR_EC_InvalidDocumentTree;
                 } else
@@ -130,6 +141,35 @@ OFCondition DSRDocumentTree::read(DcmItem &dataset,
         } else {
             DCMSR_ERROR("ValueType attribute for root content item is missing");
             result = SR_EC_MandatoryAttributeMissing;
+        }
+    }
+    return result;
+}
+
+
+OFCondition DSRDocumentTree::write(DcmItem &dataset,
+                                   DcmStack *markedItems)
+{
+    OFCondition result = SR_EC_InvalidDocumentTree;
+    /* check whether document tree is valid */
+    if (isValid())
+    {
+        /* check whether document tree contains any included templates */
+        if (isExpandedDocumentTree())
+        {
+            DSRDocumentTreeNode *node = getRoot();
+            if (node != NULL)
+            {
+                /* check and update by-reference relationships (if applicable) */
+                checkByReferenceRelationships<DSRDocumentTreeNodeCursor>(CM_updatePositionString);
+                /* update the document tree for output (if needed) */
+                updateTreeForOutput();
+                /* start writing from root node */
+                result = node->write(dataset, markedItems);
+            }
+        } else {
+            /* tbd: cannot write document with included templates */
+            result = SR_EC_CannotProcessIncludedTemplates;
         }
     }
     return result;
@@ -188,7 +228,7 @@ OFCondition DSRDocumentTree::readXML(const DSRXMLDocument &doc,
                     /* ... and let the node read the rest of the document */
                     result = node->readXML(doc, cursor, DocumentType, flags);
                     /* check and update by-reference relationships (if applicable) */
-                    checkByReferenceRelationships(CM_updatePositionString);
+                    checkByReferenceRelationships<DSRDocumentTreeNodeCursor>(CM_updatePositionString);
                 } else
                     result = SR_EC_InvalidDocumentTree;
             } else
@@ -202,70 +242,31 @@ OFCondition DSRDocumentTree::readXML(const DSRXMLDocument &doc,
 }
 
 
-OFCondition DSRDocumentTree::write(DcmItem &dataset,
-                                   DcmStack *markedItems)
-{
-    OFCondition result = SR_EC_InvalidDocumentTree;
-    /* check whether root node has correct relationship and value type */
-    if (isValid())
-    {
-        DSRDocumentTreeNode *node = getRoot();
-        if (node != NULL)
-        {
-            /* check and update by-reference relationships (if applicable) */
-            checkByReferenceRelationships(CM_updatePositionString);
-            /* update the document tree for output (if needed) */
-            updateTreeForOutput();
-            /* start writing from root node */
-            result = node->write(dataset, markedItems);
-        }
-    }
-    return result;
-}
-
-
-OFCondition DSRDocumentTree::writeXML(STD_NAMESPACE ostream &stream,
-                                      const size_t flags)
-{
-    OFCondition result = SR_EC_InvalidDocumentTree;
-    /* check whether root node has correct relationship and value type */
-    if (isValid())
-    {
-        DSRDocumentTreeNode *node = getRoot();
-        /* start writing from root node */
-        if (node != NULL)
-        {
-            /* check by-reference relationships (if applicable) */
-            checkByReferenceRelationships(CM_resetReferenceTargetFlag);
-            /* update the document tree for output (if needed) */
-            updateTreeForOutput();
-            /* start writing from root node */
-            result = node->writeXML(stream, flags);
-        }
-    }
-    return result;
-}
-
-
 OFCondition DSRDocumentTree::renderHTML(STD_NAMESPACE ostream &docStream,
                                         STD_NAMESPACE ostream &annexStream,
                                         const size_t flags)
 {
     OFCondition result = SR_EC_InvalidDocumentTree;
-    /* check whether root node has correct relationship and value type */
+    /* check whether document tree is valid */
     if (isValid())
     {
-        DSRDocumentTreeNode *node = getRoot();
-        /* start rendering from root node */
-        if (node != NULL)
+        /* check whether document tree contains any included templates */
+        if (isExpandedDocumentTree())
         {
-            /* check by-reference relationships (if applicable) */
-            checkByReferenceRelationships(CM_resetReferenceTargetFlag);
-            /* update the document tree for output (if needed) */
-            updateTreeForOutput();
-            size_t annexNumber = 1;
-            /* start rendering from root node */
-            result = node->renderHTML(docStream, annexStream, 1 /*nestingLevel*/, annexNumber, flags & ~HF_internalUseOnly);
+            DSRDocumentTreeNode *node = getRoot();
+            if (node != NULL)
+            {
+                size_t annexNumber = 1;
+                /* check by-reference relationships (if applicable) */
+                checkByReferenceRelationships<DSRDocumentTreeNodeCursor>(CM_resetReferenceTargetFlag);
+                /* update the document tree for output (if needed) */
+                updateTreeForOutput();
+                /* start rendering from root node */
+                result = node->renderHTML(docStream, annexStream, 1 /*nestingLevel*/, annexNumber, flags & ~HF_internalUseOnly);
+            }
+        } else {
+            /* tbd: cannot render document with included templates */
+            result = SR_EC_CannotProcessIncludedTemplates;
         }
     }
     return result;
@@ -309,7 +310,7 @@ OFCondition DSRDocumentTree::changeDocumentType(const E_DocumentType documentTyp
 
 OFBool DSRDocumentTree::canAddContentItem(const E_RelationshipType relationshipType,
                                           const E_ValueType valueType,
-                                          const E_AddMode addMode)
+                                          const E_AddMode addMode) const
 {
     OFBool result = OFFalse;
     if (isEmpty())
@@ -326,9 +327,9 @@ OFBool DSRDocumentTree::canAddContentItem(const E_RelationshipType relationshipT
 }
 
 
-OFBool DSRDocumentTree::canInsertSubTree(DSRDocumentSubTree *tree,
+OFBool DSRDocumentTree::canInsertSubTree(const DSRDocumentSubTree *tree,
                                          const E_AddMode addMode,
-                                         const E_RelationshipType defaultRelType)
+                                         const E_RelationshipType defaultRelType) const
 {
     OFBool result = OFFalse;
     if (isEmpty())
@@ -356,8 +357,10 @@ OFCondition DSRDocumentTree::checkDocumentTreeConstraints(DSRIODConstraintChecke
             /* check whether the current document tree is valid, i.e. the root node is a container */
             if (isValid())
             {
-                /* determine template identifier (TID) expected for the new document type */
-                const OFString expectedTemplateIdentifier = OFSTRING_GUARD(checker->getRootTemplateIdentifier());
+                /* determine template identifier (TID) and mapping resource expected for the new document type */
+                OFString expectedTemplateIdentifier;
+                OFString expectedMappingResource;
+                checker->getRootTemplateIdentification(expectedTemplateIdentifier, expectedMappingResource);
                 /* check whether the expected template (if known) has been used */
                 if (!expectedTemplateIdentifier.empty())
                 {
@@ -372,21 +375,28 @@ OFCondition DSRDocumentTree::checkDocumentTreeConstraints(DSRIODConstraintChecke
                             /* check whether the correct Mapping Resource UID is used (if present) */
                             if (!mappingResourceUID.empty() && (mappingResourceUID != UID_DICOMContentMappingResource))
                             {
-                                DCMSR_WARN("Incorrect value for MappingResourceUID (" << mappingResourceUID << "), "
+                                DCMSR_WARN("Incorrect value for Mapping Resource UID (" << mappingResourceUID << "), "
                                     << UID_DICOMContentMappingResource << " expected");
                             }
-                            /* compare with expected TID */
-                            if (templateIdentifier != expectedTemplateIdentifier)
-                            {
-                                DCMSR_WARN("Incorrect value for TemplateIdentifier ("
-                                    << ((templateIdentifier.empty()) ? "<empty>" : templateIdentifier) << "), "
-                                    << expectedTemplateIdentifier << " expected");
-                            }
+                        }
+                        /* compare with expected mapping resource */
+                        if (mappingResource != expectedMappingResource)
+                        {
+                            DCMSR_WARN("Incorrect value for Mapping Resource ("
+                                << ((mappingResource.empty()) ? "<empty>" : mappingResource) << "), "
+                                << expectedMappingResource << " expected");
+                        }
+                        /* compare with expected template identifier */
+                        if (templateIdentifier != expectedTemplateIdentifier)
+                        {
+                            DCMSR_WARN("Incorrect value for Template Identifier ("
+                                << ((templateIdentifier.empty()) ? "<empty>" : templateIdentifier) << "), "
+                                << expectedTemplateIdentifier << " expected");
                         }
                     }
                 }
                 /* check by-reference relationships (update 'target value type' if applicable) */
-                result = checkByReferenceRelationships(CM_resetReferenceTargetFlag, RF_ignoreRelationshipConstraints);
+                result = checkByReferenceRelationships<DSRDocumentTreeNodeCursor>(CM_resetReferenceTargetFlag, RF_ignoreRelationshipConstraints);
                 /* check whether the nodes of this tree also comply with the given constraints */
                 if (result.good())
                     result = checkSubTreeConstraints(this, checker);
@@ -401,15 +411,12 @@ OFCondition DSRDocumentTree::checkDocumentTreeConstraints(DSRIODConstraintChecke
 
 void DSRDocumentTree::unmarkAllContentItems()
 {
-    DSRDocumentTreeNodeCursor cursor(getRoot());
+    DSRIncludedTemplateNodeCursor cursor(getRoot());
     if (cursor.isValid())
     {
-        DSRDocumentTreeNode *node = NULL;
         /* iterate over all nodes */
         do {
-            node = cursor.getNode();
-            if (node != NULL)
-                node->setMark(OFFalse);
+            cursor.getNode()->setMark(OFFalse);
         } while (cursor.iterate());
     }
 }
@@ -417,15 +424,12 @@ void DSRDocumentTree::unmarkAllContentItems()
 
 void DSRDocumentTree::removeSignatures()
 {
-    DSRDocumentTreeNodeCursor cursor(getRoot());
+    DSRIncludedTemplateNodeCursor cursor(getRoot());
     if (cursor.isValid())
     {
-        DSRDocumentTreeNode *node = NULL;
         /* iterate over all nodes */
         do {
-            node = cursor.getNode();
-            if (node != NULL)
-                node->removeSignatures();
+            cursor.getNode()->removeSignatures();
         } while (cursor.iterate());
     }
 }
@@ -439,4 +443,13 @@ void DSRDocumentTree::swap(DSRDocumentTree &tree)
     DSRDocumentSubTree::swap(tree);
     /* swap other members */
     OFswap(DocumentType, tree.DocumentType);
+}
+
+
+OFCondition DSRDocumentTree::print(STD_NAMESPACE ostream &stream,
+                                   const size_t flags,
+                                   const DSRPositionCounter *posCounter)
+{
+    /* call inherited method */
+    return DSRDocumentSubTree::print(stream, flags, posCounter);
 }

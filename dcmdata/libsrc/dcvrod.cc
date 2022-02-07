@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2013, OFFIS e.V.
+ *  Copyright (C) 2013-2020, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,11 +23,11 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #include "dcmtk/ofstd/ofuuid.h"
+#include "dcmtk/ofstd/ofstd.h"
 
 #include "dcmtk/dcmdata/dcvrod.h"
-#include "dcmtk/dcmdata/dcvrfd.h"
 #include "dcmtk/dcmdata/dcswap.h"
-#include "dcmtk/dcmdata/dcuid.h"      /* for UID generation */
+#include "dcmtk/dcmdata/dcjson.h"
 
 
 // ********************************
@@ -79,7 +79,7 @@ DcmEVR DcmOtherDouble::ident() const
 
 
 OFCondition DcmOtherDouble::checkValue(const OFString & /*vm*/,
-                                      const OFBool /*oldFormat*/)
+                                       const OFBool /*oldFormat*/)
 {
     /* currently no checks are performed */
     return EC_Normal;
@@ -88,7 +88,7 @@ OFCondition DcmOtherDouble::checkValue(const OFString & /*vm*/,
 
 unsigned long DcmOtherDouble::getVM()
 {
-    /* value multiplicity for OF is defined as 1 */
+    /* value multiplicity for OD is defined as 1 */
     return 1;
 }
 
@@ -101,7 +101,7 @@ OFCondition DcmOtherDouble::writeXML(STD_NAMESPACE ostream &out,
 {
     /* always write XML start tag */
     writeXMLStartTag(out, flags);
-    /* OF data requires special handling in the Native DICOM Model format */
+    /* OD data requires special handling in the Native DICOM Model format */
     if (flags & DCMTypes::XF_useNativeModel)
     {
         /* for an empty value field, we do not need to do anything */
@@ -134,16 +134,19 @@ OFCondition DcmOtherDouble::writeXML(STD_NAMESPACE ostream &out,
             /* get and check 64 bit float data */
             if (getFloat64Array(floatValues).good() && (floatValues != NULL))
             {
-                /* increase default precision - see DcmFloatingPointDouble::print() */
-                const STD_NAMESPACE streamsize oldPrecision = out.precision(17);
-                /* we cannot use getVM() since it always returns 1 */
-                const size_t count = getLengthField() / sizeof(Float64);
-                /* print float values with separators */
-                out << (*(floatValues++));
-                for (unsigned long i = 1; i < count; i++)
-                    out << "\\" << (*(floatValues++));
-                /* reset i/o manipulators */
-                out.precision(oldPrecision);
+                const size_t count = getNumberOfValues();
+                /* count can be zero if we have an invalid element with less than eight bytes length */
+                if (count > 0)
+                {
+                    /* increase default precision - see DcmFloatingPointDouble::print() */
+                    const STD_NAMESPACE streamsize oldPrecision = out.precision(17);
+                    /* print float values with separators */
+                    out << (*(floatValues++));
+                    for (unsigned long i = 1; i < count; i++)
+                        out << "\\" << (*(floatValues++));
+                    /* reset i/o manipulators */
+                    out.precision(oldPrecision);
+                }
             }
         }
     }
@@ -151,4 +154,60 @@ OFCondition DcmOtherDouble::writeXML(STD_NAMESPACE ostream &out,
     writeXMLEndTag(out, flags);
     /* always report success */
     return EC_Normal;
+}
+
+
+// ********************************
+
+
+OFCondition DcmOtherDouble::writeJson(STD_NAMESPACE ostream &out,
+                                      DcmJsonFormat &format)
+{
+    /* always write JSON Opener */
+    writeJsonOpener(out, format);
+    /* for an empty value field, we do not need to do anything */
+    if (getLengthField() > 0)
+    {
+        OFString value;
+        if (format.asBulkDataURI(getTag(), value))
+        {
+            /* return defined BulkDataURI */
+            format.printBulkDataURIPrefix(out);
+            DcmJsonFormat::printString(out, value);
+        }
+        else
+        {
+            /* encode binary data as Base64 */
+            format.printInlineBinaryPrefix(out);
+            out << "\"";
+            /* adjust byte order to little endian */
+            Uint8 *byteValues = OFstatic_cast(Uint8 *, getValue(EBO_LittleEndian));
+            OFStandard::encodeBase64(out, byteValues, OFstatic_cast(size_t, getLengthField()));
+            out << "\"";
+        }
+    }
+    /* write JSON Closer  */
+    writeJsonCloser(out, format);
+    /* always report success */
+    return EC_Normal;
+}
+
+
+// ********************************
+
+
+OFCondition DcmOtherDouble::createFloat64Array(const Uint32 numDoubles,
+                                               Float64 *&doubleVals)
+{
+    Uint32 bytesRequired = 0;
+    /* make sure that max length is not exceeded */
+    if (OFStandard::safeMult(numDoubles, OFstatic_cast(Uint32, sizeof(Float64)), bytesRequired))
+        errorFlag = createEmptyValue(bytesRequired);
+    else
+        errorFlag = EC_ElemLengthExceeds32BitField;
+    if (errorFlag.good())
+        doubleVals = OFstatic_cast(Float64 *, this->getValue());
+    else
+        doubleVals = NULL;
+    return errorFlag;
 }

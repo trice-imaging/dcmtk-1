@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2012, OFFIS e.V.
+ *  Copyright (C) 2012-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,7 +11,7 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module:  ofstd
+ *  Module:  dcmrt
  *
  *  Author:  Uli Schlachter
  *
@@ -24,4 +24,5 @@
 #include "dcmtk/ofstd/oftest.h"
 
 OFTEST_REGISTER(dcmrt_search);
+OFTEST_REGISTER(dcmrt_contour);
 OFTEST_MAIN("dcmrt")

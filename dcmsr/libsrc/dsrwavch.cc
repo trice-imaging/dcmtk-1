@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,17 +26,17 @@
 #include "dcmtk/dcmsr/dsrwavch.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
 
-#define INCLUDE_CSTDIO
-#include "dcmtk/ofstd/ofstdinc.h"
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcvrus.h"
 
-#ifdef HAVE_EXPLICIT_TEMPLATE_SPECIALIZATION
-#define EXPLICIT_SPECIALIZATION template<>
-#else
-#define EXPLICIT_SPECIALIZATION
-#endif
+// global empty item object so it gets initialized and cleaned up by the linker
+const DSRWaveformChannelItem DSRWaveformChannelEmptyItem(0, 0);
 
-/* declared in class DSRListOfItems<T> */
-EXPLICIT_SPECIALIZATION const DSRWaveformChannelItem DSRListOfItems<DSRWaveformChannelItem>::EmptyItem(0, 0);
+template<>
+const DSRWaveformChannelItem& DSRgetEmptyItem<DSRWaveformChannelItem>()
+{
+    return DSRWaveformChannelEmptyItem;
+}
 
 
 DSRWaveformChannelList::DSRWaveformChannelList()

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2015, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,18 +22,6 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
-
-
-#ifdef HAVE_WINDOWS_H
-#include <windows.h>  /* this includes either winsock.h or winsock2.h */
-#elif defined(HAVE_WINSOCK_H)
-#include <winsock.h>  /* include winsock.h directly i.e. on MacOS */
-#endif
-
-#ifdef HAVE_GUSI_H
-#include <GUSI.h>
-#endif
-
 #include "dcmtk/dcmdata/dcdict.h"
 #include "dcmtk/dcmdata/cmdlnarg.h"
 #include "dcmtk/ofstd/ofstring.h"
@@ -123,17 +111,7 @@ main(int argc, char* argv[])
     FILE* fout = NULL;
     DcmDictEntry* e = NULL;
 
-#ifdef HAVE_GUSI_H
-    GUSISetup(GUSIwithSIOUXSockets);
-    GUSISetup(GUSIwithInternetSockets);
-#endif
-
-#ifdef HAVE_WINSOCK_H
-    WSAData winSockData;
-    /* we need at least version 1.1 */
-    WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
-    WSAStartup(winSockVersionNeeded, &winSockData);
-#endif
+    OFStandard::initializeNetwork();
 
     prepareCmdLineArgs(argc, argv, "mkdictbi");
 
@@ -191,7 +169,7 @@ main(int argc, char* argv[])
     fprintf(fout, "*/\n");
     fprintf(fout, "\n");
     fprintf(fout, "#include \"dcmtk/dcmdata/dcdict.h\"\n");
-    fprintf(fout, "#ifdef ENABLE_BUILTIN_DICTIONARY\n");
+    fprintf(fout, "#if DCM_DICT_DEFAULT == DCM_DICT_DEFAULT_USE_BUILTIN\n");
     fprintf(fout, "#include \"dcmtk/dcmdata/dcdicent.h\"\n");
     fprintf(fout, "\n");
     fprintf(fout, "struct DBI_SimpleEntry {\n");
@@ -273,7 +251,7 @@ main(int argc, char* argv[])
     fprintf(fout, "}\n");
     fprintf(fout, "\n");
     fprintf(fout, "\n");
-    fprintf(fout, "#else // WITH_BUILTIN_DICTIONARY\n");
+    fprintf(fout, "#else // DCM_DICT_DEFAULT == DCM_DICT_DEFAULT_USE_BUILTIN\n");
     fprintf(fout, "void\n");
     fprintf(fout, "DcmDataDictionary::loadBuiltinDictionary()\n");
     fprintf(fout, "{\n");
@@ -281,14 +259,15 @@ main(int argc, char* argv[])
     fprintf(fout, " ** Empty Stub.\n");
     fprintf(fout, " **\n");
     fprintf(fout, " ** We don't want a populated built-in data dictionary. In order to enable it,\n");
-    fprintf(fout, " ** define WITH_BUILTIN_DICTIONARY. To re-create the builtin dictionary from\n");
-    fprintf(fout, " ** a textfile like dicom.dic, use dcmdata/libsrc/mkdictbi.\n");
+    fprintf(fout, " ** define DCM_DICT_DEFAULT == DCM_DICT_DEFAULT_USE_BUILTIN (1).\n");
+    fprintf(fout, " ** To re-create the builtin dictionary from a textfile like dicom.dic,\n");
+    fprintf(fout, " ** use dcmdata/libsrc/mkdictbi.\n");
     fprintf(fout, "*/\n");
     fprintf(fout, "}\n");
     fprintf(fout, "\n");
-    fprintf(fout, "#endif // WITH_BUILTIN_DICTIONARY\n");
+    fprintf(fout, "#endif // DCM_DICT_DEFAULT == DCM_DICT_DEFAULT_USE_BUILTIN\n");
     fprintf(fout, "\n");
-    dcmDataDict.unlock();
+    dcmDataDict.wrunlock();
     if (filename)
     {
         fclose(fout);

@@ -1,12 +1,12 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2021, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class CID244_Laterality
  *
- *  Generated automatically from DICOM PS 3.16-2015c
- *  File created on 2015-08-23 14:59:16 by J. Riesmeier
+ *  Generated automatically from DICOM PS 3.16-2021d
+ *  File created on 2021-09-13 09:26:31 by J. Riesmeier
  *
  */
 
@@ -18,6 +18,8 @@
 
 #include "dcmtk/dcmsr/dsrctxgr.h"
 #include "dcmtk/dcmsr/cmr/define.h"
+
+#include "dcmtk/ofstd/ofmap.h"
 
 
 /*---------------------*
@@ -38,13 +40,13 @@ class DCMTK_CMR_EXPORT CID244_Laterality
      */
     enum EnumType
     {
-        /// (G-A100,SRT,"Right")
+        /// (24028007,SCT,"Right"), included from CID 247
         Right,
-        /// (G-A101,SRT,"Left")
+        /// (7771000,SCT,"Left"), included from CID 247
         Left,
-        /// (G-A102,SRT,"Right and left")
-        RightAndLeft,
-        /// (G-A103,SRT,"Unilateral")
+        /// (51440002,SCT,"Bilateral")
+        Bilateral,
+        /// (66459002,SCT,"Unilateral")
         Unilateral
     };
 
@@ -149,5 +151,14 @@ class DCMTK_CMR_EXPORT CID244_Laterality
     /// pointer to internal code list (use a static variable for singleton pattern)
     static CodeList *Codes;
 };
+
+
+/*-------------------*
+ *  type definition  *
+ *-------------------*/
+
+// define short name for the context group class
+typedef CID244_Laterality CMR_CID244;
+
 
 #endif

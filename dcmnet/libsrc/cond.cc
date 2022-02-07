@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2012, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,8 +23,8 @@
 #include "dcmtk/dcmnet/cond.h"
 #include "dcmtk/ofstd/ofstream.h"
 
-#define INCLUDE_CSTDIO
-#include "dcmtk/ofstd/ofstdinc.h"
+// #define INCLUDE_CSTDIO
+// #include "dcmtk/ofstd/ofstdinc.h"
 
 makeOFConditionConst(ASC_BADPRESENTATIONCONTEXTID,      OFM_dcmnet, ASCC_BADPRESENTATIONCONTEXTID,      OF_error, "ASC Bad presentation context ID");
 makeOFConditionConst(ASC_MISSINGTRANSFERSYNTAX,         OFM_dcmnet, ASCC_MISSINGTRANSFERSYNTAX,         OF_error, "ASC Missing transfer syntax");
@@ -71,6 +71,7 @@ makeOFConditionConst(DUL_REQUESTASSOCIATIONFAILED, OFM_dcmnet, DULC_REQUESTASSOC
 makeOFConditionConst(DUL_UNEXPECTEDPDU,            OFM_dcmnet, DULC_UNEXPECTEDPDU           , OF_error, "Received unexpected PDU");
 makeOFConditionConst(DUL_UNSUPPORTEDPEERPROTOCOL,  OFM_dcmnet, DULC_UNSUPPORTEDPEERPROTOCOL , OF_error, "DUL Unsupported peer protocol");
 makeOFConditionConst(DUL_WRONGDATATYPE,            OFM_dcmnet, DULC_WRONGDATATYPE           , OF_error, "DUL Wrong Data Type Specified for Request");
+makeOFConditionConst(DUL_CANNOTREADSOCKETHANDLE,   OFM_dcmnet, DULC_CANNOTREADSOCKETHANDLE  , OF_error, "DUL Cannot Read Socket Handle from Pipe");
 
 makeOFConditionConst(NET_EC_InvalidSOPClassUID,              OFM_dcmnet, 1000, OF_error, "Invalid SOP Class UID");
 makeOFConditionConst(NET_EC_UnknownStorageSOPClass,          OFM_dcmnet, 1001, OF_error, "Unknown Storage SOP Class");
@@ -87,6 +88,10 @@ makeOFConditionConst(NET_EC_InsufficientPortPrivileges,      OFM_dcmnet, 1023, O
 // codes 1024 to 1073 are used for the association negotiation profile classes
 makeOFConditionConst(NET_EC_SCPBusy,                         OFM_dcmnet, 1074, OF_error, "SCP is busy");
 makeOFConditionConst(NET_EC_CannotStartSCPThread,            OFM_dcmnet, 1075, OF_error, "Cannot start SCP Thread");
+makeOFConditionConst(NET_EC_StopAfterAssociation,            OFM_dcmnet, 1076, OF_ok, "Stop after current association (as requested)");
+makeOFConditionConst(NET_EC_StopAfterConnectionTimeout,      OFM_dcmnet, 1077, OF_ok, "Stop after TCP connection timeout (as requested)");
+makeOFConditionConst(NET_EC_InvalidSCPAssociationProfile,    OFM_dcmnet, 1078, OF_error, "Invalid or non-existing SCP Association Profile");
+makeOFConditionConst(NET_EC_AssociatePDUTooLarge,            OFM_dcmnet, 1079, OF_error, "A-ASSOCIATE PDU too large");
 
 
 OFString& DimseCondition::dump(OFString& str, OFCondition cond)

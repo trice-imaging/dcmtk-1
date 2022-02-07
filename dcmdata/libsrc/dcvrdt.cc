@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2015, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,12 +24,9 @@
 #include "dcmtk/dcmdata/dcvrdt.h"
 #include "dcmtk/dcmdata/dcvrda.h"
 #include "dcmtk/dcmdata/dcvrtm.h"
+#include "dcmtk/dcmdata/dcmatch.h"
 #include "dcmtk/ofstd/ofstring.h"
 #include "dcmtk/ofstd/ofstd.h"
-
-#define INCLUDE_CSTDIO
-#include "dcmtk/ofstd/ofstdinc.h"
-
 
 #define MAX_DT_LENGTH 26
 
@@ -225,45 +222,66 @@ OFCondition DcmDateTime::getDicomDateTimeFromOFDateTime(const OFDateTime &dateTi
     return l_error;
 }
 
-
 OFCondition DcmDateTime::getOFDateTimeFromString(const OFString &dicomDateTime,
                                                  OFDateTime &dateTimeValue)
 {
-    OFCondition l_error = EC_IllegalParameter;
-    /* clear result variable */
+    return getOFDateTimeFromString(dicomDateTime.c_str(), dicomDateTime.size(), dateTimeValue);
+}
+
+OFCondition DcmDateTime::getOFDateTimeFromString(const char *dicomDateTime,
+                                                 size_t dicomDateTimeSize,
+                                                 OFDateTime &dateTimeValue)
+{
+    // clear result variable
     dateTimeValue.clear();
-    /* minimal check for valid format: YYYYMMDD */
-    if (dicomDateTime.length() >= 8)
+    /* minimal check for valid format: YYYY */
+    if (dicomDateTimeSize < 4 || !OFStandard::checkDigits<4>(dicomDateTime))
+        return EC_IllegalParameter;
+    unsigned int month = 1;
+    unsigned int day = 1;
+    double timeZone = 0.0;
+    // check for/extract time zone
+    if (dicomDateTimeSize >= 9 && DcmTime::getTimeZoneFromString(dicomDateTime + dicomDateTimeSize - 5, 5, timeZone).good())
+        dicomDateTimeSize -= 5;
+    else
+        timeZone = OFTime::getLocalTimeZone();
+    switch(dicomDateTimeSize)
     {
-        OFString string;
-        unsigned int year, month, day;
-        unsigned int hour = 0;
-        unsigned int minute = 0;
-        double second = 0;
-        double timeZone = 0;
-        /* check whether optional time zone is present and extract the value if so */
-        if (DcmTime::getTimeZoneFromString(dicomDateTime.substr(dicomDateTime.length() - 5), timeZone).good())
-            string = dicomDateTime.substr(0, dicomDateTime.length() - 5);
+    default:
+        // check whether a time value is contained or it is simply an error
+        if (dicomDateTimeSize >= 10)
+        {
+            OFCondition status = DcmTime::getOFTimeFromString(dicomDateTime + 8,
+                                                              dicomDateTimeSize - 8,
+                                                              dateTimeValue.Time,
+                                                              OFFalse, // no support for HH:MM:SS in VR=DT
+                                                              timeZone);
+            if (status.bad())
+                return status;
+        }
+        else break;
+
+    case 8:
+        if (OFStandard::checkDigits<2>(dicomDateTime + 6))
+            day = OFStandard::extractDigits<unsigned int,2>(dicomDateTime + 6);
         else
+            break;
+    case 6:
+        if (OFStandard::checkDigits<2>(dicomDateTime + 4))
+            month = OFStandard::extractDigits<unsigned int,2>(dicomDateTime + 4);
+        else
+            break;
+    case 4:
+        if (dateTimeValue.Date.setDate(OFStandard::extractDigits<unsigned int,4>(dicomDateTime), month, day))
         {
-            string = dicomDateTime;
-            /* no time zone specified, therefore, use the local one */
-            timeZone = OFTime::getLocalTimeZone();
+            // set timezone if it hasn't been set
+            if (dicomDateTimeSize <= 8)
+                dateTimeValue.Time.setTimeZone(timeZone);
+            return EC_Normal;
         }
-        /* extract remaining components from date/time string: YYYYMMDDHHMM[SS[.FFFFFF]] */
-        /* scan seconds using OFStandard::atof to avoid locale issues */
-        if (sscanf(string.c_str(), "%04u%02u%02u%02u%02u", &year, &month, &day, &hour, &minute) >= 3)
-        {
-            if (string.length() > 12)
-            {
-                string.erase(0, 12);
-                second = OFStandard::atof(string.c_str());
-            }
-            if (dateTimeValue.setDateTime(year, month, day, hour, minute, second, timeZone))
-                l_error = EC_Normal;
-        }
+        break;
     }
-    return l_error;
+    return EC_IllegalParameter;
 }
 
 
@@ -336,6 +354,13 @@ OFCondition DcmDateTime::getISOFormattedDateTimeFromString(const OFString &dicom
 // ********************************
 
 
+OFBool DcmDateTime::check(const char* dicomDateTime,
+                               const size_t dicomDateTimeSize)
+{
+    const int vrID = DcmElement::scanValue("dt", dicomDateTime, dicomDateTimeSize);
+    return vrID == 7 /* DT */ || vrID == 18 /* dubious DT (pre 1850 or post 2049) */;
+}
+
 OFCondition DcmDateTime::checkStringValue(const OFString &value,
                                           const OFString &vm)
 {
@@ -361,8 +386,7 @@ OFCondition DcmDateTime::checkStringValue(const OFString &value,
             else if (dcmEnableVRCheckerForStringValues.get())
             {
                 /* check value representation */
-                const int vrID = DcmElement::scanValue(value, "dt", posStart, length);
-                if ((vrID != 7) && (vrID != 18))
+                if (!check(value.data() + posStart, length))
                 {
                     result = EC_ValueRepresentationViolated;
                     break;
@@ -377,4 +401,13 @@ OFCondition DcmDateTime::checkStringValue(const OFString &value,
         }
     }
     return result;
+}
+
+
+OFBool DcmDateTime::matches(const OFString& key,
+                            const OFString& candidate,
+                            const OFBool enableWildCardMatching) const
+{
+  OFstatic_cast(void,enableWildCardMatching);
+  return DcmAttributeMatching::rangeMatchingDateTime(key.c_str(), key.length(), candidate.c_str(), candidate.length());
 }

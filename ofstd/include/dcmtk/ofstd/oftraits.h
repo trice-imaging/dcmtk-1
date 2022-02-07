@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2014, OFFIS e.V.
+ *  Copyright (C) 2014-2019, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,7 +28,7 @@
 #include "dcmtk/ofstd/oftypes.h"
 
 // use native classes if C++11 is supported
-#ifdef DCMTK_USE_CXX11_STL
+#ifdef HAVE_TYPE_TRAITS
 #include <type_traits>
 
 template<bool B,typename... ARGS>
@@ -100,7 +100,7 @@ template<typename T,typename F>
 struct OFconditional<OFFalse,T,F> { typedef F type; };
 
 template<typename T,T Value>
-struct OFintegral_constant { static const T value = Value; };
+struct OFintegral_constant { typedef OFintegral_constant type; static const T value = Value; };
 
 template<typename T,T Value>
 const T OFintegral_constant<T,Value>::value;
@@ -138,10 +138,8 @@ struct OFremove_volatile { typedef T type; };
 template<typename T>
 struct OFremove_extent { typedef T type; };
 
-#ifdef HAVE_CXX_BOOL
 template<>
 struct OFis_unsigned<bool> : OFtrue_type {};
-#endif
 
 #ifndef C_CHAR_UNSIGNED
 template<>

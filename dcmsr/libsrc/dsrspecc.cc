@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2010-2014, OFFIS e.V.
+ *  Copyright (C) 2010-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -49,9 +49,12 @@ OFBool DSRSpectaclePrescriptionReportConstraintChecker::isTemplateSupportRequire
 }
 
 
-const char *DSRSpectaclePrescriptionReportConstraintChecker::getRootTemplateIdentifier() const
+OFCondition DSRSpectaclePrescriptionReportConstraintChecker::getRootTemplateIdentification(OFString &templateIdentifier,
+                                                                                           OFString &mappingResource) const
 {
-    return "2020";
+    templateIdentifier = "2020";
+    mappingResource = "DCMR";
+    return EC_Normal;
 }
 
 
@@ -75,7 +78,7 @@ OFBool DSRSpectaclePrescriptionReportConstraintChecker::checkContentRelationship
         if ((relationshipType == RT_contains) && (sourceValueType == VT_Container))
         {
             result = (targetValueType == VT_Container) || (targetValueType == VT_Code) ||
-                     (targetValueType == VT_Num) || (targetValueType == VT_Text);
+                     (targetValueType == VT_Num)       || (targetValueType == VT_Text);
         }
     }
     return result;

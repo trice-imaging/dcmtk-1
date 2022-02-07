@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2011, OFFIS e.V.
+ *  Copyright (C) 1998-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -30,13 +30,14 @@
 
 #ifdef WITH_OPENSSL
 
-BEGIN_EXTERN_C
-#include <openssl/ssl.h>
-END_EXTERN_C
-
+// forward declarations of OpenSSL data structures
+struct ssl_st;
+typedef struct ssl_st SSL;
 
 /** this class represents a TLS (Transport Layer Security) V1 based secure
  *  transport connection.
+ *  @remark This class is only available if DCMTK is compiled with
+ *  OpenSSL support enabled.
  */
 class DCMTK_DCMTLS_EXPORT DcmTLSConnection: public DcmTransportConnection
 {
@@ -44,12 +45,12 @@ public:
 
   /** constructor.
    *  @param openSocket TCP/IP socket to be used for the transport connection.
-   *    the connection must already be establised on socket level. This object
+   *    the connection must already be established on socket level. This object
    *    takes over control of the socket.
-   *  @param newTLSConnection pointer to intialized OpenSSL connection object
+   *  @param newTLSConnection pointer to initialized OpenSSL connection object
    *    to be used for this connection.
    */
-  DcmTLSConnection(int openSocket, SSL *newTLSConnection);
+  DcmTLSConnection(DcmNativeSocketType openSocket, SSL *newTLSConnection);
 
   /** destructor
    */
@@ -58,24 +59,24 @@ public:
   /** performs server side handshake on established socket.
    *  This function is used to establish a secure transport connection
    *  over the established TCP connection.
-   *  @return TCS_ok if successful, an error code otherwise.
+   *  @return EC_Normal if successful, an error code otherwise.
    */
-  virtual DcmTransportLayerStatus serverSideHandshake();
+  virtual OFCondition serverSideHandshake();
 
   /** performs client side handshake on established socket.
    *  This function is used to establish a secure transport connection
    *  over the established TCP connection.
-   *  @return TCS_ok if successful, an error code otherwise.
+   *  @return EC_Normal if successful, an error code otherwise.
    */
-  virtual DcmTransportLayerStatus clientSideHandshake();
+  virtual OFCondition clientSideHandshake();
 
   /** performs a re-negotiation of the connection with different
    *  connection parameters. Used to change the parameters of the
    *  secure transport connection.
    *  @param newSuite string identifying the ciphersuite to be negotiated.
-   *  @return TCS_ok if successful, an error code otherwise.
+   *  @return EC_Normal if successful, an error code otherwise.
    */
-  virtual DcmTransportLayerStatus renegotiate(const char *newSuite);
+  virtual OFCondition renegotiate(const char *newSuite);
 
   /** attempts to read nbyte bytes from the transport connection and
    *  writes them into the given buffer.
@@ -98,6 +99,12 @@ public:
    *  is closed.
    */
   virtual void close();
+
+  /** Closes the transport connection directly. If a secure connection
+   *  is used, a closure alert is NOT sent before the connection
+   *  is closed.
+   */
+  virtual void closeTransportConnection();
 
   /** returns the size in bytes of the peer certificate of a secure connection.
    *  @return peer certificate length in bytes
@@ -131,12 +138,6 @@ public:
    */
   virtual OFString& dumpConnectionParameters(OFString& str);
 
-  /** returns an error string for a given error code.
-   *  @param code error code
-   *  @return description for error code
-   */
-  virtual const char *errorString(DcmTransportLayerStatus code);
-
 private:
 
   /// private undefined copy constructor
@@ -145,11 +146,12 @@ private:
   /// private undefined assignment operator
   DcmTLSConnection& operator=(const DcmTLSConnection&);
 
+  /// dump TLS connection details to debug logger
+  void logTLSConnection();
+
   /// pointer to the TLS connection structure used by the OpenSSL library
   SSL *tlsConnection;
 
-  /// last error code returned by the OpenSSL library
-  unsigned long lastError;
 };
 
 #endif /* WITH_OPENSSL */

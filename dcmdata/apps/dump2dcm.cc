@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2015, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -15,7 +15,7 @@
  *
  *  Author:  Andreas Barth
  *
- *  Purpose: create a Dicom FileFormat or DataSet from an ASCII-dump
+ *  Purpose: create a DICOM FileFormat or DataSet from an ASCII-dump
  *
  */
 
@@ -34,8 +34,8 @@
  *        two characters.  If the VR can determined from the tag, this part
  *        of a line is optional.
  * Value: There are several rules for writing values:
- *        1. US, SS, SL, UL, FD, FL are written as decimal strings that can
- *           be read by scanf().
+ *        1. US, SS, UL, SL, UV, SV, FD, FL, OD, OF, OL and OV are written as
+ *           decimal strings that can be read by scanf().
  *        2. AT is written as '(gggg,eeee)' with additional spaces stripped
  *           off automatically and gggg and eeee being decimal strings that
  *           can be read by scanf().
@@ -79,16 +79,8 @@
 // if defined, use createValueFromTempFile() for large binary data files
 //#define EXPERIMENTAL_READ_FROM_FILE
 
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_CCTYPE
-#include "dcmtk/ofstd/ofstdinc.h"
-
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
-#endif
-#ifdef HAVE_GUSI_H
-#include <GUSI.h>
 #endif
 
 #include "dcmtk/ofstd/ofstd.h"
@@ -274,6 +266,12 @@ parseVR(char *&s, DcmEVR &vr)
         vr = EVR_UNKNOWN;
         s += 2;
     }
+    // dcmdump uses "??" in case of "Unknown Tag & Data" and implicit VR
+    else if ((*s == '?') && (*(s + 1) == '?'))
+    {
+        vr = EVR_UNKNOWN;
+        s += 2;
+    }
     else ok = OFFalse;
 
     return ok;
@@ -452,12 +450,13 @@ putFileContentsIntoElement(DcmElement *elem, const char *filename)
         ec = EC_IllegalCall;
     if (ec.good())
     {
+        OFLOG_INFO(dump2dcmLogger, "reading " << len << " bytes from binary data file: " << filename);
+        OFLOG_DEBUG(dump2dcmLogger, "  and storing it in the element " << elem->getTag());
         /* read binary file into the buffer */
         if (fread(buf, 1, len, f) != len)
         {
-            char errBuf[256];
             OFLOG_ERROR(dump2dcmLogger, "error reading binary data file: " << filename
-                << ": " << OFStandard::strerror(errno, errBuf, sizeof(errBuf)));
+                << ": " << OFStandard::getLastSystemErrorCode().message());
             ec = EC_CorruptedData;
         }
         else if (evr == EVR_OW)
@@ -503,7 +502,7 @@ insertIntoSet(DcmStack &stack, const E_TransferSyntax xfer, const DcmTagKey &tag
            (tagkey != DCM_LUTData || (vr != EVR_US && vr != EVR_SS && vr != EVR_OW)) &&
            (tagkey != DCM_PixelData || (vr != EVR_OB && vr != EVR_OW && vr != EVR_pixelSQ)) &&
            (tagvr != EVR_xs || (vr != EVR_US && vr != EVR_SS)) &&
-           (tagvr != EVR_ox || (vr != EVR_OB && vr != EVR_OW)) &&
+           ((tagvr != EVR_ox && tagvr != EVR_px) || (vr != EVR_OB && vr != EVR_OW)) &&
            (tagvr != EVR_na || vr != EVR_pixelItem))
         {
             OFLOG_WARN(dump2dcmLogger, "Tag " << tag << " with wrong VR '"
@@ -526,7 +525,7 @@ insertIntoSet(DcmStack &stack, const E_TransferSyntax xfer, const DcmTagKey &tag
         else if (newTagVR == EVR_pixelItem)
             newElement = new DcmPixelItem(DCM_PixelItemTag);
         else
-            newElementError = newDicomElement(newElement, tag);
+            newElementError = DcmItem::newDicomElementWithVR(newElement, tag);
 
         if (newElementError == EC_Normal)
         {
@@ -785,10 +784,6 @@ readDumpFile(DcmMetaInfo *metaheader, DcmDataset *dataset,
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_GUSI_H
-    GUSISetup(GUSIwithSIOUXSockets);
-    GUSISetup(GUSIwithInternetSockets);
-#endif
 
     OFConsoleApplication app(OFFIS_CONSOLE_APPLICATION , "Convert ASCII dump to DICOM file", rcsid);
     OFCommandLine cmd;

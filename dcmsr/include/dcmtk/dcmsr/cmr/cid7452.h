@@ -1,12 +1,12 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2021, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class CID7452_OrganizationalRoles
  *
- *  Generated automatically from DICOM PS 3.16-2015c
- *  File created on 2015-08-23 14:59:24 by J. Riesmeier
+ *  Generated automatically from DICOM PS 3.16-2021d
+ *  File created on 2021-09-13 09:26:37 by J. Riesmeier
  *
  */
 
@@ -19,6 +19,8 @@
 #include "dcmtk/dcmsr/dsrctxgr.h"
 #include "dcmtk/dcmsr/cmr/define.h"
 
+#include "dcmtk/ofstd/ofmap.h"
+
 
 /*---------------------*
  *  class declaration  *
@@ -26,7 +28,7 @@
 
 /** Implementation of DCMR Context Group:
  *  CID 7452 - Organizational Roles.
- *  (type: extensible, version: 20150602)
+ *  (type: extensible, version: 20170626)
  */
 class DCMTK_CMR_EXPORT CID7452_OrganizationalRoles
   : public DSRContextGroup
@@ -38,33 +40,49 @@ class DCMTK_CMR_EXPORT CID7452_OrganizationalRoles
      */
     enum EnumType
     {
-        /// (J-0016E,SRT,"Medical Practitioner")
+        /// (158965000,SCT,"Medical Practitioner")
         MedicalPractitioner,
-        /// (J-004E8,SRT,"Physician")
+        /// (309343006,SCT,"Physician")
         Physician,
-        /// (J-07100,SRT,"Nurse")
+        /// (128670,DCM,"Head of Radiology")
+        HeadOfRadiology,
+        /// (128671,DCM,"Chair of Protocol Committee")
+        ChairOfProtocolCommittee,
+        /// (128676,DCM,"Representative of Protocol Committee")
+        RepresentativeOfProtocolCommittee,
+        /// (128677,DCM,"Representative of Ethics Committee")
+        RepresentativeOfEthicsCommittee,
+        /// (128675,DCM,"Head of Cardiology")
+        HeadOfCardiology,
+        /// (128673,DCM,"Administrator of Radiology Department")
+        AdministratorOfRadiologyDepartment,
+        /// (106292003,SCT,"Nurse")
         Nurse,
-        /// (J-00187,SRT,"Radiologic Technologist")
+        /// (159016003,SCT,"Radiologic Technologist")
         RadiologicTechnologist,
-        /// (J-00187,SRT,"Radiographer")
+        /// (128674,DCM,"Lead Radiologic Technologist")
+        LeadRadiologicTechnologist,
+        /// (3430008,SCT,"Radiation Therapist")
+        RadiationTherapist,
+        /// (159016003,SCT,"Radiographer")
         Radiographer,
         /// (C1144859,UMLS,"Intern")
         Intern,
-        /// (J-005E6,SRT,"Resident")
+        /// (405277009,SCT,"Resident")
         Resident,
-        /// (J-00172,SRT,"Registrar")
+        /// (158971006,SCT,"Registrar")
         Registrar,
         /// (121088,DCM,"Fellow")
         Fellow,
-        /// (J-005E8,SRT,"Attending")
+        /// (405279007,SCT,"Attending")
         Attending,
-        /// (J-0050A,SRT,"Consultant")
+        /// (309390008,SCT,"Consultant")
         Consultant,
         /// (C1441532,UMLS,"Consulting Physician")
         ConsultingPhysician,
-        /// (J-0714A,SRT,"Scrub nurse")
+        /// (415506007,SCT,"Scrub nurse")
         ScrubNurse,
-        /// (J-00556,SRT,"Surgeon")
+        /// (304292004,SCT,"Surgeon")
         Surgeon,
         /// (121092,DCM,"Sonologist")
         Sonologist,
@@ -177,5 +195,14 @@ class DCMTK_CMR_EXPORT CID7452_OrganizationalRoles
     /// pointer to internal code list (use a static variable for singleton pattern)
     static CodeList *Codes;
 };
+
+
+/*-------------------*
+ *  type definition  *
+ *-------------------*/
+
+// define short name for the context group class
+typedef CID7452_OrganizationalRoles CMR_CID7452;
+
 
 #endif

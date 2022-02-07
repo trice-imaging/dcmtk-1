@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2014, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,14 +23,15 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/dcmdata/dcvrat.h"
-
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
-
+#include "dcmtk/dcmdata/dcjson.h"
 
 // ********************************
 
+
+DcmAttributeTag::DcmAttributeTag(const DcmTag &tag)
+  : DcmElement(tag, 0)
+{
+}
 
 DcmAttributeTag::DcmAttributeTag(const DcmTag &tag,
                                  const Uint32 len)
@@ -71,9 +72,20 @@ int DcmAttributeTag::compare(const DcmElement& rhs) const
     myThis = OFconst_cast(DcmAttributeTag*, this);
     myRhs = OFstatic_cast(DcmAttributeTag*, OFconst_cast(DcmElement*, &rhs));
 
+    /* compare number of values */
+    unsigned long thisNumValues = myThis->getNumberOfValues();
+    unsigned long rhsNumValues = myRhs->getNumberOfValues();
+    if (thisNumValues < rhsNumValues)
+    {
+        return -1;
+    }
+    else if (thisNumValues > rhsNumValues)
+    {
+        return 1;
+    }
+
     /* iterate over all components and test equality */
-    unsigned long thisVM = myThis->getVM();
-    for (unsigned long count = 0; count < thisVM; count++)
+    for (unsigned long count = 0; count < thisNumValues; count++)
     {
         DcmTagKey val;
         if (myThis->getTagVal(val, count).good())
@@ -91,22 +103,7 @@ int DcmAttributeTag::compare(const DcmElement& rhs) const
                 }
                 /* otherwise they are equal, continue comparison */
             }
-            else
-            {
-                break; // values equal until this point (rhs shorter)
-            }
         }
-    }
-
-    /* we get here if all values are equal. Now look at the number of components. */
-    unsigned long rhsVM = myRhs->getVM();
-    if (thisVM < rhsVM)
-    {
-        return -1;
-    }
-    else if (thisVM > rhsVM)
-    {
-        return 1;
     }
 
     /* all values as well as VM equal: objects are equal */
@@ -144,6 +141,12 @@ OFCondition DcmAttributeTag::checkValue(const OFString &vm,
 
 unsigned long DcmAttributeTag::getVM()
 {
+    return getNumberOfValues();
+}
+
+
+unsigned long DcmAttributeTag::getNumberOfValues()
+{
     /* attribute tags store pairs of 16 bit values */
     return OFstatic_cast(unsigned long, getLengthField() / (2 * sizeof(Uint16)));
 }
@@ -163,7 +166,7 @@ void DcmAttributeTag::print(STD_NAMESPACE ostream& out,
         /* get unsigned integer data */
         Uint16 *uintVals;
         errorFlag = getUint16Array(uintVals);
-        const unsigned long count = getVM();
+        const unsigned long count = getNumberOfValues();
         if ((uintVals != NULL) && (count > 0))
         {
             /* determine number of values to be printed */
@@ -242,6 +245,51 @@ OFCondition DcmAttributeTag::writeXML(STD_NAMESPACE ostream &out,
         /* DCMTK-specific format does not require anything special */
         return DcmElement::writeXML(out, flags);
     }
+}
+
+
+// ********************************
+
+
+OFCondition DcmAttributeTag::writeJson(STD_NAMESPACE ostream &out,
+                                       DcmJsonFormat &format)
+{
+    // always write JSON Opener
+    DcmElement::writeJsonOpener(out, format);
+
+    if (!isEmpty())
+    {
+        Uint16 *uintVals;
+        getUint16Array(uintVals);
+        const unsigned long vm = getVM();
+        // check for empty/invalid value
+        if ((uintVals != NULL) && (vm > 0))
+        {
+            format.printValuePrefix(out);
+            out << STD_NAMESPACE uppercase << STD_NAMESPACE setfill('0');
+            // print tag values "ggggeeee" in hex mode (upper case!)
+            out << "\"";
+            out << STD_NAMESPACE hex << STD_NAMESPACE setw(4) << (*(uintVals++));
+            out << STD_NAMESPACE setw(4) << (*(uintVals++)) << STD_NAMESPACE dec;
+            out << "\"";
+            for (unsigned long valNo = 1; valNo < vm; valNo++)
+            {
+                format.printNextArrayElementPrefix(out);
+                out << "\"";
+                out << STD_NAMESPACE hex << STD_NAMESPACE setw(4) << (*(uintVals++));
+                out << STD_NAMESPACE setw(4) << (*(uintVals++)) << STD_NAMESPACE dec;
+                out << "\"";
+            }
+            // reset i/o manipulators
+            out << STD_NAMESPACE nouppercase << STD_NAMESPACE setfill(' ');
+            format.printValueSuffix(out);
+        }
+    }
+
+    // write normal JSON closer
+    DcmElement::writeJsonCloser(out, format);
+    // always report success
+    return EC_Normal;
 }
 
 
@@ -402,4 +450,29 @@ OFCondition DcmAttributeTag::checkStringValue(const OFString &value,
                                               const OFString &vm)
 {
     return DcmElement::checkVM(DcmElement::determineVM(value.c_str(), value.length()), vm);
+}
+
+
+// ********************************
+
+
+OFBool DcmAttributeTag::isUniversalMatch(const OFBool normalize,
+                                         const OFBool enableWildCardMatching)
+{
+  if(!isEmpty(normalize))
+  {
+    if(enableWildCardMatching)
+    {
+      OFString value;
+      for(unsigned long valNo = 0; valNo < getVM(); ++valNo)
+      {
+        getOFString(value, valNo, normalize);
+        if(value.find_first_not_of( '*' ) != OFString_npos)
+          return OFFalse;
+      }
+    }
+    else
+      return OFFalse;
+  }
+  return OFTrue;
 }

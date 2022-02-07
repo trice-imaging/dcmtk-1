@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTPersonIdentificationCodeSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -31,7 +31,12 @@ DRTPersonIdentificationCodeSequence::Item::Item(const OFBool emptyDefaultItem)
     ContextGroupVersion(DCM_ContextGroupVersion),
     ContextIdentifier(DCM_ContextIdentifier),
     ContextUID(DCM_ContextUID),
-    MappingResource(DCM_MappingResource)
+    EquivalentCodeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
+    LongCodeValue(DCM_LongCodeValue),
+    MappingResource(DCM_MappingResource),
+    MappingResourceName(DCM_MappingResourceName),
+    MappingResourceUID(DCM_MappingResourceUID),
+    URNCodeValue(DCM_URNCodeValue)
 {
 }
 
@@ -48,7 +53,12 @@ DRTPersonIdentificationCodeSequence::Item::Item(const Item &copy)
     ContextGroupVersion(copy.ContextGroupVersion),
     ContextIdentifier(copy.ContextIdentifier),
     ContextUID(copy.ContextUID),
-    MappingResource(copy.MappingResource)
+    EquivalentCodeSequence(copy.EquivalentCodeSequence),
+    LongCodeValue(copy.LongCodeValue),
+    MappingResource(copy.MappingResource),
+    MappingResourceName(copy.MappingResourceName),
+    MappingResourceUID(copy.MappingResourceUID),
+    URNCodeValue(copy.URNCodeValue)
 {
 }
 
@@ -73,7 +83,12 @@ DRTPersonIdentificationCodeSequence::Item &DRTPersonIdentificationCodeSequence::
         ContextGroupVersion = copy.ContextGroupVersion;
         ContextIdentifier = copy.ContextIdentifier;
         ContextUID = copy.ContextUID;
+        EquivalentCodeSequence = copy.EquivalentCodeSequence;
+        LongCodeValue = copy.LongCodeValue;
         MappingResource = copy.MappingResource;
+        MappingResourceName = copy.MappingResourceName;
+        MappingResourceUID = copy.MappingResourceUID;
+        URNCodeValue = copy.URNCodeValue;
     }
     return *this;
 }
@@ -88,9 +103,14 @@ void DRTPersonIdentificationCodeSequence::Item::clear()
         CodingSchemeDesignator.clear();
         CodingSchemeVersion.clear();
         CodeMeaning.clear();
+        LongCodeValue.clear();
+        URNCodeValue.clear();
+        EquivalentCodeSequence.clear();
         ContextIdentifier.clear();
         ContextUID.clear();
         MappingResource.clear();
+        MappingResourceUID.clear();
+        MappingResourceName.clear();
         ContextGroupVersion.clear();
         ContextGroupExtensionFlag.clear();
         ContextGroupLocalVersion.clear();
@@ -105,9 +125,14 @@ OFBool DRTPersonIdentificationCodeSequence::Item::isEmpty()
            CodingSchemeDesignator.isEmpty() &&
            CodingSchemeVersion.isEmpty() &&
            CodeMeaning.isEmpty() &&
+           LongCodeValue.isEmpty() &&
+           URNCodeValue.isEmpty() &&
+           EquivalentCodeSequence.isEmpty() &&
            ContextIdentifier.isEmpty() &&
            ContextUID.isEmpty() &&
            MappingResource.isEmpty() &&
+           MappingResourceUID.isEmpty() &&
+           MappingResourceName.isEmpty() &&
            ContextGroupVersion.isEmpty() &&
            ContextGroupExtensionFlag.isEmpty() &&
            ContextGroupLocalVersion.isEmpty() &&
@@ -128,13 +153,18 @@ OFCondition DRTPersonIdentificationCodeSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, CodeValue, "1", "1", "PersonIdentificationCodeSequence");
-        getAndCheckElementFromDataset(item, CodingSchemeDesignator, "1", "1", "PersonIdentificationCodeSequence");
+        getAndCheckElementFromDataset(item, CodeValue, "1", "1C", "PersonIdentificationCodeSequence");
+        getAndCheckElementFromDataset(item, CodingSchemeDesignator, "1", "1C", "PersonIdentificationCodeSequence");
         getAndCheckElementFromDataset(item, CodingSchemeVersion, "1", "1C", "PersonIdentificationCodeSequence");
         getAndCheckElementFromDataset(item, CodeMeaning, "1", "1", "PersonIdentificationCodeSequence");
+        getAndCheckElementFromDataset(item, LongCodeValue, "1", "1C", "PersonIdentificationCodeSequence");
+        getAndCheckElementFromDataset(item, URNCodeValue, "1", "1C", "PersonIdentificationCodeSequence");
+        EquivalentCodeSequence.read(item, "1-n", "3", "PersonIdentificationCodeSequence");
         getAndCheckElementFromDataset(item, ContextIdentifier, "1", "3", "PersonIdentificationCodeSequence");
         getAndCheckElementFromDataset(item, ContextUID, "1", "3", "PersonIdentificationCodeSequence");
         getAndCheckElementFromDataset(item, MappingResource, "1", "1C", "PersonIdentificationCodeSequence");
+        getAndCheckElementFromDataset(item, MappingResourceUID, "1", "3", "PersonIdentificationCodeSequence");
+        getAndCheckElementFromDataset(item, MappingResourceName, "1", "3", "PersonIdentificationCodeSequence");
         getAndCheckElementFromDataset(item, ContextGroupVersion, "1", "1C", "PersonIdentificationCodeSequence");
         getAndCheckElementFromDataset(item, ContextGroupExtensionFlag, "1", "3", "PersonIdentificationCodeSequence");
         getAndCheckElementFromDataset(item, ContextGroupLocalVersion, "1", "1C", "PersonIdentificationCodeSequence");
@@ -151,13 +181,18 @@ OFCondition DRTPersonIdentificationCodeSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmShortString(CodeValue), "1", "1", "PersonIdentificationCodeSequence");
-        addElementToDataset(result, item, new DcmShortString(CodingSchemeDesignator), "1", "1", "PersonIdentificationCodeSequence");
+        addElementToDataset(result, item, new DcmShortString(CodeValue), "1", "1C", "PersonIdentificationCodeSequence");
+        addElementToDataset(result, item, new DcmShortString(CodingSchemeDesignator), "1", "1C", "PersonIdentificationCodeSequence");
         addElementToDataset(result, item, new DcmShortString(CodingSchemeVersion), "1", "1C", "PersonIdentificationCodeSequence");
         addElementToDataset(result, item, new DcmLongString(CodeMeaning), "1", "1", "PersonIdentificationCodeSequence");
+        addElementToDataset(result, item, new DcmUnlimitedCharacters(LongCodeValue), "1", "1C", "PersonIdentificationCodeSequence");
+        addElementToDataset(result, item, new DcmUniversalResourceIdentifierOrLocator(URNCodeValue), "1", "1C", "PersonIdentificationCodeSequence");
+        if (result.good()) result = EquivalentCodeSequence.write(item, "1-n", "3", "PersonIdentificationCodeSequence");
         addElementToDataset(result, item, new DcmCodeString(ContextIdentifier), "1", "3", "PersonIdentificationCodeSequence");
         addElementToDataset(result, item, new DcmUniqueIdentifier(ContextUID), "1", "3", "PersonIdentificationCodeSequence");
         addElementToDataset(result, item, new DcmCodeString(MappingResource), "1", "1C", "PersonIdentificationCodeSequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(MappingResourceUID), "1", "3", "PersonIdentificationCodeSequence");
+        addElementToDataset(result, item, new DcmLongString(MappingResourceName), "1", "3", "PersonIdentificationCodeSequence");
         addElementToDataset(result, item, new DcmDateTime(ContextGroupVersion), "1", "1C", "PersonIdentificationCodeSequence");
         addElementToDataset(result, item, new DcmCodeString(ContextGroupExtensionFlag), "1", "3", "PersonIdentificationCodeSequence");
         addElementToDataset(result, item, new DcmDateTime(ContextGroupLocalVersion), "1", "1C", "PersonIdentificationCodeSequence");
@@ -257,12 +292,48 @@ OFCondition DRTPersonIdentificationCodeSequence::Item::getContextUID(OFString &v
 }
 
 
+OFCondition DRTPersonIdentificationCodeSequence::Item::getLongCodeValue(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(LongCodeValue, value, pos);
+}
+
+
 OFCondition DRTPersonIdentificationCodeSequence::Item::getMappingResource(OFString &value, const signed long pos) const
 {
     if (EmptyDefaultItem)
         return EC_IllegalCall;
     else
         return getStringValueFromElement(MappingResource, value, pos);
+}
+
+
+OFCondition DRTPersonIdentificationCodeSequence::Item::getMappingResourceName(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(MappingResourceName, value, pos);
+}
+
+
+OFCondition DRTPersonIdentificationCodeSequence::Item::getMappingResourceUID(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(MappingResourceUID, value, pos);
+}
+
+
+OFCondition DRTPersonIdentificationCodeSequence::Item::getURNCodeValue(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(URNCodeValue, value, pos);
 }
 
 
@@ -396,6 +467,19 @@ OFCondition DRTPersonIdentificationCodeSequence::Item::setContextUID(const OFStr
 }
 
 
+OFCondition DRTPersonIdentificationCodeSequence::Item::setLongCodeValue(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmUnlimitedCharacters::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = LongCodeValue.putOFStringArray(value);
+    }
+    return result;
+}
+
+
 OFCondition DRTPersonIdentificationCodeSequence::Item::setMappingResource(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -404,6 +488,45 @@ OFCondition DRTPersonIdentificationCodeSequence::Item::setMappingResource(const 
         result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
             result = MappingResource.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTPersonIdentificationCodeSequence::Item::setMappingResourceName(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = MappingResourceName.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTPersonIdentificationCodeSequence::Item::setMappingResourceUID(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmUniqueIdentifier::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = MappingResourceUID.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTPersonIdentificationCodeSequence::Item::setURNCodeValue(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmUniversalResourceIdentifierOrLocator::checkStringValue(value) : EC_Normal;
+        if (result.good())
+            result = URNCodeValue.putOFStringArray(value);
     }
     return result;
 }
@@ -512,7 +635,7 @@ OFBool DRTPersonIdentificationCodeSequence::isValid() const
 }
 
 
-unsigned long DRTPersonIdentificationCodeSequence::getNumberOfItems() const
+size_t DRTPersonIdentificationCodeSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -542,12 +665,12 @@ OFCondition DRTPersonIdentificationCodeSequence::gotoNextItem()
 }
 
 
-OFCondition DRTPersonIdentificationCodeSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTPersonIdentificationCodeSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -562,12 +685,12 @@ OFCondition DRTPersonIdentificationCodeSequence::gotoItem(const unsigned long nu
 }
 
 
-OFCondition DRTPersonIdentificationCodeSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTPersonIdentificationCodeSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -582,7 +705,7 @@ OFCondition DRTPersonIdentificationCodeSequence::gotoItem(const unsigned long nu
 }
 
 
-OFCondition DRTPersonIdentificationCodeSequence::gotoItem(const unsigned long num)
+OFCondition DRTPersonIdentificationCodeSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -618,7 +741,7 @@ const DRTPersonIdentificationCodeSequence::Item &DRTPersonIdentificationCodeSequ
 }
 
 
-OFCondition DRTPersonIdentificationCodeSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTPersonIdentificationCodeSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -628,7 +751,7 @@ OFCondition DRTPersonIdentificationCodeSequence::getItem(const unsigned long num
 }
 
 
-DRTPersonIdentificationCodeSequence::Item &DRTPersonIdentificationCodeSequence::getItem(const unsigned long num)
+DRTPersonIdentificationCodeSequence::Item &DRTPersonIdentificationCodeSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -638,7 +761,7 @@ DRTPersonIdentificationCodeSequence::Item &DRTPersonIdentificationCodeSequence::
 }
 
 
-const DRTPersonIdentificationCodeSequence::Item &DRTPersonIdentificationCodeSequence::getItem(const unsigned long num) const
+const DRTPersonIdentificationCodeSequence::Item &DRTPersonIdentificationCodeSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -648,13 +771,13 @@ const DRTPersonIdentificationCodeSequence::Item &DRTPersonIdentificationCodeSequ
 }
 
 
-DRTPersonIdentificationCodeSequence::Item &DRTPersonIdentificationCodeSequence::operator[](const unsigned long num)
+DRTPersonIdentificationCodeSequence::Item &DRTPersonIdentificationCodeSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTPersonIdentificationCodeSequence::Item &DRTPersonIdentificationCodeSequence::operator[](const unsigned long num) const
+const DRTPersonIdentificationCodeSequence::Item &DRTPersonIdentificationCodeSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -677,7 +800,7 @@ OFCondition DRTPersonIdentificationCodeSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTPersonIdentificationCodeSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTPersonIdentificationCodeSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -700,7 +823,7 @@ OFCondition DRTPersonIdentificationCodeSequence::insertItem(const unsigned long 
 }
 
 
-OFCondition DRTPersonIdentificationCodeSequence::removeItem(const unsigned long pos)
+OFCondition DRTPersonIdentificationCodeSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

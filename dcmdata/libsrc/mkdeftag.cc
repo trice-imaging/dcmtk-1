@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2015, OFFIS e.V.
+ *  Copyright (C) 1994-2018, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,17 +20,6 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
-
-#ifdef HAVE_WINDOWS_H
-#include <windows.h>  /* this includes either winsock.h or winsock2.h */
-#elif defined(HAVE_WINSOCK_H)
-#include <winsock.h>  /* include winsock.h directly i.e. on MacOS */
-#endif
-
-#ifdef HAVE_GUSI_H
-#include <GUSI.h>
-#endif
-
 #include "dcmtk/dcmdata/dcdict.h"
 #include "dcmtk/dcmdata/cmdlnarg.h"
 #include "dcmtk/ofstd/ofstring.h"
@@ -81,7 +70,7 @@ printDefined(FILE* fout, const DcmDictEntry* e)
     if (e == NULL || e->getTagName() == NULL)
         return;
 
-    strcpy(buf, e->getTagName());
+    OFStandard::strlcpy(buf, e->getTagName(), DCM_MAXDICTLINESIZE+1);
 
     convertToIdentifier(buf);
 
@@ -126,17 +115,7 @@ int main(int argc, char* argv[])
     int i = 0;
     FILE* fout = NULL;
 
-#ifdef HAVE_GUSI_H
-    GUSISetup(GUSIwithSIOUXSockets);
-    GUSISetup(GUSIwithInternetSockets);
-#endif
-
-#ifdef HAVE_WINSOCK_H
-    WSAData winSockData;
-    /* we need at least version 1.1 */
-    WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
-    WSAStartup(winSockVersionNeeded, &winSockData);
-#endif
+    OFStandard::initializeNetwork();
 
     prepareCmdLineArgs(argc, argv, "mkdeftag");
 
@@ -175,8 +154,8 @@ int main(int argc, char* argv[])
     fputs("** It was generated automatically by:\n", fout);
 #ifndef SUPPRESS_CREATE_STAMP
     /*
-     * Putting the date in the file will confuse CVS/RCS
-     * if nothing has changed except the generation date.
+     * Putting the date in the file will confuse version control
+     * systems if nothing has changed except the generation date.
      * This is only an issue if the header file is continually
      * generated new.
      */
@@ -259,7 +238,7 @@ int main(int argc, char* argv[])
     }
     fputs("\n#endif /* !DCDEFTAG_H */\n", fout);
 
-    dcmDataDict.unlock();
+    dcmDataDict.wrunlock();
     return 0;
 }
 

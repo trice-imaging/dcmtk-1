@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2014, OFFIS e.V.
+ *  Copyright (C) 2014-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -33,12 +33,11 @@
  *  @brief Provides an interface to query properties of all fundamental numeric types.
  */
 
-// use native classes if C++11 is supported
-#if __cplusplus >= 201103L
+// use native classes if available
+#ifdef HAVE_STL_LIMITS
 
 #include <limits>
-using OFfloat_round_style = std::float_round_style;
-enum
+enum OFfloat_round_style
 {
     OFround_indeterminate       = std::round_indeterminate,
     OFround_toward_zero         = std::round_toward_zero,
@@ -46,22 +45,46 @@ enum
     OFround_toward_infinity     = std::round_toward_infinity,
     OFround_toward_neg_infinity = std::round_toward_neg_infinity
 };
-using OFfloat_denorm_style = std::float_denorm_style;
-enum
+enum OFfloat_denorm_style
 {
     OFdenorm_indeterminate = std::denorm_indeterminate,
     OFdenorm_absent        = std::denorm_absent,
     OFdenorm_present       = std::denorm_present
 };
+
+#ifdef HAVE_CXX11
+
 template<typename T>
 using OFnumeric_limits = std::numeric_limits<T>;
 
-#else // fallback implementations
+#else // fallback implementation of C++11 features
 
-#define INCLUDE_CLIMITS
-#define INCLUDE_CFLOAT
-#define INCLUDE_CMATH
-#include "dcmtk/ofstd/ofstdinc.h"
+template<typename T>
+struct OFnumeric_limits : std::numeric_limits<T>
+{
+    static const int max_digits10 = 0;
+    static inline T lowest() { return (std::numeric_limits<T>::min)(); }
+};
+template<>
+struct OFnumeric_limits<float> : std::numeric_limits<float>
+{
+    static const int max_digits10 = DCMTK_FLOAT_MAX_DIGITS10;
+    static inline float lowest() { return -(std::numeric_limits<float>::max)(); }
+};
+template<>
+struct OFnumeric_limits<double> : std::numeric_limits<double>
+{
+    static const int max_digits10 = DCMTK_DOUBLE_MAX_DIGITS10;
+    static inline double lowest() { return -(std::numeric_limits<double>::max)(); }
+};
+
+#endif // fallback implementation of C++11 features based on std::numeric_limits
+
+#else // fallback implementations entirely without using the native STL
+
+#include <climits>
+#include <cfloat>
+#include <cmath>
 
 /** Enumeration constants of type OFfloat_round_style indicate the rounding style
  *  used by floating-point arithmetics whenever a result of an expression is stored
@@ -948,9 +971,9 @@ struct OFnumeric_limits
     static const int max_exponent10                 = 0;
     static const OFBool traps                       = OFFalse;
     static const OFBool tinyness_before             = OFFalse;
-    static inline T min()                           { return T(); }
+    static inline T (min)()                         { return T(); }
     static inline T lowest()                        { return T(); }
-    static inline T max()                           { return T(); }
+    static inline T (max)()                         { return T(); }
     static inline T epsilon()                       { return T(); }
     static inline T round_error()                   { return T(); }
     static inline T infinity()                      { return T(); }
@@ -959,7 +982,6 @@ struct OFnumeric_limits
     static inline T denorm_min()                    { return T(); }
 };
 
-#ifdef HAVE_CXX_BOOL
 template<>
 struct OFnumeric_limits<bool>
 {
@@ -986,9 +1008,9 @@ struct OFnumeric_limits<bool>
     static const int max_exponent10                 = 0;
     static const OFBool traps                       = OFFalse;
     static const OFBool tinyness_before             = OFFalse;
-    static inline bool min()                        { return OFFalse; }
+    static inline bool (min)()                      { return OFFalse; }
     static inline bool lowest()                     { return OFFalse; }
-    static inline bool max()                        { return OFTrue; }
+    static inline bool (max)()                      { return OFTrue; }
     static inline bool epsilon()                    { return OFFalse; }
     static inline bool round_error()                { return OFFalse; }
     static inline bool infinity()                   { return OFFalse; }
@@ -996,7 +1018,6 @@ struct OFnumeric_limits<bool>
     static inline bool signaling_NaN()              { return OFFalse; }
     static inline bool denorm_min()                 { return OFFalse; }
 };
-#endif
 
 template<>
 struct OFnumeric_limits<char>
@@ -1019,7 +1040,11 @@ struct OFnumeric_limits<char>
     static const OFBool is_bounded                  = OFTrue;
     static const OFBool is_modulo                   = DCMTK_CHAR_MODULO;
     static const int digits                         = OFnumeric_limits<char>::is_signed ? CHAR_BIT - 1 : CHAR_BIT;
-    static const int digits10                       = OFstatic_cast( int, OFnumeric_limits<char>::digits * .30102999566398119521373889472449 );
+#ifndef C_CHAR_UNSIGNED
+    static const int digits10                       = DCMTK_SIGNED_CHAR_DIGITS10;
+#else
+    static const int digits10                       = DCMTK_UNSIGNED_CHAR_DIGITS10;
+#endif
     static const int max_digits10                   = 0;
     static const int radix                          = 2;
     static const int min_exponent                   = 0;
@@ -1028,9 +1053,9 @@ struct OFnumeric_limits<char>
     static const int max_exponent10                 = 0;
     static const OFBool traps                       = DCMTK_CHAR_TRAPS;
     static const OFBool tinyness_before             = OFFalse;
-    static inline char min()                        { return OFstatic_cast( char, CHAR_MIN ); }
+    static inline char (min)()                      { return OFstatic_cast( char, CHAR_MIN ); }
     static inline char lowest()                     { return OFstatic_cast( char, CHAR_MIN ); }
-    static inline char max()                        { return OFstatic_cast( char, CHAR_MAX ); }
+    static inline char (max)()                      { return OFstatic_cast( char, CHAR_MAX ); }
     static inline char epsilon()                    { return OFstatic_cast( char, 0 ); }
     static inline char round_error()                { return OFstatic_cast( char, 0 ); }
     static inline char infinity()                   { return OFstatic_cast( char, 0 ); }
@@ -1056,7 +1081,7 @@ struct OFnumeric_limits<signed char>
     static const OFBool is_bounded                  = OFTrue;
     static const OFBool is_modulo                   = DCMTK_SIGNED_CHAR_MODULO;
     static const int digits                         = CHAR_BIT - 1;
-    static const int digits10                       = OFstatic_cast( int, ( CHAR_BIT - 1 ) * .30102999566398119521373889472449 );
+    static const int digits10                       = DCMTK_SIGNED_CHAR_DIGITS10;
     static const int max_digits10                   = 0;
     static const int radix                          = 2;
     static const int min_exponent                   = 0;
@@ -1065,9 +1090,9 @@ struct OFnumeric_limits<signed char>
     static const int max_exponent10                 = 0;
     static const OFBool traps                       = DCMTK_SIGNED_CHAR_TRAPS;
     static const OFBool tinyness_before             = OFFalse;
-    static inline signed char min()                 { return OFstatic_cast( signed char, SCHAR_MIN ); }
+    static inline signed char (min)()               { return OFstatic_cast( signed char, SCHAR_MIN ); }
     static inline signed char lowest()              { return OFstatic_cast( signed char, SCHAR_MIN ); }
-    static inline signed char max()                 { return OFstatic_cast( signed char, SCHAR_MAX ); }
+    static inline signed char (max)()               { return OFstatic_cast( signed char, SCHAR_MAX ); }
     static inline signed char epsilon()             { return OFstatic_cast( signed char, 0 ); }
     static inline signed char round_error()         { return OFstatic_cast( signed char, 0 ); }
     static inline signed char infinity()            { return OFstatic_cast( signed char, 0 ); }
@@ -1093,7 +1118,7 @@ struct OFnumeric_limits<unsigned char>
     static const OFBool is_bounded                  = OFTrue;
     static const OFBool is_modulo                   = DCMTK_UNSIGNED_CHAR_MODULO;
     static const int digits                         = CHAR_BIT;
-    static const int digits10                       = OFstatic_cast( int, CHAR_BIT * .30102999566398119521373889472449 );
+    static const int digits10                       = DCMTK_UNSIGNED_CHAR_DIGITS10;
     static const int max_digits10                   = 0;
     static const int radix                          = 2;
     static const int min_exponent                   = 0;
@@ -1102,9 +1127,9 @@ struct OFnumeric_limits<unsigned char>
     static const int max_exponent10                 = 0;
     static const OFBool traps                       = DCMTK_UNSIGNED_CHAR_TRAPS;
     static const OFBool tinyness_before             = OFFalse;
-    static inline unsigned char min()               { return OFstatic_cast( unsigned char, 0 ); }
+    static inline unsigned char (min)()             { return OFstatic_cast( unsigned char, 0 ); }
     static inline unsigned char lowest()            { return OFstatic_cast( unsigned char, 0 ); }
-    static inline unsigned char max()               { return OFstatic_cast( unsigned char, UCHAR_MAX ); }
+    static inline unsigned char (max)()             { return OFstatic_cast( unsigned char, UCHAR_MAX ); }
     static inline unsigned char epsilon()           { return OFstatic_cast( unsigned char, 0 ); }
     static inline unsigned char round_error()       { return OFstatic_cast( unsigned char, 0 ); }
     static inline unsigned char infinity()          { return OFstatic_cast( unsigned char, 0 ); }
@@ -1130,7 +1155,7 @@ struct OFnumeric_limits<signed short>
     static const OFBool is_bounded                  = OFTrue;
     static const OFBool is_modulo                   = DCMTK_SIGNED_SHORT_MODULO;
     static const int digits                         = OFstatic_cast( int, CHAR_BIT * sizeof( signed short ) - 1 );
-    static const int digits10                       = OFstatic_cast( int, OFnumeric_limits<signed short>::digits * .30102999566398119521373889472449 );
+    static const int digits10                       = DCMTK_SIGNED_SHORT_DIGITS10;
     static const int max_digits10                   = 0;
     static const int radix                          = 2;
     static const int min_exponent                   = 0;
@@ -1139,9 +1164,9 @@ struct OFnumeric_limits<signed short>
     static const int max_exponent10                 = 0;
     static const OFBool traps                       = DCMTK_SIGNED_SHORT_TRAPS;
     static const OFBool tinyness_before             = OFFalse;
-    static inline signed short min()                { return OFstatic_cast( signed short, SHRT_MIN ); }
+    static inline signed short (min)()              { return OFstatic_cast( signed short, SHRT_MIN ); }
     static inline signed short lowest()             { return OFstatic_cast( signed short, SHRT_MIN ); }
-    static inline signed short max()                { return OFstatic_cast( signed short, SHRT_MAX ); }
+    static inline signed short (max)()              { return OFstatic_cast( signed short, SHRT_MAX ); }
     static inline signed short epsilon()            { return OFstatic_cast( signed short, 0 ); }
     static inline signed short round_error()        { return OFstatic_cast( signed short, 0 ); }
     static inline signed short infinity()           { return OFstatic_cast( signed short, 0 ); }
@@ -1167,7 +1192,7 @@ struct OFnumeric_limits<unsigned short>
     static const OFBool is_bounded                  = OFTrue;
     static const OFBool is_modulo                   = DCMTK_UNSIGNED_SHORT_MODULO;
     static const int digits                         = OFstatic_cast( int, CHAR_BIT * sizeof( unsigned short ) );
-    static const int digits10                       = OFstatic_cast( int, OFnumeric_limits<unsigned short>::digits * .30102999566398119521373889472449 );
+    static const int digits10                       = DCMTK_UNSIGNED_SHORT_DIGITS10;
     static const int max_digits10                   = 0;
     static const int radix                          = 2;
     static const int min_exponent                   = 0;
@@ -1176,9 +1201,9 @@ struct OFnumeric_limits<unsigned short>
     static const int max_exponent10                 = 0;
     static const OFBool traps                       = DCMTK_UNSIGNED_SHORT_TRAPS;
     static const OFBool tinyness_before             = OFFalse;
-    static inline unsigned short min()              { return OFstatic_cast( unsigned short, 0 ); }
+    static inline unsigned short (min)()            { return OFstatic_cast( unsigned short, 0 ); }
     static inline unsigned short lowest()           { return OFstatic_cast( unsigned short, 0 ); }
-    static inline unsigned short max()              { return OFstatic_cast( unsigned short, USHRT_MAX ); }
+    static inline unsigned short (max)()            { return OFstatic_cast( unsigned short, USHRT_MAX ); }
     static inline unsigned short epsilon()          { return OFstatic_cast( unsigned short, 0 ); }
     static inline unsigned short round_error()      { return OFstatic_cast( unsigned short, 0 ); }
     static inline unsigned short infinity()         { return OFstatic_cast( unsigned short, 0 ); }
@@ -1204,7 +1229,7 @@ struct OFnumeric_limits<signed int>
     static const OFBool is_bounded                  = OFTrue;
     static const OFBool is_modulo                   = DCMTK_SIGNED_INT_MODULO;
     static const int digits                         = OFstatic_cast( int, CHAR_BIT * sizeof( signed int ) - 1 );
-    static const int digits10                       = OFstatic_cast( int, OFnumeric_limits<signed int>::digits * .30102999566398119521373889472449 );
+    static const int digits10                       = DCMTK_SIGNED_INT_DIGITS10;
     static const int max_digits10                   = 0;
     static const int radix                          = 2;
     static const int min_exponent                   = 0;
@@ -1213,9 +1238,9 @@ struct OFnumeric_limits<signed int>
     static const int max_exponent10                 = 0;
     static const OFBool traps                       = DCMTK_SIGNED_INT_TRAPS;
     static const OFBool tinyness_before             = OFFalse;
-    static inline signed int min()                  { return OFstatic_cast( signed int, INT_MIN ); }
+    static inline signed int (min)()                { return OFstatic_cast( signed int, INT_MIN ); }
     static inline signed int lowest()               { return OFstatic_cast( signed int, INT_MIN ); }
-    static inline signed int max()                  { return OFstatic_cast( signed int, INT_MAX ); }
+    static inline signed int (max)()                { return OFstatic_cast( signed int, INT_MAX ); }
     static inline signed int epsilon()              { return OFstatic_cast( signed int, 0 ); }
     static inline signed int round_error()          { return OFstatic_cast( signed int, 0 ); }
     static inline signed int infinity()             { return OFstatic_cast( signed int, 0 ); }
@@ -1241,7 +1266,7 @@ struct OFnumeric_limits<unsigned int>
     static const OFBool is_bounded                  = OFTrue;
     static const OFBool is_modulo                   = DCMTK_UNSIGNED_INT_MODULO;
     static const int digits                         = OFstatic_cast( int, CHAR_BIT * sizeof( unsigned int ) );
-    static const int digits10                       = OFstatic_cast( int, OFnumeric_limits<unsigned int>::digits * .30102999566398119521373889472449 );
+    static const int digits10                       = DCMTK_UNSIGNED_INT_DIGITS10;
     static const int max_digits10                   = 0;
     static const int radix                          = 2;
     static const int min_exponent                   = 0;
@@ -1250,9 +1275,9 @@ struct OFnumeric_limits<unsigned int>
     static const int max_exponent10                 = 0;
     static const OFBool traps                       = DCMTK_UNSIGNED_INT_TRAPS;
     static const OFBool tinyness_before             = OFFalse;
-    static inline unsigned int min()                { return OFstatic_cast( unsigned int, 0 ); }
+    static inline unsigned int (min)()              { return OFstatic_cast( unsigned int, 0 ); }
     static inline unsigned int lowest()             { return OFstatic_cast( unsigned int, 0 ); }
-    static inline unsigned int max()                { return OFstatic_cast( unsigned int, UINT_MAX ); }
+    static inline unsigned int (max)()              { return OFstatic_cast( unsigned int, UINT_MAX ); }
     static inline unsigned int epsilon()            { return OFstatic_cast( unsigned int, 0 ); }
     static inline unsigned int round_error()        { return OFstatic_cast( unsigned int, 0 ); }
     static inline unsigned int infinity()           { return OFstatic_cast( unsigned int, 0 ); }
@@ -1278,7 +1303,7 @@ struct OFnumeric_limits<signed long>
     static const OFBool is_bounded                  = OFTrue;
     static const OFBool is_modulo                   = DCMTK_SIGNED_LONG_MODULO;
     static const int digits                         = OFstatic_cast( int, CHAR_BIT * sizeof( signed long ) - 1 );
-    static const int digits10                       = OFstatic_cast( int, OFnumeric_limits<signed long>::digits * .30102999566398119521373889472449 );
+    static const int digits10                       = DCMTK_SIGNED_LONG_DIGITS10;
     static const int max_digits10                   = 0;
     static const int radix                          = 2;
     static const int min_exponent                   = 0;
@@ -1287,9 +1312,9 @@ struct OFnumeric_limits<signed long>
     static const int max_exponent10                 = 0;
     static const OFBool traps                       = DCMTK_SIGNED_LONG_TRAPS;
     static const OFBool tinyness_before             = OFFalse;
-    static inline signed long min()                 { return OFstatic_cast( signed long, LONG_MIN ); }
+    static inline signed long (min)()               { return OFstatic_cast( signed long, LONG_MIN ); }
     static inline signed long lowest()              { return OFstatic_cast( signed long, LONG_MIN ); }
-    static inline signed long max()                 { return OFstatic_cast( signed long, LONG_MAX ); }
+    static inline signed long (max)()               { return OFstatic_cast( signed long, LONG_MAX ); }
     static inline signed long epsilon()             { return OFstatic_cast( signed long, 0 ); }
     static inline signed long round_error()         { return OFstatic_cast( signed long, 0 ); }
     static inline signed long infinity()            { return OFstatic_cast( signed long, 0 ); }
@@ -1315,7 +1340,7 @@ struct OFnumeric_limits<unsigned long>
     static const OFBool is_bounded                  = OFTrue;
     static const OFBool is_modulo                   = DCMTK_UNSIGNED_LONG_MODULO;
     static const int digits                         = OFstatic_cast( int, CHAR_BIT * sizeof( unsigned long ) );
-    static const int digits10                       = OFstatic_cast( int, OFnumeric_limits<unsigned long>::digits * .30102999566398119521373889472449 );
+    static const int digits10                       = DCMTK_UNSIGNED_LONG_DIGITS10;
     static const int max_digits10                   = 0;
     static const int radix                          = 2;
     static const int min_exponent                   = 0;
@@ -1324,9 +1349,9 @@ struct OFnumeric_limits<unsigned long>
     static const int max_exponent10                 = 0;
     static const OFBool traps                       = DCMTK_UNSIGNED_LONG_TRAPS;
     static const OFBool tinyness_before             = OFFalse;
-    static inline unsigned long min()               { return OFstatic_cast( unsigned long, 0 ); }
+    static inline unsigned long (min)()             { return OFstatic_cast( unsigned long, 0 ); }
     static inline unsigned long lowest()            { return OFstatic_cast( unsigned long, 0 ); }
-    static inline unsigned long max()               { return OFstatic_cast( unsigned long, ULONG_MAX ); }
+    static inline unsigned long (max)()             { return OFstatic_cast( unsigned long, ULONG_MAX ); }
     static inline unsigned long epsilon()           { return OFstatic_cast( unsigned long, 0 ); }
     static inline unsigned long round_error()       { return OFstatic_cast( unsigned long, 0 ); }
     static inline unsigned long infinity()          { return OFstatic_cast( unsigned long, 0 ); }
@@ -1353,7 +1378,7 @@ struct OFnumeric_limits<float>
     static const OFBool is_modulo                   = OFFalse;
     static const int digits                         = OFstatic_cast( int, FLT_MANT_DIG );
     static const int digits10                       = OFstatic_cast( int, FLT_DIG );
-    static const int max_digits10                   = OFstatic_cast( int, OFnumeric_limits<float>::digits * .30102999566398119521373889472449  + 2 );
+    static const int max_digits10                   = DCMTK_FLOAT_MAX_DIGITS10;
     static const int radix                          = FLT_RADIX;
     static const int min_exponent                   = FLT_MIN_EXP;
     static const int min_exponent10                 = FLT_MIN_10_EXP;
@@ -1361,9 +1386,9 @@ struct OFnumeric_limits<float>
     static const int max_exponent10                 = FLT_MAX_10_EXP;
     static const OFBool traps                       = DCMTK_FLOAT_TRAPS;
     static const OFBool tinyness_before             = DCMTK_FLOAT_TINYNESS_BEFORE;
-    static inline float min()                       { return OFstatic_cast( float, FLT_MIN ); }
+    static inline float (min)()                     { return OFstatic_cast( float, FLT_MIN ); }
     static inline float lowest()                    { return OFstatic_cast( float, -FLT_MAX ); }
-    static inline float max()                       { return OFstatic_cast( float, FLT_MAX ); }
+    static inline float (max)()                     { return OFstatic_cast( float, FLT_MAX ); }
     static inline float epsilon()                   { return OFstatic_cast( float, FLT_EPSILON ); }
     static inline float round_error()               { return OFstatic_cast( float, 0.5f ); }
     static inline float infinity()                  { return DCMTK_FLOAT_INFINITY; }
@@ -1390,7 +1415,7 @@ struct OFnumeric_limits<double>
     static const OFBool is_modulo                   = OFFalse;
     static const int digits                         = OFstatic_cast( int, DBL_MANT_DIG );
     static const int digits10                       = OFstatic_cast( int, DBL_DIG );
-    static const int max_digits10                   = OFstatic_cast( int, OFnumeric_limits<double>::digits * .30102999566398119521373889472449  + 2 );
+    static const int max_digits10                   = DCMTK_DOUBLE_MAX_DIGITS10;
     static const int radix                          = FLT_RADIX;
     static const int min_exponent                   = DBL_MIN_EXP;
     static const int min_exponent10                 = DBL_MIN_10_EXP;
@@ -1398,9 +1423,9 @@ struct OFnumeric_limits<double>
     static const int max_exponent10                 = DBL_MAX_10_EXP;
     static const OFBool traps                       = DCMTK_DOUBLE_TRAPS;
     static const OFBool tinyness_before             = DCMTK_DOUBLE_TINYNESS_BEFORE;
-    static inline double min()                      { return OFstatic_cast( double, DBL_MIN ); }
+    static inline double (min)()                    { return OFstatic_cast( double, DBL_MIN ); }
     static inline double lowest()                   { return OFstatic_cast( double, -DBL_MAX ); }
-    static inline double max()                      { return OFstatic_cast( double, DBL_MAX ); }
+    static inline double (max)()                    { return OFstatic_cast( double, DBL_MAX ); }
     static inline double epsilon()                  { return OFstatic_cast( double, DBL_EPSILON ); }
     static inline double round_error()              { return OFstatic_cast( double, 0.5 ); }
     static inline double infinity()                 { return DCMTK_DOUBLE_INFINITY; }

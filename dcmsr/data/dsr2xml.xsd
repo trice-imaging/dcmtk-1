@@ -10,7 +10,7 @@
   <xsd:annotation>
     <xsd:documentation xml:lang="en">
       XML Schema for DCMTK tools dsr2xml and xml2dsr.
-      Copyright (C) 2003-2015, OFFIS e.V.
+      Copyright (C) 2003-2021, OFFIS e.V. and J. Riesmeier
       All rights reserved.  See COPYRIGHT file for details.
     </xsd:documentation>
   </xsd:annotation>
@@ -25,11 +25,13 @@
     <xsd:sequence>
       <xsd:element name="sopclass" type="dsr:SOPClass"/>
       <xsd:element name="charset" type="dsr:Charset" minOccurs="0"/>
+      <xsd:element name="timezone" type="dsr:Timezone" minOccurs="0"/>
       <xsd:element name="modality" type="dsr:Modality" minOccurs="0"/>
       <xsd:choice>
         <xsd:element name="manufacturer" type="xsd:string" minOccurs="0"/>
         <xsd:element name="device" type="dsr:Device"/>
       </xsd:choice>
+      <xsd:element name="synchronization" type="dsr:Synchronization" minOccurs="0"/>
       <xsd:element name="referringphysician" type="dsr:ReferringPhysician" minOccurs="0"/>
       <xsd:element name="patient" type="dsr:Patient"/>
       <xsd:element name="study" type="dsr:Study"/>
@@ -40,7 +42,7 @@
       <xsd:element name="reference" type="dsr:Reference" minOccurs="0"/>
       <xsd:element name="document" type="dsr:Document"/>
     </xsd:sequence>
-    <xsd:attribute name="type" type="dsr:ReportType" use="required"/>
+    <xsd:attribute name="type" type="dsr:ReportType"/>
   </xsd:complexType>
 
   <!-- Complex Types (2nd level) -->
@@ -55,11 +57,19 @@
 
   <xsd:complexType name="Device">
     <xsd:sequence>
-      <xsd:element name="manufacturer" type="dsr:LongString"/>
+      <xsd:element name="manufacturer" type="dsr:LongString" minOccurs="0"/>
       <xsd:element name="model" type="dsr:LongString"/>
       <xsd:element name="serial" type="dsr:LongString" minOccurs="0"/>
       <xsd:element name="version" type="dsr:LongString" minOccurs="0"/>
     </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="Synchronization">
+    <xsd:sequence>
+      <xsd:element name="trigger" type="dsr:SynchronizationTrigger"/>
+      <xsd:element name="acquisitiontime" type="dsr:YesNo"/>
+    </xsd:sequence>
+    <xsd:attribute name="uid" type="dsr:UniqueIdentifier" use="required"/>
   </xsd:complexType>
 
   <xsd:complexType name="ReferringPhysician">
@@ -71,6 +81,7 @@
   <xsd:complexType name="Patient">
     <xsd:sequence>
       <xsd:element name="id" type="dsr:LongString" minOccurs="0"/>
+      <xsd:element name="issuer" type="dsr:LongString" minOccurs="0"/>
       <xsd:element name="name" type="dsr:PersonName" minOccurs="0"/>
       <xsd:element name="birthday" minOccurs="0">
         <xsd:complexType>
@@ -80,6 +91,9 @@
         </xsd:complexType>
       </xsd:element>
       <xsd:element name="sex" type="dsr:Sex" minOccurs="0"/>
+      <!-- strictly speaking, Patient's Size and Weight belong to the Study IE -->
+      <xsd:element name="size" type="dsr:DecimalString" minOccurs="0"/>
+      <xsd:element name="weight" type="dsr:DecimalString" minOccurs="0"/>
     </xsd:sequence>
   </xsd:complexType>
 
@@ -714,7 +728,19 @@
       <xsd:enumeration value="Chest CAD SR"/>
       <xsd:enumeration value="Colon CAD SR"/>
       <xsd:enumeration value="Procedure Log"/>
-      <xsd:enumeration value="X-Ray Radiation Dose SR Document"/>
+      <xsd:enumeration value="X-Ray Radiation Dose SR"/>
+      <xsd:enumeration value="Enhanced X-Ray Radiation Dose SR"/>
+      <xsd:enumeration value="Spectacle Prescription Report"/>
+      <xsd:enumeration value="Macular Grid Thickness and Volume Report"/>
+      <xsd:enumeration value="Implantation Plan SR Document"/>
+      <xsd:enumeration value="Comprehensive 3D SR"/>
+      <xsd:enumeration value="Radiopharmaceutical Radiation Dose SR"/>
+      <xsd:enumeration value="Extensible SR"/>
+      <xsd:enumeration value="Acquisition Context SR"/>
+      <xsd:enumeration value="Simplified Adult Echo SR"/>
+      <xsd:enumeration value="Patient Radiation Dose SR"/>
+      <xsd:enumeration value="Performed Imaging Agent Administration SR"/>
+      <xsd:enumeration value="Planned Imaging Agent Administration SR"/>
     </xsd:restriction>
   </xsd:simpleType>
 
@@ -805,6 +831,15 @@
     </xsd:restriction>
   </xsd:simpleType>
 
+  <xsd:simpleType name="SynchronizationTrigger">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="SOURCE"/>
+      <xsd:enumeration value="EXTERNAL"/>
+      <xsd:enumeration value="PASSTHRU"/>
+      <xsd:enumeration value="NO TRIGGER"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
   <xsd:simpleType name="Charset">
     <xsd:restriction base="xsd:string">
       <xsd:enumeration value="ISO_IR 6"/>
@@ -817,8 +852,12 @@
       <xsd:enumeration value="ISO_IR 126"/>
       <xsd:enumeration value="ISO_IR 138"/>
       <xsd:enumeration value="ISO_IR 148"/>
-      <xsd:enumeration value="ISO_IR 13"/>
       <xsd:enumeration value="ISO_IR 166"/>
+      <xsd:enumeration value="ISO 2022 IR 13\ISO 2022 IR 87"/>
+      <xsd:enumeration value="ISO 2022 IR 6\ISO 2022 IR 149"/>
+      <xsd:enumeration value="ISO 2022 IR 6\ISO 2022 IR 58"/>
+      <xsd:enumeration value="GB18030"/>
+      <xsd:enumeration value="GBK"/>
       <xsd:enumeration value="ISO_IR 192"/>
     </xsd:restriction>
   </xsd:simpleType>
@@ -835,6 +874,13 @@
       <xsd:enumeration value="M"/>
       <xsd:enumeration value="F"/>
       <xsd:enumeration value="O"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="YesNo">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="YES"/>
+      <xsd:enumeration value="NO"/>
     </xsd:restriction>
   </xsd:simpleType>
 
@@ -859,8 +905,9 @@
   </xsd:simpleType>
 
   <xsd:simpleType name="DecimalString">
-    <xsd:restriction base="xsd:decimal">
-      <xsd:totalDigits value="16"/>
+    <xsd:restriction base="xsd:string">
+      <xsd:pattern value="[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?"/>
+      <xsd:maxLength value="16"/>
     </xsd:restriction>
   </xsd:simpleType>
 
@@ -906,9 +953,8 @@
 
   <xsd:simpleType name="UniqueIdentifier">
     <xsd:restriction base="xsd:string">
-      <xsd:minLength value="1"/>
       <xsd:maxLength value="64"/>
-      <xsd:pattern value="\d+(\.\d+)*"/>
+      <xsd:pattern value="(([1-9][0-9]*)|0)(\.([1-9][0-9]*|0))+"/>
     </xsd:restriction>
   </xsd:simpleType>
 
@@ -943,6 +989,12 @@
   </xsd:complexType>
 
   <!-- Other Data Types -->
+
+  <xsd:simpleType name="Timezone">
+    <xsd:restriction base="xsd:string">
+      <xsd:pattern value="[\-+][0-9]{4}"/>
+    </xsd:restriction>
+  </xsd:simpleType>
 
   <xsd:simpleType name="IntegerList">
     <xsd:restriction base="xsd:string">

@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTScheduledProtocolCodeSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -31,8 +31,13 @@ DRTScheduledProtocolCodeSequence::Item::Item(const OFBool emptyDefaultItem)
     ContextGroupVersion(DCM_ContextGroupVersion),
     ContextIdentifier(DCM_ContextIdentifier),
     ContextUID(DCM_ContextUID),
+    EquivalentCodeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
+    LongCodeValue(DCM_LongCodeValue),
     MappingResource(DCM_MappingResource),
-    ProtocolContextSequence(emptyDefaultItem /*emptyDefaultSequence*/)
+    MappingResourceName(DCM_MappingResourceName),
+    MappingResourceUID(DCM_MappingResourceUID),
+    ProtocolContextSequence(emptyDefaultItem /*emptyDefaultSequence*/),
+    URNCodeValue(DCM_URNCodeValue)
 {
 }
 
@@ -49,8 +54,13 @@ DRTScheduledProtocolCodeSequence::Item::Item(const Item &copy)
     ContextGroupVersion(copy.ContextGroupVersion),
     ContextIdentifier(copy.ContextIdentifier),
     ContextUID(copy.ContextUID),
+    EquivalentCodeSequence(copy.EquivalentCodeSequence),
+    LongCodeValue(copy.LongCodeValue),
     MappingResource(copy.MappingResource),
-    ProtocolContextSequence(copy.ProtocolContextSequence)
+    MappingResourceName(copy.MappingResourceName),
+    MappingResourceUID(copy.MappingResourceUID),
+    ProtocolContextSequence(copy.ProtocolContextSequence),
+    URNCodeValue(copy.URNCodeValue)
 {
 }
 
@@ -75,8 +85,13 @@ DRTScheduledProtocolCodeSequence::Item &DRTScheduledProtocolCodeSequence::Item::
         ContextGroupVersion = copy.ContextGroupVersion;
         ContextIdentifier = copy.ContextIdentifier;
         ContextUID = copy.ContextUID;
+        EquivalentCodeSequence = copy.EquivalentCodeSequence;
+        LongCodeValue = copy.LongCodeValue;
         MappingResource = copy.MappingResource;
+        MappingResourceName = copy.MappingResourceName;
+        MappingResourceUID = copy.MappingResourceUID;
         ProtocolContextSequence = copy.ProtocolContextSequence;
+        URNCodeValue = copy.URNCodeValue;
     }
     return *this;
 }
@@ -91,9 +106,14 @@ void DRTScheduledProtocolCodeSequence::Item::clear()
         CodingSchemeDesignator.clear();
         CodingSchemeVersion.clear();
         CodeMeaning.clear();
+        LongCodeValue.clear();
+        URNCodeValue.clear();
+        EquivalentCodeSequence.clear();
         ContextIdentifier.clear();
         ContextUID.clear();
         MappingResource.clear();
+        MappingResourceUID.clear();
+        MappingResourceName.clear();
         ContextGroupVersion.clear();
         ContextGroupExtensionFlag.clear();
         ContextGroupLocalVersion.clear();
@@ -109,9 +129,14 @@ OFBool DRTScheduledProtocolCodeSequence::Item::isEmpty()
            CodingSchemeDesignator.isEmpty() &&
            CodingSchemeVersion.isEmpty() &&
            CodeMeaning.isEmpty() &&
+           LongCodeValue.isEmpty() &&
+           URNCodeValue.isEmpty() &&
+           EquivalentCodeSequence.isEmpty() &&
            ContextIdentifier.isEmpty() &&
            ContextUID.isEmpty() &&
            MappingResource.isEmpty() &&
+           MappingResourceUID.isEmpty() &&
+           MappingResourceName.isEmpty() &&
            ContextGroupVersion.isEmpty() &&
            ContextGroupExtensionFlag.isEmpty() &&
            ContextGroupLocalVersion.isEmpty() &&
@@ -133,13 +158,18 @@ OFCondition DRTScheduledProtocolCodeSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, CodeValue, "1", "1", "ScheduledProtocolCodeSequence");
-        getAndCheckElementFromDataset(item, CodingSchemeDesignator, "1", "1", "ScheduledProtocolCodeSequence");
+        getAndCheckElementFromDataset(item, CodeValue, "1", "1C", "ScheduledProtocolCodeSequence");
+        getAndCheckElementFromDataset(item, CodingSchemeDesignator, "1", "1C", "ScheduledProtocolCodeSequence");
         getAndCheckElementFromDataset(item, CodingSchemeVersion, "1", "1C", "ScheduledProtocolCodeSequence");
         getAndCheckElementFromDataset(item, CodeMeaning, "1", "1", "ScheduledProtocolCodeSequence");
+        getAndCheckElementFromDataset(item, LongCodeValue, "1", "1C", "ScheduledProtocolCodeSequence");
+        getAndCheckElementFromDataset(item, URNCodeValue, "1", "1C", "ScheduledProtocolCodeSequence");
+        EquivalentCodeSequence.read(item, "1-n", "3", "ScheduledProtocolCodeSequence");
         getAndCheckElementFromDataset(item, ContextIdentifier, "1", "3", "ScheduledProtocolCodeSequence");
         getAndCheckElementFromDataset(item, ContextUID, "1", "3", "ScheduledProtocolCodeSequence");
         getAndCheckElementFromDataset(item, MappingResource, "1", "1C", "ScheduledProtocolCodeSequence");
+        getAndCheckElementFromDataset(item, MappingResourceUID, "1", "3", "ScheduledProtocolCodeSequence");
+        getAndCheckElementFromDataset(item, MappingResourceName, "1", "3", "ScheduledProtocolCodeSequence");
         getAndCheckElementFromDataset(item, ContextGroupVersion, "1", "1C", "ScheduledProtocolCodeSequence");
         getAndCheckElementFromDataset(item, ContextGroupExtensionFlag, "1", "3", "ScheduledProtocolCodeSequence");
         getAndCheckElementFromDataset(item, ContextGroupLocalVersion, "1", "1C", "ScheduledProtocolCodeSequence");
@@ -157,13 +187,18 @@ OFCondition DRTScheduledProtocolCodeSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmShortString(CodeValue), "1", "1", "ScheduledProtocolCodeSequence");
-        addElementToDataset(result, item, new DcmShortString(CodingSchemeDesignator), "1", "1", "ScheduledProtocolCodeSequence");
+        addElementToDataset(result, item, new DcmShortString(CodeValue), "1", "1C", "ScheduledProtocolCodeSequence");
+        addElementToDataset(result, item, new DcmShortString(CodingSchemeDesignator), "1", "1C", "ScheduledProtocolCodeSequence");
         addElementToDataset(result, item, new DcmShortString(CodingSchemeVersion), "1", "1C", "ScheduledProtocolCodeSequence");
         addElementToDataset(result, item, new DcmLongString(CodeMeaning), "1", "1", "ScheduledProtocolCodeSequence");
+        addElementToDataset(result, item, new DcmUnlimitedCharacters(LongCodeValue), "1", "1C", "ScheduledProtocolCodeSequence");
+        addElementToDataset(result, item, new DcmUniversalResourceIdentifierOrLocator(URNCodeValue), "1", "1C", "ScheduledProtocolCodeSequence");
+        if (result.good()) result = EquivalentCodeSequence.write(item, "1-n", "3", "ScheduledProtocolCodeSequence");
         addElementToDataset(result, item, new DcmCodeString(ContextIdentifier), "1", "3", "ScheduledProtocolCodeSequence");
         addElementToDataset(result, item, new DcmUniqueIdentifier(ContextUID), "1", "3", "ScheduledProtocolCodeSequence");
         addElementToDataset(result, item, new DcmCodeString(MappingResource), "1", "1C", "ScheduledProtocolCodeSequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(MappingResourceUID), "1", "3", "ScheduledProtocolCodeSequence");
+        addElementToDataset(result, item, new DcmLongString(MappingResourceName), "1", "3", "ScheduledProtocolCodeSequence");
         addElementToDataset(result, item, new DcmDateTime(ContextGroupVersion), "1", "1C", "ScheduledProtocolCodeSequence");
         addElementToDataset(result, item, new DcmCodeString(ContextGroupExtensionFlag), "1", "3", "ScheduledProtocolCodeSequence");
         addElementToDataset(result, item, new DcmDateTime(ContextGroupLocalVersion), "1", "1C", "ScheduledProtocolCodeSequence");
@@ -264,12 +299,48 @@ OFCondition DRTScheduledProtocolCodeSequence::Item::getContextUID(OFString &valu
 }
 
 
+OFCondition DRTScheduledProtocolCodeSequence::Item::getLongCodeValue(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(LongCodeValue, value, pos);
+}
+
+
 OFCondition DRTScheduledProtocolCodeSequence::Item::getMappingResource(OFString &value, const signed long pos) const
 {
     if (EmptyDefaultItem)
         return EC_IllegalCall;
     else
         return getStringValueFromElement(MappingResource, value, pos);
+}
+
+
+OFCondition DRTScheduledProtocolCodeSequence::Item::getMappingResourceName(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(MappingResourceName, value, pos);
+}
+
+
+OFCondition DRTScheduledProtocolCodeSequence::Item::getMappingResourceUID(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(MappingResourceUID, value, pos);
+}
+
+
+OFCondition DRTScheduledProtocolCodeSequence::Item::getURNCodeValue(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(URNCodeValue, value, pos);
 }
 
 
@@ -403,6 +474,19 @@ OFCondition DRTScheduledProtocolCodeSequence::Item::setContextUID(const OFString
 }
 
 
+OFCondition DRTScheduledProtocolCodeSequence::Item::setLongCodeValue(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmUnlimitedCharacters::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = LongCodeValue.putOFStringArray(value);
+    }
+    return result;
+}
+
+
 OFCondition DRTScheduledProtocolCodeSequence::Item::setMappingResource(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -411,6 +495,45 @@ OFCondition DRTScheduledProtocolCodeSequence::Item::setMappingResource(const OFS
         result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
             result = MappingResource.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTScheduledProtocolCodeSequence::Item::setMappingResourceName(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = MappingResourceName.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTScheduledProtocolCodeSequence::Item::setMappingResourceUID(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmUniqueIdentifier::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = MappingResourceUID.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTScheduledProtocolCodeSequence::Item::setURNCodeValue(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmUniversalResourceIdentifierOrLocator::checkStringValue(value) : EC_Normal;
+        if (result.good())
+            result = URNCodeValue.putOFStringArray(value);
     }
     return result;
 }
@@ -519,7 +642,7 @@ OFBool DRTScheduledProtocolCodeSequence::isValid() const
 }
 
 
-unsigned long DRTScheduledProtocolCodeSequence::getNumberOfItems() const
+size_t DRTScheduledProtocolCodeSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -549,12 +672,12 @@ OFCondition DRTScheduledProtocolCodeSequence::gotoNextItem()
 }
 
 
-OFCondition DRTScheduledProtocolCodeSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTScheduledProtocolCodeSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -569,12 +692,12 @@ OFCondition DRTScheduledProtocolCodeSequence::gotoItem(const unsigned long num, 
 }
 
 
-OFCondition DRTScheduledProtocolCodeSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTScheduledProtocolCodeSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -589,7 +712,7 @@ OFCondition DRTScheduledProtocolCodeSequence::gotoItem(const unsigned long num, 
 }
 
 
-OFCondition DRTScheduledProtocolCodeSequence::gotoItem(const unsigned long num)
+OFCondition DRTScheduledProtocolCodeSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -625,7 +748,7 @@ const DRTScheduledProtocolCodeSequence::Item &DRTScheduledProtocolCodeSequence::
 }
 
 
-OFCondition DRTScheduledProtocolCodeSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTScheduledProtocolCodeSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -635,7 +758,7 @@ OFCondition DRTScheduledProtocolCodeSequence::getItem(const unsigned long num, I
 }
 
 
-DRTScheduledProtocolCodeSequence::Item &DRTScheduledProtocolCodeSequence::getItem(const unsigned long num)
+DRTScheduledProtocolCodeSequence::Item &DRTScheduledProtocolCodeSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -645,7 +768,7 @@ DRTScheduledProtocolCodeSequence::Item &DRTScheduledProtocolCodeSequence::getIte
 }
 
 
-const DRTScheduledProtocolCodeSequence::Item &DRTScheduledProtocolCodeSequence::getItem(const unsigned long num) const
+const DRTScheduledProtocolCodeSequence::Item &DRTScheduledProtocolCodeSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -655,13 +778,13 @@ const DRTScheduledProtocolCodeSequence::Item &DRTScheduledProtocolCodeSequence::
 }
 
 
-DRTScheduledProtocolCodeSequence::Item &DRTScheduledProtocolCodeSequence::operator[](const unsigned long num)
+DRTScheduledProtocolCodeSequence::Item &DRTScheduledProtocolCodeSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTScheduledProtocolCodeSequence::Item &DRTScheduledProtocolCodeSequence::operator[](const unsigned long num) const
+const DRTScheduledProtocolCodeSequence::Item &DRTScheduledProtocolCodeSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -684,7 +807,7 @@ OFCondition DRTScheduledProtocolCodeSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTScheduledProtocolCodeSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTScheduledProtocolCodeSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -707,7 +830,7 @@ OFCondition DRTScheduledProtocolCodeSequence::insertItem(const unsigned long pos
 }
 
 
-OFCondition DRTScheduledProtocolCodeSequence::removeItem(const unsigned long pos)
+OFCondition DRTScheduledProtocolCodeSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

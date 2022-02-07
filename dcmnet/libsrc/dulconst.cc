@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2011, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were partly developed by
@@ -67,17 +67,12 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
-
 #include "dcmtk/dcmnet/dicom.h"
 #include "dcmtk/dcmnet/cond.h"
 #include "dcmtk/dcmnet/diutil.h"
 #include "dcmtk/dcmnet/lst.h"
 #include "dcmtk/dcmnet/dul.h"
-#include "dulstruc.h"
+#include "dcmtk/dcmnet/dulstruc.h"
 #include "dulpriv.h"
 #include "dcmtk/ofstd/ofconsol.h"
 
@@ -177,12 +172,12 @@ constructAssociatePDU(DUL_ASSOCIATESERVICEPARAMETERS * params,
 
     if (strlen(params->calledAPTitle) < 1 || strlen(params->calledAPTitle) > 16)
         return makeDcmnetCondition(DULC_ILLEGALSERVICEPARAMETER, OF_error, "Illegal service parameter: Called AP Title");
-    (void) strcpy(pdu->calledAPTitle, params->calledAPTitle);
+    OFStandard::strlcpy(pdu->calledAPTitle, params->calledAPTitle, sizeof(pdu->calledAPTitle));
     pdu->length += 16;
 
     if (strlen(params->callingAPTitle) < 1 || strlen(params->callingAPTitle) > 16)
         return makeDcmnetCondition(DULC_ILLEGALSERVICEPARAMETER, OF_error, "Illegal service parameter: Calling AP Title");
-    (void) strcpy(pdu->callingAPTitle, params->callingAPTitle);
+    OFStandard::strlcpy(pdu->callingAPTitle, params->callingAPTitle, sizeof(pdu->callingAPTitle));
     pdu->length += 16;
 
     (void) memset(pdu->rsv3, 0, 32);
@@ -482,11 +477,16 @@ streamAssociatePDU(PRV_ASSOCIATEPDU * assoc, unsigned char *b,
     *b++ = assoc->rsv2[0];
     *b++ = assoc->rsv2[1];
     (void) memset(b, ' ', 32);
-    (void) strncpy((char *) b, assoc->calledAPTitle,
-            strlen(assoc->calledAPTitle));
+
+    // we don't copy the zero bytes at the end of the AEtitle strings
+    // since the PDU requires a space-padded, non zero-padded string.
+    size_t len = strlen(assoc->calledAPTitle);
+    if (len > 16) len = 16;
+    memcpy(b, assoc->calledAPTitle, len);
     b += 16;
-    (void) strncpy((char *) b, assoc->callingAPTitle,
-            strlen(assoc->callingAPTitle));
+    len = strlen(assoc->callingAPTitle);
+    if (len > 16) len = 16;
+    memcpy(b, assoc->callingAPTitle, len);
     b += 16;
     (void) memset(b, 0, 32);
     b += 32;
@@ -664,13 +664,13 @@ constructSubItem(char *name, unsigned char type,
     if (strlen(name) < 1 || strlen(name) > 64)
     {
         char buf[1024];
-        sprintf(buf,"Illegal service parameter: %s", name);
+        OFStandard::snprintf(buf, 1024, "Illegal service parameter: %s", name);
         return makeDcmnetCondition(DULC_ILLEGALSERVICEPARAMETER, OF_error, buf);
     }
     subItem->type = type;
     subItem->rsv1 = 0;
     subItem->length = (unsigned short) strlen(name);
-    (void) strcpy(subItem->data, name);
+    OFStandard::strlcpy(subItem->data, name, sizeof(subItem->data));
 
     *rtnLength = subItem->length + 4;
     return EC_Normal;
@@ -1012,6 +1012,9 @@ constructSCUSCPRoles(unsigned char type,
           presentationCtx = (DUL_PRESENTATIONCONTEXT*)LST_Next(&params->requestedPresentationContext);
       }
   } else {  // type != DUL_TYPEASSOCIATERQ
+     /* The implemented behaviour is documented in dul.h (see DUL_SC_ROLE enum definition).
+      * The error case is already handled in ASC_acceptPresentationContext() in assoc.cc.
+      */
       presentationCtx = params->acceptedPresentationContext != NULL ?
           (DUL_PRESENTATIONCONTEXT*)LST_Head(&params->acceptedPresentationContext) :
           (DUL_PRESENTATIONCONTEXT*)NULL;
@@ -1093,7 +1096,7 @@ constructExtNeg(unsigned char type,
             SOPClassExtendedNegotiationSubItem* extNeg = *i;
             extNeg->itemType = 0x56;
             // recompute the length fields
-            extNeg->sopClassUIDLength = extNeg->sopClassUID.length();
+            extNeg->sopClassUIDLength = OFstatic_cast(unsigned short, extNeg->sopClassUID.length());
             extNeg->itemLength = 2 + extNeg->sopClassUIDLength + extNeg->serviceClassAppInfoLength;
             length = 4 + extNeg->itemLength;
             *rtnLength += length;
@@ -1133,7 +1136,7 @@ constructSCUSCPSubItem(char *name, unsigned char type, unsigned char scuRole,
     if (strlen(name) < 1 || strlen(name) > 64)
     {
         char buf[1024];
-        sprintf(buf,"Illegal service parameter: %s", name);
+        OFStandard::snprintf(buf, 1024, "Illegal service parameter: %s", name);
         return makeDcmnetCondition(DULC_ILLEGALSERVICEPARAMETER, OF_error, buf);
     }
 
@@ -1142,7 +1145,7 @@ constructSCUSCPSubItem(char *name, unsigned char type, unsigned char scuRole,
     scuscpItem->SCURole = scuRole;
     scuscpItem->SCPRole = scpRole;
     scuscpItem->length = (unsigned short) (strlen(name) + 2 + 2);
-    (void) strcpy(scuscpItem->SOPClassUID, name);
+    OFStandard::strlcpy(scuscpItem->SOPClassUID, name, sizeof(scuscpItem->SOPClassUID));
 
     *length = scuscpItem->length + 4;
     return EC_Normal;
@@ -1457,7 +1460,7 @@ streamSCUSCPRole(PRV_SCUSCPROLE * scuscpRole, unsigned char *b,
     COPY_SHORT_BIG(length, b);
     b += 2;
 
-    length = strlen(scuscpRole->SOPClassUID);
+    length = OFstatic_cast(unsigned short, strlen(scuscpRole->SOPClassUID));
     COPY_SHORT_BIG(length, b);
     b += 2;
 
@@ -1503,7 +1506,7 @@ streamExtNeg(SOPClassExtendedNegotiationSubItem* extNeg, unsigned char *b, unsig
 
     extNeg->itemType = 0x56;
     // recompute the length fields
-    extNeg->sopClassUIDLength = extNeg->sopClassUID.length();
+    extNeg->sopClassUIDLength = OFstatic_cast(unsigned short, extNeg->sopClassUID.length());
     extNeg->itemLength = 2 + extNeg->sopClassUIDLength + extNeg->serviceClassAppInfoLength;
 
     *b++ = extNeg->itemType;

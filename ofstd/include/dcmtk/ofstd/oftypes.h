@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1997-2014, OFFIS e.V.
+ *  Copyright (C) 1997-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,17 +27,24 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 #include "dcmtk/ofstd/ofdefine.h"
 
+// some C++ implementations only define printf format macros like PRIu32
+// when this macro is defined before <inttypes.h> or <cinttypes> are included.
+#define __STDC_FORMAT_MACROS 1
+
 // include this file in doxygen documentation
 
 /** @file oftypes.h
  *  @brief Definition of standard types used throughout the toolkit
  */
 
+#include "dcmtk/ofstd/ofstdinc.h"
+
 // use native types if C++11 is supported
-#ifdef DCMTK_USE_CXX11_STL
+#ifdef HAVE_CXX11
 #include <cstdint>
 #include <cstddef>
 #include <ostream>
+#include <cinttypes>
 
 #define OFTypename typename
 #define OFlonglong long long
@@ -68,21 +75,33 @@ inline std::ostream& operator<<( std::ostream& o, OFnullptr_t /* unused */ )
 
 #else // fallback definitions
 
-#define INCLUDE_OSTREAM
-#define INCLUDE_CSTDINT
-#define INCLUDE_CSTDDEF
-#include "dcmtk/ofstd/ofstdinc.h"
+#include <cstddef>
+BEGIN_EXTERN_C
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+END_EXTERN_C
+
+#include "dcmtk/ofstd/ofstream.h"
 
 typedef signed char     Sint8;
 typedef unsigned char   Uint8;
 
+#ifdef PRIu32 /* if that macro exists, we also have int32_t et al */
+typedef int32_t         Sint32;
+typedef uint32_t        Uint32;
+#else /* defined(PRIu32) */
 #if SIZEOF_LONG == 8
 typedef signed int      Sint32;
 typedef unsigned int    Uint32;
-#else
+#else /* SIZEOF_LONG == 8 */
 typedef signed long     Sint32;
 typedef unsigned long   Uint32;
-#endif
+#endif /* SIZEOF_LONG == 8 */
+#endif /* defined(PRIu32) */
 
 typedef signed short    Sint16;
 typedef unsigned short  Uint16;
@@ -120,7 +139,7 @@ typedef OFlonglong    Sint64;
 #define OF_NO_SINT64 1
 #endif
 
-#ifdef HAVE_INT64_T
+#ifdef HAVE_UINT64_T
 /* many platforms define uint64_t in <cstdint> */
 typedef uint64_t      Uint64;
 #elif SIZEOF_LONG == 8
@@ -157,29 +176,9 @@ typedef Uint64 OFuintptr_t;
 
 // Definition of type OFBool
 
-#ifdef HAVE_CXX_BOOL
-
-#define OFBool bool
+typedef bool OFBool;
 #define OFTrue true
 #define OFFalse false
-
-#else
-
-/** the boolean type used throughout the DCMTK project. Mapped to the
- *  built-in type "bool" if the current C++ compiler supports it. Mapped
- *  to int for old-fashioned compilers which do not yet support bool.
- */
-typedef int OFBool;
-
-#ifndef OFTrue
-#define OFTrue (1)
-#endif
-
-#ifndef OFFalse
-#define OFFalse (0)
-#endif
-
-#endif
 
 #if defined(HAVE_TYPENAME)
 #define OFTypename typename

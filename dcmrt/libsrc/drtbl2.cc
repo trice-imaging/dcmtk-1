@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTBlockSequenceInRTBeamsModule
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -33,7 +33,8 @@ DRTBlockSequenceInRTBeamsModule::Item::Item(const OFBool emptyDefaultItem)
     BlockTrayID(DCM_BlockTrayID),
     BlockType(DCM_BlockType),
     MaterialID(DCM_MaterialID),
-    SourceToBlockTrayDistance(DCM_SourceToBlockTrayDistance)
+    SourceToBlockTrayDistance(DCM_SourceToBlockTrayDistance),
+    TrayAccessoryCode(DCM_TrayAccessoryCode)
 {
 }
 
@@ -52,7 +53,8 @@ DRTBlockSequenceInRTBeamsModule::Item::Item(const Item &copy)
     BlockTrayID(copy.BlockTrayID),
     BlockType(copy.BlockType),
     MaterialID(copy.MaterialID),
-    SourceToBlockTrayDistance(copy.SourceToBlockTrayDistance)
+    SourceToBlockTrayDistance(copy.SourceToBlockTrayDistance),
+    TrayAccessoryCode(copy.TrayAccessoryCode)
 {
 }
 
@@ -80,6 +82,7 @@ DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::Item::op
         BlockType = copy.BlockType;
         MaterialID = copy.MaterialID;
         SourceToBlockTrayDistance = copy.SourceToBlockTrayDistance;
+        TrayAccessoryCode = copy.TrayAccessoryCode;
     }
     return *this;
 }
@@ -91,6 +94,7 @@ void DRTBlockSequenceInRTBeamsModule::Item::clear()
     {
         /* clear all DICOM attributes */
         BlockTrayID.clear();
+        TrayAccessoryCode.clear();
         AccessoryCode.clear();
         SourceToBlockTrayDistance.clear();
         BlockType.clear();
@@ -110,6 +114,7 @@ void DRTBlockSequenceInRTBeamsModule::Item::clear()
 OFBool DRTBlockSequenceInRTBeamsModule::Item::isEmpty()
 {
     return BlockTrayID.isEmpty() &&
+           TrayAccessoryCode.isEmpty() &&
            AccessoryCode.isEmpty() &&
            SourceToBlockTrayDistance.isEmpty() &&
            BlockType.isEmpty() &&
@@ -139,6 +144,7 @@ OFCondition DRTBlockSequenceInRTBeamsModule::Item::read(DcmItem &item)
         /* re-initialize object */
         clear();
         getAndCheckElementFromDataset(item, BlockTrayID, "1", "3", "BlockSequence");
+        getAndCheckElementFromDataset(item, TrayAccessoryCode, "1", "3", "BlockSequence");
         getAndCheckElementFromDataset(item, AccessoryCode, "1", "3", "BlockSequence");
         getAndCheckElementFromDataset(item, SourceToBlockTrayDistance, "1", "2", "BlockSequence");
         getAndCheckElementFromDataset(item, BlockType, "1", "1", "BlockSequence");
@@ -164,6 +170,7 @@ OFCondition DRTBlockSequenceInRTBeamsModule::Item::write(DcmItem &item)
     {
         result = EC_Normal;
         addElementToDataset(result, item, new DcmShortString(BlockTrayID), "1", "3", "BlockSequence");
+        addElementToDataset(result, item, new DcmLongString(TrayAccessoryCode), "1", "3", "BlockSequence");
         addElementToDataset(result, item, new DcmLongString(AccessoryCode), "1", "3", "BlockSequence");
         addElementToDataset(result, item, new DcmDecimalString(SourceToBlockTrayDistance), "1", "2", "BlockSequence");
         addElementToDataset(result, item, new DcmCodeString(BlockType), "1", "1", "BlockSequence");
@@ -361,6 +368,15 @@ OFCondition DRTBlockSequenceInRTBeamsModule::Item::getSourceToBlockTrayDistance(
 }
 
 
+OFCondition DRTBlockSequenceInRTBeamsModule::Item::getTrayAccessoryCode(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(TrayAccessoryCode, value, pos);
+}
+
+
 OFCondition DRTBlockSequenceInRTBeamsModule::Item::setAccessoryCode(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -530,6 +546,19 @@ OFCondition DRTBlockSequenceInRTBeamsModule::Item::setSourceToBlockTrayDistance(
 }
 
 
+OFCondition DRTBlockSequenceInRTBeamsModule::Item::setTrayAccessoryCode(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = TrayAccessoryCode.putOFStringArray(value);
+    }
+    return result;
+}
+
+
 // --- sequence class ---
 
 DRTBlockSequenceInRTBeamsModule::DRTBlockSequenceInRTBeamsModule(const OFBool emptyDefaultSequence)
@@ -633,7 +662,7 @@ OFBool DRTBlockSequenceInRTBeamsModule::isValid() const
 }
 
 
-unsigned long DRTBlockSequenceInRTBeamsModule::getNumberOfItems() const
+size_t DRTBlockSequenceInRTBeamsModule::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -663,12 +692,12 @@ OFCondition DRTBlockSequenceInRTBeamsModule::gotoNextItem()
 }
 
 
-OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -683,12 +712,12 @@ OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const unsigned long num, O
 }
 
 
-OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -703,7 +732,7 @@ OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const unsigned long num, O
 }
 
 
-OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const unsigned long num)
+OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -739,7 +768,7 @@ const DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::ge
 }
 
 
-OFCondition DRTBlockSequenceInRTBeamsModule::getItem(const unsigned long num, Item *&item)
+OFCondition DRTBlockSequenceInRTBeamsModule::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -749,7 +778,7 @@ OFCondition DRTBlockSequenceInRTBeamsModule::getItem(const unsigned long num, It
 }
 
 
-DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::getItem(const unsigned long num)
+DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -759,7 +788,7 @@ DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::getItem(
 }
 
 
-const DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::getItem(const unsigned long num) const
+const DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -769,13 +798,13 @@ const DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::ge
 }
 
 
-DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::operator[](const unsigned long num)
+DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::operator[](const unsigned long num) const
+const DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -798,7 +827,7 @@ OFCondition DRTBlockSequenceInRTBeamsModule::addItem(Item *&item)
 }
 
 
-OFCondition DRTBlockSequenceInRTBeamsModule::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTBlockSequenceInRTBeamsModule::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -821,7 +850,7 @@ OFCondition DRTBlockSequenceInRTBeamsModule::insertItem(const unsigned long pos,
 }
 
 
-OFCondition DRTBlockSequenceInRTBeamsModule::removeItem(const unsigned long pos)
+OFCondition DRTBlockSequenceInRTBeamsModule::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2005-2014, OFFIS e.V.
+ *  Copyright (C) 2005-2015, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -33,7 +33,13 @@
  *  class declaration  *
  *---------------------*/
 
-/** Class for checking the relationship content constraints of the X-Ray Radiation Dose SR IOD
+/** Class for checking the relationship content constraints of the X-Ray Radiation Dose
+ *  SR IOD.
+ *  According to DICOM PS 3.3: "The document may be constructed from Baseline TID 10001
+ *  (Projection X-Ray Radiation Dose) or Baseline TID 10011 (CT Radiation Dose) invoked
+ *  at the root node.  Note: This IOD maybe used with other Templates defined for Dose
+ *  Reporting.  Such other Templates may be specialized for specific modalities or
+ *  future dose measurement techniques."
  */
 class DCMTK_DCMSR_EXPORT DSRXRayRadiationDoseSRConstraintChecker
   : public DSRIODConstraintChecker
@@ -59,10 +65,14 @@ class DCMTK_DCMSR_EXPORT DSRXRayRadiationDoseSRConstraintChecker
      */
     virtual OFBool isTemplateSupportRequired() const;
 
-    /** get identifier of the root template
-     ** @return always returns NULL (no template required)
+    /** get identifier and mapping resource of the root template (if any)
+     ** @param  templateIdentifier  identifier of the root template (might be empty)
+     *  @param  mappingResource     mapping resource that defines the root template
+     *                              (might be empty)
+     ** @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual const char *getRootTemplateIdentifier() const;
+    virtual OFCondition getRootTemplateIdentification(OFString &templateIdentifier,
+                                                      OFString &mappingResource) const;
 
     /** get the associated document type of the SR IOD
      ** @return document type (DSRTypes::DT_XRayRadiationDoseSR)

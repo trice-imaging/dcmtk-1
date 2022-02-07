@@ -156,11 +156,16 @@ static const int extend_test[16] =   /* entry n is 2**(n-1) */
   { 0, 0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
     0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000 };
 
+/*
+ * Originally, a -1 was shifted but since shifting a negative value is
+ * undefined behavior, now "~0U" (bit-wise NOT unsigned int 0) is used,
+ * shifted and casted to an int. The result is the same, of course.
+ */
 static const int extend_offset[16] = /* entry n is (-1 << n) + 1 */
-  { 0, ((-1)<<1) + 1, ((-1)<<2) + 1, ((-1)<<3) + 1, ((-1)<<4) + 1,
-    ((-1)<<5) + 1, ((-1)<<6) + 1, ((-1)<<7) + 1, ((-1)<<8) + 1,
-    ((-1)<<9) + 1, ((-1)<<10) + 1, ((-1)<<11) + 1, ((-1)<<12) + 1,
-    ((-1)<<13) + 1, ((-1)<<14) + 1, ((-1)<<15) + 1 };
+  { 0, (int)((~0U)<<1) + 1, (int)((~0U)<<2) + 1, (int)((~0U)<<3) + 1, (int)((~0U)<<4) + 1,
+    (int)((~0U)<<5) + 1, (int)((~0U)<<6) + 1, (int)((~0U)<<7) + 1, (int)((~0U)<<8) + 1,
+    (int)((~0U)<<9) + 1, (int)((~0U)<<10) + 1, (int)((~0U)<<11) + 1, (int)((~0U)<<12) + 1,
+    (int)((~0U)<<13) + 1, (int)((~0U)<<14) + 1, (int)((~0U)<<15) + 1 };
 
 #endif /* AVOID_TABLES */
 
@@ -228,6 +233,7 @@ decode_mcu (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
   int blkn;
   BITREAD_STATE_VARS;
   savable_state state;
+  boolean cornell_workaround = (cinfo->workaround_options & WORKAROUND_BUGGY_CORNELL_16BIT_JPEG_ENCODER) != 0;
 
   /* Process restart marker if needed; may have to suspend */
   if (cinfo->restart_interval) {
@@ -256,7 +262,7 @@ decode_mcu (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
       /* Decode a single block's worth of coefficients */
 
       /* Section F.2.2.1: decode the DC coefficient difference */
-      HUFF_DECODE(s, br_state, dctbl, return FALSE, label1);
+      HUFF_DECODE(s, br_state, dctbl, return FALSE, label1, cornell_workaround);
       if (s) {
     CHECK_BIT_BUFFER(br_state, s, return FALSE);
     r = GET_BITS(s);
@@ -277,11 +283,11 @@ decode_mcu (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
     /* Section F.2.2.2: decode the AC coefficients */
     /* Since zeroes are skipped, output area must be cleared beforehand */
     for (k = 1; k < DCTSIZE2; k++) {
-      HUFF_DECODE(s, br_state, actbl, return FALSE, label2);
-      
+      HUFF_DECODE(s, br_state, actbl, return FALSE, label2, cornell_workaround);
+
       r = s >> 4;
       s &= 15;
-      
+
       if (s) {
         k += r;
         CHECK_BIT_BUFFER(br_state, s, return FALSE);
@@ -304,11 +310,11 @@ decode_mcu (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
     /* Section F.2.2.2: decode the AC coefficients */
     /* In this path we just discard the values */
     for (k = 1; k < DCTSIZE2; k++) {
-      HUFF_DECODE(s, br_state, actbl, return FALSE, label3);
-      
+      HUFF_DECODE(s, br_state, actbl, return FALSE, label3, cornell_workaround);
+
       r = s >> 4;
       s &= 15;
-      
+
       if (s) {
         k += r;
         CHECK_BIT_BUFFER(br_state, s, return FALSE);

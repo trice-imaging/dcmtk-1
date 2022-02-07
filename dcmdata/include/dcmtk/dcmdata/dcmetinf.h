@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2013, OFFIS e.V.
+ *  Copyright (C) 1994-2019, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,15 +27,18 @@
 
 #include "dcmtk/dcmdata/dcitem.h"
 
+// forward declarations
+class DcmJsonFormat;
+
 
 /// magic string identifying DICOM files
-#define DCM_Magic                       "DICM"
+#define DCM_Magic "DICM"
 
 /// length of magic string identifying DICOM files
-#define DCM_MagicLen                    4
+#define DCM_MagicLen 4
 
 /// length of DICOM file preamble, in bytes
-#define DCM_PreambleLen                 128
+#define DCM_PreambleLen 128
 
 /// transfer syntax used for encoding DICOM meta-headers
 #define META_HEADER_DEFAULT_TRANSFERSYNTAX EXS_LittleEndianExplicit
@@ -59,7 +62,8 @@ class DCMTK_DCMDATA_EXPORT DcmMetaInfo
     DcmMetaInfo(const DcmMetaInfo &old);
 
     /** assignment operator.
-     *  @param the metainfo to be copied
+     *  @param obj the metainfo to be copied
+     *  @return reference to this object
      */
     DcmMetaInfo &operator=(const DcmMetaInfo &obj);
 
@@ -99,7 +103,8 @@ class DCMTK_DCMDATA_EXPORT DcmMetaInfo
     virtual void removeInvalidGroups();
 
     /** return the transfer syntax in which this dataset was originally read.
-     *  @return transfer syntax in which this dataset was originally read, EXS_Unknown if the dataset was created in memory
+     *  @return transfer syntax in which this dataset was originally read, EXS_Unknown
+     *    if the dataset was created in memory
      */
     E_TransferSyntax getOriginalXfer() const;
 
@@ -110,7 +115,7 @@ class DCMTK_DCMDATA_EXPORT DcmMetaInfo
      *  @param pixelFileName not used
      *  @param pixelCounter not used
      */
-    virtual void print(STD_NAMESPACE ostream&out,
+    virtual void print(STD_NAMESPACE ostream &out,
                        const size_t flags = 0,
                        const int level = 0,
                        const char *pixelFileName = NULL,
@@ -126,15 +131,7 @@ class DCMTK_DCMDATA_EXPORT DcmMetaInfo
      */
     virtual void transferEnd();
 
-    /** calculate the length of this DICOM element when encoded with the
-     *  given transfer syntax and the given encoding type for sequences.
-     *  For elements, the length includes the length of the tag, length field,
-     *  VR field and the value itself, for items and sequences it returns
-     *  the length of the complete item or sequence including delimitation tags
-     *  if applicable. Never returns undefined length.
-     *  @param xfer transfer syntax for length calculation
-     *  @param enctype sequence encoding type for length calculation
-     *  @return length of DICOM element
+    /** @copydoc DcmObject::calcElementLength()
      */
     virtual Uint32 calcElementLength(const E_TransferSyntax xfer,
                                      const E_EncodingType enctype);
@@ -176,6 +173,14 @@ class DCMTK_DCMDATA_EXPORT DcmMetaInfo
     virtual OFCondition writeXML(STD_NAMESPACE ostream &out,
                                  const size_t flags = 0);
 
+    /** write object in JSON format
+     *  @param out output stream to which the JSON document is written
+     *  @param format used to format and customize the output
+     *  @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition writeJson(STD_NAMESPACE ostream &out,
+                                  DcmJsonFormat &format);
+
     /** load object from a DICOM file.  If the file preamble is missing, an error is returned.
      *  @param fileName name of the file to load (may contain wide chars if support enabled).
      *    Since there are various constructors for the OFFilename class, a "char *", "OFString"
@@ -213,6 +218,7 @@ class DCMTK_DCMDATA_EXPORT DcmMetaInfo
 
     /** peeks into the input stream and checks whether the next element
      *  is group 0002, i.e. belongs to the meta-header
+     *  @param inStream input stream
      *  @return true if next element is part of meta-header, false otherwise
      */
     OFBool nextTagIsMeta(DcmInputStream &inStream);
@@ -225,7 +231,8 @@ class DCMTK_DCMDATA_EXPORT DcmMetaInfo
      *  @param xtag attribute tag for group length
      *  @param glenc handling of group length encoding element in dataset
      *  @param headerLen output parameter; length of meta-header as encoded in group length element
-     *  @param bytesRead output parameter; number of bytes read when reading group length (for counting the remaining number of meta-header bytes)
+     *  @param bytesRead output parameter; number of bytes read when reading group length
+     *    (for counting the remaining number of meta-header bytes)
      *  @param maxReadLength max read length for elements
      *  @return EC_Normal if successful, an error code otherwise
      */

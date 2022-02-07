@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTTreatmentSessionIonBeamSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -27,13 +27,16 @@ DRTTreatmentSessionIonBeamSequence::Item::Item(const OFBool emptyDefaultItem)
     BeamName(DCM_BeamName),
     BeamType(DCM_BeamType),
     CurrentFractionNumber(DCM_CurrentFractionNumber),
+    DeliveredDepthDoseParametersSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     DeliveredPrimaryMeterset(DCM_DeliveredPrimaryMeterset),
     DeliveredSecondaryMeterset(DCM_DeliveredSecondaryMeterset),
     DeliveredTreatmentTime(DCM_DeliveredTreatmentTime),
+    FixationEye(DCM_FixationEye),
     FixationLightAzimuthalAngle(DCM_FixationLightAzimuthalAngle),
     FixationLightPolarAngle(DCM_FixationLightPolarAngle),
     GeneralAccessorySequence(emptyDefaultItem /*emptyDefaultSequence*/),
     IonControlPointDeliverySequence(emptyDefaultItem /*emptyDefaultSequence*/),
+    ModulatedScanModeType(DCM_ModulatedScanModeType),
     NumberOfBlocks(DCM_NumberOfBlocks),
     NumberOfBoli(DCM_NumberOfBoli),
     NumberOfCompensators(DCM_NumberOfCompensators),
@@ -83,13 +86,16 @@ DRTTreatmentSessionIonBeamSequence::Item::Item(const Item &copy)
     BeamName(copy.BeamName),
     BeamType(copy.BeamType),
     CurrentFractionNumber(copy.CurrentFractionNumber),
+    DeliveredDepthDoseParametersSequence(copy.DeliveredDepthDoseParametersSequence),
     DeliveredPrimaryMeterset(copy.DeliveredPrimaryMeterset),
     DeliveredSecondaryMeterset(copy.DeliveredSecondaryMeterset),
     DeliveredTreatmentTime(copy.DeliveredTreatmentTime),
+    FixationEye(copy.FixationEye),
     FixationLightAzimuthalAngle(copy.FixationLightAzimuthalAngle),
     FixationLightPolarAngle(copy.FixationLightPolarAngle),
     GeneralAccessorySequence(copy.GeneralAccessorySequence),
     IonControlPointDeliverySequence(copy.IonControlPointDeliverySequence),
+    ModulatedScanModeType(copy.ModulatedScanModeType),
     NumberOfBlocks(copy.NumberOfBlocks),
     NumberOfBoli(copy.NumberOfBoli),
     NumberOfCompensators(copy.NumberOfCompensators),
@@ -147,13 +153,16 @@ DRTTreatmentSessionIonBeamSequence::Item &DRTTreatmentSessionIonBeamSequence::It
         BeamName = copy.BeamName;
         BeamType = copy.BeamType;
         CurrentFractionNumber = copy.CurrentFractionNumber;
+        DeliveredDepthDoseParametersSequence = copy.DeliveredDepthDoseParametersSequence;
         DeliveredPrimaryMeterset = copy.DeliveredPrimaryMeterset;
         DeliveredSecondaryMeterset = copy.DeliveredSecondaryMeterset;
         DeliveredTreatmentTime = copy.DeliveredTreatmentTime;
+        FixationEye = copy.FixationEye;
         FixationLightAzimuthalAngle = copy.FixationLightAzimuthalAngle;
         FixationLightPolarAngle = copy.FixationLightPolarAngle;
         GeneralAccessorySequence = copy.GeneralAccessorySequence;
         IonControlPointDeliverySequence = copy.IonControlPointDeliverySequence;
+        ModulatedScanModeType = copy.ModulatedScanModeType;
         NumberOfBlocks = copy.NumberOfBlocks;
         NumberOfBoli = copy.NumberOfBoli;
         NumberOfCompensators = copy.NumberOfCompensators;
@@ -210,6 +219,7 @@ void DRTTreatmentSessionIonBeamSequence::Item::clear()
         RadiationAtomicNumber.clear();
         RadiationChargeState.clear();
         ScanMode.clear();
+        ModulatedScanModeType.clear();
         ReferencedToleranceTableNumber.clear();
         BeamLimitingDeviceLeafPairsSequence.clear();
         ReferencedPatientSetupNumber.clear();
@@ -238,6 +248,7 @@ void DRTTreatmentSessionIonBeamSequence::Item::clear()
         PatientSupportAccessoryCode.clear();
         FixationLightAzimuthalAngle.clear();
         FixationLightPolarAngle.clear();
+        FixationEye.clear();
         CurrentFractionNumber.clear();
         TreatmentDeliveryType.clear();
         TreatmentTerminationStatus.clear();
@@ -249,6 +260,7 @@ void DRTTreatmentSessionIonBeamSequence::Item::clear()
         DeliveredSecondaryMeterset.clear();
         SpecifiedTreatmentTime.clear();
         DeliveredTreatmentTime.clear();
+        DeliveredDepthDoseParametersSequence.clear();
         NumberOfControlPoints.clear();
         IonControlPointDeliverySequence.clear();
     }
@@ -266,6 +278,7 @@ OFBool DRTTreatmentSessionIonBeamSequence::Item::isEmpty()
            RadiationAtomicNumber.isEmpty() &&
            RadiationChargeState.isEmpty() &&
            ScanMode.isEmpty() &&
+           ModulatedScanModeType.isEmpty() &&
            ReferencedToleranceTableNumber.isEmpty() &&
            BeamLimitingDeviceLeafPairsSequence.isEmpty() &&
            ReferencedPatientSetupNumber.isEmpty() &&
@@ -294,6 +307,7 @@ OFBool DRTTreatmentSessionIonBeamSequence::Item::isEmpty()
            PatientSupportAccessoryCode.isEmpty() &&
            FixationLightAzimuthalAngle.isEmpty() &&
            FixationLightPolarAngle.isEmpty() &&
+           FixationEye.isEmpty() &&
            CurrentFractionNumber.isEmpty() &&
            TreatmentDeliveryType.isEmpty() &&
            TreatmentTerminationStatus.isEmpty() &&
@@ -305,6 +319,7 @@ OFBool DRTTreatmentSessionIonBeamSequence::Item::isEmpty()
            DeliveredSecondaryMeterset.isEmpty() &&
            SpecifiedTreatmentTime.isEmpty() &&
            DeliveredTreatmentTime.isEmpty() &&
+           DeliveredDepthDoseParametersSequence.isEmpty() &&
            NumberOfControlPoints.isEmpty() &&
            IonControlPointDeliverySequence.isEmpty();
 }
@@ -332,6 +347,7 @@ OFCondition DRTTreatmentSessionIonBeamSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, RadiationAtomicNumber, "1", "1C", "TreatmentSessionIonBeamSequence");
         getAndCheckElementFromDataset(item, RadiationChargeState, "1", "1C", "TreatmentSessionIonBeamSequence");
         getAndCheckElementFromDataset(item, ScanMode, "1", "1", "TreatmentSessionIonBeamSequence");
+        getAndCheckElementFromDataset(item, ModulatedScanModeType, "1", "1C", "TreatmentSessionIonBeamSequence");
         getAndCheckElementFromDataset(item, ReferencedToleranceTableNumber, "1", "3", "TreatmentSessionIonBeamSequence");
         BeamLimitingDeviceLeafPairsSequence.read(item, "1-n", "3", "TreatmentSessionIonBeamSequence");
         getAndCheckElementFromDataset(item, ReferencedPatientSetupNumber, "1", "3", "TreatmentSessionIonBeamSequence");
@@ -360,6 +376,7 @@ OFCondition DRTTreatmentSessionIonBeamSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, PatientSupportAccessoryCode, "1", "3", "TreatmentSessionIonBeamSequence");
         getAndCheckElementFromDataset(item, FixationLightAzimuthalAngle, "1", "3", "TreatmentSessionIonBeamSequence");
         getAndCheckElementFromDataset(item, FixationLightPolarAngle, "1", "3", "TreatmentSessionIonBeamSequence");
+        getAndCheckElementFromDataset(item, FixationEye, "1", "3", "TreatmentSessionIonBeamSequence");
         getAndCheckElementFromDataset(item, CurrentFractionNumber, "1", "2", "TreatmentSessionIonBeamSequence");
         getAndCheckElementFromDataset(item, TreatmentDeliveryType, "1", "2", "TreatmentSessionIonBeamSequence");
         getAndCheckElementFromDataset(item, TreatmentTerminationStatus, "1", "1", "TreatmentSessionIonBeamSequence");
@@ -371,6 +388,7 @@ OFCondition DRTTreatmentSessionIonBeamSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, DeliveredSecondaryMeterset, "1", "3", "TreatmentSessionIonBeamSequence");
         getAndCheckElementFromDataset(item, SpecifiedTreatmentTime, "1", "3", "TreatmentSessionIonBeamSequence");
         getAndCheckElementFromDataset(item, DeliveredTreatmentTime, "1", "3", "TreatmentSessionIonBeamSequence");
+        DeliveredDepthDoseParametersSequence.read(item, "1-n", "3", "TreatmentSessionIonBeamSequence");
         getAndCheckElementFromDataset(item, NumberOfControlPoints, "1", "1", "TreatmentSessionIonBeamSequence");
         IonControlPointDeliverySequence.read(item, "1-n", "1", "TreatmentSessionIonBeamSequence");
         result = EC_Normal;
@@ -394,6 +412,7 @@ OFCondition DRTTreatmentSessionIonBeamSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmIntegerString(RadiationAtomicNumber), "1", "1C", "TreatmentSessionIonBeamSequence");
         addElementToDataset(result, item, new DcmSignedShort(RadiationChargeState), "1", "1C", "TreatmentSessionIonBeamSequence");
         addElementToDataset(result, item, new DcmCodeString(ScanMode), "1", "1", "TreatmentSessionIonBeamSequence");
+        addElementToDataset(result, item, new DcmCodeString(ModulatedScanModeType), "1", "1C", "TreatmentSessionIonBeamSequence");
         addElementToDataset(result, item, new DcmIntegerString(ReferencedToleranceTableNumber), "1", "3", "TreatmentSessionIonBeamSequence");
         if (result.good()) result = BeamLimitingDeviceLeafPairsSequence.write(item, "1-n", "3", "TreatmentSessionIonBeamSequence");
         addElementToDataset(result, item, new DcmIntegerString(ReferencedPatientSetupNumber), "1", "3", "TreatmentSessionIonBeamSequence");
@@ -422,6 +441,7 @@ OFCondition DRTTreatmentSessionIonBeamSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmLongString(PatientSupportAccessoryCode), "1", "3", "TreatmentSessionIonBeamSequence");
         addElementToDataset(result, item, new DcmFloatingPointSingle(FixationLightAzimuthalAngle), "1", "3", "TreatmentSessionIonBeamSequence");
         addElementToDataset(result, item, new DcmFloatingPointSingle(FixationLightPolarAngle), "1", "3", "TreatmentSessionIonBeamSequence");
+        addElementToDataset(result, item, new DcmCodeString(FixationEye), "1", "3", "TreatmentSessionIonBeamSequence");
         addElementToDataset(result, item, new DcmIntegerString(CurrentFractionNumber), "1", "2", "TreatmentSessionIonBeamSequence");
         addElementToDataset(result, item, new DcmCodeString(TreatmentDeliveryType), "1", "2", "TreatmentSessionIonBeamSequence");
         addElementToDataset(result, item, new DcmCodeString(TreatmentTerminationStatus), "1", "1", "TreatmentSessionIonBeamSequence");
@@ -433,6 +453,7 @@ OFCondition DRTTreatmentSessionIonBeamSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmDecimalString(DeliveredSecondaryMeterset), "1", "3", "TreatmentSessionIonBeamSequence");
         addElementToDataset(result, item, new DcmDecimalString(SpecifiedTreatmentTime), "1", "3", "TreatmentSessionIonBeamSequence");
         addElementToDataset(result, item, new DcmDecimalString(DeliveredTreatmentTime), "1", "3", "TreatmentSessionIonBeamSequence");
+        if (result.good()) result = DeliveredDepthDoseParametersSequence.write(item, "1-n", "3", "TreatmentSessionIonBeamSequence");
         addElementToDataset(result, item, new DcmIntegerString(NumberOfControlPoints), "1", "1", "TreatmentSessionIonBeamSequence");
         if (result.good()) result = IonControlPointDeliverySequence.write(item, "1-n", "1", "TreatmentSessionIonBeamSequence");
     }
@@ -539,6 +560,15 @@ OFCondition DRTTreatmentSessionIonBeamSequence::Item::getDeliveredTreatmentTime(
 }
 
 
+OFCondition DRTTreatmentSessionIonBeamSequence::Item::getFixationEye(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(FixationEye, value, pos);
+}
+
+
 OFCondition DRTTreatmentSessionIonBeamSequence::Item::getFixationLightAzimuthalAngle(Float32 &value, const unsigned long pos) const
 {
     if (EmptyDefaultItem)
@@ -554,6 +584,15 @@ OFCondition DRTTreatmentSessionIonBeamSequence::Item::getFixationLightPolarAngle
         return EC_IllegalCall;
     else
         return OFconst_cast(DcmFloatingPointSingle &, FixationLightPolarAngle).getFloat32(value, pos);
+}
+
+
+OFCondition DRTTreatmentSessionIonBeamSequence::Item::getModulatedScanModeType(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(ModulatedScanModeType, value, pos);
 }
 
 
@@ -1026,6 +1065,19 @@ OFCondition DRTTreatmentSessionIonBeamSequence::Item::setDeliveredTreatmentTime(
 }
 
 
+OFCondition DRTTreatmentSessionIonBeamSequence::Item::setFixationEye(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = FixationEye.putOFStringArray(value);
+    }
+    return result;
+}
+
+
 OFCondition DRTTreatmentSessionIonBeamSequence::Item::setFixationLightAzimuthalAngle(const Float32 value, const unsigned long pos)
 {
     if (EmptyDefaultItem)
@@ -1041,6 +1093,19 @@ OFCondition DRTTreatmentSessionIonBeamSequence::Item::setFixationLightPolarAngle
         return EC_IllegalCall;
     else
         return FixationLightPolarAngle.putFloat32(value, pos);
+}
+
+
+OFCondition DRTTreatmentSessionIonBeamSequence::Item::setModulatedScanModeType(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = ModulatedScanModeType.putOFStringArray(value);
+    }
+    return result;
 }
 
 
@@ -1481,7 +1546,7 @@ OFBool DRTTreatmentSessionIonBeamSequence::isValid() const
 }
 
 
-unsigned long DRTTreatmentSessionIonBeamSequence::getNumberOfItems() const
+size_t DRTTreatmentSessionIonBeamSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -1511,12 +1576,12 @@ OFCondition DRTTreatmentSessionIonBeamSequence::gotoNextItem()
 }
 
 
-OFCondition DRTTreatmentSessionIonBeamSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTTreatmentSessionIonBeamSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -1531,12 +1596,12 @@ OFCondition DRTTreatmentSessionIonBeamSequence::gotoItem(const unsigned long num
 }
 
 
-OFCondition DRTTreatmentSessionIonBeamSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTTreatmentSessionIonBeamSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -1551,7 +1616,7 @@ OFCondition DRTTreatmentSessionIonBeamSequence::gotoItem(const unsigned long num
 }
 
 
-OFCondition DRTTreatmentSessionIonBeamSequence::gotoItem(const unsigned long num)
+OFCondition DRTTreatmentSessionIonBeamSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -1587,7 +1652,7 @@ const DRTTreatmentSessionIonBeamSequence::Item &DRTTreatmentSessionIonBeamSequen
 }
 
 
-OFCondition DRTTreatmentSessionIonBeamSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTTreatmentSessionIonBeamSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -1597,7 +1662,7 @@ OFCondition DRTTreatmentSessionIonBeamSequence::getItem(const unsigned long num,
 }
 
 
-DRTTreatmentSessionIonBeamSequence::Item &DRTTreatmentSessionIonBeamSequence::getItem(const unsigned long num)
+DRTTreatmentSessionIonBeamSequence::Item &DRTTreatmentSessionIonBeamSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -1607,7 +1672,7 @@ DRTTreatmentSessionIonBeamSequence::Item &DRTTreatmentSessionIonBeamSequence::ge
 }
 
 
-const DRTTreatmentSessionIonBeamSequence::Item &DRTTreatmentSessionIonBeamSequence::getItem(const unsigned long num) const
+const DRTTreatmentSessionIonBeamSequence::Item &DRTTreatmentSessionIonBeamSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -1617,13 +1682,13 @@ const DRTTreatmentSessionIonBeamSequence::Item &DRTTreatmentSessionIonBeamSequen
 }
 
 
-DRTTreatmentSessionIonBeamSequence::Item &DRTTreatmentSessionIonBeamSequence::operator[](const unsigned long num)
+DRTTreatmentSessionIonBeamSequence::Item &DRTTreatmentSessionIonBeamSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTTreatmentSessionIonBeamSequence::Item &DRTTreatmentSessionIonBeamSequence::operator[](const unsigned long num) const
+const DRTTreatmentSessionIonBeamSequence::Item &DRTTreatmentSessionIonBeamSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -1646,7 +1711,7 @@ OFCondition DRTTreatmentSessionIonBeamSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTTreatmentSessionIonBeamSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTTreatmentSessionIonBeamSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -1669,7 +1734,7 @@ OFCondition DRTTreatmentSessionIonBeamSequence::insertItem(const unsigned long p
 }
 
 
-OFCondition DRTTreatmentSessionIonBeamSequence::removeItem(const unsigned long pos)
+OFCondition DRTTreatmentSessionIonBeamSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2010, OFFIS e.V.
+ *  Copyright (C) 1998-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,13 +23,8 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 #include "dcmtk/dcmpstat/dvpshlp.h"
 #include "dcmtk/dcmpstat/dvpsdef.h"
-#include "dcmtk/dcmnet/dcompat.h"     /* compatability routines */
+#include "dcmtk/dcmnet/dcompat.h"     /* compatibility routines */
 #include "dcmtk/dcmdata/dctk.h"
-
-#define INCLUDE_CSTDIO
-#define INCLUDE_CERRNO
-#define INCLUDE_CTIME
-#include "dcmtk/ofstd/ofstdinc.h"
 
 BEGIN_EXTERN_C
 #ifdef HAVE_SYS_TYPES_H
@@ -60,7 +55,7 @@ OFCondition DVPSHelper::loadFileFormat(const char *filename,
                                        DcmFileFormat *&fileformat)
 {
     fileformat = new DcmFileFormat;
-    OFCondition result =  fileformat->loadFile(filename);
+    OFCondition result =  fileformat->loadFile(OFFilename(filename,OFTrue));
 
     if (result.bad())
     {
@@ -132,7 +127,7 @@ void DVPSHelper::cleanChildren()
 {
 #ifdef HAVE_WAITPID
     int stat_loc;
-#elif HAVE_WAIT3
+#elif defined(HAVE_WAIT3)
     struct rusage rusage;
 #if defined(__NeXT__)
     /* some systems need a union wait as argument to wait3 */

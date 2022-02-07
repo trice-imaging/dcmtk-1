@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2015, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -48,6 +48,16 @@
 #ifndef ENVIRONMENT_PATH_SEPARATOR
 #define ENVIRONMENT_PATH_SEPARATOR '\n' /* at least define something unlikely */
 #endif
+
+/*
+** Loading of default dictionary:
+**  DCM_DICT_DEFAULT_USE_NONE: Do not load any default dictionary on startup
+**  DCM_DICT_DEFAULT_USE_BUILTIN: Load builtin dictionary on startup
+**  DCM_DICT_DEFAULT_USE_EXTERNAL: Load external (i.e. file-based) dictionary on startup
+*/
+#define DCM_DICT_DEFAULT_USE_NONE     0
+#define DCM_DICT_DEFAULT_USE_BUILTIN  1
+#define DCM_DICT_DEFAULT_USE_EXTERNAL 2
 
 
 /** this class implements a loadable DICOM Data Dictionary
@@ -236,9 +246,13 @@ public:
    */
   DcmDataDictionary& wrlock();
 
-  /** unlocks the read or write lock which must have been acquired previously.
+  /** unlocks the read lock which must have been acquired previously.
    */
-  void unlock();
+  void rdunlock();
+
+  /** unlocks the write lock which must have been acquired previously.
+   */
+  void wrunlock();
 
   /** checks if a data dictionary has been loaded. This method acquires and
    *  releases a read lock. It must not be called with another lock on the
@@ -274,6 +288,8 @@ private:
 
 #ifdef WITH_THREADS
   /** the read/write lock used to protect access from multiple threads
+   *  @remark this member is only available if DCMTK is compiled with thread
+   *  support enabled.
    */
   OFReadWriteLock dataDictLock;
 #endif

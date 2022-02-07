@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2009-2015, OFFIS e.V.
+ *  Copyright (C) 2009-2019, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,7 +27,7 @@
 
 #include "dcmtk/ofstd/ofutil.h" // for OFPair
 
-#if defined(HAVE_STL) || defined(HAVE_STL_MAP)
+#ifdef HAVE_STL_MAP
 // it is possible to use the standard template library map class since the
 // interface is nearly identical.
 #include <map>
@@ -209,11 +209,25 @@ public:
      */
     OFPair<iterator, bool> insert(const value_type& val)
     {
+        // If value already exists, return it
         OFListIterator(value_type) it = find(val.first);
         if (it != end())
             return OFMake_pair(it, false);
 
-        it = values_.insert(values_.end(), val);
+        // Sorted insertion
+        it = begin();
+        while ( (it != end()) && (val.first > it->first) )
+            it++;
+        if (it == end())
+            it = values_.insert(values_.end(), val);
+        else
+        {
+            // Insert at current position and rewind iterator
+            // to the inserted element
+            values_.insert(it, val);
+            it--;
+        }
+
         return OFMake_pair(it, true);
     }
 

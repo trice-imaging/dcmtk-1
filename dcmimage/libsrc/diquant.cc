@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2010, OFFIS e.V.
+ *  Copyright (C) 2002-2016, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -93,7 +93,7 @@ OFCondition DcmQuant::createPaletteColorImage(
     }
     DcmQuantIdent id(cols);
 
-    register OFBool isByteData = (numberOfColors <= 256);
+    OFBool isByteData = (numberOfColors <= 256);
 
     // compute size requirement for palette color pixel data in bytes
     unsigned long totalSize = cols * rows * frames;

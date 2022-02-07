@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2010-2015, OFFIS e.V.
+ *  Copyright (C) 2010-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,16 +24,21 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #include "dcmtk/dcmsr/dsrsc3gr.h"
+
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcvrfl.h"
+
 #include "dcmtk/ofstd/ofstd.h"
 
-#ifdef HAVE_EXPLICIT_TEMPLATE_SPECIALIZATION
-#define EXPLICIT_SPECIALIZATION template<>
-#else
-#define EXPLICIT_SPECIALIZATION
-#endif
 
-/* declared in class DSRListOfItems<T> */
-EXPLICIT_SPECIALIZATION const DSRGraphicData3DItem DSRListOfItems<DSRGraphicData3DItem>::EmptyItem(0, 0, 0);
+// global empty item object so it gets initialized and cleaned up by the linker
+const DSRGraphicData3DItem DSRGraphicData3DEmptyItem(0, 0, 0);
+
+template<>
+const DSRGraphicData3DItem& DSRgetEmptyItem<DSRGraphicData3DItem>()
+{
+    return DSRGraphicData3DEmptyItem;
+}
 
 
 DSRGraphicData3DList::DSRGraphicData3DList()
@@ -71,11 +76,11 @@ OFCondition DSRGraphicData3DList::print(STD_NAMESPACE ostream &stream,
     while (iterator != endPos)
     {
         /* need to convert float to avoid problems with decimal point ('.' or ',') */
-        OFStandard::ftoa(buffer, sizeof(buffer), (*iterator).XCoord);
+        OFStandard::ftoa(buffer, sizeof(buffer), (*iterator).XCoord, 0, 0, 9 /* FLT_DECIMAL_DIG for DICOM FL */);
         stream << buffer << tripletSeparator;
-        OFStandard::ftoa(buffer, sizeof(buffer), (*iterator).YCoord);
+        OFStandard::ftoa(buffer, sizeof(buffer), (*iterator).YCoord, 0, 0, 9 /* FLT_DECIMAL_DIG for DICOM FL */);
         stream << buffer << tripletSeparator;
-        OFStandard::ftoa(buffer, sizeof(buffer), (*iterator).ZCoord);
+        OFStandard::ftoa(buffer, sizeof(buffer), (*iterator).ZCoord, 0, 0, 9 /* FLT_DECIMAL_DIG for DICOM FL */);
         stream << buffer;
         iterator++;
         if (iterator != endPos)

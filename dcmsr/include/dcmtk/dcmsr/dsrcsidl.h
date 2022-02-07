@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2003-2015, OFFIS e.V.
+ *  Copyright (C) 2003-2017, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -60,7 +60,7 @@ class DCMTK_DCMSR_EXPORT DSRCodingSchemeIdentificationList
     /** check whether list is empty
      ** @return OFTrue if list is empty, OFFalse otherwise
      */
-    OFBool empty() const;
+    OFBool isEmpty() const;
 
     /** get number of items stored in the list
      ** @return number of items
@@ -99,6 +99,16 @@ class DCMTK_DCMSR_EXPORT DSRCodingSchemeIdentificationList
      */
     OFCondition writeXML(STD_NAMESPACE ostream &stream,
                          const size_t flags) const;
+
+    /** set specific character set, which is used for checking the affected element values.
+     *  Please note that this method does not return an error if the given 'value' is not
+     *  defined by the DICOM standard or not supported by this implementation.
+     ** @param  value  value to be set (single or multiple values) or "" for no value
+     *  @param  check  check 'value' for conformance with VR (CS) and VM (1-n) if enabled
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    OFCondition setSpecificCharacterSet(const OFString &value,
+                                        const OFBool check = OFTrue);
 
     /** add private OFFIS DCMTK coding scheme entry to the list.
      *  Please note that any information previously stored under the defined coding scheme
@@ -319,6 +329,8 @@ class DCMTK_DCMSR_EXPORT DSRCodingSchemeIdentificationList
         OFString CodingSchemeVersion;
         /// Coding Scheme Responsible Organization (VR=ST, type 3)
         OFString CodingSchemeResponsibleOrganization;
+        /// Coding Scheme Resources Sequence (VR=SQ, type 3)
+         // - tbd: optional attribute not yet supported
     };
 
     /** add the specified coding scheme to the list (if not existent)
@@ -341,6 +353,8 @@ class DCMTK_DCMSR_EXPORT DSRCodingSchemeIdentificationList
     OFList<ItemStruct *> ItemList;
     /// internal cursor to current (selected) list item
     OFListIterator(ItemStruct *) Iterator;
+    /// specific character set used for checking purposes
+    OFString SpecificCharacterSet;
 
     // copy constructor - not implemented!
     DSRCodingSchemeIdentificationList(const DSRCodingSchemeIdentificationList &);

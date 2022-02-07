@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2015 OFFIS e.V.
+ *  Copyright (C) 2011-2020 OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -34,10 +34,15 @@ OFTEST_REGISTER(dcmdata_decimalString_1);
 OFTEST_REGISTER(dcmdata_decimalString_2);
 OFTEST_REGISTER(dcmdata_decimalString_3);
 OFTEST_REGISTER(dcmdata_decimalString_4);
+OFTEST_REGISTER(dcmdata_decimalString_putFloat64);
 OFTEST_REGISTER(dcmdata_floatingPointDouble);
 OFTEST_REGISTER(dcmdata_personName);
 OFTEST_REGISTER(dcmdata_uniqueIdentifier_1);
 OFTEST_REGISTER(dcmdata_uniqueIdentifier_2);
+OFTEST_REGISTER(dcmdata_otherLong);
+OFTEST_REGISTER(dcmdata_other64bitVeryLong);
+OFTEST_REGISTER(dcmdata_signed64bitVeryLong);
+OFTEST_REGISTER(dcmdata_unsigned64bitVeryLong);
 OFTEST_REGISTER(dcmdata_VRCompare);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_AE);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_AS);
@@ -54,6 +59,8 @@ OFTEST_REGISTER(dcmdata_elementLength_EVR_LT);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_OB);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_OD);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_OF);
+OFTEST_REGISTER(dcmdata_elementLength_EVR_OL);
+OFTEST_REGISTER(dcmdata_elementLength_EVR_OV);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_OW);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_OverlayData);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_PN);
@@ -63,6 +70,7 @@ OFTEST_REGISTER(dcmdata_elementLength_EVR_SL);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_SQ);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_SS);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_ST);
+OFTEST_REGISTER(dcmdata_elementLength_EVR_SV);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_TM);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_UC);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_UI);
@@ -72,15 +80,21 @@ OFTEST_REGISTER(dcmdata_elementLength_EVR_UNKNOWN);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_UNKNOWN2B);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_UR);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_US);
+OFTEST_REGISTER(dcmdata_elementLength_EVR_UV);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_UT);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_lt);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_na);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_ox);
+OFTEST_REGISTER(dcmdata_elementLength_EVR_px);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_up);
 OFTEST_REGISTER(dcmdata_elementLength_EVR_xs);
 OFTEST_REGISTER(dcmdata_elementLength_pixelItem);
 OFTEST_REGISTER(dcmdata_elementLength_pixelSequence);
 OFTEST_REGISTER(dcmdata_elementParent);
+OFTEST_REGISTER(dcmdata_sequenceInsert);
+OFTEST_REGISTER(dcmdata_pixelSequenceInsert);
+OFTEST_REGISTER(dcmdata_findAndGetSequenceItem);
+OFTEST_REGISTER(dcmdata_findAndGetUint16Array);
 OFTEST_REGISTER(dcmdata_parser_missingDelimitationItems);
 OFTEST_REGISTER(dcmdata_parser_missingSequenceDelimitationItem_1);
 OFTEST_REGISTER(dcmdata_parser_missingSequenceDelimitationItem_2);
@@ -101,4 +115,7 @@ OFTEST_REGISTER(dcmdata_specificCharacterSet_2);
 OFTEST_REGISTER(dcmdata_specificCharacterSet_3);
 OFTEST_REGISTER(dcmdata_specificCharacterSet_4);
 OFTEST_REGISTER(dcmdata_attribute_filter);
+OFTEST_REGISTER(dcmdata_attribute_matching);
+OFTEST_REGISTER(dcmdata_newDicomElementPrivate);
+OFTEST_REGISTER(dcmdata_generateUniqueIdentifier);
 OFTEST_MAIN("dcmdata")

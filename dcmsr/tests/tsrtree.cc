@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2012-2015, OFFIS e.V.
+ *  Copyright (C) 2012-2017, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,6 +24,7 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #include "dcmtk/ofstd/oftest.h"
+
 #include "dcmtk/dcmsr/dsrtree.h"
 
 
@@ -110,8 +111,8 @@ OFTEST(dcmsr_addTreeNode_2)
     /* and, insert the new tree (i.e. add its first node) into the other one */
     OFCHECK_EQUAL(tree.gotoNode(nodeID + 1), nodeID + 1);
     OFCHECK_EQUAL(tree.addNode(newTree.getAndRemoveRootNode(), DSRTypes::AM_afterCurrent), nodeID + 3);
-    /* check resulting tree */
     OFCHECK_EQUAL(tree.countNodes(), 6);
+    /* check resulting tree */
     OFCHECK_EQUAL(tree.gotoRoot(), nodeID + 0);
     OFCHECK_EQUAL(tree.iterate(), nodeID + 1);
     OFCHECK_EQUAL(tree.iterate(), nodeID + 3);
@@ -142,7 +143,6 @@ OFTEST(dcmsr_addTreeNode_3)
     OFCHECK_EQUAL(tree.addNode(newTree.getAndRemoveRootNode(), DSRTypes::AM_beforeCurrent), nodeID + 3);
     OFCHECK_EQUAL(tree.countNodes(), 6);
     /* check resulting tree */
-    OFCHECK_EQUAL(tree.countNodes(), 6);
     OFCHECK_EQUAL(tree.gotoRoot(), nodeID + 0);
     OFCHECK_EQUAL(tree.iterate(), nodeID + 3);
     OFCHECK_EQUAL(tree.iterate(), nodeID + 4);
@@ -173,7 +173,6 @@ OFTEST(dcmsr_addTreeNode_4)
     OFCHECK_EQUAL(tree.addNode(newTree.getAndRemoveRootNode(), DSRTypes::AM_belowCurrent), nodeID + 3);
     OFCHECK_EQUAL(tree.countNodes(), 6);
     /* check resulting tree */
-    OFCHECK_EQUAL(tree.countNodes(), 6);
     OFCHECK_EQUAL(tree.gotoRoot(), nodeID + 0);
     OFCHECK_EQUAL(tree.iterate(), nodeID + 1);
     OFCHECK_EQUAL(tree.iterate(), nodeID + 2);
@@ -204,13 +203,67 @@ OFTEST(dcmsr_addTreeNode_5)
     OFCHECK_EQUAL(tree.addNode(newTree.getAndRemoveRootNode(), DSRTypes::AM_belowCurrentBeforeFirstChild), nodeID + 3);
     OFCHECK_EQUAL(tree.countNodes(), 6);
     /* check resulting tree */
-    OFCHECK_EQUAL(tree.countNodes(), 6);
     OFCHECK_EQUAL(tree.gotoRoot(), nodeID + 0);
     OFCHECK_EQUAL(tree.iterate(), nodeID + 3);
     OFCHECK_EQUAL(tree.iterate(), nodeID + 4);
     OFCHECK_EQUAL(tree.iterate(), nodeID + 5);
     OFCHECK_EQUAL(tree.iterate(), nodeID + 1);
     OFCHECK_EQUAL(tree.iterate(), nodeID + 2);
+}
+
+
+OFTEST(dcmsr_addTreeNode_6)
+{
+    DSRTree<> tree;
+    const size_t nodeID = tree.getNextNodeID();
+    OFCHECK_EQUAL(tree.countNodes(), 0);
+    /* first, create a simple tree of 3 nodes and check the references */
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode()), nodeID + 0);
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode(), DSRTypes::AM_belowCurrent), nodeID + 1);
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode(), DSRTypes::AM_afterCurrent), nodeID + 2);
+    OFCHECK_EQUAL(tree.countNodes(), 3);
+    /* then, create another tree with 3 node on the same level */
+    DSRTree<> newTree;
+    OFCHECK_EQUAL(newTree.addNode(new DSRTreeNode()), nodeID + 3);
+    OFCHECK_EQUAL(newTree.addNode(new DSRTreeNode(), DSRTypes::AM_afterCurrent), nodeID + 4);
+    OFCHECK_EQUAL(newTree.addNode(new DSRTreeNode(), DSRTypes::AM_afterCurrent), nodeID + 5);
+    OFCHECK_EQUAL(newTree.countNodes(), 3);
+    /* and, insert the new tree before the root node of the other one */
+    OFCHECK_EQUAL(tree.gotoRoot(), nodeID + 0);
+    OFCHECK_EQUAL(tree.addNode(newTree.getAndRemoveRootNode(), DSRTypes::AM_beforeCurrent), nodeID + 3);
+    OFCHECK_EQUAL(tree.countNodes(), 6);
+    /* check resulting tree (should have a new root node now) */
+    OFCHECK_EQUAL(tree.gotoRoot(), nodeID + 3);
+}
+
+
+OFTEST(dcmsr_replaceTreeNode)
+{
+    DSRTree<> tree;
+    const size_t nodeID = tree.getNextNodeID();
+    OFCHECK_EQUAL(tree.countNodes(), 0);
+    /* first, create a simple tree of 6 nodes and check the references */
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode()), nodeID + 0);
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode(), DSRTypes::AM_belowCurrent), nodeID + 1);
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode(), DSRTypes::AM_afterCurrent), nodeID + 2);
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode(), DSRTypes::AM_afterCurrent), nodeID + 3);
+    OFCHECK_EQUAL(tree.gotoPrevious(), nodeID + 2);
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode(), DSRTypes::AM_belowCurrent), nodeID + 4);
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode(), DSRTypes::AM_afterCurrent), nodeID + 5);
+    OFCHECK_EQUAL(tree.gotoPrevious(), nodeID + 4);
+    OFCHECK_EQUAL(tree.goUp(), nodeID + 2);
+    OFCHECK_EQUAL(tree.gotoPrevious(), nodeID + 1);
+    OFCHECK_EQUAL(tree.goUp(), nodeID + 0);
+    OFCHECK_EQUAL(tree.countNodes(), 6);
+    /* then, replace one of the nodes */
+    OFCHECK_EQUAL(tree.gotoNode(nodeID + 2), nodeID + 2);
+    OFCHECK_EQUAL(tree.replaceNode(new DSRTreeNode()), nodeID + 6);
+    /* a subtree of 3 nodes has been replaced by 1 node */
+    OFCHECK_EQUAL(tree.countNodes(), 4);
+    /* finally, replace the root node */
+    OFCHECK_EQUAL(tree.gotoRoot(), nodeID + 0);
+    OFCHECK_EQUAL(tree.replaceNode(new DSRTreeNode()), nodeID + 7);
+    OFCHECK_EQUAL(tree.countNodes(), 1);
 }
 
 
@@ -485,6 +538,44 @@ OFTEST(dcmsr_extractSubTree)
 }
 
 
+OFTEST(dcmsr_gotoParentUntilRoot)
+{
+    DSRTree<> tree;
+    const size_t rootID = tree.getNextNodeID();
+    /* first, create a simple tree of 8 nodes and check the references */
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode()), rootID + 0);
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode(), DSRTypes::AM_belowCurrent), rootID + 1);
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode(), DSRTypes::AM_afterCurrent), rootID + 2);
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode(), DSRTypes::AM_afterCurrent), rootID + 3);
+    OFCHECK_EQUAL(tree.gotoPrevious(), rootID + 2);
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode(), DSRTypes::AM_belowCurrent), rootID + 4);
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode(), DSRTypes::AM_afterCurrent), rootID + 5);
+    OFCHECK_EQUAL(tree.gotoPrevious(), rootID + 4);
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode(), DSRTypes::AM_belowCurrent), rootID + 6);
+    OFCHECK_EQUAL(tree.addNode(new DSRTreeNode(), DSRTypes::AM_belowCurrent), rootID + 7);
+    /* then, go one level up until the root node is reached */
+    size_t prevID;
+    size_t nodeID = tree.getNodeID();
+    do {
+        prevID = nodeID;
+        nodeID = tree.gotoParent();
+    } while (nodeID != 0);
+    /* check whether it is really the root node */
+    OFCHECK_EQUAL(prevID, rootID);
+    OFCHECK_EQUAL(tree.getNodeID(), rootID);
+    /* try again starting at another child node */
+    nodeID = rootID + 5;
+    OFCHECK_EQUAL(tree.gotoNode(nodeID), nodeID);
+    do {
+        prevID = nodeID;
+        nodeID = tree.gotoParent();
+    } while (nodeID != 0);
+    /* check whether it is really the root node */
+    OFCHECK_EQUAL(prevID, rootID);
+    OFCHECK_EQUAL(tree.getNodeID(), rootID);
+}
+
+
 OFTEST(dcmsr_gotoAnnotatedTreeNode)
 {
     DSRTree<> tree;
@@ -503,9 +594,8 @@ OFTEST(dcmsr_gotoAnnotatedTreeNode)
     OFCHECK_EQUAL(tree.gotoNode(DSRTreeNodeAnnotation("bastard")), 0 /* not found */);
     OFCHECK_EQUAL(tree.gotoNode(DSRTreeNodeAnnotation("first child")), nodeID + 1);
     /* clear annotation of current node and try again */
-    DSRTreeNode *node = tree.getNode();
-    if (node!= NULL)
-        node->clearAnnotation();
+    if (tree.isValid())
+        tree.getNode()->clearAnnotation();
     else
         OFCHECK_FAIL("could not get current node");
     OFCHECK_EQUAL(tree.gotoNode(DSRTreeNodeAnnotation("first child")), 0 /* not found */);

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2011, OFFIS e.V.
+ *  Copyright (C) 1998-2019, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,10 +24,10 @@
 #define SIPRIVAT_H
 
 #include "dcmtk/config/osconfig.h"
-#include "dcmtk/dcmsign/sitypes.h"
 
 #ifdef WITH_OPENSSL
 
+#include "dcmtk/dcmsign/sitypes.h"
 #include "dcmtk/ofstd/ofstring.h"
 
 class SiAlgorithm;
@@ -37,6 +37,8 @@ typedef struct evp_pkey_st EVP_PKEY;
 
 
 /** a class representing a private key.
+ *  @remark this class is only available if DCMTK is compiled with
+ *  OpenSSL support enabled.
  */
 class DCMTK_DCMSIGN_EXPORT SiPrivateKey
 {     

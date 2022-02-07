@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,8 +27,6 @@
 #include "dcmtk/config/osconfig.h"   /* make sure OS specific configuration is included first */
 
 #include "dcmtk/dcmsr/dsrtypes.h"
-
-#include "dcmtk/ofstd/ofstring.h"
 
 
 /*---------------------*
@@ -76,6 +74,18 @@ class DCMTK_DCMSR_EXPORT DSRCompositeReferenceValue
      */
     DSRCompositeReferenceValue &operator=(const DSRCompositeReferenceValue &referenceValue);
 
+    /** comparison operator "equal"
+     ** @param  referenceValue  reference value that should be compared to the current one
+     ** @return OFTrue if both composite reference values are equal, OFFalse otherwise
+     */
+    OFBool operator==(const DSRCompositeReferenceValue &referenceValue) const;
+
+    /** comparison operator "not equal"
+     ** @param  referenceValue  reference value that should be compared to the current one
+     ** @return OFTrue if both composite reference values are not equal, OFFalse otherwise
+     */
+    OFBool operator!=(const DSRCompositeReferenceValue &referenceValue) const;
+
     /** clear all internal variables.
      *  Since an empty reference value is invalid the reference becomes invalid afterwards.
      */
@@ -89,10 +99,18 @@ class DCMTK_DCMSR_EXPORT DSRCompositeReferenceValue
     virtual OFBool isValid() const;
 
     /** check whether the current reference value is empty.
-     *  Checks whether both UIDs of the reference value are empty.
+     *  Checks whether both mandatory UIDs of the reference value are empty.
      ** @return OFTrue if value is empty, OFFalse otherwise
      */
     virtual OFBool isEmpty() const;
+
+    /** check whether the current reference value is complete, i.e.\ whether both
+     *  mandatory UIDs are non-empty.  This is just a basic check that might be useful
+     *  for "validating" input data.  See isValid() for a more sophisticated way of
+     *  checking the current reference value.
+     ** @return OFTrue if value is complete, OFFalse otherwise
+     */
+    virtual OFBool isComplete() const;
 
     /** print reference value.
      *  The output of a typical composite reference value looks like this: (BasicTextSR,"1.2.3").
@@ -127,7 +145,7 @@ class DCMTK_DCMSR_EXPORT DSRCompositeReferenceValue
      *  enabled, a warning message is printed if the sequence is absent or contains more than
      *  one item.
      ** @param  dataset  DICOM dataset from which the sequence should be read
-     *  @param  tagKey   DICOM tag specifying the attribute (= sequence) which should be read
+     *  @param  tagKey   DICOM tag specifying the attribute (= sequence) that should be read
      *  @param  type     value type of the sequence (valid value: "1", "2", something else)
      *                   This parameter is used for checking purpose, any difference is reported.
      *  @param  flags    flag used to customize the reading process (see DSRTypes::RF_xxx)
@@ -141,7 +159,7 @@ class DCMTK_DCMSR_EXPORT DSRCompositeReferenceValue
     /** write referenced SOP sequence to dataset.
      *  If the value is empty an empty sequence (without any items) is written.
      ** @param  dataset  DICOM dataset to which the sequence should be written
-     *  @param  tagKey   DICOM tag specifying the attribute (= sequence) which should be written
+     *  @param  tagKey   DICOM tag specifying the attribute (= sequence) that should be written
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition writeSequence(DcmItem &dataset,
@@ -167,6 +185,13 @@ class DCMTK_DCMSR_EXPORT DSRCompositeReferenceValue
     {
         return SOPClassUID;
     }
+
+    /** get name associated with the SOP class UID (if any)
+     ** @param  defaultName  string value that is returned if the SOP class UID is unknown
+     ** @return name associated with the current SOP class UID (might be empty, e.g. in case
+     *          the SOP class UID is empty or 'defaultName' is an empty string)
+     */
+    const OFString getSOPClassName(const OFString &defaultName = "unknown SOP Class UID") const;
 
     /** get SOP instance UID
      ** @return current SOP instance UID (might be invalid or an empty string)
@@ -338,25 +363,31 @@ class DCMTK_DCMSR_EXPORT DSRCompositeReferenceValue
      *  The only checks performed are that the UID is non-empty and that it conforms to the
      *  corresponding VR (UI) and VM (1).  Derived classes should overwrite this method for
      *  more specific tests (e.g. allowing only particular SOP classes).
-     ** @param  sopClassUID   SOP class UID to be checked
+     ** @param  sopClassUID     SOP class UID to be checked
+     *  @param  reportWarnings  if enabled, report warning messages to the logger
      ** @return status, EC_Normal if value is valid, an error code otherwise
      */
-    virtual OFCondition checkSOPClassUID(const OFString &sopClassUID) const;
+    virtual OFCondition checkSOPClassUID(const OFString &sopClassUID,
+                                         const OFBool reportWarnings = OFFalse) const;
 
     /** check the specified SOP instance UID for validity.
      *  The only checks performed are that the UID is non-empty and that it conforms to the
      *  corresponding VR (UI) and VM (1).  Derived classes should overwrite this method for
      *  more specific tests.
-     *  @param  sopInstanceUID  SOP instance UID to be checked
+     ** @param  sopInstanceUID  SOP instance UID to be checked
+     *  @param  reportWarnings  if enabled, report warning messages to the logger
      ** @return status, EC_Normal if value is valid, an error code otherwise
      */
-    virtual OFCondition checkSOPInstanceUID(const OFString &sopInstanceUID) const;
+    virtual OFCondition checkSOPInstanceUID(const OFString &sopInstanceUID,
+                                            const OFBool reportWarnings = OFFalse) const;
 
     /** check the currently stored reference value for validity.
      *  See above checkXXX() methods for details.
+     ** @param  reportWarnings  if enabled, report a warning message on each deviation
+     *                          from an expected value to the logger
      ** @return status, EC_Normal if current value is valid, an error code otherwise
      */
-    OFCondition checkCurrentValue() const;
+    OFCondition checkCurrentValue(const OFBool reportWarnings = OFFalse) const;
 
     /// reference SOP class UID (VR=UI, type 1)
     OFString SOPClassUID;

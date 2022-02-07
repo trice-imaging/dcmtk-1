@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2018, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,6 +26,9 @@
 #include "dcmtk/dcmsr/dsrtypes.h"
 #include "dcmtk/dcmsr/dsrreftn.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
+
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcvrul.h"
 
 
 DSRByReferenceTreeNode::DSRByReferenceTreeNode(const E_RelationshipType relationshipType)
@@ -65,6 +68,48 @@ DSRByReferenceTreeNode::~DSRByReferenceTreeNode()
 }
 
 
+OFBool DSRByReferenceTreeNode::operator==(const DSRDocumentTreeNode &node) const
+{
+    /* call comparison operator of base class (includes check of value type) */
+    OFBool result = DSRDocumentTreeNode::operator==(node);
+    if (result)
+    {
+        /* it's safe to cast the type since the value type has already been checked */
+        const DSRByReferenceTreeNode &byRefNode = OFstatic_cast(const DSRByReferenceTreeNode &, node);
+        if (ValidReference && byRefNode.ValidReference)
+        {
+            /* check referenced node ID only */
+            result = (ReferencedNodeID == byRefNode.ReferencedNodeID);
+        } else {
+            /* check whether both references are invalid */
+            result = (ValidReference == byRefNode.ValidReference);
+        }
+    }
+    return result;
+}
+
+
+OFBool DSRByReferenceTreeNode::operator!=(const DSRDocumentTreeNode &node) const
+{
+    /* call comparison operator of base class (includes check of value type) */
+    OFBool result = DSRDocumentTreeNode::operator!=(node);
+    if (!result)
+    {
+        /* it's safe to cast the type since the value type has already been checked */
+        const DSRByReferenceTreeNode &byRefNode = OFstatic_cast(const DSRByReferenceTreeNode &, node);
+        if (ValidReference && byRefNode.ValidReference)
+        {
+            /* check referenced node ID only */
+            result = (ReferencedNodeID != byRefNode.ReferencedNodeID);
+        } else {
+            /* check whether either of the references is invalid */
+            result = (ValidReference != byRefNode.ValidReference);
+        }
+    }
+    return result;
+}
+
+
 DSRByReferenceTreeNode *DSRByReferenceTreeNode::clone() const
 {
     return new DSRByReferenceTreeNode(*this);
@@ -100,7 +145,10 @@ OFCondition DSRByReferenceTreeNode::print(STD_NAMESPACE ostream &stream,
     DCMSR_PRINT_ANSI_ESCAPE_CODE(DCMSR_ANSI_ESCAPE_CODE_RELATIONSHIP_TYPE)
     stream << relationshipTypeToReadableName(getRelationshipType()) << " ";
     DCMSR_PRINT_ANSI_ESCAPE_CODE(DCMSR_ANSI_ESCAPE_CODE_ITEM_VALUE)
-    stream << ReferencedContentItem;
+    if (ReferencedContentItem.empty())
+        stream << "?";
+    else
+        stream << ReferencedContentItem;
     /* print node ID (might be useful for debugging purposes) */
     if (flags & PF_printNodeID)
     {

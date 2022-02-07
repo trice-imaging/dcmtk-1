@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation are maintained by
@@ -45,6 +45,8 @@ class DCMTK_DCMSR_EXPORT DSRSubTemplate
   : protected DSRDocumentSubTree,
     public DSRTemplateCommon
 {
+    // allow direct access to inherited getRoot() method
+    friend class DSRIncludedTemplateNodeCursor;
 
   public:
 
@@ -86,7 +88,9 @@ class DCMTK_DCMSR_EXPORT DSRSubTemplate
      */
     virtual void clear();
 
-    /** check whether the current internal state is valid
+    /** check whether the current internal state is valid.
+     *  That means, whether both the internally stored subtree and the template
+     *  identification are valid.
      ** @return OFTrue if valid, OFFalse otherwise
      */
     virtual OFBool isValid() const;
@@ -95,7 +99,7 @@ class DCMTK_DCMSR_EXPORT DSRSubTemplate
      *  document tree starting from the root node
      ** @return always returns OFFalse since this class handles non-root templates only
      */
-    OFBool isRootTemplate() const
+    inline OFBool isRootTemplate() const
     {
         return OFFalse;
     }
@@ -103,11 +107,24 @@ class DCMTK_DCMSR_EXPORT DSRSubTemplate
     /** get read-only access to internally stored subtree.
      *  This method is not "const" because the template identification is set/updated
      *  automatically for the root node of the subtree (if applicable).
-     ** @return get constant reference to internally stored subtree
+     ** @return constant reference to internally stored subtree
      */
     virtual const DSRDocumentSubTree &getTree();
 
-    /** insert tree from given template to internally stored subtree.
+    /** add extra content item to the current one (if the template is extensible).
+     *  See DSRDocumentSubTree::addContentItem() for details.
+     ** @param  relationshipType  relationship type of node to be added with regard to
+     *                            the current one
+     *  @param  valueType         value type of node to be added
+     *  @param  addMode           flag specifying at which position to add the new node
+     *                            (e.g. after or below the current node)
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition addExtraContentItem(const E_RelationshipType relationshipType,
+                                            const E_ValueType valueType,
+                                            const E_AddMode addMode = AM_afterCurrent);
+
+    /** insert tree from given extra template to internally stored subtree.
      *  If possible, this method adds a copy of the given tree to the current content item.
      *  However, in case this template is non-extensible, an error code will be returned.
      ** @param  subTemplate     template that contains the tree that should be inserted
@@ -118,20 +135,38 @@ class DCMTK_DCMSR_EXPORT DSRSubTemplate
      *                          type is used if the one of a top-level node is "unknown".
      ** @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual OFCondition insertTemplate(const DSRSubTemplate &subTemplate,
-                                       const E_AddMode addMode = AM_belowCurrent,
-                                       const E_RelationshipType defaultRelType = RT_unknown);
+    virtual OFCondition insertExtraTemplate(const DSRSubTemplate &subTemplate,
+                                            const E_AddMode addMode = AM_belowCurrent,
+                                            const E_RelationshipType defaultRelType = RT_unknown);
 
 
   // --- introduce some methods from base class to public API
 
+    using DSRDocumentSubTree::isEmpty;
+    using DSRDocumentSubTree::isCursorValid;
     using DSRDocumentSubTree::print;
+    using DSRDocumentSubTree::writeXML;
     using DSRDocumentSubTree::countNodes;
+    using DSRDocumentSubTree::countChildNodes;
+    using DSRDocumentSubTree::hasParentNode;
+    using DSRDocumentSubTree::hasChildNodes;
+    using DSRDocumentSubTree::hasPreviousNode;
+    using DSRDocumentSubTree::hasNextNode;
+    using DSRDocumentSubTree::hasSiblingNodes;
+    using DSRDocumentSubTree::iterate;
+    using DSRDocumentSubTree::gotoRoot;
+    using DSRDocumentSubTree::gotoFirst;
+    using DSRDocumentSubTree::gotoLast;
+    using DSRDocumentSubTree::gotoPrevious;
+    using DSRDocumentSubTree::gotoNext;
+    using DSRDocumentSubTree::gotoParent;
+    using DSRDocumentSubTree::gotoChild;
     using DSRDocumentSubTree::gotoNamedNode;
     using DSRDocumentSubTree::gotoNextNamedNode;
     using DSRDocumentSubTree::gotoAnnotatedNode;
     using DSRDocumentSubTree::gotoNextAnnotatedNode;
     using DSRDocumentSubTree::getCurrentContentItem;
+    using DSRDocumentSubTree::updateByReferenceRelationships;
 
 
   protected:

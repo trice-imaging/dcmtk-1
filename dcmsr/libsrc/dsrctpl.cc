@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation are maintained by
@@ -26,6 +26,9 @@
 #include "dcmtk/dcmsr/dsrctpl.h"
 #include "dcmtk/dcmsr/dsrdocst.h"
 
+#include "dcmtk/dcmdata/dcvrcs.h"
+#include "dcmtk/dcmdata/dcvrui.h"
+
 
 DSRTemplateCommon::DSRTemplateCommon(const OFString &templateIdentifier,
                                      const OFString &mappingResource,
@@ -34,6 +37,7 @@ DSRTemplateCommon::DSRTemplateCommon(const OFString &templateIdentifier,
     MappingResource(mappingResource),
     MappingResourceUID(mappingResourceUID),
     ExtensibleMode(OFFalse),
+    OrderSignificantMode(OFFalse),
     NodeList()
 {
     /* by default, a template is non-extensible */
@@ -42,6 +46,12 @@ DSRTemplateCommon::DSRTemplateCommon(const OFString &templateIdentifier,
 
 DSRTemplateCommon::~DSRTemplateCommon()
 {
+}
+
+
+void DSRTemplateCommon::clear()
+{
+    clearEntriesInNodeList();
 }
 
 
@@ -77,11 +87,40 @@ OFBool DSRTemplateCommon::isTemplateIdentificationValid(const OFBool check) cons
 }
 
 
+OFBool DSRTemplateCommon::compareTemplateIdentication(const OFString &templateIdentifier,
+                                                      const OFString &mappingResource,
+                                                      const OFString &mappingResourceUID) const
+{
+    OFBool result = (TemplateIdentifier == templateIdentifier) && (MappingResource == mappingResource);
+    /* mapping resource UID is optional, so only check it if present */
+    if (result && !MappingResourceUID.empty() && !mappingResourceUID.empty())
+        result = (MappingResourceUID == mappingResourceUID);
+    return result;
+}
+
+
 // protected methods
 
-void DSRTemplateCommon::reserveEntriesInNodeList(const size_t count)
+void DSRTemplateCommon::clearEntriesInNodeList()
 {
-    NodeList.reserve(count);
+    /* set all entries to 0 */
+    for (size_t i = 0; i < NodeList.size(); ++i)
+        NodeList[i] = 0;
+}
+
+
+void DSRTemplateCommon::reserveEntriesInNodeList(const size_t count,
+                                                 const OFBool initialize)
+{
+    /* check whether the entries should be initialized... */
+    if (initialize)
+    {
+        NodeList.resize(count);
+        clearEntriesInNodeList();
+    } else {
+        /* ... or only reserved (not created and initialized) */
+        NodeList.reserve(count);
+    }
 }
 
 
@@ -105,6 +144,22 @@ size_t DSRTemplateCommon::getEntryFromNodeList(const size_t pos) const
 }
 
 
+size_t DSRTemplateCommon::gotoEntryFromNodeList(DSRDocumentTreeNodeCursor &cursor,
+                                                const size_t pos) const
+{
+    size_t nodeID = 0;
+    /* make sure that cursor is valid and list entry exists */
+    if ((cursor.isValid()) && (pos < NodeList.size()))
+    {
+        nodeID = NodeList[pos];
+        /* check whether current node is already the right one */
+        if (cursor.getNodeID() != nodeID)
+            nodeID = cursor.gotoNode(nodeID);
+    }
+    return nodeID;
+}
+
+
 size_t DSRTemplateCommon::gotoEntryFromNodeList(DSRDocumentSubTree *tree,
                                                 const size_t pos)
 {
@@ -122,14 +177,15 @@ size_t DSRTemplateCommon::gotoEntryFromNodeList(DSRDocumentSubTree *tree,
 
 
 size_t DSRTemplateCommon::gotoLastEntryFromNodeList(DSRDocumentSubTree *tree,
-                                                    const size_t lastPos)
+                                                    const size_t lastPos,
+                                                    const size_t firstPos)
 {
     size_t nodeID = 0;
     /* make sure that tree is valid and list entry exists */
-    if ((tree != NULL) && (lastPos < NodeList.size()))
+    if ((tree != NULL) && (firstPos <= lastPos) && (lastPos < NodeList.size()))
     {
         size_t pos = lastPos + 1;
-        while ((pos > 0) && (nodeID == 0))
+        while ((pos > firstPos) && (nodeID == 0))
             nodeID = NodeList[--pos];
         /* check whether current node is already the right one */
         if (tree->getNodeID() != nodeID)

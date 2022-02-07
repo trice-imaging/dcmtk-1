@@ -1,12 +1,12 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2021, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class CID7445_DeviceParticipatingRoles
  *
- *  Generated automatically from DICOM PS 3.16-2015c
- *  File created on 2015-08-23 14:59:23 by J. Riesmeier
+ *  Generated automatically from DICOM PS 3.16-2021d
+ *  File created on 2021-09-13 09:26:36 by J. Riesmeier
  *
  */
 
@@ -18,6 +18,8 @@
 
 #include "dcmtk/dcmsr/dsrctxgr.h"
 #include "dcmtk/dcmsr/cmr/define.h"
+
+#include "dcmtk/ofstd/ofmap.h"
 
 
 /*---------------------*
@@ -147,5 +149,14 @@ class DCMTK_CMR_EXPORT CID7445_DeviceParticipatingRoles
     /// pointer to internal code list (use a static variable for singleton pattern)
     static CodeList *Codes;
 };
+
+
+/*-------------------*
+ *  type definition  *
+ *-------------------*/
+
+// define short name for the context group class
+typedef CID7445_DeviceParticipatingRoles CMR_CID7445;
+
 
 #endif

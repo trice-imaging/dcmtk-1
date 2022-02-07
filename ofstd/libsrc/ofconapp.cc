@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1999-2013, OFFIS e.V.
+ *  Copyright (C) 1999-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,12 +25,11 @@
 #include "dcmtk/ofstd/ofconapp.h"
 #include "dcmtk/ofstd/ofstring.h"     /* for OFString */
 
-#ifdef WITH_LIBICONV
+#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
 #include "dcmtk/ofstd/ofchrenc.h"     /* for OFCharacterEncoding */
 
-#define INCLUDE_LOCALE
-#include "dcmtk/ofstd/ofstdinc.h"     /* for setlocale() */
-#endif // WITH_LIBICONV
+#include <locale>
+#endif // DCMTK_ENABLE_CHARSET_CONVERSION
 
 #ifdef HAVE_WINDOWS_H
 #define WIN32_LEAN_AND_MEAN
@@ -140,13 +139,17 @@ void OFConsoleApplication::printHeader(const OFBool hostInfo,
     if (hostInfo)
     {
         (*output) << OFendl << "Host type: " << CANONICAL_HOST_TYPE << OFendl;
-#if defined(WITH_LIBICONV) && defined(HAVE_LOCALE_H)
+#if defined(DCMTK_ENABLE_CHARSET_CONVERSION) && defined(HAVE_LOCALE_H)
         /* determine system's current locale */
         const char *currentLocale = setlocale(LC_CTYPE, NULL);
         if (setlocale(LC_CTYPE, "") != NULL)
         {
-            OFCharacterEncoding converter;
-            (*output) << "Character encoding: " << converter.getLocaleEncoding() << OFendl;
+            OFString encoding = OFCharacterEncoding::getLocaleEncoding();
+            (*output) << "Character encoding: ";
+            if (!encoding.empty())
+                (*output) << encoding << OFendl;
+            else
+                (*output) << "system default (unknown)" << OFendl;
             /* reset locale to the previous setting or to the default (7-bit ASCII) */
             if (currentLocale != NULL)
                 setlocale(LC_CTYPE, currentLocale);
@@ -163,10 +166,55 @@ void OFConsoleApplication::printHeader(const OFBool hostInfo,
             (*output) << "Code page: " << GetOEMCP() << " (OEM) / " << GetACP() << " (ANSI)" << OFendl;
         }
 #endif
+        /* output details on DCMTK's build options */
+        (*output) << "Build options:";
 #ifdef DEBUG
         /* indicate that debug code is present */
-        (*output) << OFendl << "Compiled with DEBUG defined, i.e. with debug code" << OFendl;
+        (*output) << " debug";
 #endif
+#ifdef ofstd_EXPORTS
+        /* indicate that shared library support is enabled */
+        (*output) << " shared";
+#endif
+#ifdef HAVE_CXX11
+        /* indicate that C++11 is used */
+        (*output) << " cxx11";
+#endif
+#ifdef HAVE_STL
+        /* indicate that the C++ STL is used */
+        (*output) << " stl";
+#endif
+#ifdef WITH_THREADS
+        /* indicate that MT support is enabled */
+        (*output) << " threads";
+#endif
+#ifdef DCMTK_ENABLE_LFS
+        /* indicate that LFS support is enabled */
+        (*output) << " lfs";
+#endif
+#if DCM_DICT_DEFAULT == 1
+        /* indicate that the builtin data dictionary is enabled */
+        (*output) << " builtin-dict";
+#elif DCM_DICT_DEFAULT == 2
+        /* indicate that the external data dictionary is enabled */
+        (*output) << " extern-dict";
+#endif
+#ifdef DCM_DICT_USE_DCMDICTPATH
+        /* indicate that the DCMDICTPATH environment variable is checked */
+        (*output) << " dcmdictpath";
+#elif DCM_DICT_DEFAULT == 0
+        /* indicate that no data dictionary is available */
+        (*output) << " no-dict";
+#endif
+#ifdef ENABLE_PRIVATE_TAGS
+        /* indicate that private tag dictionary is enabled */
+        (*output) << " private-tags";
+#endif
+#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
+        /* indicate that character set conversion is enabled */
+        (*output) << " char-conv";
+#endif
+        (*output) << OFendl;
     }
     /* release output stream */
     if (stdError)
@@ -198,7 +246,7 @@ void OFConsoleApplication::printUsage(const OFCommandLine *cmd)
     output << OFendl;
     ofConsole.unlockCout();
     /* exit code: no error */
-    exit(0);
+    exit(EXITCODE_NO_ERROR);
 }
 
 

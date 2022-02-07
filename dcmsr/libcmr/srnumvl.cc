@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2016, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class CMR_SRNumericMeasurementValue
@@ -29,9 +29,16 @@ CMR_SRNumericMeasurementValue::CMR_SRNumericMeasurementValue(const OFString &num
 }
 
 
+CMR_SRNumericMeasurementValue::CMR_SRNumericMeasurementValue(const CID42_NumericValueQualifier &valueQualifier,
+                                                             const OFBool check)
+  : DSRNumericMeasurementValue(valueQualifier, check)
+{
+}
+
+
 CMR_SRNumericMeasurementValue::CMR_SRNumericMeasurementValue(const OFString &numericValue,
                                                              const DSRCodedEntryValue &measurementUnit,
-                                                             const DSRCodedEntryValue &valueQualifier,
+                                                             const CID42_NumericValueQualifier &valueQualifier,
                                                              const OFBool check)
   : DSRNumericMeasurementValue(numericValue, measurementUnit, valueQualifier, check)
 {
@@ -39,6 +46,12 @@ CMR_SRNumericMeasurementValue::CMR_SRNumericMeasurementValue(const OFString &num
 
 
 CMR_SRNumericMeasurementValue::CMR_SRNumericMeasurementValue(const CMR_SRNumericMeasurementValue &numericMeasurement)
+  : DSRNumericMeasurementValue(numericMeasurement)
+{
+}
+
+
+CMR_SRNumericMeasurementValue::CMR_SRNumericMeasurementValue(const DSRNumericMeasurementValue &numericMeasurement)
   : DSRNumericMeasurementValue(numericMeasurement)
 {
 }
@@ -57,24 +70,42 @@ CMR_SRNumericMeasurementValue &CMR_SRNumericMeasurementValue::operator=(const CM
 }
 
 
-OFCondition CMR_SRNumericMeasurementValue::setNumericValueQualifier(CID42_NumericValueQualifier::EnumType valueQualifier,
-                                                                    const OFBool enhancedEncodingMode)
+OFCondition CMR_SRNumericMeasurementValue::setValue(const CID42_NumericValueQualifier &valueQualifier,
+                                                    const OFBool check)
 {
     /* map type to coded entry and call the method doing the real work */
-    return setNumericValueQualifier(CID42_NumericValueQualifier::getCodedEntry(valueQualifier, enhancedEncodingMode), OFFalse /*check*/);
+    return DSRNumericMeasurementValue::setValue(valueQualifier, check);
+}
+
+
+OFCondition CMR_SRNumericMeasurementValue::setValue(const OFString &numericValue,
+                                                    const DSRCodedEntryValue &measurementUnit,
+                                                    const CID42_NumericValueQualifier &valueQualifier,
+                                                    const OFBool check)
+{
+    /* map type to coded entry and call the method doing the real work */
+    return DSRNumericMeasurementValue::setValue(numericValue, measurementUnit, valueQualifier, check);
+}
+
+
+OFCondition CMR_SRNumericMeasurementValue::setNumericValueQualifier(const CID42_NumericValueQualifier &valueQualifier,
+                                                                    const OFBool check)
+{
+    /* map type to coded entry and call the method doing the real work */
+    return DSRNumericMeasurementValue::setNumericValueQualifier(valueQualifier, check);
 }
 
 
 OFCondition CMR_SRNumericMeasurementValue::checkNumericValueQualifier(const DSRCodedEntryValue &valueQualifier) const
 {
     /* first, perform some basic checks (done by the base class) */
-    OFCondition status = DSRNumericMeasurementValue::checkNumericValueQualifier(valueQualifier);
-    if (status.good() && !valueQualifier.isEmpty())
+    OFCondition result = DSRNumericMeasurementValue::checkNumericValueQualifier(valueQualifier);
+    if (result.good() && !valueQualifier.isEmpty())
     {
         /* then, also check for conformance with CID 42 */
         static const CID42_NumericValueQualifier contextGroup;
         if (contextGroup.findCodedEntry(valueQualifier).bad())
-            status = SR_EC_CodedEntryNotInContextGroup;
+            result = SR_EC_CodedEntryNotInContextGroup;
     }
-    return status;
+    return result;
 }

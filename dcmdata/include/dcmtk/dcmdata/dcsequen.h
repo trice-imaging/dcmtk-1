@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2015, OFFIS e.V.
+ *  Copyright (C) 1994-2020, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -31,6 +31,9 @@
 #include "dcmtk/dcmdata/dclist.h"
 #include "dcmtk/dcmdata/dcstack.h"
 
+// forward declarations
+class DcmJsonFormat;
+
 /** class representing a DICOM Sequence of Items (SQ).
  *  This class is derived from class DcmElement (and not from DcmObject) despite the fact
  *  that sequences have no value field as such, they maintain a list of items. However,
@@ -41,15 +44,15 @@ class DCMTK_DCMDATA_EXPORT DcmSequenceOfItems : public DcmElement
 {
 public:
 
-    /** constructor
+    // Make friend with DcmItem which requires access to protected
+    // constructor allowing construction using an explicit value length.
+    friend class DcmItem;
+
+    /** constructor.
+     *  Create new element from given tag.
      *  @param tag attribute tag
-     *  @param len length of the attribute value
-     *  @param readAsUN flag indicating whether the sequence should be
-     *  read (interpreted) as a UN element with Implicit VR Little Endian encoding
      */
-    DcmSequenceOfItems(const DcmTag &tag,
-                       const Uint32 len = 0,
-                       OFBool readAsUN = OFFalse);
+    DcmSequenceOfItems(const DcmTag &tag);
 
     /** copy constructor
      *  @param oldSeq element to be copied
@@ -61,6 +64,7 @@ public:
 
     /** copy assignment operator
      *  @param obj element to be copied
+     *  @return reference to this object
      */
     DcmSequenceOfItems &operator=(const DcmSequenceOfItems &obj);
 
@@ -68,19 +72,21 @@ public:
      *  with a given object of the same type. The tag of the element is also
      *  considered as the first component that is compared, followed by the
      *  object types (VR, i.e. DCMTK'S EVR) and the comparison of all value
-     *  components of the object, preferrably in the order declared in the
+     *  components of the object, preferably in the order declared in the
      *  object (if applicable). For sequences that means that all
-     *  containted items are compared element by element, so this may be
+     *  contained items are compared element by element, so this may be
      *  an expensive operation!
      *  @param  rhs the right hand side of the comparison
      *  @return 0 if the object values are equal.
-     *          -1 if either the value of the  first component that does not match
-     *          is lower in this object than in rhs, or all compared components match
-     *          but this object has fewer components than rhs. Also returned if rhs
-     *          cannot be casted to this object type.
-     *          1 if either the value of the first component that does not match
-     *          is greater in this object than in rhs object, or all compared
-     *          components match but the this component is longer.
+     *          -1 if this element has fewer components than the rhs element.
+     *          Also -1 if the value of the first component that does not match
+     *          is lower in this object than in rhs. Also returned if rhs
+     *          cannot be casted to this object type or both objects are of
+     *          different VR (i.e. the DcmEVR returned by the element's ident()
+     *          call are different).
+     *          1 if either this element has more components than the rhs element, or
+     *          if the first component that does not match is greater in this object than
+     *          in rhs object.
      */
     virtual int compare(const DcmElement& rhs) const;
 
@@ -132,7 +138,7 @@ public:
      *  @param pixelFileName not used (used in certain sub-classes of this class)
      *  @param pixelCounter not used (used in certain sub-classes of this class)
      */
-    virtual void print(STD_NAMESPACE ostream&out,
+    virtual void print(STD_NAMESPACE ostream &out,
                        const size_t flags = 0,
                        const int level = 0,
                        const char *pixelFileName = NULL,
@@ -151,7 +157,18 @@ public:
     /** get value multiplicity
      *  @return always returns 1 (according to the DICOM standard)
      */
-    virtual unsigned long getVM() { return 1L; }
+    virtual unsigned long getVM();
+
+    /** get number of values (items) stored in this sequence.
+     *  The result is the same as card() unless overwritten in a derived class.
+     *  @return number of items in this sequence
+     */
+    virtual unsigned long getNumberOfValues();
+
+    /** get cardinality of this sequence
+     *  @return number of items in this sequence
+     */
+    virtual unsigned long card() const;
 
     /** This function takes care of group length and padding elements
      *  in the current element list according to what is specified in
@@ -190,21 +207,7 @@ public:
                              const Uint32 subPadlen = 0,
                              Uint32 instanceLength = 0);
 
-    /** calculate the length of this DICOM element when encoded with the
-     *  given transfer syntax and the given encoding type for sequences.
-     *  For elements, the length includes the length of the tag, length field,
-     *  VR field and the value itself, for items and sequences it returns
-     *  the length of the complete item or sequence including delimitation tags
-     *  if applicable.
-     *  If length encodig is set to be explicit and the total sequence size is
-     *  larger than the available 32-bit length field, then undefined length
-     *  is returned. If "dcmWriteOversizedSeqsAndItemsUndefined" is disabled,
-     *  also the internal DcmObject errorFlag is set to EC_SeqOrItemContentOverflow
-     *  in case the sequence content (excluding tag header etc.) is already too
-     *  large.
-     *  @param xfer transfer syntax for length calculation
-     *  @param enctype sequence encoding type for length calculation
-     *  @return length of DICOM element
+    /** @copydoc DcmObject::calcElementLength()
      */
     virtual Uint32 calcElementLength(const E_TransferSyntax xfer,
                                      const E_EncodingType enctype);
@@ -212,7 +215,7 @@ public:
     /** calculate the value length (without attribute tag, VR and length field)
      *  of this DICOM element when encoded with the given transfer syntax and
      *  the given encoding type for sequences.
-     *  If length encodig is set to be explicit and the total sequence size is
+     *  If length encoding is set to be explicit and the total sequence size is
      *  larger than the available 32-bit length field, then undefined length
      *  is returned. If "dcmWriteOversizedSeqsAndItemsImplicit" is disabled,
      *  also the internal DcmObject errorFlag is set to
@@ -277,8 +280,16 @@ public:
      *  @param flags optional flag used to customize the output (see DCMTypes::XF_xxx)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual OFCondition writeXML(STD_NAMESPACE ostream&out,
+    virtual OFCondition writeXML(STD_NAMESPACE ostream &out,
                                  const size_t flags = 0);
+
+    /** write object in JSON format
+     *  @param out output stream to which the JSON document is written
+     *  @param format used to format and customize the output
+     *  @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition writeJson(STD_NAMESPACE ostream &out,
+                                  DcmJsonFormat &format);
 
     /** special write method for creation of digital signatures
      *  @param outStream DICOM output stream
@@ -308,8 +319,8 @@ public:
      *  character codes below 128 are considered to be ASCII codes and all others are
      *  considered to be non-ASCII.
      *  @param checkAllStrings if true, also check elements with string values not affected
-     *    by SpecificCharacterSet (0008,0005), default: only check PN, LO, LT, SH, ST, UC
-     *    and UT
+     *    by SpecificCharacterSet (0008,0005). By default, only check PN, LO, LT, SH, ST,
+     *    UC and UT.
      *  @return true if object contains non-ASCII characters, false otherwise
      */
     virtual OFBool containsExtendedCharacters(const OFBool checkAllStrings = OFFalse);
@@ -329,11 +340,6 @@ public:
      *  @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition convertCharacterSet(DcmSpecificCharacterSet &converter);
-
-    /** get cardinality of this sequence
-     *  @return number of items in this sequence
-     */
-    virtual unsigned long card() const;
 
     /** insert the given item at the start of the item list maintained by this sequence.
      *  Ownership of the item, which must be allocated on the heap, is transferred to the sequence.
@@ -500,6 +506,22 @@ public:
                                         E_ByteOrder byteOrder = gLocalByteOrder);
 
 protected:
+
+    /** constructor. Create new element from given tag and length.
+     *  Only reachable from friend classes since construction with
+     *  length different from 0 leads to a state with length being set but
+     *  the element's value still being uninitialized. This can lead to crashes
+     *  when the value is read or written. Thus the method calling this
+     *  constructor with length > 0 must ensure that the element's value is
+     *  explicitly initialized, too.
+     *  @param tag attribute tag
+     *  @param len length of the attribute value
+     *  @param readAsUN flag indicating whether the sequence should be
+     *  read (interpreted) as a UN element with Implicit VR Little Endian encoding
+     */
+    DcmSequenceOfItems(const DcmTag &tag,
+                       const Uint32 len,
+                       OFBool readAsUN = OFFalse);
 
     /** This function reads tag and length information from inStream and
      *  returns this information to the caller. When reading information,

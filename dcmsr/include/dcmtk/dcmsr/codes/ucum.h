@@ -1,11 +1,17 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2017, J. Riesmeier, Oldenburg, Germany
+ *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file with UCUM Code Definitions (Coding Scheme "UCUM")
  *
  *  Generated semi-automatically from DICOM PS 3.16-2015c
  *  File created on 2015-08-24 by J. Riesmeier
+ *  Last modified on 2017-03-08 by J. Riesmeier
+ *
+ *  NB: This file does not yet contain all codes defined in PS 3.16 since the
+ *      mapping of the code meaning to a compiler-friendly representation is
+ *      much more complex than for other coding schemes.
  *
  */
 
@@ -42,15 +48,17 @@
 // description of the code meaning to a compiler-friendly but still human-readable representation.
 
 #define CODE_UCUM_Pixels            DSRBasicCodedEntry("{pixels}", "UCUM", "pixels")
-#define CODE_UCUM_Degrees           DSRBasicCodedEntry("deg", "UCUM", "degrees")
+#define CODE_UCUM_Degrees           DSRBasicCodedEntry("deg", "UCUM", "deg")
 #define CODE_UCUM_Minus1To1         DSRBasicCodedEntry("{-1:1}", "UCUM", "{-1:1}")
 #define CODE_UCUM_Millimeter        DSRBasicCodedEntry("mm", "UCUM", "millimeter")
-#define CODE_UCUM_Cm3               DSRBasicCodedEntry("cm3", "UCUM", "cm3")
-#define CODE_UCUM_S                 DSRBasicCodedEntry("s", "UCUM", "s")
-#define CODE_UCUM_Min               DSRBasicCodedEntry("min", "UCUM", "min")
+#define CODE_UCUM_Centimeter        DSRBasicCodedEntry("cm", "UCUM", "centimeter")
+#define CODE_UCUM_cm3               DSRBasicCodedEntry("cm3", "UCUM", "cm3")
+#define CODE_UCUM_ml                DSRBasicCodedEntry("ml", "UCUM", "ml")
+#define CODE_UCUM_s                 DSRBasicCodedEntry("s", "UCUM", "s")
+#define CODE_UCUM_min               DSRBasicCodedEntry("min", "UCUM", "min")
 #define CODE_UCUM_Bq                DSRBasicCodedEntry("Bq", "UCUM", "Bq")
 #define CODE_UCUM_BqPerMol          DSRBasicCodedEntry("Bq/mol", "UCUM", "Bq/mol")
-#define CODE_UCUM_MmolPerL          DSRBasicCodedEntry("mmol/l", "UCUM", "mmol/l")
-#define CODE_UCUM_CountsPerSecond   DSRBasicCodedEntry("{counts}/s", "UCUM", "Counts per second")
+#define CODE_UCUM_mmolPerL          DSRBasicCodedEntry("mmol/l", "UCUM", "mmol/l")
+#define CODE_UCUM_CountsPerSecond   DSRBasicCodedEntry("{counts}/s", "UCUM", "counts/s")
 
 #endif

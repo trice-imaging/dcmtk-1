@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTROIContourSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -23,6 +23,8 @@ DRTROIContourSequence::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
     ContourSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     ROIDisplayColor(DCM_ROIDisplayColor),
+    RecommendedDisplayCIELabValue(DCM_RecommendedDisplayCIELabValue),
+    RecommendedDisplayGrayscaleValue(DCM_RecommendedDisplayGrayscaleValue),
     ReferencedROINumber(DCM_ReferencedROINumber)
 {
 }
@@ -32,6 +34,8 @@ DRTROIContourSequence::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
     ContourSequence(copy.ContourSequence),
     ROIDisplayColor(copy.ROIDisplayColor),
+    RecommendedDisplayCIELabValue(copy.RecommendedDisplayCIELabValue),
+    RecommendedDisplayGrayscaleValue(copy.RecommendedDisplayGrayscaleValue),
     ReferencedROINumber(copy.ReferencedROINumber)
 {
 }
@@ -49,6 +53,8 @@ DRTROIContourSequence::Item &DRTROIContourSequence::Item::operator=(const Item &
         EmptyDefaultItem = copy.EmptyDefaultItem;
         ContourSequence = copy.ContourSequence;
         ROIDisplayColor = copy.ROIDisplayColor;
+        RecommendedDisplayCIELabValue = copy.RecommendedDisplayCIELabValue;
+        RecommendedDisplayGrayscaleValue = copy.RecommendedDisplayGrayscaleValue;
         ReferencedROINumber = copy.ReferencedROINumber;
     }
     return *this;
@@ -62,6 +68,8 @@ void DRTROIContourSequence::Item::clear()
         /* clear all DICOM attributes */
         ReferencedROINumber.clear();
         ROIDisplayColor.clear();
+        RecommendedDisplayGrayscaleValue.clear();
+        RecommendedDisplayCIELabValue.clear();
         ContourSequence.clear();
     }
 }
@@ -71,6 +79,8 @@ OFBool DRTROIContourSequence::Item::isEmpty()
 {
     return ReferencedROINumber.isEmpty() &&
            ROIDisplayColor.isEmpty() &&
+           RecommendedDisplayGrayscaleValue.isEmpty() &&
+           RecommendedDisplayCIELabValue.isEmpty() &&
            ContourSequence.isEmpty();
 }
 
@@ -90,6 +100,8 @@ OFCondition DRTROIContourSequence::Item::read(DcmItem &item)
         clear();
         getAndCheckElementFromDataset(item, ReferencedROINumber, "1", "1", "ROIContourSequence");
         getAndCheckElementFromDataset(item, ROIDisplayColor, "3", "3", "ROIContourSequence");
+        getAndCheckElementFromDataset(item, RecommendedDisplayGrayscaleValue, "1", "3", "ROIContourSequence");
+        getAndCheckElementFromDataset(item, RecommendedDisplayCIELabValue, "3", "3", "ROIContourSequence");
         ContourSequence.read(item, "1-n", "3", "ROIContourSequence");
         result = EC_Normal;
     }
@@ -105,6 +117,8 @@ OFCondition DRTROIContourSequence::Item::write(DcmItem &item)
         result = EC_Normal;
         addElementToDataset(result, item, new DcmIntegerString(ReferencedROINumber), "1", "1", "ROIContourSequence");
         addElementToDataset(result, item, new DcmIntegerString(ROIDisplayColor), "3", "3", "ROIContourSequence");
+        addElementToDataset(result, item, new DcmUnsignedShort(RecommendedDisplayGrayscaleValue), "1", "3", "ROIContourSequence");
+        addElementToDataset(result, item, new DcmUnsignedShort(RecommendedDisplayCIELabValue), "3", "3", "ROIContourSequence");
         if (result.good()) result = ContourSequence.write(item, "1-n", "3", "ROIContourSequence");
     }
     return result;
@@ -126,6 +140,24 @@ OFCondition DRTROIContourSequence::Item::getROIDisplayColor(Sint32 &value, const
         return EC_IllegalCall;
     else
         return OFconst_cast(DcmIntegerString &, ROIDisplayColor).getSint32(value, pos);
+}
+
+
+OFCondition DRTROIContourSequence::Item::getRecommendedDisplayCIELabValue(Uint16 &value, const unsigned long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return OFconst_cast(DcmUnsignedShort &, RecommendedDisplayCIELabValue).getUint16(value, pos);
+}
+
+
+OFCondition DRTROIContourSequence::Item::getRecommendedDisplayGrayscaleValue(Uint16 &value, const unsigned long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return OFconst_cast(DcmUnsignedShort &, RecommendedDisplayGrayscaleValue).getUint16(value, pos);
 }
 
 
@@ -157,6 +189,24 @@ OFCondition DRTROIContourSequence::Item::setROIDisplayColor(const OFString &valu
             result = ROIDisplayColor.putOFStringArray(value);
     }
     return result;
+}
+
+
+OFCondition DRTROIContourSequence::Item::setRecommendedDisplayCIELabValue(const Uint16 value, const unsigned long pos)
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return RecommendedDisplayCIELabValue.putUint16(value, pos);
+}
+
+
+OFCondition DRTROIContourSequence::Item::setRecommendedDisplayGrayscaleValue(const Uint16 value, const unsigned long pos)
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return RecommendedDisplayGrayscaleValue.putUint16(value, pos);
 }
 
 
@@ -276,7 +326,7 @@ OFBool DRTROIContourSequence::isValid() const
 }
 
 
-unsigned long DRTROIContourSequence::getNumberOfItems() const
+size_t DRTROIContourSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -306,12 +356,12 @@ OFCondition DRTROIContourSequence::gotoNextItem()
 }
 
 
-OFCondition DRTROIContourSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTROIContourSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -326,12 +376,12 @@ OFCondition DRTROIContourSequence::gotoItem(const unsigned long num, OFListItera
 }
 
 
-OFCondition DRTROIContourSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTROIContourSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -346,7 +396,7 @@ OFCondition DRTROIContourSequence::gotoItem(const unsigned long num, OFListConst
 }
 
 
-OFCondition DRTROIContourSequence::gotoItem(const unsigned long num)
+OFCondition DRTROIContourSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -382,7 +432,7 @@ const DRTROIContourSequence::Item &DRTROIContourSequence::getCurrentItem() const
 }
 
 
-OFCondition DRTROIContourSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTROIContourSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -392,7 +442,7 @@ OFCondition DRTROIContourSequence::getItem(const unsigned long num, Item *&item)
 }
 
 
-DRTROIContourSequence::Item &DRTROIContourSequence::getItem(const unsigned long num)
+DRTROIContourSequence::Item &DRTROIContourSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -402,7 +452,7 @@ DRTROIContourSequence::Item &DRTROIContourSequence::getItem(const unsigned long 
 }
 
 
-const DRTROIContourSequence::Item &DRTROIContourSequence::getItem(const unsigned long num) const
+const DRTROIContourSequence::Item &DRTROIContourSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -412,13 +462,13 @@ const DRTROIContourSequence::Item &DRTROIContourSequence::getItem(const unsigned
 }
 
 
-DRTROIContourSequence::Item &DRTROIContourSequence::operator[](const unsigned long num)
+DRTROIContourSequence::Item &DRTROIContourSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTROIContourSequence::Item &DRTROIContourSequence::operator[](const unsigned long num) const
+const DRTROIContourSequence::Item &DRTROIContourSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -441,7 +491,7 @@ OFCondition DRTROIContourSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTROIContourSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTROIContourSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -464,7 +514,7 @@ OFCondition DRTROIContourSequence::insertItem(const unsigned long pos, Item *&it
 }
 
 
-OFCondition DRTROIContourSequence::removeItem(const unsigned long pos)
+OFCondition DRTROIContourSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

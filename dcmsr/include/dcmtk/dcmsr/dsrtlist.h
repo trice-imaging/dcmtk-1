@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2014, OFFIS e.V.
+ *  Copyright (C) 2000-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,9 +26,19 @@
 
 #include "dcmtk/config/osconfig.h"   /* make sure OS specific configuration is included first */
 
-#include "dcmtk/ofstd/oflist.h"
-
 #include "dcmtk/dcmdata/dcerror.h"
+
+#include "dcmtk/ofstd/oflist.h"
+#include "dcmtk/ofstd/ofvector.h"
+
+
+/** get the default item which is returned in DSRListOfItems::getItem() if the index is invalid.
+ *  This function needs to be specialized and instantiated for each different use of DSRListOfItems.
+ *  @tparam T the type of the object that will be returned.
+ *  @return a reference to an object of type T.
+ */
+template<typename T>
+const T& DSRgetEmptyItem();
 
 
 /*---------------------*
@@ -71,16 +81,68 @@ template<class T> class DSRListOfItems
      */
     inline DSRListOfItems<T> &operator=(const DSRListOfItems<T> &lst)
     {
-        /* class OFList has no overloaded assignment operator */
-        ItemList.clear();
-        const OFLIST_TYPENAME OFListConstIterator(T) endPos = lst.ItemList.end();
-        OFLIST_TYPENAME OFListConstIterator(T) iterator = lst.ItemList.begin();
-        while (iterator != endPos)
+        /* check for self-assignment, which would not work */
+        if (this != &lst)
         {
-            ItemList.push_back(*iterator);
-            iterator++;
+            /* class OFList has no overloaded assignment operator */
+            ItemList.clear();
+            const OFLIST_TYPENAME OFListConstIterator(T) endPos = lst.ItemList.end();
+            OFLIST_TYPENAME OFListConstIterator(T) iterator = lst.ItemList.begin();
+            while (iterator != endPos)
+            {
+                ItemList.push_back(*iterator);
+                iterator++;
+            }
         }
         return *this;
+    }
+
+    /** comparison operator "equal"
+     ** @param  lst  list that should be compared to the current one
+     ** @return OFTrue if both lists are equal, OFFalse otherwise
+     */
+    OFBool operator==(const DSRListOfItems<T> &lst) const
+    {
+        /* first check whether the size of both lists is equal */
+        OFBool result = (ItemList.size() == lst.ItemList.size());
+        /* then iterate over all list entries (if any) */
+        if (result && !ItemList.empty())
+        {
+            /* since OFList does not implement a comparison operator we need the following */
+            const OFLIST_TYPENAME OFListConstIterator(T) endPos = ItemList.end();
+            OFLIST_TYPENAME OFListConstIterator(T) iterator = ItemList.begin();
+            OFLIST_TYPENAME OFListConstIterator(T) lstIter = lst.ItemList.begin();
+            do {
+                result = (*iterator == *lstIter);
+                iterator++;
+                lstIter++;
+            } while (result && (iterator != endPos));
+        }
+        return result;
+    }
+
+    /** comparison operator "not equal"
+     ** @param  lst  list that should be compared to the current one
+     ** @return OFTrue if both lists are not equal, OFFalse otherwise
+     */
+    OFBool operator!=(const DSRListOfItems<T> &lst) const
+    {
+        /* first check whether the size of both lists is not equal */
+        OFBool result = (ItemList.size() != lst.ItemList.size());
+        /* then iterate over all list entries (if any) */
+        if (!result && !ItemList.empty())
+        {
+            /* since OFList does not implement a comparison operator we need the following */
+            const OFLIST_TYPENAME OFListConstIterator(T) endPos = ItemList.end();
+            OFLIST_TYPENAME OFListConstIterator(T) iterator = ItemList.begin();
+            OFLIST_TYPENAME OFListConstIterator(T) lstIter = lst.ItemList.begin();
+            do {
+                result = (*iterator != *lstIter);
+                iterator++;
+                lstIter++;
+            } while (!result && (iterator != endPos));
+        }
+        return result;
     }
 
     /** clear all internal variables
@@ -126,7 +188,7 @@ template<class T> class DSRListOfItems
         if (gotoItemPos(idx, iterator))
             return *iterator;
         else
-            return EmptyItem;
+            return DSRgetEmptyItem<T>();
     }
 
     /** get copy of the specified item
@@ -148,6 +210,32 @@ template<class T> class DSRListOfItems
         return result;
     }
 
+    /** get copy of all items (as a vector)
+     ** @param  items  reference to a variable where the result should be stored.
+     *                 (always cleared before items are added)
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    OFCondition getItems(OFVector<T> &items) const
+    {
+        items.clear();
+        if (!ItemList.empty())
+        {
+            /* avoid re-allocations */
+            items.reserve(ItemList.size());
+            /* iterate over all list items */
+            const OFLIST_TYPENAME OFListConstIterator(T) endPos = ItemList.end();
+            OFLIST_TYPENAME OFListConstIterator(T) iterator = ItemList.begin();
+            while (iterator != endPos)
+            {
+                /* and copy them to the passed vector */
+                items.push_back(*iterator);
+                iterator++;
+            }
+        }
+        /* always return OK */
+        return EC_Normal;
+    }
+
     /** add item to the list
      ** @param  item  item to be added
      */
@@ -165,6 +253,20 @@ template<class T> class DSRListOfItems
             ItemList.push_back(item);
     }
 
+    /** add items to the list
+     ** @param  items  items to be added (stored as a vector)
+     */
+    inline void addItems(const OFVector<T> &items)
+    {
+        const OFTypename OFVector<T>::const_iterator endPos = items.end();
+        OFTypename OFVector<T>::const_iterator iterator = items.begin();
+        while (iterator != endPos)
+        {
+            ItemList.push_back(*iterator);
+            iterator++;
+        }
+    }
+
     /** insert item at specified position to the list
      ** @param  idx   index of the item before the new one should be inserted (starting from 1)
      *  @param  item  item to be inserted
@@ -180,7 +282,7 @@ template<class T> class DSRListOfItems
             ItemList.push_back(item);
             result = EC_Normal;
         } else {
-            OFLIST_TYPENAME OFListIterator(T) iterator = ItemList.begin();
+            OFLIST_TYPENAME OFListConstIterator(T) iterator = ItemList.begin();
             if (gotoItemPos(idx, iterator))
             {
                 ItemList.insert(iterator, 1, item);
@@ -197,7 +299,7 @@ template<class T> class DSRListOfItems
     OFCondition removeItem(const size_t idx)
     {
         OFCondition result = EC_IllegalParameter;
-        OFLIST_TYPENAME OFListIterator(T) iterator = ItemList.begin();
+        OFLIST_TYPENAME OFListConstIterator(T) iterator = ItemList.begin();
         if (gotoItemPos(idx, iterator))
         {
             ItemList.erase(iterator);
@@ -205,11 +307,6 @@ template<class T> class DSRListOfItems
         }
         return result;
     }
-
-    /// default item which is returned in getItem() if the index is invalid.
-    /// This static member variable needs to be defined (not only declared)
-    /// in each derived class.
-    static const T EmptyItem;
 
 
   protected:

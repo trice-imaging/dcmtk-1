@@ -344,6 +344,12 @@ get_sos (j_decompress_ptr cinfo)
     
     TRACEMS3(cinfo, 1, JTRC_SOS_COMPONENT, cc,
          compptr->dc_tbl_no, compptr->ac_tbl_no);
+
+    /* This CSi (cc) should differ from the previous CSi */
+    for (ci = 0; ci < i; ci++) {
+      if (cinfo->cur_comp_info[ci] == compptr)
+        ERREXIT1(cinfo, JERR_BAD_COMPONENT_ID, cc);
+    }
   }
 
   /* Collect the additional scan parameters Ss, Se, Ah/Al. */
@@ -376,29 +382,29 @@ get_dac (j_decompress_ptr cinfo)
 /* Process a DAC marker */
 {
   IJG_INT32 length;
-  int index, val;
+  int idx, val;
   INPUT_VARS(cinfo);
 
   INPUT_2BYTES(cinfo, length, return FALSE);
   length -= 2;
   
   while (length > 0) {
-    INPUT_BYTE(cinfo, index, return FALSE);
+    INPUT_BYTE(cinfo, idx, return FALSE);
     INPUT_BYTE(cinfo, val, return FALSE);
 
     length -= 2;
 
-    TRACEMS2(cinfo, 1, JTRC_DAC, index, val);
+    TRACEMS2(cinfo, 1, JTRC_DAC, idx, val);
 
-    if (index < 0 || index >= (2*NUM_ARITH_TBLS))
-      ERREXIT1(cinfo, JERR_DAC_INDEX, index);
+    if (idx < 0 || idx >= (2*NUM_ARITH_TBLS))
+      ERREXIT1(cinfo, JERR_DAC_INDEX, idx);
 
-    if (index >= NUM_ARITH_TBLS) { /* define AC table */
-      cinfo->arith_ac_K[index-NUM_ARITH_TBLS] = (UINT8) val;
+    if (idx >= NUM_ARITH_TBLS) { /* define AC table */
+      cinfo->arith_ac_K[idx-NUM_ARITH_TBLS] = (UINT8) val;
     } else {            /* define DC table */
-      cinfo->arith_dc_L[index] = (UINT8) (val & 0x0F);
-      cinfo->arith_dc_U[index] = (UINT8) (val >> 4);
-      if (cinfo->arith_dc_L[index] > cinfo->arith_dc_U[index])
+      cinfo->arith_dc_L[idx] = (UINT8) (val & 0x0F);
+      cinfo->arith_dc_U[idx] = (UINT8) (val >> 4);
+      if (cinfo->arith_dc_L[idx] > cinfo->arith_dc_U[idx])
     ERREXIT1(cinfo, JERR_DAC_VALUE, val);
     }
   }
@@ -583,7 +589,7 @@ get_dri (j_decompress_ptr cinfo)
 
 
 LOCAL(void)
-examine_app0 (j_decompress_ptr cinfo, JOCTET FAR * data,
+examine_app0 (j_decompress_ptr cinfo, const JOCTET FAR * data,
           unsigned int datalen, IJG_INT32 remaining)
 /* Examine first few bytes from an APP0.
  * Take appropriate action if it is a JFIF marker.
@@ -659,7 +665,7 @@ examine_app0 (j_decompress_ptr cinfo, JOCTET FAR * data,
 
 
 LOCAL(void)
-examine_app14 (j_decompress_ptr cinfo, JOCTET FAR * data,
+examine_app14 (j_decompress_ptr cinfo, const JOCTET FAR * data,
            unsigned int datalen, IJG_INT32 remaining)
 /* Examine first few bytes from an APP14.
  * Take appropriate action if it is an Adobe marker.

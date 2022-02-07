@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2018, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,8 +27,6 @@
 #include "dcmtk/config/osconfig.h"   /* make sure OS specific configuration is included first */
 
 #include "dcmtk/dcmsr/dsrdocst.h"
-
-#include "dcmtk/dcmdata/dcitem.h"
 
 
 /*---------------------*
@@ -84,12 +82,20 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTree
     virtual void clear();
 
     /** check whether the current internal state is valid.
-     *  The SR document is valid if the document type is supported, the tree is not
-     *  empty, the root item is a container and has the internal relationship type
+     *  The SR document tree is valid if the document type is supported, the tree is
+     *  not empty, the root item is a container and has the internal relationship type
      *  DSRTypes::RT_isRoot.  Also see DSRDocumentSubTree::isValidDocumentTree().
      ** @return OFTrue if valid, OFFalse otherwise
      */
     virtual OFBool isValid() const;
+
+    /** print current SR document tree to specified output stream
+     ** @param  stream  output stream
+     *  @param  flags   optional flag used to customize the output (see DSRTypes::PF_xxx)
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition print(STD_NAMESPACE ostream &stream,
+                              const size_t flags = 0);
 
     /** read SR document tree from DICOM dataset.
      *  Please note that the current document tree is also deleted if the reading fails.
@@ -104,7 +110,8 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTree
                              const E_DocumentType documentType,
                              const size_t flags = 0);
 
-    /** write current SR document tree to DICOM dataset
+    /** write current SR document tree to DICOM dataset.
+     *  Please note that included (non-expanded) sub-templates are not supported.
      ** @param  dataset      reference to DICOM dataset where the current tree should be
      *                       written to.  The 'dataset' is not cleared before writing to it!
      *  @param  markedItems  optional stack where pointers to all 'marked' content items
@@ -125,15 +132,8 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTree
                                 DSRXMLCursor cursor,
                                 const size_t flags);
 
-    /** write current SR document tree in XML format
-     ** @param  stream  output stream to which the XML document is written
-     *  @param  flags   flag used to customize the output (see DSRTypes::XF_xxx)
-     ** @return status, EC_Normal if successful, an error code otherwise
-     */
-    virtual OFCondition writeXML(STD_NAMESPACE ostream &stream,
-                                 const size_t flags);
-
-    /** render current SR document tree in HTML/XHTML format
+    /** render current SR document tree in HTML/XHTML format.
+     *  Please note that included (non-expanded) sub-templates are not supported.
      ** @param  docStream    output stream to which the main HTML/XHTML document is written
      *  @param  annexStream  output stream to which the HTML/XHTML document annex is written
      *  @param  flags        optional flag used to customize the output (see DSRTypes::HF_xxx)
@@ -144,7 +144,7 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTree
                                    const size_t flags = 0);
 
     /** get document type
-     ** return current document type (might be DSRTypes::DT_invalid)
+     ** @return current document type (might be DSRTypes::DT_invalid)
      */
     inline E_DocumentType getDocumentType() const
     {
@@ -183,7 +183,7 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTree
      */
     virtual OFBool canAddContentItem(const E_RelationshipType relationshipType,
                                      const E_ValueType valueType,
-                                     const E_AddMode addMode = AM_afterCurrent);
+                                     const E_AddMode addMode = AM_afterCurrent) const;
 
     /** check whether specified subtree can be inserted at the current position, i.e.\ added
      *  to the current content item.
@@ -198,9 +198,9 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTree
      *                          type is used if the one of a top-level node is "unknown".
      ** @return OFTrue if specified subtree can be inserted, OFFalse otherwise
      */
-    virtual OFBool canInsertSubTree(DSRDocumentSubTree *tree,
+    virtual OFBool canInsertSubTree(const DSRDocumentSubTree *tree,
                                     const E_AddMode addMode = AM_belowCurrent,
-                                    const E_RelationshipType defaultRelType = RT_unknown);
+                                    const E_RelationshipType defaultRelType = RT_unknown) const;
 
     /** check whether the document tree complies with the constraints of the given checker.
      *  This method also checks whether the currently stored document tree is either empty
@@ -233,6 +233,21 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTree
      ** @param  tree  tree to swap with
      */
     void swap(DSRDocumentTree &tree);
+
+    /** print current SR document tree to specified output stream.
+     *  This method is only needed to avoid compiler warnings regarding an "overloaded
+     *  virtual function" hiding DSRDocumentSubTree::print() from the base class, which
+     *  has different parameters than the public print() method of this class.
+     ** @param  stream      output stream
+     *  @param  flags       flag used to customize the output (see DSRTypes::PF_xxx)
+     *  @param  posCounter  pointer to position counter that should be used to initialize
+     *                      the counter for line indentation or numbering of nested
+     *                      content items
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition print(STD_NAMESPACE ostream &stream,
+                              const size_t flags,
+                              const DSRPositionCounter *posCounter);
 
 
   private:

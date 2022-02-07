@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1997-2011, OFFIS e.V.
+ *  Copyright (C) 1997-2019, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -216,6 +216,7 @@ OFTEST(ofstd_OFString_substr)
   x.replace (0, 1, 1, 'j');
   OFCHECK_EQUAL(x, "jello");
 }
+
 
 OFTEST(ofstd_OFString_reserve)
 {

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2011, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,11 +24,7 @@
 #include "dcmtk/dcmdata/dcerror.h"    /* for dcmdata error constants */
 #include "dcmtk/dcmdata/dcdict.h"
 #include "dcmtk/dcmdata/dcdicent.h"
-
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
-
+#include "dcmtk/ofstd/ofstd.h"
 
 DcmTag::DcmTag()
   : vr(EVR_UNKNOWN),
@@ -129,7 +125,7 @@ void DcmTag::lookupVRinDictionary()
         vr = dictRef->getVR();
         errorFlag = EC_Normal;
     }
-    dcmDataDict.unlock();
+    dcmDataDict.rdunlock();
 }
 
 // ********************************
@@ -162,7 +158,7 @@ const char *DcmTag::getTagName()
     if (newTagName == NULL)
         newTagName = DcmTag_ERROR_TagName;
     updateTagName(newTagName);
-    dcmDataDict.unlock();
+    dcmDataDict.rdunlock();
 
     if (tagName)
         return tagName;
@@ -222,7 +218,7 @@ OFCondition DcmTag::findTagFromName(const char *name, DcmTag &value)
             }
             else
                 result = EC_TagNotFound;
-            dcmDataDict.unlock();
+            dcmDataDict.rdunlock();
         }
     }
     return result;
@@ -248,9 +244,10 @@ void DcmTag::updateTagName(const char *c)
     delete[] tagName;
     if (c)
     {
-        tagName = new char[strlen(c) + 1];
+        size_t buflen = strlen(c) + 1;
+        tagName = new char[buflen];
         if (tagName)
-            strcpy(tagName, c);
+            OFStandard::strlcpy(tagName, c, buflen);
     } else
         tagName = NULL;
 }
@@ -260,9 +257,10 @@ void DcmTag::updatePrivateCreator(const char *c)
     delete[] privateCreator;
     if (c)
     {
-        privateCreator = new char[strlen(c) + 1];
+        size_t buflen = strlen(c) + 1;
+        privateCreator = new char[buflen];
         if (privateCreator)
-            strcpy(privateCreator, c);
+            OFStandard::strlcpy(privateCreator, c, buflen);
     } else
         privateCreator = NULL;
 }

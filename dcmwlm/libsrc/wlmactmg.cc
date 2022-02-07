@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2014, OFFIS e.V.
+ *  Copyright (C) 1996-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,6 +25,7 @@
 #include "dcmtk/config/osconfig.h"
 
 #include "dcmtk/ofstd/ofcond.h"
+#include "dcmtk/ofstd/ofstrutl.h"
 #include "dcmtk/dcmnet/dicom.h"
 #include "dcmtk/dcmwlm/wltypdef.h"
 #include "dcmtk/ofstd/oftypes.h"
@@ -34,28 +35,33 @@
 #include "dcmtk/dcmdata/dcdict.h"
 #include "dcmtk/dcmdata/dcdeftag.h"
 #include "dcmtk/dcmwlm/wlds.h"
-#include "dcmtk/ofstd/ofcmdln.h"
 #include "dcmtk/dcmnet/assoc.h"
 #include "dcmtk/dcmnet/dimse.h"
 #include "dcmtk/dcmnet/diutil.h"
 #include "dcmtk/ofstd/ofstd.h"
+#include "dcmtk/ofstd/ofdatime.h"
 #include "dcmtk/dcmdata/dcdicent.h"  // needed by MSVC5 with STL
+#include "dcmtk/oflog/internal/env.h"
 #include "dcmtk/dcmwlm/wlmactmg.h"
+#include "dcmtk/ofstd/ofstdinc.h"
+#include <ctime>
+
+
 
 // ----------------------------------------------------------------------------
 
-// We need two global functions, because we need to pass a function pointer for a callback function
+// We need three global functions, because we need to pass a function pointer for a callback function
 // to a certain function in dcmnet. This function pointer cannot point to an element function of the
 // above defined class, because dcmnet expects it to be a pointer to a global function. Hence, function
-// FindCallback() needs to be global. Function AddStatusDetail() is used in FindCallback() that's why
-// it is also defined as global.
+// FindCallback() needs to be global. Function AddStatusDetail() and storeRequestFile() are used in
+// FindCallback() that's why they are also defined as global.
 
 static void FindCallback( void *callbackData, OFBool cancelled, T_DIMSE_C_FindRQ * /*request*/, DcmDataset *requestIdentifiers, int responseCount, T_DIMSE_C_FindRSP *response, DcmDataset **responseIdentifiers, DcmDataset **statusDetail );
 // Task         : This function will try to select another record from a database which matches the
 //                search mask that was passed. In certain circumstances, the selected information
 //                will be dumped to stdout.
 // Parameters   : callbackData        - [in] data for this callback function
-//                cancelled           - [in] Specifies if we encounteres a C-CANCEL-RQ. In such a case
+//                cancelled           - [in] Specifies if we encountered a C-CANCEL-RQ. In such a case
 //                                      the search shall be cancelled.
 //                request             - [in] The original C-FIND-RQ message.
 //                requestIdentifiers  - [in] Contains the search mask.
@@ -79,6 +85,16 @@ static OFString AddStatusDetail( DcmDataset **statusDetail, const DcmElement *el
 //                               container.
 // Return Value : none.
 
+static void storeRequestToFile(DcmDataset& request, const OFString& callingAE, const OFString& calledAE, const OFString& reqFilePath, const OFString& reqFileFormat);
+// Task        : Store request to file using the directory and file name format
+// Parameters  : request       - [in] The incoming C-FIND request
+//               callingAE     - [in] The peer's Calling AE Title
+//               calledAE      - [in] Our AE Title
+//               reqFilePath   - [in] The request file directory to write to
+//               reqFileFormat - [in] The request file name format to use
+// Return Value: none
+
+
 // ----------------------------------------------------------------------------
 
 WlmActivityManager::WlmActivityManager(
@@ -86,6 +102,7 @@ WlmActivityManager::WlmActivityManager(
     OFCmdUnsignedInt opt_portv,
     OFBool opt_refuseAssociationv,
     OFBool opt_rejectWithoutImplementationUIDv,
+    OFCmdUnsignedInt opt_sleepBeforeFindReqv,
     OFCmdUnsignedInt opt_sleepAfterFindv,
     OFCmdUnsignedInt opt_sleepDuringFindv,
     OFCmdUnsignedInt opt_maxPDUv,
@@ -106,6 +123,7 @@ WlmActivityManager::WlmActivityManager(
 //                opt_portv                           - [in] The port on which the application is supposed to listen.
 //                opt_refuseAssociationv              - [in] Specifies if an association shall always be refused by the SCP.
 //                opt_rejectWithoutImplementationUIDv - [in] Specifies if the application shall reject an association if no implementation class UID is provided by the calling SCU.
+//                opt_sleepBeforeFindReqv             - [in] Specifies how many seconds the application is supposed to sleep before handling a C-FIND-Req.
 //                opt_sleepAfterFindv                 - [in] Specifies how many seconds the application is supposed to sleep after having handled a C-FIND-Rsp.
 //                opt_sleepDuringFindv                - [in] Specifies how many seconds the application is supposed to sleep during the handling of a C-FIND-Rsp.
 //                opt_maxPDUv                         - [in] Maximum length of a PDU that can be received in bytes.
@@ -118,7 +136,7 @@ WlmActivityManager::WlmActivityManager(
 //                argvv                               - [in/out] Holds complete commandline
 // Return Value : none.
   : dataSource( dataSourcev ), opt_port( opt_portv ), opt_refuseAssociation( opt_refuseAssociationv ),
-    opt_rejectWithoutImplementationUID( opt_rejectWithoutImplementationUIDv ),
+    opt_rejectWithoutImplementationUID( opt_rejectWithoutImplementationUIDv ), opt_sleepBeforeFindReq( opt_sleepBeforeFindReqv ),
     opt_sleepAfterFind( opt_sleepAfterFindv ), opt_sleepDuringFind( opt_sleepDuringFindv ),
     opt_maxPDU( opt_maxPDUv ), opt_networkTransferSyntax( opt_networkTransferSyntaxv ),
     opt_failInvalidQuery( opt_failInvalidQueryv ),
@@ -130,10 +148,12 @@ WlmActivityManager::WlmActivityManager(
 {
   // initialize supported abstract transfer syntaxes.
   supportedAbstractSyntaxes = new char*[2];
-  supportedAbstractSyntaxes[0] = new char[ strlen( UID_VerificationSOPClass ) + 1 ];
-  strcpy( supportedAbstractSyntaxes[0], UID_VerificationSOPClass );
-  supportedAbstractSyntaxes[1] = new char[ strlen( UID_FINDModalityWorklistInformationModel ) + 1 ];
-  strcpy( supportedAbstractSyntaxes[1], UID_FINDModalityWorklistInformationModel );
+  size_t buflen = strlen( UID_VerificationSOPClass ) + 1;
+  supportedAbstractSyntaxes[0] = new char[buflen];
+  OFStandard::strlcpy( supportedAbstractSyntaxes[0], UID_VerificationSOPClass, buflen );
+  buflen = strlen( UID_FINDModalityWorklistInformationModel ) + 1;
+  supportedAbstractSyntaxes[1] = new char[buflen];
+  OFStandard::strlcpy( supportedAbstractSyntaxes[1], UID_FINDModalityWorklistInformationModel, buflen );
   numberOfSupportedAbstractSyntaxes = 2;
 
   // make sure not to let dcmdata remove trailing blank padding or perform other
@@ -142,19 +162,7 @@ WlmActivityManager::WlmActivityManager(
   if (!opt_forkedChild)
     DCMWLM_WARN("(notice: dcmdata auto correction disabled.)");
 
-#ifdef HAVE_GUSI_H
-  // needed for Macintosh.
-  GUSISetup( GUSIwithSIOUXSockets );
-  GUSISetup( GUSIwithInternetSockets );
-#endif
-
-#ifdef HAVE_WINSOCK_H
-  WSAData winSockData;
-  // we need at least version 1.1.
-  WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
-  WSAStartup(winSockVersionNeeded, &winSockData);
-#endif
-
+  OFStandard::initializeNetwork();
 }
 
 // ----------------------------------------------------------------------------
@@ -171,10 +179,40 @@ WlmActivityManager::~WlmActivityManager()
   delete[] supportedAbstractSyntaxes[1];
   delete[] supportedAbstractSyntaxes;
 
-#ifdef HAVE_WINSOCK_H
-  WSACleanup();
-#endif
+  OFStandard::shutdownNetwork();
 }
+
+// ----------------------------------------------------------------------------
+
+OFBool WlmActivityManager::setRequestFilePath(const OFString& path, const OFString& format)
+// Date         : March 08, 2019
+// Author       : Michael Onken
+// Task         : Set the directory where to store request files to.
+// Parameters   : path   - [in] The directory to store request files to.
+//                format - [in] the format for the request file names.
+// Return Value : OFTrue if directory and format is accepted, OFFalse otherwise.
+{
+  if (!path.empty())
+  {
+    if (OFStandard::dirExists(path) && OFStandard::isWriteable(path))
+    {
+      opt_requestFilePath = path;
+      opt_requestFileFormat = format;
+    }
+    else
+    {
+        return OFFalse;
+    }
+  }
+  else
+  {
+      // disables option
+      opt_requestFilePath = path;
+      opt_requestFileFormat = format;
+  }
+  return OFTrue;
+}
+
 
 // ----------------------------------------------------------------------------
 
@@ -208,26 +246,8 @@ OFCondition WlmActivityManager::StartProvidingService()
   /* if this process was started by CreateProcess, opt_forkedChild is set */
   if (opt_forkedChild)
   {
-    /* tell dcmnet DUL about child process status, too */
-    DUL_markProcessAsForkedChild();
-
-    char buf[256];
-    DWORD bytesRead = 0;
-    HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
-
-    // read socket handle number from stdin, i.e. the anonymous pipe
-    // to which our parent process has written the handle number.
-    if (ReadFile(hStdIn, buf, sizeof(buf), &bytesRead, NULL))
-    {
-      // make sure buffer is zero terminated
-      buf[bytesRead] = '\0';
-        dcmExternalSocketHandle.set(atoi(buf));
-    }
-    else
-    {
-      DCMWLM_ERROR("cannot read socket handle: " << GetLastError());
-      exit(0);
-    }
+    // we are a child process in multi-process mode
+    if (DUL_readSocketHandleAsForkedChild().bad()) exit(10);
   }
   else
   {
@@ -260,7 +280,7 @@ OFCondition WlmActivityManager::StartProvidingService()
     cond = WaitForAssociation( net );
 
     // Clean up any child processes if the execution is not limited to a single process.
-    // (On windows platform, childs are not handled via the process table,
+    // (On windows platform, children are not handled via the process table,
     // so there's no need to clean up children)
 #ifdef HAVE_FORK
     if( !opt_singleProcess )
@@ -285,7 +305,7 @@ OFCondition WlmActivityManager::StartProvidingService()
 void WlmActivityManager::RefuseAssociation( T_ASC_Association **assoc, WlmRefuseReasonType reason )
 // Date         : December 10, 2001
 // Author       : Thomas Wilkens
-// Task         : This function takes care of refusing an assocation request.
+// Task         : This function takes care of refusing an association request.
 // Parameters   : assoc  - [in] The association (network connection to another DICOM application).
 //                reason - [in] The reason why the association request will be refused.
 // Return Value : none.
@@ -353,7 +373,7 @@ OFCondition WlmActivityManager::WaitForAssociation( T_ASC_Network * net )
 // Author       : Thomas Wilkens
 // Task         : This function takes care of receiving, negotiating and accepting/refusing an
 //                association request. Additionally, it handles the request the association
-//                requesting application transmits after a connection isd established.
+//                requesting application transmits after a connection is established.
 // Parameters   : net - [in] Contains network parameters.
 // Return Value : Indicator which shows if function was executed successfully.
 {
@@ -377,7 +397,7 @@ OFCondition WlmActivityManager::WaitForAssociation( T_ASC_Network * net )
   // Listen to a socket for timeout seconds and wait for an association request.
   OFCondition cond = ASC_receiveAssociation( net, &assoc, opt_maxPDU, NULL, NULL, OFFalse, DUL_NOBLOCK, timeout );
 
-  // just return, if timeout occured (DUL_NOASSOCIATIONREQUEST)
+  // just return, if timeout occurred (DUL_NOASSOCIATIONREQUEST)
   // or (WIN32) if dcmnet has started a child for us, to handle this
   // association (signaled by "DULC_FORKEDCHILD") -> return to "event loop"
   if ( ( cond.code() == DULC_FORKEDCHILD ) || ( cond == DUL_NOASSOCIATIONREQUEST ) )
@@ -417,7 +437,7 @@ OFCondition WlmActivityManager::WaitForAssociation( T_ASC_Network * net )
 
   // Condition 2: determine the application context name. If an error occurred or if the
   // application context name is not supported we want to refuse the association request.
-  cond = ASC_getApplicationContextName( assoc->params, buf );
+  cond = ASC_getApplicationContextName( assoc->params, buf, sizeof(buf) );
   if( cond.bad() || strcmp( buf, DICOM_STDAPPLICATIONCONTEXT ) != 0 )
   {
     RefuseAssociation( &assoc, WLM_BAD_APP_CONTEXT );
@@ -456,7 +476,7 @@ OFCondition WlmActivityManager::WaitForAssociation( T_ASC_Network * net )
   }
 
   // Condition 5: if the called application entity title is not supported
-  // whithin the data source we want to refuse the association request
+  // within the data source we want to refuse the association request
   dataSource->SetCalledApplicationEntityTitle( assoc->params->DULparams.calledAPTitle );
   if( !dataSource->IsCalledApplicationEntityTitleSupported() )
   {
@@ -538,7 +558,7 @@ OFCondition WlmActivityManager::WaitForAssociation( T_ASC_Network * net )
     else if( pid > 0 )
     {
       // Fork returns a positive process id if this is the parent process.
-      // If this is the case, remeber the process in a table and go ahead.
+      // If this is the case, remember the process in a table and go ahead.
       AddProcessToTable( pid, assoc );
 
       // the child will handle the association, we can drop it
@@ -566,7 +586,7 @@ OFCondition WlmActivityManager::NegotiateAssociation( T_ASC_Association *assoc )
 // Date         : December 10, 2001
 // Author       : Thomas Wilkens
 // Task         : This function negotiates a presentation context which will be used by this application
-//                and the other DICOM appliation that requests an association.
+//                and the other DICOM application that requests an association.
 // Parameters   : assoc - [in] The association (network connection to another DICOM application).
 // Return Value : OFCondition value denoting success or error.
 {
@@ -768,10 +788,35 @@ struct WlmFindContextType
 //          in wltypdef.h because it makes use of class WlmDataSource which is
 //          unknown in wltypdef.h.)
 {
+  WlmFindContextType() :
+    dataSource(NULL),
+    priorStatus(WLM_SUCCESS),
+    opt_sleepBeforeFindReq(0),
+    opt_sleepDuringFind(0),
+    opt_reqFilePath(),
+    opt_reqFileFormat("#t.dump")
+  {
+    ourAETitle[0] = '\0';
+    theirAETitle[0] = '\0';
+  };
+
   WlmDataSource *dataSource;
   WlmDataSourceStatusType priorStatus;
   DIC_AE ourAETitle;
+  DIC_AE theirAETitle;
+  OFCmdUnsignedInt opt_sleepBeforeFindReq;
   OFCmdUnsignedInt opt_sleepDuringFind;
+  /// directory to store request files to (if enabled, otherwise empty)
+  OFString opt_reqFilePath;
+  /// request file name format:
+  /// Several placeholder can be used by(denoted by #) :
+  /// #a: calling application entity title of the peer Storage SCU
+  /// #c: called application entity title used by the peer Storage SCU to address storescp
+  /// #p: patient ID if present, otherwise empty string
+  /// #t: timestamp in the format YYYYMMDDhhmmssffffff
+  /// Default is #t.dump
+  OFString opt_reqFileFormat;
+
 };
 
 // ----------------------------------------------------------------------------
@@ -779,7 +824,7 @@ struct WlmFindContextType
 OFCondition WlmActivityManager::HandleFindSCP( T_ASC_Association *assoc, T_DIMSE_C_FindRQ *request, T_ASC_PresentationContextID presID )
 // Date         : December 10, 2001
 // Author       : Thomas Wilkens
-// Task         : This function processes a DIMSE C-FIND-RQ commmand that was
+// Task         : This function processes a DIMSE C-FIND-RQ command that was
 //                received over the network connection.
 // Parameters   : assoc    - [in] The association (network connection to another DICOM application).
 //                request  - [in] The DIMSE C-FIND-RQ message that was received.
@@ -792,15 +837,18 @@ OFCondition WlmActivityManager::HandleFindSCP( T_ASC_Association *assoc, T_DIMSE
   WlmFindContextType context;
   context.dataSource = dataSource;
   context.priorStatus = WLM_PENDING;
-  ASC_getAPTitles( assoc->params, NULL, context.ourAETitle, NULL );
+  ASC_getAPTitles( assoc->params, context.theirAETitle, sizeof(context.theirAETitle), context.ourAETitle, sizeof(context.ourAETitle), NULL, 0);
   context.opt_sleepDuringFind = opt_sleepDuringFind;
+  context.opt_sleepBeforeFindReq = opt_sleepBeforeFindReq;
+  context.opt_reqFilePath = opt_requestFilePath;
+  context.opt_reqFileFormat = opt_requestFileFormat;
 
   // Dump some information if required.
   DCMWLM_INFO(DIMSE_dumpMessage(temp_str, *request, DIMSE_INCOMING, NULL, presID));
 
   // Handle a C-FIND-Request on the provider side: receive the data set that represents the search mask
   // over the network, try to select corresponding records that match the search mask from some data source
-  // (this is done whithin the callback function FindCallback() that will be passed) and send corresponding
+  // (this is done within the callback function FindCallback() that will be passed) and send corresponding
   // C-FIND-RSP messages to the other DICOM application this application is connected with. In the end,
   // also send the C-FIND-RSP message that indicates that there are no more search results.
   OFCondition cond = DIMSE_findProvider( assoc, presID, request, FindCallback, &context, opt_blockMode, opt_dimse_timeout );
@@ -812,7 +860,7 @@ OFCondition WlmActivityManager::HandleFindSCP( T_ASC_Association *assoc, T_DIMSE
   if( opt_sleepAfterFind > 0 )
   {
     DCMWLM_INFO("Sleeping (after find): " << opt_sleepAfterFind << " secs");
-    OFStandard::sleep( (unsigned int)opt_sleepAfterFind );
+    OFStandard::forceSleep( (unsigned int)opt_sleepAfterFind );
   }
 
   // return result
@@ -835,8 +883,8 @@ void WlmActivityManager::AddProcessToTable( int pid, T_ASC_Association *assoc )
   ps = new WlmProcessSlotType ();
 
   // Remember process information in the new item.
-  ASC_getPresentationAddresses( assoc->params, ps->peerName, NULL );
-  ASC_getAPTitles( assoc->params, ps->callingAETitle, ps->calledAETitle, NULL );
+  ASC_getPresentationAddresses( assoc->params, ps->peerName, sizeof(ps->peerName), NULL, 0 );
+  ASC_getAPTitles( assoc->params, ps->callingAETitle, sizeof(ps->callingAETitle), ps->calledAETitle, sizeof(ps->calledAETitle), NULL, 0);
   ps->processId = pid;
   ps->startTime = time(NULL);
   ps->hasStorageAbility = OFFalse;
@@ -865,7 +913,7 @@ void WlmActivityManager::RemoveProcessFromTable( int pid )
     // if process can be found, delete it from list and free memory
     if ( ps->processId == pid )
     {
-      processTable.remove(*it);
+      processTable.erase(it);
       delete ps;
       return;
     }
@@ -922,7 +970,7 @@ void WlmActivityManager::CleanChildren()
     }
   }
 
-#elif HAVE_WAIT3                                              // PLATFORMS THAT HAVE wait3()
+#elif defined(HAVE_WAIT3)                                     // PLATFORMS THAT HAVE wait3()
 #if defined(__NeXT__)
   // some systems need a union wait as argument to wait3
   union wait status;
@@ -1038,7 +1086,7 @@ static void FindCallback( void *callbackData, OFBool cancelled, T_DIMSE_C_FindRQ
 //                search mask that was passed. In certain circumstances, the selected information
 //                will be dumped to stdout.
 // Parameters   : callbackData        - [in] data for this callback function
-//                cancelled           - [in] Specifies if we encounteres a C-CANCEL-RQ. In such a case
+//                cancelled           - [in] Specifies if we encountered a C-CANCEL-RQ. In such a case
 //                                      the search shall be cancelled.
 //                request             - [in] The original C-FIND-RQ message.
 //                requestIdentifiers  - [in] Contains the search mask.
@@ -1057,11 +1105,12 @@ static void FindCallback( void *callbackData, OFBool cancelled, T_DIMSE_C_FindRQ
   WlmFindContextType *context = NULL;
   WlmDataSource *dataSource = NULL;
   OFCmdUnsignedInt opt_sleepDuringFind = 0;
-
+  OFCmdUnsignedInt opt_sleepBeforeFindReq = 0;
   // Recover contents of context.
   context = (WlmFindContextType*)callbackData;
   dataSource = context->dataSource;
   opt_sleepDuringFind = context->opt_sleepDuringFind;
+  opt_sleepBeforeFindReq = context->opt_sleepBeforeFindReq;
 
   // Determine the data source's current status.
   dbstatus = context->priorStatus;
@@ -1073,6 +1122,20 @@ static void FindCallback( void *callbackData, OFBool cancelled, T_DIMSE_C_FindRQ
     DCMWLM_INFO("Find SCP Request Identifiers:" << OFendl
       << DcmObject::PrintHelper(*requestIdentifiers) << OFendl
       << "=============================");
+
+    // If desired, dump request to file
+    if (!context->opt_reqFilePath.empty())
+    {
+      DCMWLM_INFO("Storing request dataset to file");
+      storeRequestToFile(*requestIdentifiers, context->theirAETitle, context->ourAETitle, context->opt_reqFilePath, context->opt_reqFileFormat);
+    }
+
+    // If desired, sleep before actually trying to get answer for FIND request
+    if (opt_sleepBeforeFindReq > 0)
+    {
+      DCMWLM_INFO("SLEEPING (before evaluating find request): " << opt_sleepBeforeFindReq << " secs");
+      OFStandard::forceSleep((unsigned int)opt_sleepBeforeFindReq);
+    }
 
     // Determine the records that match the search mask. After this call, the
     // matching records will be available through dataSource->nextFindResponse(...).)
@@ -1088,7 +1151,7 @@ static void FindCallback( void *callbackData, OFBool cancelled, T_DIMSE_C_FindRQ
   if( opt_sleepDuringFind > 0 )
   {
     DCMWLM_INFO("SLEEPING (during find): " << opt_sleepDuringFind << " secs");
-    OFStandard::sleep((unsigned int)opt_sleepDuringFind);
+    OFStandard::forceSleep((unsigned int)opt_sleepDuringFind);
   }
 
   // If we encountered a C-CANCEL-RQ and if we have pending
@@ -1114,7 +1177,7 @@ static void FindCallback( void *callbackData, OFBool cancelled, T_DIMSE_C_FindRQ
   }
 
   // Set response status
-  response->DimseStatus = dbstatus;
+  response->DimseStatus = OFstatic_cast(DIC_US, dbstatus);
 
   // Delete status detail information if there is some
   if( *statusDetail != NULL )
@@ -1139,5 +1202,55 @@ static void FindCallback( void *callbackData, OFBool cancelled, T_DIMSE_C_FindRQ
     default:
       // other status codes may not have any status detail
       break;
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+static void storeRequestToFile(DcmDataset& request, const OFString& callingAE, const OFString& calledAE, const OFString& reqFilePath, const OFString& reqFileFormat)
+{
+  OFString fileName = reqFileFormat;
+  // Called Application Entity Title
+  OFStringUtil::replace_all(fileName, WLM_CALLED_AETITLE_PLACEHOLDER, calledAE);
+  // Calling Application Entity Title
+  OFStringUtil::replace_all(fileName, WLM_CALLING_AETITLE_PLACEHOLDER, callingAE);
+
+  // Process ID
+  int processID = dcmtk::log4cplus::internal::get_process_id();
+  OFOStringStream convInt;
+  convInt << processID;
+  OFStringUtil::replace_all(fileName, WLM_PROCESS_ID_PLACEHOLDER, convInt.str().c_str());
+
+  // Timestamp
+  if (reqFileFormat.find("#t") != OFString_npos)
+  {
+    OFString ts;
+    OFDateTime dt;
+    dt.setCurrentDateTime();
+    dt.getISOFormattedDateTime(ts, OFTrue /* seconds */, OFTrue /* fraction */, OFFalse /* no tz */, OFFalse /* no delimiters */, "" /* no date / time separator */);
+    OFStringUtil::replace_all(ts, ".", "");
+    OFStringUtil::replace_all(fileName, WLM_TIMESTAMP_PLACEHOLDER, ts);
+  }
+
+  // Patient ID goes last since it might contain placeholders again (".#x...)"
+  OFString patientID;
+  request.findAndGetOFStringArray(DCM_PatientID, patientID);
+  OFStringUtil::replace_all(fileName, WLM_PATIENT_ID_PLACEHOLDER, patientID);
+
+  // Finally store file
+  STD_NAMESPACE ofstream outputStream;
+  OFString fullPath;
+  OFStandard::combineDirAndFilename(fullPath, reqFilePath, fileName, OFFalse /* no empty dir name, shouldnt happen anyway...*/);
+  outputStream.open(fullPath.c_str());
+  if (outputStream.good())
+  {
+    DcmObject::PrintHelper printer(request);
+    outputStream << printer;
+    outputStream.close();
+  }
+  if (!outputStream)
+  {
+    /* report details on file i/o error */
+    DCMWLM_ERROR("Could not write request to file: " << fileName << ": " << OFStandard::getLastSystemErrorCode().message());
   }
 }

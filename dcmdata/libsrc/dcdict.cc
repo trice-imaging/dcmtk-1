@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2015, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,12 +27,8 @@
 #include "dcmtk/ofstd/ofdefine.h"
 #include "dcmtk/dcmdata/dcdicent.h"
 #include "dcmtk/dcmdata/dctypes.h"
-
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#define INCLUDE_CCTYPE
-#include "dcmtk/ofstd/ofstdinc.h"
+#include "dcmtk/ofstd/ofstd.h"
+#include "dcmtk/ofstd/offile.h"
 
 /*
 ** The separator character between fields in the data dictionary file(s)
@@ -43,6 +39,7 @@
 ** Comment character for the data dictionary file(s)
 */
 #define DCM_DICT_COMMENT_CHAR '#'
+
 
 /*
 ** THE Global DICOM Data Dictionary
@@ -137,11 +134,11 @@ stripWhitespace(char* s)
 {
   if (s)
   {
-    register unsigned char c;
-    register unsigned char *t;
-    register unsigned char *p;
+    unsigned char c;
+    unsigned char *t;
+    unsigned char *p;
     t=p=OFreinterpret_cast(unsigned char *, s);
-    while ((c = *t++)) if (!isspace(c)) *p++ = c;
+    while ((c = *t++) != '\0') if (!isspace(c)) *p++ = c;
     *p = '\0';
   }
 }
@@ -164,12 +161,12 @@ stripLeadingWhitespace(char* s)
 {
   if (s)
   {
-    register unsigned char c;
-    register unsigned char *t;
-    register unsigned char *p;
+    unsigned char c;
+    unsigned char *t;
+    unsigned char *p;
     t=p=OFreinterpret_cast(unsigned char *, s);
     while (isspace(*t)) t++;
-    while ((c = *t++)) *p++ = c;
+    while ((c = *t++) != '\0') *p++ = c;
     *p = '\0';
   }
 }
@@ -243,7 +240,7 @@ splitFields(const char* line, char* fields[], int maxFields, char splitChar)
             len = p - line;
         }
         fields[foundFields] = OFstatic_cast(char *, malloc(len + 1));
-        strncpy(fields[foundFields], line, len);
+        OFStandard::strlcpy(fields[foundFields], line, len+1);
         fields[foundFields][len] = '\0';
         foundFields++;
         line = p + 1;
@@ -360,8 +357,9 @@ parseWholeTagField(char* s, DcmTagKey& key,
     if (pi > 0)
     {
       // copy private creator name
-      privCreator = new char[strlen(pc) + 1]; // deleted by caller
-      if (privCreator) strcpy(privCreator,pc);
+      size_t buflen = strlen(pc) + 1;
+      privCreator = new char[buflen]; // deleted by caller
+      if (privCreator) OFStandard::strlcpy(privCreator, pc, buflen);
     }
 
     key.set(OFstatic_cast(unsigned short, gl), OFstatic_cast(unsigned short, el));
@@ -590,15 +588,25 @@ DcmDataDictionary::loadExternalDictionaries()
     const char* env = NULL;
     size_t len;
     int sepCnt = 0;
-    OFBool msgIfDictAbsent = OFTrue;
     OFBool loadFailed = OFFalse;
 
+    /* if DCMDICTPATH environment variable should be considered, read it */
+#ifdef DCM_DICT_USE_DCMDICTPATH
     env = getenv(DCM_DICT_ENVIRONMENT_VARIABLE);
+#endif
+    /* if DCMDICTPATH environment variable is not set or empty,
+     * and reading of external dictionary is generally permitted,
+     * try to read dictionary from default path
+     */
     if ((env == NULL) || (strlen(env) == 0)) {
+#if DCM_DICT_DEFAULT == DCM_DICT_DEFAULT_USE_EXTERNAL
         env = DCM_DICT_DEFAULT_PATH;
-        msgIfDictAbsent = OFFalse;
+#endif
     }
 
+    /* if any mechanism for external dictionary (environment or default external)
+     * is actually provided it, parse env and load all dictionaries specified therein.
+     */
     if ((env != NULL) && (strlen(env) != 0)) {
         len = strlen(env);
         for (size_t i = 0; i < len; ++i) {
@@ -608,7 +616,7 @@ DcmDataDictionary::loadExternalDictionaries()
         }
 
         if (sepCnt == 0) {
-            if (!loadDictionary(env, msgIfDictAbsent)) {
+            if (!loadDictionary(env, OFTrue)) {
                 return OFFalse;
             }
         } else {
@@ -621,7 +629,7 @@ DcmDataDictionary::loadExternalDictionaries()
 
             for (int ii = 0; ii < ndicts; ii++) {
                 if ((dictArray[ii] != NULL) && (strlen(dictArray[ii]) > 0)) {
-                    if (!loadDictionary(dictArray[ii], msgIfDictAbsent)) {
+                    if (!loadDictionary(dictArray[ii], OFTrue)) {
                         loadFailed = OFTrue;
                     }
                 }
@@ -805,17 +813,18 @@ void GlobalDcmDataDictionary::createDataDict()
 #ifdef WITH_THREADS
   dataDictLock.wrlock();
 #endif
-#ifdef DONT_LOAD_EXTERNAL_DICTIONARIES
-  const OFBool loadExternal = OFFalse;
-#else
+
+#if (DCM_DICT_DEFAULT == DCM_DICT_DEFAULT_USE_EXTERNAL) || defined(DCM_DICT_USE_DCMDICTPATH)
   const OFBool loadExternal = OFTrue;
+#else
+  const OFBool loadExternal = OFFalse;
 #endif
   /* Make sure no other thread managed to create the dictionary
    * before we got our write lock. */
   if (!dataDict)
     dataDict = new DcmDataDictionary(OFTrue /*loadBuiltin*/, loadExternal);
 #ifdef WITH_THREADS
-  dataDictLock.unlock();
+  dataDictLock.wrunlock();
 #endif
 }
 
@@ -828,7 +837,7 @@ const DcmDataDictionary& GlobalDcmDataDictionary::rdlock()
   {
     /* dataDictLock must not be locked during createDataDict() */
 #ifdef WITH_THREADS
-    dataDictLock.unlock();
+    dataDictLock.rdunlock();
 #endif
     createDataDict();
 #ifdef WITH_THREADS
@@ -847,7 +856,7 @@ DcmDataDictionary& GlobalDcmDataDictionary::wrlock()
   {
     /* dataDictLock must not be locked during createDataDict() */
 #ifdef WITH_THREADS
-    dataDictLock.unlock();
+    dataDictLock.wrunlock();
 #endif
     createDataDict();
 #ifdef WITH_THREADS
@@ -857,22 +866,29 @@ DcmDataDictionary& GlobalDcmDataDictionary::wrlock()
   return *dataDict;
 }
 
-void GlobalDcmDataDictionary::unlock()
+void GlobalDcmDataDictionary::rdunlock()
 {
 #ifdef WITH_THREADS
-  dataDictLock.unlock();
+  dataDictLock.rdunlock();
+#endif
+}
+
+void GlobalDcmDataDictionary::wrunlock()
+{
+#ifdef WITH_THREADS
+  dataDictLock.wrunlock();
 #endif
 }
 
 OFBool GlobalDcmDataDictionary::isDictionaryLoaded()
 {
   OFBool result = rdlock().isDictionaryLoaded();
-  unlock();
+  rdunlock();
   return result;
 }
 
 void GlobalDcmDataDictionary::clear()
 {
   wrlock().clear();
-  unlock();
+  wrunlock();
 }

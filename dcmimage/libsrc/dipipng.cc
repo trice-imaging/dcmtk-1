@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2003-2011, OFFIS e.V.
+ *  Copyright (C) 2003-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,6 +28,7 @@
 #include "dcmtk/dcmimgle/diimage.h"
 #include "dcmtk/dcmimage/dipipng.h"
 #include "dcmtk/dcmdata/dcuid.h"      /* for dcmtk version */
+#include "dcmtk/ofstd/ofdiag.h"
 
 BEGIN_EXTERN_C
 #ifdef HAVE_LIBPNG_PNG_H
@@ -51,6 +52,8 @@ DiPNGPlugin::~DiPNGPlugin()
 {
 }
 
+#include DCMTK_DIAGNOSTIC_PUSH
+#include DCMTK_DIAGNOSTIC_IGNORE_VISUAL_STUDIO_OBJECT_DESTRUCTION_WARNING
 
 int DiPNGPlugin::write(
   DiImage *image,
@@ -181,7 +184,7 @@ int DiPNGPlugin::write(
       png_write_end( png_ptr, info_ptr );
 
       // finish
-      png_destroy_write_struct( &png_ptr, NULL );
+      png_destroy_write_struct( &png_ptr, &info_ptr );
       delete[] row_ptr;
       if( text_ptr ) delete[] text_ptr;
       result = 1;
@@ -190,6 +193,8 @@ int DiPNGPlugin::write(
 
   return result;
 }
+
+#include DCMTK_DIAGNOSTIC_POP
 
 
 void DiPNGPlugin::setInterlaceType(DiPNGInterlace itype)

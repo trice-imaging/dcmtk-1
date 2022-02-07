@@ -21,9 +21,9 @@ LOCALINCLUDES = -I$(dcmdatadir)/include -I$(oflogdir)/include -I$(ofstddir)/incl
 LIBDIRS = -L$(top_srcdir)/libsrc -L$(dcmimgledir)/libsrc -L$(dcmdatadir)/libsrc \
 	-L$(oflogdir)/libsrc -L$(ofstddir)/libsrc
 LOCALLIBS = -ldcmrt -ldcmimgle -ldcmdata -loflog -lofstd \
-	$(TIFFLIBS) $(PNGLIBS) $(ZLIBLIBS) $(ICONVLIBS)
+	$(TIFFLIBS) $(PNGLIBS) $(ZLIBLIBS) $(CHARCONVLIBS) $(MATHLIBS)
 
-test_objs = tests.o tsearch.o
+test_objs = tests.o tsearch.o tcontour.o
 objs = drttest.o $(test_objs)
 progs = drttest tests
 
@@ -31,19 +31,19 @@ progs = drttest tests
 all: $(progs)
 
 drttest: drttest.o
-	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(LIBS)
 
 tests: $(test_objs)
-	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $(test_objs) $(LOCALLIBS) $(ICONVLIBS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $(test_objs) $(LOCALLIBS) $(LIBS)
 
 install: all
 
 
 check: tests
-	./tests
+	DCMDICTPATH=../data/dicom.dic ./tests
 
 check-exhaustive: tests
-	./tests -x
+	DCMDICTPATH=../data/dicom.dic ./tests -x
 
 
 clean:

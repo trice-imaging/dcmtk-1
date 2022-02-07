@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2012, OFFIS e.V.
+ *  Copyright (C) 2012-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -34,8 +34,8 @@
  * represented through DicomImage.
  *
  * @note These functions hopefully simplify working with DRTImageIOD. This is a
- * work in progress, please propose any improvements which would make working
- * with this class easier for you and that your consider useful.
+ *   work in progress, please propose any improvements which would make working
+ *   with this class easier for you and that you consider useful.
  */
 class DCMTK_DCMRT_EXPORT DRTImage : public DRTImageIOD
 {
@@ -63,7 +63,7 @@ public:
      *  instance assumes ownership of the dataset pointer and will delete it
      *  when done with it. You must not delete it yourself. This applies even
      *  when the function returns an error.
-     *  @param  dataset DICOM dataset from which the RT Image should be read
+     *  @param dataset DICOM dataset from which the RT Image should be read
      *  @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition read(DcmItem *dataset);
@@ -156,8 +156,8 @@ public:
     /** set automatically calculated histogram window.
      *  possibly active VOI LUT is implicitly disabled.
      *
-     ** @param  thresh  threshhold value specifying percentage of histogram border which
-     *                  shall be ignored (defaut: 5%).
+     ** @param  thresh  threshold value specifying percentage of histogram border which
+     *                  shall be ignored (default: 5%).
      *
      *  @return EC_Normal if successful, else an error code
      */
@@ -235,19 +235,18 @@ private:
     /// Reset this class image and DICOM object members
     virtual void reset();
 
-    /**
-     * Hide DRTImageIOD::read(). DicomImage() doesn't allow the dataset that was
-     * used for loading the image to be deleted. Thus, read() cannot work.
+    /** hide DRTImageIOD::read(). DicomImage() doesn't allow the dataset that was
+     *  used for loading the image to be deleted. Thus, read() cannot work.
+     *  @return always returns EC_IllegalCall since this method should not be called
      */
-    virtual OFCondition read(DcmItem &dataset)
+    virtual OFCondition read(DcmItem & /*dataset*/)
     {
         return EC_IllegalCall;
     }
 
-    /**
-     * Turn a status code from DicomImage into an OFCondition object.
-     * @param status status code
-     * @return OFCondition instance for the given status
+    /** turn a status code from DicomImage into an OFCondition object.
+     *  @param status status code
+     *  @return OFCondition instance for the given status
      */
     OFCondition statusToCondition(int status)
     {

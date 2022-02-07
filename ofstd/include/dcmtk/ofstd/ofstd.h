@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -30,12 +30,19 @@
 #include "dcmtk/ofstd/oftypes.h"    /* for OFBool */
 #include "dcmtk/ofstd/oftraits.h"   /* for OFenable_if, ... */
 #include "dcmtk/ofstd/ofcond.h"     /* for OFCondition */
+#include "dcmtk/ofstd/oflimits.h"   /* for OFnumeric_limits<T>::max() */
+#include "dcmtk/ofstd/oferror.h"
 
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#define INCLUDE_UNISTD
-#include "dcmtk/ofstd/ofstdinc.h"
+#include <cassert>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cstdarg>
+#ifdef HAVE_UNISTD_H
+BEGIN_EXTERN_C
+#include <unistd.h>
+END_EXTERN_C
+#endif
 
 BEGIN_EXTERN_C
 #ifdef HAVE_SYS_TYPES_H
@@ -43,11 +50,19 @@ BEGIN_EXTERN_C
 #endif
 END_EXTERN_C
 
+/* Check if we are using glibc in a version where readdir() is known to be
+ * thread-safe and where readdir_r() is deprecated.
+ */
+#if defined(__GLIBC__) && (((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 24)) || (__GLIBC__ >= 3))
+#define READDIR_IS_THREADSAFE
+#endif
+
 /*------------------------*
  *  forward declarations  *
  *------------------------*/
 
 class OFFilename;
+class OFSockAddr;
 
 /*---------------------*
  *  class declaration  *
@@ -77,7 +92,6 @@ class DCMTK_OFSTD_EXPORT OFStandard
         MM_XML
     };
 
-    class OFHostent;
     class OFGroup;
     class OFPasswd;
 
@@ -132,6 +146,42 @@ class DCMTK_OFSTD_EXPORT OFStandard
       return my_strlcat(dst, src, siz);
 #endif
     }
+
+    /** Standard C99 formatted string output function.
+     *  This is an implementation of the snprintf(3) function as defined in the
+     *  C99 standard. Like all functions of the  printf() family, it produces
+     *  output according to a format string. Output is written to the character
+     *  array passed as parameter str. The function never writes more than size
+     *  bytes and guarantees that the result will be NUL terminated, although
+     *  it may be truncated if the buffer provided is too small.
+     *  @param str string buffer to write to
+     *  @param size size of string buffer, in bytes
+     *  @param format printf() format string
+     *  @param ... parameters to be formatted
+     *  @return number of characters that have been written (if the buffer is
+     *    large enough) or the number of characters that would have been
+     *    written (if the buffer is too small), in both cases not including
+     *    the final NUL character.
+     */
+    static int snprintf(char *str, size_t size, const char *format, ...);
+
+    /** Standard C99 formatted string output function.
+     *  This is an implementation of the snprintf(3) function as defined in the
+     *  C99 standard. Like all functions of the  printf() family, it produces
+     *  output according to a format string. Output is written to the character
+     *  array passed as parameter str. The function never writes more than size
+     *  bytes and guarantees that the result will be NUL terminated, although
+     *  it may be truncated if the buffer provided is too small.
+     *  @param str string buffer to write to
+     *  @param size size of string buffer, in bytes
+     *  @param format printf() format string
+     *  @param ap parameters to be formatted
+     *  @return number of characters that have been written (if the buffer is
+     *    large enough) or the number of characters that would have been
+     *    written (if the buffer is too small), in both cases not including
+     *    the final NUL character.
+     */
+    static int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 
     /** convert a given error code to a string. This function wraps the various
      *  approaches found on different systems. Internally, the standard function
@@ -566,10 +616,14 @@ class DCMTK_OFSTD_EXPORT OFStandard
      *  (") is converted to "&#34;" instead of "&quot;" because the latter entity is not defined.
      *  In HTML mode, the apostrophe sign (') is converted to "&#39;" instead of "&apos;" for the
      *  same reason.
+     *  @note This method might create invalid character entity references, such as "&#27;" for ESC,
+     *    if contained in the 'sourceString'.  An XML document with such character entities cannot
+     *    be parsed by most XML parsers.  However, removing them from the output stream would also
+     *    be no option.
      ** @param out stream used for the HTML/XHTML/XML mnenonic output
      *  @param sourceString source string to be converted.  May contain one or more NULL bytes.
      *  @param convertNonASCII convert non-ASCII characters (< # 32 and >= #127) to numeric value
-     *    (@&@#nnn;) if OFTrue
+     *    (@&@#nnn;) if OFTrue.  This might lead to invalid XML character entity references.
      *  @param markupMode convert to HTML, HTML 3.2, XHTML or XML markup.
      *    LF and CR are encoded as "&#10;" and "&#13;" in XML mode, the flag 'newlineAllowed'
      *    has no meaning in this case.
@@ -595,10 +649,14 @@ class DCMTK_OFSTD_EXPORT OFStandard
      *  (") is converted to "&#34;" instead of "&quot;" because the latter entity is not defined.
      *  In HTML mode, the apostrophe sign (') is converted to "&#39;" instead of "&apos;" for the
      *  same reason.
+     *  @note This method might create invalid character entity references, such as "&#27;" for ESC,
+     *    if contained in the 'sourceString'.  An XML document with such character entities cannot
+     *    be parsed by most XML parsers.  However, removing them from the 'markupString' would also
+     *    be no option.
      ** @param sourceString source string to be converted.  May also contain one or more NULL bytes.
      *  @param markupString reference to character string where the result should be stored
      *  @param convertNonASCII convert non-ASCII characters (< # 32 and >= #127) to numeric value
-     *    (@&@#nnn;) if OFTrue
+     *    (@&@#nnn;) if OFTrue.  This might lead to invalid XML character entity references.
      *  @param markupMode convert to HTML, HTML 3.2, XHTML or XML markup string.
      *    LF and CR are encoded as "@&@#10;" and "@&@#13;" in XML mode, the flag 'newlineAllowed'
      *    has no meaning in this case.
@@ -629,7 +687,7 @@ class DCMTK_OFSTD_EXPORT OFStandard
 
     /** convert character string to an octal format stream.
      *  All non-ASCII and control characters (code < #32 and >= #127) are converted to their
-     *  octal representation, i.e. to '\ooo' where 'ooo' are the three octal digits of the
+     *  octal representation, i.e. to '\\ooo' where 'ooo' are the three octal digits of the
      *  character.  All other characters are output as is.  See section 6.1.2.3 in DICOM PS 3.5.
      ** @param out stream used for the output
      *  @param sourceString source string to be converted.  May contain one or more NULL bytes.
@@ -643,7 +701,7 @@ class DCMTK_OFSTD_EXPORT OFStandard
 
     /** convert character string to an octal format string.
      *  All non-ASCII and control characters (code < #32 and >= #127) are converted to their
-     *  octal representation, i.e. to '\ooo' where 'ooo' are the three octal digits of the
+     *  octal representation, i.e. to '\\ooo' where 'ooo' are the three octal digits of the
      *  character.  All other characters are output as is.  See section 6.1.2.3 in DICOM PS 3.5.
      ** @param sourceString source string to be converted.  May contain one or more NULL bytes.
      *  @param octalString reference to character string where the result should be stored
@@ -707,67 +765,15 @@ class DCMTK_OFSTD_EXPORT OFStandard
     static size_t decodeBase64(const OFString &data,
                                unsigned char *&result);
 
-
-#ifndef DOXYGEN
-    static OFBool (isnan) (float f);
-    static OFBool (isnan) (double d);
-    template<typename Integer>
-    static inline OFTypename OFenable_if<OFis_integral<Integer>::value,OFBool>::type
-    (isnan) ( const Integer i ) { return (isnan) ( OFstatic_cast( double, i ) ); }
-
-    static OFBool (isinf) (float f);
-    static OFBool (isinf) (double d);
-    template<typename Integer>
-    static inline OFTypename OFenable_if<OFis_integral<Integer>::value,OFBool>::type
-    (isinf) ( const Integer i ) { return (isinf) ( OFstatic_cast( double, i ) ); }
-#else
-    /** Determines if the given floating point number is a not-a-number (NaN) value.
-     *  @param f the floating point value to inspect.
-     *  @return OFTrue if f is a NaN, OFFalse otherwise.
-     */
-    static OFBool isnan( float f );
-
-    /** Determines if the given floating point number is a not-a-number (NaN) value.
-     *  @param d the floating point value to inspect.
-     *  @return OFTrue if d is a NaN, OFFalse otherwise.
-     */
-    static OFBool isnan( double d );
-
-    /** Casts the argument to double and calls OFStandard::isnan(double) on the result.
-     *  @param i an integer, i.e. <kbd>OFis_integral<Integer>::value</kbd> equals <kbd>OFTrue</kbd>.
-     *  @return OFStandard::isnan(OFstatic_cast(double,i)).
-     */
-    template<typename Integer>
-    static OFBool isnan( Integer i );
-
-    /** Determines if the given floating point number is a positive or negative infinity.
-     *  @param f the floating point value to inspect.
-     *  @return OFTrue if f is infinite, OFFalse otherwise.
-     */
-    static OFBool isinf( float f );
-
-    /** Determines if the given floating point number is a positive or negative infinity.
-     *  @param d the floating point value to inspect.
-     *  @return OFTrue if d is infinite, OFFalse otherwise.
-     */
-    static OFBool isinf( double d );
-
-    /** Casts the argument to double and calls OFStandard::isinf(double) on the result.
-     *  @param i an integer, i.e. <kbd>OFis_integral<Integer>::value</kbd> equals <kbd>OFTrue</kbd>.
-     *  @return OFStandard::isinf(OFstatic_cast(double,i)).
-     */
-    template<typename Integer>
-    static OFBool isinf( Integer i );
-#endif
-
     /** converts a floating-point number from an ASCII
      *  decimal representation to internal double-precision format.
      *  Unlike the atof() function defined in Posix, this implementation
      *  is not affected by a locale setting, the radix character is always
      *  assumed to be '.'
      *  This implementation does not set errno if the input cannot be parsed
-     *  and it does not implement special handling for overflow/underflow
-     *  or NaN values.  However, a return code indicates whether or not
+     *  and it does not implement special handling for overflow/underflow.
+     *  It does handle "NaN" and "Inf" (case insensitive; following
+     *  characters are ignore). A return code indicates whether or not
      *  a successful conversion could be performed.
      *  The precision of this implementation is limited to approx. 9
      *  decimal digits.
@@ -879,7 +885,7 @@ class DCMTK_OFSTD_EXPORT OFStandard
      */
     static long getProcessID();
 
-     /** check whether the addition of two 32-bit integers yields in an overflow
+    /** check whether the addition of two 32-bit integers yields in an overflow
      *  @param summand1 first integer value to be added
      *  @param summand2 second integer value to be added
      *  @return OFTrue if an overflow occurred during the addition, OFFalse otherwise
@@ -890,19 +896,186 @@ class DCMTK_OFSTD_EXPORT OFStandard
       return (0xffffffff - summand1 < summand2);
     }
 
-    /** Thread-safe version of gethostbyname.
-     *  @param name the host name.
-     *  @return a OFStandard::OFHostent object.
+    /** check whether subtraction is safe (i.e.\ no underflow occurs) and if so,
+     *  perform it (i.e.\ compute minuend-subtrahend=difference). Only works for
+     *  unsigned types.
+     *  @param minuend number to subtract from
+     *  @param subtrahend number to subtract from minuend
+     *  @param difference difference, if subtraction is safe, otherwise the
+     *    parameter value is not touched by the function
+     *  @return OFTrue if subtraction is safe and could be performed, OFFalse
+     *   otherwise
      */
-    static OFHostent getHostByName( const char* name );
+    template <typename T>
+    static OFBool
+    safeSubtract(T minuend, T subtrahend, T& difference)
+    {
+        assert(!OFnumeric_limits<T>::is_signed);
+        if (minuend < subtrahend) {
+            return OFFalse;
+        } else {
+            difference = minuend - subtrahend;
+            return OFTrue;
+        }
+    }
 
-    /** Thread-safe version of gethostbyaddr.
-     *  @param addr see manpage.
-     *  @param len see manpage.
-     *  @param type see manpage.
-     *  @return a OFStandard::OFHostent object.
+    /** check whether addition is safe (i.e.\ no overflow occurs) and if so,
+     *  perform it (i.e.\ compute a+b=sum). Only works for unsigned types.
+     *  @param a first number to add
+     *  @param b second number to add
+     *  @param sum resulting sum of both numbers, if addition is safe, otherwise
+     *    parameter value is not touched by the function
+     *  @return OFTrue if addition is safe and could be performed, OFFalse
+     *    otherwise
      */
-    static OFHostent getHostByAddr( const char* addr, int len, int type );
+    template <typename T>
+    static OFBool
+    safeAdd(T a, T b, T& sum)
+    {
+        assert(!OFnumeric_limits<T>::is_signed);
+        if ((OFnumeric_limits<T>::max)() - a < b) {
+            return OFFalse;
+        } else {
+            sum = a + b;
+            return OFTrue;
+        }
+    }
+
+    /** check whether multiplication is safe (i.e.\ no overflow occurs) and if so,
+     *  perform it (i.e.\ compute a*b=product). Only works for unsigned types.
+     *  @param a first number to multiply
+     *  @param b second number to multiply
+     *  @param product resulting product of both numbers, if multiplication is
+     *    safe, otherwise parameter value is not touched by the function
+     *  @return OFTrue if multiplication is safe and could be performed, OFFalse
+     *    otherwise
+     */
+    template <typename T>
+    static OFBool safeMult(T a, T b, T& product)
+    {
+        assert(!OFnumeric_limits<T>::is_signed);
+        T x = a * b;
+        if (a != 0 && x / a != b) {
+            return OFFalse;
+        }
+        product = x;
+        return OFTrue;
+    }
+
+#ifdef DOXYGEN
+    /** checks if a string only contains valid decimal digits, i.e.\ 0-9.
+     *  @tparam Count the number of characters (bytes) to check.
+     *  @param string a pointer to a character array to check.
+     *  @return OFTrue if all characters are valid decimal digits, OFFalse
+     *    if at least one non-digit character is encountered.
+     */
+    template<size_t Count>
+    static OFBool checkDigits(const char* string);
+
+    /** extracts digits from a string and converts them to the given integer
+     *  number type.
+     *  The result is similar to calling atoi, but extractDigits does not
+     *  verify all characters are digits and does not require zero terminated
+     *  strings. It is meant to be used in conjunction with
+     *  OFStandard::checkDigits(). extractDigits does not handle sign
+     *  characters ('+' and '-').
+     *  @tparam T the type of the resulting value, e.g.\ unsigned int. Must
+     *    be a valid integer type, i.e.\ OFnumeric_limits<T>::is_integer must
+     *    be OFTrue.
+     *  @tparam Count the number of digits to extract. Must be greater zero
+     *    and less or equal to OFnumeric_limits<T>::digits10
+     *  @param string a pointer to a character array to extract digits from.
+     *  @return a value of type T that is equivalent to the number represented
+     *    by the digits.
+     *  @details
+     *  @warning The results are unspecified if the given string contains
+     *    non-digit characters.
+     */
+    template<typename T,size_t Count>
+    static T extractDigits(const char*);
+#else
+    template<size_t Count>
+    static OFTypename OFenable_if<!Count,OFBool>::type
+    checkDigits(const char* /*string*/)
+    {
+        return OFTrue;
+    }
+
+    template<size_t Count>
+    static OFTypename OFenable_if<!!Count,OFBool>::type
+    checkDigits(const char* string)
+    {
+        return *string >= '0' && *string <= '9' &&
+            checkDigits<Count-1>( string + 1 );
+    }
+
+    template<typename T,size_t Count>
+    static OFTypename OFenable_if
+    <
+        OFnumeric_limits<T>::is_integer && Count == 1,
+        T
+    >::type extractDigits(const char* string)
+    {
+        return *string - '0';
+    }
+
+    template<typename T,size_t Count>
+    static OFTypename OFenable_if
+    <
+        OFnumeric_limits<T>::is_integer && ( Count > 1 ) &&
+             OFstatic_cast(size_t, OFnumeric_limits<T>::digits10) >= Count,
+        T
+    >::type extractDigits(const char* string)
+    {
+        return extractDigits<T,Count-1>( string ) * 10
+            + extractDigits<T,1>( string + Count - 1 );
+    }
+#endif
+
+    /** An utility function that finds a substring within a string that does
+     *  not contain leading and trailing spaces and null bytes, effectively
+     *  trimming the string without unnecessary copies.
+     *  @param pBegin a reference to a pointer to the beginning of the string.
+     *  @param pEnd a reference to a pointer to the end of the string (the
+     *    first byte behind the string).
+     *  @details
+     *  @pre pBegin <= pEnd
+     *  @details
+     *  trimString() increments pBegin and decrements pEnd until either both
+     *  point to a non-null and non-space character (the position after it in
+     *  case of pEnd) or both become equal (in case the string only contains
+     *  spaces and null bytes).
+     */
+    static void trimString( const char*& pBegin, const char*& pEnd );
+
+    /** An utility function that finds a substring within a string that does
+     *  not contain leading and trailing spaces and null bytes, effectively
+     *  trimming the string without unnecessary copies.
+     *  @param str a reference to a pointer to the beginning of the string.
+     *  @param size a reference to a size_t variable containing the number of
+     *    bytes in the string referenced by str.
+     *  @details
+     *  This overload is implemented using the other overload of the function
+     *  operating on two character pointers.
+     */
+    static void trimString( const char*& str, size_t& size );
+
+    /** This function performs a reverse DNS lookup of a hostname.
+     *  The parameters are identical to those passed to gethostbyaddr().
+     *  If the lookup fails, an empty string is returned.
+     *  @param addr IP address, actually a pointer to a struct in_addr or a struct in6_addr object
+     *  @param len length of the struct pointed to by addr
+     *  @param type address type, either AF_INET or AF_INET6
+     *  @return hostname for the IP address
+     */
+    static OFString getHostnameByAddress(const char* addr, int len, int type);
+
+    /** This function performs a DNS lookup of an IP address based on a hostname.
+     *  If a DNS lookup yields multiple IP addresses, only the first one is returned.
+     *  @param name hostname
+     *  @param result a OFSockAddr instance in which the result is stored
+     */
+    static void getAddressByHostname(const char *name, OFSockAddr& result);
 
     /** Thread-safe version of getgrnam.
      *  @param name the group name.
@@ -918,7 +1091,7 @@ class DCMTK_OFSTD_EXPORT OFStandard
 
     /** On Posix-like platform, this method executes setuid(getuid()),
      *  which causes the application to revert from root privileges to
-     *  thos of the calling user when the program is installed as
+     *  those of the calling user when the program is installed as
      *  setuid root. DCMTK command line tools that open a socket for
      *  incoming DICOM network connections will call this method immediately
      *  after opening the socket. Since DICOM by default operates on
@@ -945,6 +1118,52 @@ class DCMTK_OFSTD_EXPORT OFStandard
      *  @return the host name as an OFString value.
      */
     static OFString getHostName();
+
+    /** Initialize the network API (if necessary), e.g.\ Winsock.
+     *  Calls the appropriate network initialization routines for the current
+     *  platform, e.g.\ WSAStartup().
+     *  @note This function must be called by an application before any
+     *    network related functions are used, be it listening on a socket or
+     *    just retrieving the current host name. Not all platforms require
+     *    calling a network initialization routine, therefore testing if it
+     *    works to determine if this method must be called is not an option
+     *    -- just always ensure to call it at program startup if the
+     *    application does something network related!
+     */
+    static void initializeNetwork();
+
+    /** Shutdown the network API (if necessary), e.g.\ Winsock.
+     *  Calls the appropriate network shutdown routines to free used resources
+     *  (e.g.\ WSACleanup()).
+     */
+    static void shutdownNetwork();
+
+    /** Retrieve the last operating system error code that was emitted in the
+     *  calling thread.
+     *  The current implementation uses errno on POSIX-like platforms and
+     *  GetLastError() on Windows.
+     *  @return the last error code as OFerror_code object.
+     */
+    static OFerror_code getLastSystemErrorCode();
+
+    /** Retrieve the last network specific error code that was emitted in the
+     *  calling thread.
+     *  The current implementation uses errno on POSIX-like platforms and
+     *  WSAGetLastError() on Windows.
+     *  @return the last error code as OFerror_code object.
+     */
+    static OFerror_code getLastNetworkErrorCode();
+
+   /** Method that ensures that the current thread is actually sleeping for the
+    *  defined number of seconds (at least).
+    *  The problem with the regular sleep() function called from
+    *  OFStandard::sleep is that it might be interrupted by signals or a
+    *  network timeout (depending on the operating system). This methods
+    *  re-executes OFStandard's sleep method until the desired number of
+    *  seconds have elapsed.
+    *  @param seconds The number of seconds to sleep (at least)
+    */
+    static void forceSleep(Uint32 seconds);
 
  private:
 

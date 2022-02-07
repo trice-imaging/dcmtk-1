@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2015, OFFIS e.V.
+ *  Copyright (C) 2002-2016, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,13 +26,6 @@
 #define DSRSOPRF_H
 
 #include "dcmtk/config/osconfig.h"   /* make sure OS specific configuration is included first */
-
-#include "dcmtk/ofstd/oflist.h"
-#include "dcmtk/ofstd/ofstring.h"
-#include "dcmtk/ofstd/ofcond.h"
-
-#include "dcmtk/dcmdata/dcitem.h"
-#include "dcmtk/dcmdata/dctagkey.h"
 
 #include "dcmtk/dcmsr/dsrtypes.h"
 #include "dcmtk/dcmsr/dsrcodvl.h"
@@ -66,7 +59,7 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
     /** check whether list of references is empty
      ** @return OFTrue if list is empty, OFFalse otherwise
      */
-    OFBool empty() const;
+    OFBool isEmpty() const;
 
     /** get number of instance stored in the list of references
      ** @return number of instances
@@ -114,6 +107,16 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
     OFCondition writeXML(STD_NAMESPACE ostream &stream,
                          const size_t flags) const;
 
+    /** set specific character set, which is used for checking the affected element values.
+     *  Please note that this method does not return an error if the given 'value' is not
+     *  defined by the DICOM standard or not supported by this implementation.
+     ** @param  value  value to be set (single or multiple values) or "" for no value
+     *  @param  check  check 'value' for conformance with VR (CS) and VM (1-n) if enabled
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    OFCondition setSpecificCharacterSet(const OFString &value,
+                                        const OFBool check = OFTrue);
+
     /** add the specified item to the list of references.
      *  Before adding the item, the given UID values are usually checked.  If one of the
      *  values is invalid, nothing is done but an error is returned.  If successful, the
@@ -136,7 +139,7 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
                         const OFBool check = OFTrue);
 
     /** add item from specified DICOM dataset to the list of references.
-     *  Internally an item representing the given dataset is inserted into the hierarchical
+     *  Internally, an item representing the given dataset is inserted into the hierarchical
      *  structure of studies, series and instances, if not already contained in the list.
      *  In any case, the specified item is selected as the current one.
      ** @param  dataset  reference to DICOM dataset from which the relevant UIDs are retrieved
@@ -233,6 +236,15 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
      ** @return reference to the resulting string (might be empty)
      */
     const OFString &getSOPClassUID(OFString &stringValue) const;
+
+    /** get name associated with the SOP class UID of the currently selected entry
+     ** @param  stringValue  reference to string variable in which the result is stored
+     *  @param  defaultName  string value that is returned if the SOP class UID is unknown
+     ** @return reference to the resulting string (might be empty even if 'defaultName' is
+     *          non-empty, e.g. in case no entry is currently selected)
+     */
+    const OFString &getSOPClassName(OFString &stringValue,
+                                    const OFString &defaultName = "unknown SOP Class UID") const;
 
     /** get the retrieve application entity title of the currently selected entry (optional).
      *  The resulting string may contain multiple values separated by a backslash ("\").
@@ -612,6 +624,8 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
     OFList<StudyStruct *> StudyList;
     /// internal cursor to current (selected) list item
     OFListIterator(StudyStruct *) Iterator;
+    /// specific character set used for checking purposes
+    OFString SpecificCharacterSet;
 
     // default constructor - not implemented!
     DSRSOPInstanceReferenceList();

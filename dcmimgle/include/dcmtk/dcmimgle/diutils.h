@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2014, OFFIS e.V.
+ *  Copyright (C) 1996-2018, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -45,7 +45,7 @@ extern DCMTK_DCMIMGLE_EXPORT OFLogger DCM_dcmimgleLogger;
 // include this file in doxygen documentation
 
 /** @file diutils.h
- *  @brief utilities for the dcmimgle/dcmimage module
+ *  @brief type definitions, constants and helper functions for the dcmimgle/dcmimage module
  */
 
 
@@ -319,6 +319,28 @@ enum EL_BitsPerTableEntry
     ELM_CheckValue
 };
 
+/** type of VOI LUT transformation to apply.
+ *  Specifies which VOI LUT transformation should be applied to an image.
+ */
+enum EW_WindowType
+{
+    /// use given value
+    EWT_none,
+    /// use the n-th VOI window from the image file
+    EWT_window_from_file,
+    /// use the n-th VOI look up table from the image file
+    EWT_voi_lut_from_file,
+    /// compute VOI window using min-max algorithm
+    EWT_window_minmax,
+    /// compute VOI window using min-max algorithm ignoring extremes
+    EWT_window_minmax_n,
+    /// compute VOI window using min-max algorithm applied to region of interest
+    EWT_window_minmax_roi,
+    /// compute VOI window using Histogram algorithm, ignoring n percent
+    EWT_window_histogram,
+    /// compute VOI window using center and width
+    EWT_window_center_width
+};
 
 /*----------------------------*
  *  constant initializations  *
@@ -393,7 +415,7 @@ class DCMTK_DCMIMGLE_EXPORT DicomImageClass
     {
         if (tb_value > 0)
             tb_value -= tb_pos;
-        register unsigned int tb_bits = 0;
+        unsigned int tb_bits = 0;
         while (tb_value > 0)
         {
             ++tb_bits;

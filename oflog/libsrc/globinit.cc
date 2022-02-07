@@ -42,7 +42,7 @@ namespace dcmtk
 namespace log4cplus
 {
 
-#ifdef UNICODE
+#ifdef DCMTK_OFLOG_UNICODE
 DCMTK_LOG4CPLUS_EXPORT tostream & tcout = STD_NAMESPACE wcout;
 DCMTK_LOG4CPLUS_EXPORT tostream & tcerr = STD_NAMESPACE wcerr;
 
@@ -342,6 +342,18 @@ alloc_ptd ()
 void initializeFactoryRegistry();
 
 
+#ifdef DCMTK_LOG4CPLUS_USE_WIN32_THREADS
+
+//! Thread local storage clean up function for WIN32 threads.
+static
+void WINAPI
+ptd_cleanup_func_win32(void * /* arg */ )
+{
+    threadCleanup();
+}
+
+#else
+
 //! Thread local storage clean up function for POSIX threads.
 static
 void
@@ -388,6 +400,8 @@ ptd_cleanup_func (void * arg)
     threadCleanup ();
 }
 
+#endif
+
 
 static
 void
@@ -405,7 +419,11 @@ void initializeLog4cplus()
     if (initialized)
         return;
 
-    internal::tls_storage_key = thread::impl::tls_init (ptd_cleanup_func);
+#ifdef DCMTK_LOG4CPLUS_USE_WIN32_THREADS
+    internal::tls_storage_key = thread::impl::tls_init(ptd_cleanup_func_win32);
+#else
+    internal::tls_storage_key = thread::impl::tls_init(ptd_cleanup_func);
+#endif
     threadSetup ();
 
     DefaultContext * dc = get_dc (true);

@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTReferringPhysicianIdentificationSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -26,6 +26,7 @@ DRTReferringPhysicianIdentificationSequence::Item::Item(const OFBool emptyDefaul
     InstitutionName(DCM_InstitutionName),
     PersonAddress(DCM_PersonAddress),
     PersonIdentificationCodeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
+    PersonTelecomInformation(DCM_PersonTelecomInformation),
     PersonTelephoneNumbers(DCM_PersonTelephoneNumbers)
 {
 }
@@ -38,6 +39,7 @@ DRTReferringPhysicianIdentificationSequence::Item::Item(const Item &copy)
     InstitutionName(copy.InstitutionName),
     PersonAddress(copy.PersonAddress),
     PersonIdentificationCodeSequence(copy.PersonIdentificationCodeSequence),
+    PersonTelecomInformation(copy.PersonTelecomInformation),
     PersonTelephoneNumbers(copy.PersonTelephoneNumbers)
 {
 }
@@ -58,6 +60,7 @@ DRTReferringPhysicianIdentificationSequence::Item &DRTReferringPhysicianIdentifi
         InstitutionName = copy.InstitutionName;
         PersonAddress = copy.PersonAddress;
         PersonIdentificationCodeSequence = copy.PersonIdentificationCodeSequence;
+        PersonTelecomInformation = copy.PersonTelecomInformation;
         PersonTelephoneNumbers = copy.PersonTelephoneNumbers;
     }
     return *this;
@@ -72,6 +75,7 @@ void DRTReferringPhysicianIdentificationSequence::Item::clear()
         PersonIdentificationCodeSequence.clear();
         PersonAddress.clear();
         PersonTelephoneNumbers.clear();
+        PersonTelecomInformation.clear();
         InstitutionName.clear();
         InstitutionAddress.clear();
         InstitutionCodeSequence.clear();
@@ -84,6 +88,7 @@ OFBool DRTReferringPhysicianIdentificationSequence::Item::isEmpty()
     return PersonIdentificationCodeSequence.isEmpty() &&
            PersonAddress.isEmpty() &&
            PersonTelephoneNumbers.isEmpty() &&
+           PersonTelecomInformation.isEmpty() &&
            InstitutionName.isEmpty() &&
            InstitutionAddress.isEmpty() &&
            InstitutionCodeSequence.isEmpty();
@@ -106,6 +111,7 @@ OFCondition DRTReferringPhysicianIdentificationSequence::Item::read(DcmItem &ite
         PersonIdentificationCodeSequence.read(item, "1-n", "1", "ReferringPhysicianIdentificationSequence");
         getAndCheckElementFromDataset(item, PersonAddress, "1", "3", "ReferringPhysicianIdentificationSequence");
         getAndCheckElementFromDataset(item, PersonTelephoneNumbers, "1-n", "3", "ReferringPhysicianIdentificationSequence");
+        getAndCheckElementFromDataset(item, PersonTelecomInformation, "1", "3", "ReferringPhysicianIdentificationSequence");
         getAndCheckElementFromDataset(item, InstitutionName, "1", "1C", "ReferringPhysicianIdentificationSequence");
         getAndCheckElementFromDataset(item, InstitutionAddress, "1", "3", "ReferringPhysicianIdentificationSequence");
         InstitutionCodeSequence.read(item, "1-n", "1C", "ReferringPhysicianIdentificationSequence");
@@ -124,6 +130,7 @@ OFCondition DRTReferringPhysicianIdentificationSequence::Item::write(DcmItem &it
         if (result.good()) result = PersonIdentificationCodeSequence.write(item, "1-n", "1", "ReferringPhysicianIdentificationSequence");
         addElementToDataset(result, item, new DcmShortText(PersonAddress), "1", "3", "ReferringPhysicianIdentificationSequence");
         addElementToDataset(result, item, new DcmLongString(PersonTelephoneNumbers), "1-n", "3", "ReferringPhysicianIdentificationSequence");
+        addElementToDataset(result, item, new DcmLongText(PersonTelecomInformation), "1", "3", "ReferringPhysicianIdentificationSequence");
         addElementToDataset(result, item, new DcmLongString(InstitutionName), "1", "1C", "ReferringPhysicianIdentificationSequence");
         addElementToDataset(result, item, new DcmShortText(InstitutionAddress), "1", "3", "ReferringPhysicianIdentificationSequence");
         if (result.good()) result = InstitutionCodeSequence.write(item, "1-n", "1C", "ReferringPhysicianIdentificationSequence");
@@ -156,6 +163,15 @@ OFCondition DRTReferringPhysicianIdentificationSequence::Item::getPersonAddress(
         return EC_IllegalCall;
     else
         return getStringValueFromElement(PersonAddress, value, pos);
+}
+
+
+OFCondition DRTReferringPhysicianIdentificationSequence::Item::getPersonTelecomInformation(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(PersonTelecomInformation, value, pos);
 }
 
 
@@ -202,6 +218,19 @@ OFCondition DRTReferringPhysicianIdentificationSequence::Item::setPersonAddress(
         result = (check) ? DcmShortText::checkStringValue(value) : EC_Normal;
         if (result.good())
             result = PersonAddress.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTReferringPhysicianIdentificationSequence::Item::setPersonTelecomInformation(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmLongText::checkStringValue(value) : EC_Normal;
+        if (result.good())
+            result = PersonTelecomInformation.putOFStringArray(value);
     }
     return result;
 }
@@ -323,7 +352,7 @@ OFBool DRTReferringPhysicianIdentificationSequence::isValid() const
 }
 
 
-unsigned long DRTReferringPhysicianIdentificationSequence::getNumberOfItems() const
+size_t DRTReferringPhysicianIdentificationSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -353,12 +382,12 @@ OFCondition DRTReferringPhysicianIdentificationSequence::gotoNextItem()
 }
 
 
-OFCondition DRTReferringPhysicianIdentificationSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTReferringPhysicianIdentificationSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -373,12 +402,12 @@ OFCondition DRTReferringPhysicianIdentificationSequence::gotoItem(const unsigned
 }
 
 
-OFCondition DRTReferringPhysicianIdentificationSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTReferringPhysicianIdentificationSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -393,7 +422,7 @@ OFCondition DRTReferringPhysicianIdentificationSequence::gotoItem(const unsigned
 }
 
 
-OFCondition DRTReferringPhysicianIdentificationSequence::gotoItem(const unsigned long num)
+OFCondition DRTReferringPhysicianIdentificationSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -429,7 +458,7 @@ const DRTReferringPhysicianIdentificationSequence::Item &DRTReferringPhysicianId
 }
 
 
-OFCondition DRTReferringPhysicianIdentificationSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTReferringPhysicianIdentificationSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -439,7 +468,7 @@ OFCondition DRTReferringPhysicianIdentificationSequence::getItem(const unsigned 
 }
 
 
-DRTReferringPhysicianIdentificationSequence::Item &DRTReferringPhysicianIdentificationSequence::getItem(const unsigned long num)
+DRTReferringPhysicianIdentificationSequence::Item &DRTReferringPhysicianIdentificationSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -449,7 +478,7 @@ DRTReferringPhysicianIdentificationSequence::Item &DRTReferringPhysicianIdentifi
 }
 
 
-const DRTReferringPhysicianIdentificationSequence::Item &DRTReferringPhysicianIdentificationSequence::getItem(const unsigned long num) const
+const DRTReferringPhysicianIdentificationSequence::Item &DRTReferringPhysicianIdentificationSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -459,13 +488,13 @@ const DRTReferringPhysicianIdentificationSequence::Item &DRTReferringPhysicianId
 }
 
 
-DRTReferringPhysicianIdentificationSequence::Item &DRTReferringPhysicianIdentificationSequence::operator[](const unsigned long num)
+DRTReferringPhysicianIdentificationSequence::Item &DRTReferringPhysicianIdentificationSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTReferringPhysicianIdentificationSequence::Item &DRTReferringPhysicianIdentificationSequence::operator[](const unsigned long num) const
+const DRTReferringPhysicianIdentificationSequence::Item &DRTReferringPhysicianIdentificationSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -488,7 +517,7 @@ OFCondition DRTReferringPhysicianIdentificationSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTReferringPhysicianIdentificationSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTReferringPhysicianIdentificationSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -511,7 +540,7 @@ OFCondition DRTReferringPhysicianIdentificationSequence::insertItem(const unsign
 }
 
 
-OFCondition DRTReferringPhysicianIdentificationSequence::removeItem(const unsigned long pos)
+OFCondition DRTReferringPhysicianIdentificationSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

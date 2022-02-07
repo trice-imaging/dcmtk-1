@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTWedgeSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -22,6 +22,7 @@
 DRTWedgeSequence::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
     AccessoryCode(DCM_AccessoryCode),
+    EffectiveWedgeAngle(DCM_EffectiveWedgeAngle),
     SourceToWedgeTrayDistance(DCM_SourceToWedgeTrayDistance),
     WedgeAngle(DCM_WedgeAngle),
     WedgeFactor(DCM_WedgeFactor),
@@ -36,6 +37,7 @@ DRTWedgeSequence::Item::Item(const OFBool emptyDefaultItem)
 DRTWedgeSequence::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
     AccessoryCode(copy.AccessoryCode),
+    EffectiveWedgeAngle(copy.EffectiveWedgeAngle),
     SourceToWedgeTrayDistance(copy.SourceToWedgeTrayDistance),
     WedgeAngle(copy.WedgeAngle),
     WedgeFactor(copy.WedgeFactor),
@@ -58,6 +60,7 @@ DRTWedgeSequence::Item &DRTWedgeSequence::Item::operator=(const Item &copy)
     {
         EmptyDefaultItem = copy.EmptyDefaultItem;
         AccessoryCode = copy.AccessoryCode;
+        EffectiveWedgeAngle = copy.EffectiveWedgeAngle;
         SourceToWedgeTrayDistance = copy.SourceToWedgeTrayDistance;
         WedgeAngle = copy.WedgeAngle;
         WedgeFactor = copy.WedgeFactor;
@@ -83,6 +86,7 @@ void DRTWedgeSequence::Item::clear()
         WedgeFactor.clear();
         WedgeOrientation.clear();
         SourceToWedgeTrayDistance.clear();
+        EffectiveWedgeAngle.clear();
     }
 }
 
@@ -96,7 +100,8 @@ OFBool DRTWedgeSequence::Item::isEmpty()
            WedgeAngle.isEmpty() &&
            WedgeFactor.isEmpty() &&
            WedgeOrientation.isEmpty() &&
-           SourceToWedgeTrayDistance.isEmpty();
+           SourceToWedgeTrayDistance.isEmpty() &&
+           EffectiveWedgeAngle.isEmpty();
 }
 
 
@@ -121,6 +126,7 @@ OFCondition DRTWedgeSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, WedgeFactor, "1", "2", "WedgeSequence");
         getAndCheckElementFromDataset(item, WedgeOrientation, "1", "2", "WedgeSequence");
         getAndCheckElementFromDataset(item, SourceToWedgeTrayDistance, "1", "3", "WedgeSequence");
+        getAndCheckElementFromDataset(item, EffectiveWedgeAngle, "1", "3", "WedgeSequence");
         result = EC_Normal;
     }
     return result;
@@ -141,6 +147,7 @@ OFCondition DRTWedgeSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmDecimalString(WedgeFactor), "1", "2", "WedgeSequence");
         addElementToDataset(result, item, new DcmDecimalString(WedgeOrientation), "1", "2", "WedgeSequence");
         addElementToDataset(result, item, new DcmDecimalString(SourceToWedgeTrayDistance), "1", "3", "WedgeSequence");
+        addElementToDataset(result, item, new DcmDecimalString(EffectiveWedgeAngle), "1", "3", "WedgeSequence");
     }
     return result;
 }
@@ -152,6 +159,24 @@ OFCondition DRTWedgeSequence::Item::getAccessoryCode(OFString &value, const sign
         return EC_IllegalCall;
     else
         return getStringValueFromElement(AccessoryCode, value, pos);
+}
+
+
+OFCondition DRTWedgeSequence::Item::getEffectiveWedgeAngle(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(EffectiveWedgeAngle, value, pos);
+}
+
+
+OFCondition DRTWedgeSequence::Item::getEffectiveWedgeAngle(Float64 &value, const unsigned long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return OFconst_cast(DcmDecimalString &, EffectiveWedgeAngle).getFloat64(value, pos);
 }
 
 
@@ -271,6 +296,19 @@ OFCondition DRTWedgeSequence::Item::setAccessoryCode(const OFString &value, cons
         result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
             result = AccessoryCode.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTWedgeSequence::Item::setEffectiveWedgeAngle(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmDecimalString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = EffectiveWedgeAngle.putOFStringArray(value);
     }
     return result;
 }
@@ -470,7 +508,7 @@ OFBool DRTWedgeSequence::isValid() const
 }
 
 
-unsigned long DRTWedgeSequence::getNumberOfItems() const
+size_t DRTWedgeSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -500,12 +538,12 @@ OFCondition DRTWedgeSequence::gotoNextItem()
 }
 
 
-OFCondition DRTWedgeSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTWedgeSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -520,12 +558,12 @@ OFCondition DRTWedgeSequence::gotoItem(const unsigned long num, OFListIterator(I
 }
 
 
-OFCondition DRTWedgeSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTWedgeSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -540,7 +578,7 @@ OFCondition DRTWedgeSequence::gotoItem(const unsigned long num, OFListConstItera
 }
 
 
-OFCondition DRTWedgeSequence::gotoItem(const unsigned long num)
+OFCondition DRTWedgeSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -576,7 +614,7 @@ const DRTWedgeSequence::Item &DRTWedgeSequence::getCurrentItem() const
 }
 
 
-OFCondition DRTWedgeSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTWedgeSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -586,7 +624,7 @@ OFCondition DRTWedgeSequence::getItem(const unsigned long num, Item *&item)
 }
 
 
-DRTWedgeSequence::Item &DRTWedgeSequence::getItem(const unsigned long num)
+DRTWedgeSequence::Item &DRTWedgeSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -596,7 +634,7 @@ DRTWedgeSequence::Item &DRTWedgeSequence::getItem(const unsigned long num)
 }
 
 
-const DRTWedgeSequence::Item &DRTWedgeSequence::getItem(const unsigned long num) const
+const DRTWedgeSequence::Item &DRTWedgeSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -606,13 +644,13 @@ const DRTWedgeSequence::Item &DRTWedgeSequence::getItem(const unsigned long num)
 }
 
 
-DRTWedgeSequence::Item &DRTWedgeSequence::operator[](const unsigned long num)
+DRTWedgeSequence::Item &DRTWedgeSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTWedgeSequence::Item &DRTWedgeSequence::operator[](const unsigned long num) const
+const DRTWedgeSequence::Item &DRTWedgeSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -635,7 +673,7 @@ OFCondition DRTWedgeSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTWedgeSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTWedgeSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -658,7 +696,7 @@ OFCondition DRTWedgeSequence::insertItem(const unsigned long pos, Item *&item)
 }
 
 
-OFCondition DRTWedgeSequence::removeItem(const unsigned long pos)
+OFCondition DRTWedgeSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

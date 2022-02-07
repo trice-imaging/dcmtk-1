@@ -21,9 +21,9 @@ LOCALINCLUDES = -I$(ofstddir)/include -I$(oflogdir)/include \
 LIBDIRS = -L$(top_srcdir)/libsrc -L$(ofstddir)/libsrc -L$(oflogdir)/libsrc \
 	-L$(dcmdatadir)/libsrc -L$(dcmtlsdir)/libsrc $(compr_libdirs)
 LOCALLIBS = -ldcmnet -ldcmdata -loflog -lofstd $(ZLIBLIBS) $(TCPWRAPPERLIBS) \
-	$(ICONVLIBS)
+	$(CHARCONVLIBS) $(MATHLIBS)
 
-objs = tests.o tdump.o tpool.o
+objs = tests.o tdump.o tdimse.o tpool.o tscuscp.o tscusession.o
 progs = tests
 
 

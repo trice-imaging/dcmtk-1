@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2015, OFFIS e.V.
+ *  Copyright (C) 2002-2020, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -93,6 +93,14 @@ OFTEST(ofstd_OFTime)
     OFCHECK_EQUAL(time1.getTimeZone(), 1.0);
     OFCHECK(time1.setISOFormattedTime("12:15:30 -02:30"));
     OFCHECK_EQUAL(time1.getTimeZone(), -2.5);
+    OFCHECK(time1.setISOFormattedTime("12:15:30 -09:45"));
+    OFCHECK_EQUAL(time1.getTimeZone(), -9.75);
+    OFCHECK(time1.setISOFormattedTime("12:15:30 +09:15"));
+    OFCHECK_EQUAL(time1.getTimeZone(), +9.25);
+    /* check support for leap second */
+    OFCHECK(time1.setTime(23, 59, 59));
+    OFCHECK(time1.setTime(23, 59, 60));
+    OFCHECK(!time1.setTime(23, 59, 61));
     /* the "seconds" part is mandatory if time zone is present */
     OFCHECK(!time2.setISOFormattedTime("10:15 -02:30"));
     OFCHECK(!time2.setISOFormattedTime("1015+0100"));
@@ -126,6 +134,11 @@ OFTEST(ofstd_OFDateTime)
     OFCHECK_EQUAL(dateTime1, dateTime2);
     /* "overflow" from one day to another is currently not handled by OFDateTime */
     OFCHECK(dateTime1 != OFDateTime(2001, 1, 1, 0, 15, 30, 12) /* should be equal */);
+    OFCHECK(dateTime1 < OFDateTime(2001, 1, 1, 0, 15, 30, 2) /* should be less */);
+    OFCHECK(dateTime1 <= OFDateTime(2001, 1, 1, 0, 15, 30, 12) /* should be less or equal */);
+    OFCHECK(OFDateTime(2000, 12, 31, 12, 15, 30, -.5) > dateTime1 /* should be greater */);
+    OFCHECK(OFDateTime(2000, 12, 31, 12, 15, 30, -.5) >= dateTime1 /* should be greater or equal */);
+    OFCHECK(dateTime1 >= dateTime1 /* should be greater or equal */);
     OFCHECK(dateTime1.getISOFormattedDateTime(tmpString));
     OFCHECK_EQUAL(tmpString, "2000-12-31 12:15:30");
     OFCHECK(dateTime1.getISOFormattedDateTime(tmpString, OFTrue /*showSeconds*/, OFTrue /*showFraction*/,

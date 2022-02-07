@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTRealWorldValueMappingSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -21,9 +21,12 @@
 
 DRTRealWorldValueMappingSequence::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
+    DoubleFloatRealWorldValueFirstValueMapped(DCM_DoubleFloatRealWorldValueFirstValueMapped),
+    DoubleFloatRealWorldValueLastValueMapped(DCM_DoubleFloatRealWorldValueLastValueMapped),
     LUTExplanation(DCM_LUTExplanation),
     LUTLabel(DCM_LUTLabel),
     MeasurementUnitsCodeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
+    QuantityDefinitionSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     RealWorldValueFirstValueMapped(DCM_RealWorldValueFirstValueMapped),
     RealWorldValueIntercept(DCM_RealWorldValueIntercept),
     RealWorldValueLUTData(DCM_RealWorldValueLUTData),
@@ -35,9 +38,12 @@ DRTRealWorldValueMappingSequence::Item::Item(const OFBool emptyDefaultItem)
 
 DRTRealWorldValueMappingSequence::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
+    DoubleFloatRealWorldValueFirstValueMapped(copy.DoubleFloatRealWorldValueFirstValueMapped),
+    DoubleFloatRealWorldValueLastValueMapped(copy.DoubleFloatRealWorldValueLastValueMapped),
     LUTExplanation(copy.LUTExplanation),
     LUTLabel(copy.LUTLabel),
     MeasurementUnitsCodeSequence(copy.MeasurementUnitsCodeSequence),
+    QuantityDefinitionSequence(copy.QuantityDefinitionSequence),
     RealWorldValueFirstValueMapped(copy.RealWorldValueFirstValueMapped),
     RealWorldValueIntercept(copy.RealWorldValueIntercept),
     RealWorldValueLUTData(copy.RealWorldValueLUTData),
@@ -57,9 +63,12 @@ DRTRealWorldValueMappingSequence::Item &DRTRealWorldValueMappingSequence::Item::
     if (this != &copy)
     {
         EmptyDefaultItem = copy.EmptyDefaultItem;
+        DoubleFloatRealWorldValueFirstValueMapped = copy.DoubleFloatRealWorldValueFirstValueMapped;
+        DoubleFloatRealWorldValueLastValueMapped = copy.DoubleFloatRealWorldValueLastValueMapped;
         LUTExplanation = copy.LUTExplanation;
         LUTLabel = copy.LUTLabel;
         MeasurementUnitsCodeSequence = copy.MeasurementUnitsCodeSequence;
+        QuantityDefinitionSequence = copy.QuantityDefinitionSequence;
         RealWorldValueFirstValueMapped = copy.RealWorldValueFirstValueMapped;
         RealWorldValueIntercept = copy.RealWorldValueIntercept;
         RealWorldValueLUTData = copy.RealWorldValueLUTData;
@@ -77,12 +86,15 @@ void DRTRealWorldValueMappingSequence::Item::clear()
         /* clear all DICOM attributes */
         RealWorldValueFirstValueMapped.clear();
         RealWorldValueLastValueMapped.clear();
+        DoubleFloatRealWorldValueFirstValueMapped.clear();
+        DoubleFloatRealWorldValueLastValueMapped.clear();
         RealWorldValueIntercept.clear();
         RealWorldValueSlope.clear();
         RealWorldValueLUTData.clear();
         LUTExplanation.clear();
         LUTLabel.clear();
         MeasurementUnitsCodeSequence.clear();
+        QuantityDefinitionSequence.clear();
     }
 }
 
@@ -91,12 +103,15 @@ OFBool DRTRealWorldValueMappingSequence::Item::isEmpty()
 {
     return RealWorldValueFirstValueMapped.isEmpty() &&
            RealWorldValueLastValueMapped.isEmpty() &&
+           DoubleFloatRealWorldValueFirstValueMapped.isEmpty() &&
+           DoubleFloatRealWorldValueLastValueMapped.isEmpty() &&
            RealWorldValueIntercept.isEmpty() &&
            RealWorldValueSlope.isEmpty() &&
            RealWorldValueLUTData.isEmpty() &&
            LUTExplanation.isEmpty() &&
            LUTLabel.isEmpty() &&
-           MeasurementUnitsCodeSequence.isEmpty();
+           MeasurementUnitsCodeSequence.isEmpty() &&
+           QuantityDefinitionSequence.isEmpty();
 }
 
 
@@ -113,14 +128,17 @@ OFCondition DRTRealWorldValueMappingSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, RealWorldValueFirstValueMapped, "1", "1", "RealWorldValueMappingSequence");
-        getAndCheckElementFromDataset(item, RealWorldValueLastValueMapped, "1", "1", "RealWorldValueMappingSequence");
+        getAndCheckElementFromDataset(item, RealWorldValueFirstValueMapped, "1", "1C", "RealWorldValueMappingSequence");
+        getAndCheckElementFromDataset(item, RealWorldValueLastValueMapped, "1", "1C", "RealWorldValueMappingSequence");
+        getAndCheckElementFromDataset(item, DoubleFloatRealWorldValueFirstValueMapped, "1", "1C", "RealWorldValueMappingSequence");
+        getAndCheckElementFromDataset(item, DoubleFloatRealWorldValueLastValueMapped, "1", "1C", "RealWorldValueMappingSequence");
         getAndCheckElementFromDataset(item, RealWorldValueIntercept, "1", "1C", "RealWorldValueMappingSequence");
         getAndCheckElementFromDataset(item, RealWorldValueSlope, "1", "1C", "RealWorldValueMappingSequence");
         getAndCheckElementFromDataset(item, RealWorldValueLUTData, "1-n", "1C", "RealWorldValueMappingSequence");
         getAndCheckElementFromDataset(item, LUTExplanation, "1", "1", "RealWorldValueMappingSequence");
         getAndCheckElementFromDataset(item, LUTLabel, "1", "1", "RealWorldValueMappingSequence");
         MeasurementUnitsCodeSequence.read(item, "1-n", "1", "RealWorldValueMappingSequence");
+        QuantityDefinitionSequence.read(item, "1-n", "3", "RealWorldValueMappingSequence");
         result = EC_Normal;
     }
     return result;
@@ -133,16 +151,37 @@ OFCondition DRTRealWorldValueMappingSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmUnsignedShort(RealWorldValueFirstValueMapped), "1", "1", "RealWorldValueMappingSequence");
-        addElementToDataset(result, item, new DcmUnsignedShort(RealWorldValueLastValueMapped), "1", "1", "RealWorldValueMappingSequence");
+        addElementToDataset(result, item, new DcmUnsignedShort(RealWorldValueFirstValueMapped), "1", "1C", "RealWorldValueMappingSequence");
+        addElementToDataset(result, item, new DcmUnsignedShort(RealWorldValueLastValueMapped), "1", "1C", "RealWorldValueMappingSequence");
+        addElementToDataset(result, item, new DcmFloatingPointDouble(DoubleFloatRealWorldValueFirstValueMapped), "1", "1C", "RealWorldValueMappingSequence");
+        addElementToDataset(result, item, new DcmFloatingPointDouble(DoubleFloatRealWorldValueLastValueMapped), "1", "1C", "RealWorldValueMappingSequence");
         addElementToDataset(result, item, new DcmFloatingPointDouble(RealWorldValueIntercept), "1", "1C", "RealWorldValueMappingSequence");
         addElementToDataset(result, item, new DcmFloatingPointDouble(RealWorldValueSlope), "1", "1C", "RealWorldValueMappingSequence");
         addElementToDataset(result, item, new DcmFloatingPointDouble(RealWorldValueLUTData), "1-n", "1C", "RealWorldValueMappingSequence");
         addElementToDataset(result, item, new DcmLongString(LUTExplanation), "1", "1", "RealWorldValueMappingSequence");
         addElementToDataset(result, item, new DcmShortString(LUTLabel), "1", "1", "RealWorldValueMappingSequence");
         if (result.good()) result = MeasurementUnitsCodeSequence.write(item, "1-n", "1", "RealWorldValueMappingSequence");
+        if (result.good()) result = QuantityDefinitionSequence.write(item, "1-n", "3", "RealWorldValueMappingSequence");
     }
     return result;
+}
+
+
+OFCondition DRTRealWorldValueMappingSequence::Item::getDoubleFloatRealWorldValueFirstValueMapped(Float64 &value, const unsigned long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return OFconst_cast(DcmFloatingPointDouble &, DoubleFloatRealWorldValueFirstValueMapped).getFloat64(value, pos);
+}
+
+
+OFCondition DRTRealWorldValueMappingSequence::Item::getDoubleFloatRealWorldValueLastValueMapped(Float64 &value, const unsigned long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return OFconst_cast(DcmFloatingPointDouble &, DoubleFloatRealWorldValueLastValueMapped).getFloat64(value, pos);
 }
 
 
@@ -206,6 +245,24 @@ OFCondition DRTRealWorldValueMappingSequence::Item::getRealWorldValueSlope(Float
         return EC_IllegalCall;
     else
         return OFconst_cast(DcmFloatingPointDouble &, RealWorldValueSlope).getFloat64(value, pos);
+}
+
+
+OFCondition DRTRealWorldValueMappingSequence::Item::setDoubleFloatRealWorldValueFirstValueMapped(const Float64 value, const unsigned long pos)
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return DoubleFloatRealWorldValueFirstValueMapped.putFloat64(value, pos);
+}
+
+
+OFCondition DRTRealWorldValueMappingSequence::Item::setDoubleFloatRealWorldValueLastValueMapped(const Float64 value, const unsigned long pos)
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return DoubleFloatRealWorldValueLastValueMapped.putFloat64(value, pos);
 }
 
 
@@ -383,7 +440,7 @@ OFBool DRTRealWorldValueMappingSequence::isValid() const
 }
 
 
-unsigned long DRTRealWorldValueMappingSequence::getNumberOfItems() const
+size_t DRTRealWorldValueMappingSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -413,12 +470,12 @@ OFCondition DRTRealWorldValueMappingSequence::gotoNextItem()
 }
 
 
-OFCondition DRTRealWorldValueMappingSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTRealWorldValueMappingSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -433,12 +490,12 @@ OFCondition DRTRealWorldValueMappingSequence::gotoItem(const unsigned long num, 
 }
 
 
-OFCondition DRTRealWorldValueMappingSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTRealWorldValueMappingSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -453,7 +510,7 @@ OFCondition DRTRealWorldValueMappingSequence::gotoItem(const unsigned long num, 
 }
 
 
-OFCondition DRTRealWorldValueMappingSequence::gotoItem(const unsigned long num)
+OFCondition DRTRealWorldValueMappingSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -489,7 +546,7 @@ const DRTRealWorldValueMappingSequence::Item &DRTRealWorldValueMappingSequence::
 }
 
 
-OFCondition DRTRealWorldValueMappingSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTRealWorldValueMappingSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -499,7 +556,7 @@ OFCondition DRTRealWorldValueMappingSequence::getItem(const unsigned long num, I
 }
 
 
-DRTRealWorldValueMappingSequence::Item &DRTRealWorldValueMappingSequence::getItem(const unsigned long num)
+DRTRealWorldValueMappingSequence::Item &DRTRealWorldValueMappingSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -509,7 +566,7 @@ DRTRealWorldValueMappingSequence::Item &DRTRealWorldValueMappingSequence::getIte
 }
 
 
-const DRTRealWorldValueMappingSequence::Item &DRTRealWorldValueMappingSequence::getItem(const unsigned long num) const
+const DRTRealWorldValueMappingSequence::Item &DRTRealWorldValueMappingSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -519,13 +576,13 @@ const DRTRealWorldValueMappingSequence::Item &DRTRealWorldValueMappingSequence::
 }
 
 
-DRTRealWorldValueMappingSequence::Item &DRTRealWorldValueMappingSequence::operator[](const unsigned long num)
+DRTRealWorldValueMappingSequence::Item &DRTRealWorldValueMappingSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTRealWorldValueMappingSequence::Item &DRTRealWorldValueMappingSequence::operator[](const unsigned long num) const
+const DRTRealWorldValueMappingSequence::Item &DRTRealWorldValueMappingSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -548,7 +605,7 @@ OFCondition DRTRealWorldValueMappingSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTRealWorldValueMappingSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTRealWorldValueMappingSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -571,7 +628,7 @@ OFCondition DRTRealWorldValueMappingSequence::insertItem(const unsigned long pos
 }
 
 
-OFCondition DRTRealWorldValueMappingSequence::removeItem(const unsigned long pos)
+OFCondition DRTRealWorldValueMappingSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

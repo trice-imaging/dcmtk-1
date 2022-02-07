@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2003-2015, OFFIS e.V.
+ *  Copyright (C) 2003-2017, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -30,6 +30,7 @@ DcmAssociationConfiguration::DcmAssociationConfiguration()
 , roleselection_()
 , extneg_()
 , profiles_()
+, alwaysAcceptDefaultRole_(OFFalse)
 {
 }
 
@@ -70,6 +71,7 @@ void DcmAssociationConfiguration::clear()
   roleselection_.clear();
   extneg_.clear();
   profiles_.clear();
+  alwaysAcceptDefaultRole_ = OFFalse;
 }
 
 OFCondition DcmAssociationConfiguration::addTransferSyntax(
@@ -103,6 +105,12 @@ OFCondition DcmAssociationConfiguration::addRole(
   T_ASC_SC_ROLE role)
 {
   return roleselection_.add(key, abstractSyntaxUID, role);
+}
+
+OFCondition DcmAssociationConfiguration::createEmptyRoleList(
+  const char* key)
+{
+  return roleselection_.addEmpty(key);
 }
 
 OFCondition DcmAssociationConfiguration::addExtendedNegotiation(
@@ -531,7 +539,7 @@ OFCondition DcmAssociationConfiguration::evaluateAssociationParameters(
             found = OFTrue;
             result = ASC_acceptPresentationContext(
                 assoc.params, pc.presentationContextID,
-                pc.proposedTransferSyntaxes[j], acceptedRole);
+                pc.proposedTransferSyntaxes[j], acceptedRole, alwaysAcceptDefaultRole_);
             // SCP/SCU role selection failed, reject presentation context
             if (result == ASC_SCPSCUROLESELECTIONFAILED)
             {
@@ -588,6 +596,12 @@ OFCondition DcmAssociationConfiguration::evaluateAssociationParameters(
 
   return result;
 }
+
+void DcmAssociationConfiguration::setAlwaysAcceptDefaultRole(const OFBool enabled)
+{
+  alwaysAcceptDefaultRole_ = enabled;
+}
+
 
 
 void DcmAssociationConfiguration::dumpProfiles(

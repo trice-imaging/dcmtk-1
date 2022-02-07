@@ -1,13 +1,14 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2019, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTReferencedBeamSequenceInRTFractionSchemeModule
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
+ *  Last modified on 2019-10-31 by Riesmeier
  *
  */
 
@@ -21,24 +22,30 @@
 
 DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
+    AlternateBeamDose(DCM_AlternateBeamDose),
+    AlternateBeamDoseType(DCM_AlternateBeamDoseType),
     BeamDeliveryDurationLimit(DCM_BeamDeliveryDurationLimit),
     BeamDose(DCM_BeamDose),
-    BeamDoseSpecificationPoint(DCM_BeamDoseSpecificationPoint),
-    BeamDoseVerificationControlPointSequence(emptyDefaultItem /*emptyDefaultSequence*/),
+    BeamDoseSpecificationPoint(DCM_RETIRED_BeamDoseSpecificationPoint),
+    BeamDoseType(DCM_BeamDoseType),
     BeamMeterset(DCM_BeamMeterset),
-    ReferencedBeamNumber(DCM_ReferencedBeamNumber)
+    ReferencedBeamNumber(DCM_ReferencedBeamNumber),
+    ReferencedDoseReferenceUID(DCM_ReferencedDoseReferenceUID)
 {
 }
 
 
 DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
+    AlternateBeamDose(copy.AlternateBeamDose),
+    AlternateBeamDoseType(copy.AlternateBeamDoseType),
     BeamDeliveryDurationLimit(copy.BeamDeliveryDurationLimit),
     BeamDose(copy.BeamDose),
     BeamDoseSpecificationPoint(copy.BeamDoseSpecificationPoint),
-    BeamDoseVerificationControlPointSequence(copy.BeamDoseVerificationControlPointSequence),
+    BeamDoseType(copy.BeamDoseType),
     BeamMeterset(copy.BeamMeterset),
-    ReferencedBeamNumber(copy.ReferencedBeamNumber)
+    ReferencedBeamNumber(copy.ReferencedBeamNumber),
+    ReferencedDoseReferenceUID(copy.ReferencedDoseReferenceUID)
 {
 }
 
@@ -53,12 +60,15 @@ DRTReferencedBeamSequenceInRTFractionSchemeModule::Item &DRTReferencedBeamSequen
     if (this != &copy)
     {
         EmptyDefaultItem = copy.EmptyDefaultItem;
+        AlternateBeamDose = copy.AlternateBeamDose;
+        AlternateBeamDoseType = copy.AlternateBeamDoseType;
         BeamDeliveryDurationLimit = copy.BeamDeliveryDurationLimit;
         BeamDose = copy.BeamDose;
         BeamDoseSpecificationPoint = copy.BeamDoseSpecificationPoint;
-        BeamDoseVerificationControlPointSequence = copy.BeamDoseVerificationControlPointSequence;
+        BeamDoseType = copy.BeamDoseType;
         BeamMeterset = copy.BeamMeterset;
         ReferencedBeamNumber = copy.ReferencedBeamNumber;
+        ReferencedDoseReferenceUID = copy.ReferencedDoseReferenceUID;
     }
     return *this;
 }
@@ -71,8 +81,11 @@ void DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::clear()
         /* clear all DICOM attributes */
         ReferencedBeamNumber.clear();
         BeamDoseSpecificationPoint.clear();
+        ReferencedDoseReferenceUID.clear();
         BeamDose.clear();
-        BeamDoseVerificationControlPointSequence.clear();
+        BeamDoseType.clear();
+        AlternateBeamDose.clear();
+        AlternateBeamDoseType.clear();
         BeamMeterset.clear();
         BeamDeliveryDurationLimit.clear();
     }
@@ -83,8 +96,11 @@ OFBool DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::isEmpty()
 {
     return ReferencedBeamNumber.isEmpty() &&
            BeamDoseSpecificationPoint.isEmpty() &&
+           ReferencedDoseReferenceUID.isEmpty() &&
            BeamDose.isEmpty() &&
-           BeamDoseVerificationControlPointSequence.isEmpty() &&
+           BeamDoseType.isEmpty() &&
+           AlternateBeamDose.isEmpty() &&
+           AlternateBeamDoseType.isEmpty() &&
            BeamMeterset.isEmpty() &&
            BeamDeliveryDurationLimit.isEmpty();
 }
@@ -105,8 +121,11 @@ OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::read(DcmIte
         clear();
         getAndCheckElementFromDataset(item, ReferencedBeamNumber, "1", "1", "ReferencedBeamSequence");
         getAndCheckElementFromDataset(item, BeamDoseSpecificationPoint, "3", "3", "ReferencedBeamSequence");
+        getAndCheckElementFromDataset(item, ReferencedDoseReferenceUID, "1", "3", "ReferencedBeamSequence");
         getAndCheckElementFromDataset(item, BeamDose, "1", "3", "ReferencedBeamSequence");
-        BeamDoseVerificationControlPointSequence.read(item, "1-n", "3", "ReferencedBeamSequence");
+        getAndCheckElementFromDataset(item, BeamDoseType, "1", "1C", "ReferencedBeamSequence");
+        getAndCheckElementFromDataset(item, AlternateBeamDose, "1", "3", "ReferencedBeamSequence");
+        getAndCheckElementFromDataset(item, AlternateBeamDoseType, "1", "1C", "ReferencedBeamSequence");
         getAndCheckElementFromDataset(item, BeamMeterset, "1", "3", "ReferencedBeamSequence");
         getAndCheckElementFromDataset(item, BeamDeliveryDurationLimit, "1", "3", "ReferencedBeamSequence");
         result = EC_Normal;
@@ -123,12 +142,42 @@ OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::write(DcmIt
         result = EC_Normal;
         addElementToDataset(result, item, new DcmIntegerString(ReferencedBeamNumber), "1", "1", "ReferencedBeamSequence");
         addElementToDataset(result, item, new DcmDecimalString(BeamDoseSpecificationPoint), "3", "3", "ReferencedBeamSequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedDoseReferenceUID), "1", "3", "ReferencedBeamSequence");
         addElementToDataset(result, item, new DcmDecimalString(BeamDose), "1", "3", "ReferencedBeamSequence");
-        if (result.good()) result = BeamDoseVerificationControlPointSequence.write(item, "1-n", "3", "ReferencedBeamSequence");
+        addElementToDataset(result, item, new DcmCodeString(BeamDoseType), "1", "1C", "ReferencedBeamSequence");
+        addElementToDataset(result, item, new DcmDecimalString(AlternateBeamDose), "1", "3", "ReferencedBeamSequence");
+        addElementToDataset(result, item, new DcmCodeString(AlternateBeamDoseType), "1", "1C", "ReferencedBeamSequence");
         addElementToDataset(result, item, new DcmDecimalString(BeamMeterset), "1", "3", "ReferencedBeamSequence");
         addElementToDataset(result, item, new DcmFloatingPointDouble(BeamDeliveryDurationLimit), "1", "3", "ReferencedBeamSequence");
     }
     return result;
+}
+
+
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::getAlternateBeamDose(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(AlternateBeamDose, value, pos);
+}
+
+
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::getAlternateBeamDose(Float64 &value, const unsigned long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return OFconst_cast(DcmDecimalString &, AlternateBeamDose).getFloat64(value, pos);
+}
+
+
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::getAlternateBeamDoseType(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(AlternateBeamDoseType, value, pos);
 }
 
 
@@ -186,6 +235,15 @@ OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::getBeamDose
 }
 
 
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::getBeamDoseType(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(BeamDoseType, value, pos);
+}
+
+
 OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::getBeamMeterset(OFString &value, const signed long pos) const
 {
     if (EmptyDefaultItem)
@@ -219,6 +277,41 @@ OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::getReferenc
         return EC_IllegalCall;
     else
         return OFconst_cast(DcmIntegerString &, ReferencedBeamNumber).getSint32(value, pos);
+}
+
+
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::getReferencedDoseReferenceUID(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(ReferencedDoseReferenceUID, value, pos);
+}
+
+
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::setAlternateBeamDose(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmDecimalString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = AlternateBeamDose.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::setAlternateBeamDoseType(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = AlternateBeamDoseType.putOFStringArray(value);
+    }
+    return result;
 }
 
 
@@ -257,6 +350,19 @@ OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::setBeamDose
 }
 
 
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::setBeamDoseType(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = BeamDoseType.putOFStringArray(value);
+    }
+    return result;
+}
+
+
 OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::setBeamMeterset(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -278,6 +384,19 @@ OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::setReferenc
         result = (check) ? DcmIntegerString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
             result = ReferencedBeamNumber.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::Item::setReferencedDoseReferenceUID(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmUniqueIdentifier::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = ReferencedDoseReferenceUID.putOFStringArray(value);
     }
     return result;
 }
@@ -386,7 +505,7 @@ OFBool DRTReferencedBeamSequenceInRTFractionSchemeModule::isValid() const
 }
 
 
-unsigned long DRTReferencedBeamSequenceInRTFractionSchemeModule::getNumberOfItems() const
+size_t DRTReferencedBeamSequenceInRTFractionSchemeModule::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -416,12 +535,12 @@ OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::gotoNextItem()
 }
 
 
-OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -436,12 +555,12 @@ OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::gotoItem(const un
 }
 
 
-OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -456,7 +575,7 @@ OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::gotoItem(const un
 }
 
 
-OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::gotoItem(const unsigned long num)
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -492,7 +611,7 @@ const DRTReferencedBeamSequenceInRTFractionSchemeModule::Item &DRTReferencedBeam
 }
 
 
-OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::getItem(const unsigned long num, Item *&item)
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -502,7 +621,7 @@ OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::getItem(const uns
 }
 
 
-DRTReferencedBeamSequenceInRTFractionSchemeModule::Item &DRTReferencedBeamSequenceInRTFractionSchemeModule::getItem(const unsigned long num)
+DRTReferencedBeamSequenceInRTFractionSchemeModule::Item &DRTReferencedBeamSequenceInRTFractionSchemeModule::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -512,7 +631,7 @@ DRTReferencedBeamSequenceInRTFractionSchemeModule::Item &DRTReferencedBeamSequen
 }
 
 
-const DRTReferencedBeamSequenceInRTFractionSchemeModule::Item &DRTReferencedBeamSequenceInRTFractionSchemeModule::getItem(const unsigned long num) const
+const DRTReferencedBeamSequenceInRTFractionSchemeModule::Item &DRTReferencedBeamSequenceInRTFractionSchemeModule::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -522,13 +641,13 @@ const DRTReferencedBeamSequenceInRTFractionSchemeModule::Item &DRTReferencedBeam
 }
 
 
-DRTReferencedBeamSequenceInRTFractionSchemeModule::Item &DRTReferencedBeamSequenceInRTFractionSchemeModule::operator[](const unsigned long num)
+DRTReferencedBeamSequenceInRTFractionSchemeModule::Item &DRTReferencedBeamSequenceInRTFractionSchemeModule::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTReferencedBeamSequenceInRTFractionSchemeModule::Item &DRTReferencedBeamSequenceInRTFractionSchemeModule::operator[](const unsigned long num) const
+const DRTReferencedBeamSequenceInRTFractionSchemeModule::Item &DRTReferencedBeamSequenceInRTFractionSchemeModule::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -551,7 +670,7 @@ OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::addItem(Item *&it
 }
 
 
-OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -574,7 +693,7 @@ OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::insertItem(const 
 }
 
 
-OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::removeItem(const unsigned long pos)
+OFCondition DRTReferencedBeamSequenceInRTFractionSchemeModule::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

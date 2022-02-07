@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2010, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were partly developed by
@@ -91,14 +91,8 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_LIBC
-#define INCLUDE_UNISTD
-#include "dcmtk/ofstd/ofstdinc.h"
-
 #include "dcmtk/dcmnet/cond.h"		/* condition typedefs */
-#include "dcmtk/dcmnet/dcompat.h"	/* compatability routines */
+#include "dcmtk/dcmnet/dcompat.h"	/* compatibility routines */
 #include "dcmtk/dcmdata/dctypes.h"	/* dcmdata toolkit basic types */
 #include "dcmtk/dcmdata/dcuid.h"	/* dcmdata UID definitions */
 
@@ -113,8 +107,6 @@ typedef Uint32	MASK_32;	/* for bit masks */
 
 
 #define DICOM_STDAPPLICATIONCONTEXT UID_StandardApplicationContext
-#define DICOM_NET_IMPLEMENTATIONCLASSUID OFFIS_IMPLEMENTATION_CLASS_UID
-#define DICOM_NET_IMPLEMENTATIONVERSIONNAME OFFIS_DTK_IMPLEMENTATION_VERSION_NAME
 
 /* network type constants as used by the DUL layer */
 #define	DICOM_APPLICATION_ACCEPTOR	0x01
@@ -135,7 +127,11 @@ typedef Uint32	MASK_32;	/* for bit masks */
 #define DIC_DS_LEN		16
 #define DIC_IS_LEN		12
 #define DIC_AT_LEN		(2*sizeof(DIC_US))
-#define DIC_NODENAME_LEN	128
+
+/* a valid DNS name can be up to 253 characters, and we need to add
+ * a port number. This should be sufficient.
+ */
+#define DIC_NODENAME_LEN	270
 
 #define DICOM_UI_LENGTH DIC_UI_LEN
 

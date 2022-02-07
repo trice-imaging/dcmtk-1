@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -30,6 +30,10 @@
 #include "dcmtk/dcmsr/dsrdtitn.h"
 #include "dcmtk/dcmsr/dsrtimtn.h"
 
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcuid.h"
+#include "dcmtk/dcmdata/dcvrdt.h"
+
 
 /*---------------------*
  *  macro definitions  *
@@ -57,7 +61,7 @@ DSRDocument::DSRDocument(const E_DocumentType documentType)
     PreliminaryFlagEnum(PF_invalid),
     CompletionFlagEnum(CF_invalid),
     VerificationFlagEnum(VF_invalid),
-    SpecificCharacterSetEnum(CS_invalid),
+    SpecificCharacterSetEnum(CS_default),
     SOPClassUID(DCM_SOPClassUID),
     SOPInstanceUID(DCM_SOPInstanceUID),
     SpecificCharacterSet(DCM_SpecificCharacterSet),
@@ -65,6 +69,7 @@ DSRDocument::DSRDocument(const E_DocumentType documentType)
     InstanceCreationTime(DCM_InstanceCreationTime),
     InstanceCreatorUID(DCM_InstanceCreatorUID),
     CodingSchemeIdentification(),
+    TimezoneOffsetFromUTC(DCM_TimezoneOffsetFromUTC),
     StudyInstanceUID(DCM_StudyInstanceUID),
     StudyDate(DCM_StudyDate),
     StudyTime(DCM_StudyTime),
@@ -74,12 +79,18 @@ DSRDocument::DSRDocument(const E_DocumentType documentType)
     StudyDescription(DCM_StudyDescription),
     PatientName(DCM_PatientName),
     PatientID(DCM_PatientID),
+    IssuerOfPatientID(DCM_IssuerOfPatientID),
     PatientBirthDate(DCM_PatientBirthDate),
     PatientSex(DCM_PatientSex),
+    PatientSize(DCM_PatientSize),
+    PatientWeight(DCM_PatientWeight),
     Manufacturer(DCM_Manufacturer),
     ManufacturerModelName(DCM_ManufacturerModelName),
     DeviceSerialNumber(DCM_DeviceSerialNumber),
     SoftwareVersions(DCM_SoftwareVersions),
+    SynchronizationFrameOfReferenceUID(DCM_SynchronizationFrameOfReferenceUID),
+    SynchronizationTrigger(DCM_SynchronizationTrigger),
+    AcquisitionTimeSynchronized(DCM_AcquisitionTimeSynchronized),
     Modality(DCM_Modality),
     SeriesInstanceUID(DCM_SeriesInstanceUID),
     SeriesNumber(DCM_SeriesNumber),
@@ -103,8 +114,9 @@ DSRDocument::DSRDocument(const E_DocumentType documentType)
     PertinentOtherEvidence(DCM_PertinentOtherEvidenceSequence),
     ReferencedInstances()
 {
+    DCMSR_DEBUG("Initializing all DICOM header attributes");
     /* set initial values for a new SOP instance */
-    updateAttributes();
+    updateAttributes(OFTrue /*updateAll*/, OFFalse /*verboseMode*/);
 }
 
 
@@ -122,7 +134,7 @@ void DSRDocument::clear()
     PreliminaryFlagEnum = PF_invalid;
     CompletionFlagEnum = CF_invalid;
     VerificationFlagEnum = VF_invalid;
-    SpecificCharacterSetEnum = CS_invalid;
+    SpecificCharacterSetEnum = CS_default;
     /* clear all DICOM attributes */
     SOPClassUID.clear();
     SOPInstanceUID.clear();
@@ -131,6 +143,7 @@ void DSRDocument::clear()
     InstanceCreationTime.clear();
     InstanceCreatorUID.clear();
     CodingSchemeIdentification.clear();
+    TimezoneOffsetFromUTC.clear();
     StudyInstanceUID.clear();
     StudyDate.clear();
     StudyTime.clear();
@@ -140,12 +153,18 @@ void DSRDocument::clear()
     StudyDescription.clear();
     PatientName.clear();
     PatientID.clear();
+    IssuerOfPatientID.clear();
     PatientBirthDate.clear();
     PatientSex.clear();
+    PatientSize.clear();
+    PatientWeight.clear();
     Manufacturer.clear();
     ManufacturerModelName.clear();
     DeviceSerialNumber.clear();
     SoftwareVersions.clear();
+    SynchronizationFrameOfReferenceUID.clear();
+    SynchronizationTrigger.clear();
+    AcquisitionTimeSynchronized.clear();
     Modality.clear();
     SeriesInstanceUID.clear();
     SeriesNumber.clear();
@@ -194,6 +213,8 @@ OFCondition DSRDocument::print(STD_NAMESPACE ostream &stream,
         OFString tmpString, string2;
         /* update only some DICOM attributes */
         updateAttributes(OFFalse /*updateAll*/);
+        /* check whether general SR modules are used */
+        const OFBool usesGeneralSRModules = usesSRDocumentGeneralModule(getDocumentType());
 
         // --- print some general document information ---
 
@@ -214,16 +235,21 @@ OFCondition DSRDocument::print(STD_NAMESPACE ostream &stream,
                     patientStr += getPrintStringFromElement(PatientSex, tmpString);
                 if (!PatientBirthDate.isEmpty())
                 {
-                   if (!patientStr.empty())
-                       patientStr += ", ";
-                   patientStr += dicomToReadableDate(getStringValueFromElement(PatientBirthDate, tmpString), string2);
+                    if (!patientStr.empty())
+                        patientStr += ", ";
+                    patientStr += dicomToReadableDate(getStringValueFromElement(PatientBirthDate, tmpString), string2);
                 }
                 if (!PatientID.isEmpty())
                 {
-                   if (!patientStr.empty())
-                       patientStr += ", ";
-                   patientStr += '#';
-                   patientStr += getPrintStringFromElement(PatientID, tmpString);
+                    if (!patientStr.empty())
+                        patientStr += ", ";
+                    patientStr += '#';
+                    patientStr += getPrintStringFromElement(PatientID, tmpString);
+                    if (!IssuerOfPatientID.isEmpty())
+                    {
+                        patientStr += ":";
+                        patientStr += getPrintStringFromElement(IssuerOfPatientID, tmpString);
+                    }
                 }
                 if (!patientStr.empty())
                     stream << " (" << patientStr << ")";
@@ -231,11 +257,11 @@ OFCondition DSRDocument::print(STD_NAMESPACE ostream &stream,
             }
             /* referring physician */
             if (!ReferringPhysicianName.isEmpty())
-             {
+            {
                 DCMSR_PRINT_HEADER_FIELD_START("Referring Physician", " : ")
                 stream << getPrintStringFromElement(ReferringPhysicianName, tmpString);
                 DCMSR_PRINT_HEADER_FIELD_END
-             }
+            }
             /* study-related information */
             if (!StudyDescription.isEmpty())
             {
@@ -271,17 +297,17 @@ OFCondition DSRDocument::print(STD_NAMESPACE ostream &stream,
                     deviceStr += getPrintStringFromElement(ManufacturerModelName, tmpString);
                 if (!DeviceSerialNumber.isEmpty())
                 {
-                   if (!deviceStr.empty())
-                       deviceStr += ", ";
-                   deviceStr += '#';
-                   deviceStr += getPrintStringFromElement(DeviceSerialNumber, tmpString);
+                    if (!deviceStr.empty())
+                        deviceStr += ", ";
+                    deviceStr += '#';
+                    deviceStr += getPrintStringFromElement(DeviceSerialNumber, tmpString);
                 }
                 if (!deviceStr.empty())
                     stream << " (" << deviceStr << ")";
                 DCMSR_PRINT_HEADER_FIELD_END
             }
-            /* Key Object Selection Documents do not contain the SR Document General Module */
-            if (getDocumentType() != DT_KeyObjectSelectionDocument)
+            /* not all SR IODs contain the SR Document General Module */
+            if (usesGeneralSRModules)
             {
                 /* preliminary flag */
                 if (!PreliminaryFlag.isEmpty())
@@ -301,7 +327,7 @@ OFCondition DSRDocument::print(STD_NAMESPACE ostream &stream,
                     DCMSR_PRINT_HEADER_FIELD_END
                 }
                 /* predecessor documents */
-                if (!PredecessorDocuments.empty())
+                if (!PredecessorDocuments.isEmpty())
                 {
                     DCMSR_PRINT_HEADER_FIELD_START("Predecessor Docs   ", " : ")
                     stream << PredecessorDocuments.getNumberOfInstances();
@@ -309,20 +335,20 @@ OFCondition DSRDocument::print(STD_NAMESPACE ostream &stream,
                 }
             }
             /* identical documents */
-            if (!IdenticalDocuments.empty())
+            if (!IdenticalDocuments.isEmpty())
             {
                 DCMSR_PRINT_HEADER_FIELD_START("Identical Docs     ", " : ")
                 stream << IdenticalDocuments.getNumberOfInstances();
                 DCMSR_PRINT_HEADER_FIELD_END
             }
             /* referenced instances */
-            if (!ReferencedInstances.empty())
+            if (!ReferencedInstances.isEmpty())
             {
                 DCMSR_PRINT_HEADER_FIELD_START("References Objects ", " : ")
                 stream << ReferencedInstances.getNumberOfItems();
                 DCMSR_PRINT_HEADER_FIELD_END
             }
-            if (getDocumentType() != DT_KeyObjectSelectionDocument)
+            if (usesGeneralSRModules)
             {
                 /* verification flag */
                 DCMSR_PRINT_HEADER_FIELD_START("Verification Flag  ", " : ")
@@ -401,7 +427,7 @@ OFCondition DSRDocument::checkDatasetForReading(DcmItem &dataset,
     /* check modality */
     if (result.good())
     {
-        if (documentType == DT_KeyObjectSelectionDocument)
+        if (usesKeyObjectDocumentSeriesModule(documentType))
             result = getAndCheckElementFromDataset(dataset, modality, "1", "1", "KeyObjectDocumentSeriesModule");
         else
             result = getAndCheckElementFromDataset(dataset, modality, "1", "1", "SRDocumentSeriesModule");
@@ -423,6 +449,7 @@ OFCondition DSRDocument::read(DcmItem &dataset,
 {
     OFCondition result = EC_Normal;
     E_DocumentType documentType = DT_invalid;
+    DCMSR_DEBUG("Reading SR document from DICOM dataset");
     /* re-initialize SR document */
     clear();
     /* check SOP class UID and modality first */
@@ -440,9 +467,7 @@ OFCondition DSRDocument::read(DcmItem &dataset,
         getElementFromDataset(dataset, SOPClassUID);   /* already checked */
         getAndCheckElementFromDataset(dataset, SOPInstanceUID, "1", "1", "SOPCommonModule");
         getAndCheckElementFromDataset(dataset, SpecificCharacterSet, "1-n", "1C", "SOPCommonModule");
-        if (SpecificCharacterSet.getVM() > 1)
-            DCMSR_WARN("Multiple values for Specific Character Set are not supported");
-        getStringValueFromElement(SpecificCharacterSet, tmpString);
+        getStringValueFromElement(SpecificCharacterSet, tmpString, -1 /* all components */);
         /* currently, the VR checker in 'dcmdata' only supports ASCII and Latin-1 */
         if (!tmpString.empty() && (tmpString != "ISO_IR 6") && (tmpString != "ISO_IR 100"))
             DCMSR_WARN("The VR checker does not support this Specific Character Set: " << tmpString);
@@ -450,6 +475,14 @@ OFCondition DSRDocument::read(DcmItem &dataset,
         getAndCheckElementFromDataset(dataset, InstanceCreationTime, "1", "3", "SOPCommonModule");
         getAndCheckElementFromDataset(dataset, InstanceCreatorUID, "1", "3", "SOPCommonModule");
         CodingSchemeIdentification.read(dataset, flags);
+        if (requiresTimezoneModule(documentType))
+        {
+            // --- Timezone Module ---
+            getAndCheckElementFromDataset(dataset, TimezoneOffsetFromUTC, "1", "1", "TimezoneModule");
+        } else {
+            // --- SOP Common Module ---
+            getAndCheckElementFromDataset(dataset, TimezoneOffsetFromUTC, "1", "3", "SOPCommonModule");
+        }
 
         // --- General Study and Patient Module ---
         readStudyData(dataset, flags);
@@ -469,9 +502,19 @@ OFCondition DSRDocument::read(DcmItem &dataset,
             getAndCheckElementFromDataset(dataset, SoftwareVersions, "1-n", "3", "GeneralEquipmentModule");
         }
 
+        // --- Synchronization Module ---
+        if (requiresSynchronizationModule(documentType) /* either the IOD requires this module */ ||
+            dataset.tagExistsWithValue(DCM_SynchronizationFrameOfReferenceUID) || dataset.tagExistsWithValue(DCM_SynchronizationTrigger) ||
+            dataset.tagExistsWithValue(DCM_AcquisitionTimeSynchronized) /* or all attributes should be absent */ )
+        {
+            getAndCheckElementFromDataset(dataset, SynchronizationFrameOfReferenceUID, "1", "1", "SynchronizationModule");
+            getAndCheckElementFromDataset(dataset, SynchronizationTrigger, "1", "1", "SynchronizationModule");
+            getAndCheckElementFromDataset(dataset, AcquisitionTimeSynchronized, "1", "1", "SynchronizationModule");
+        }
+
         // --- SR Document Series Module / Key Object Document Series Module ---
         getElementFromDataset(dataset, Modality);   /* already checked */
-        if (documentType == DT_KeyObjectSelectionDocument)
+        if (usesKeyObjectDocumentSeriesModule(documentType))
         {
             getAndCheckElementFromDataset(dataset, SeriesInstanceUID, "1", "1", "KeyObjectDocumentSeriesModule");
             getAndCheckElementFromDataset(dataset, SeriesNumber, "1", "1", "KeyObjectDocumentSeriesModule");
@@ -498,7 +541,7 @@ OFCondition DSRDocument::read(DcmItem &dataset,
         removeAttributeFromSequence(ReferencedPerformedProcedureStep, DCM_DigitalSignaturesSequence);
 
         // --- SR Document General Module / Key Object Document Module ---
-        if (documentType == DT_KeyObjectSelectionDocument)
+        if (usesKeyObjectDocumentModule(documentType))
         {
             getAndCheckElementFromDataset(dataset, InstanceNumber, "1", "1", "KeyObjectDocumentModule");
             getAndCheckElementFromDataset(dataset, ContentDate, "1", "1", "KeyObjectDocumentModule");
@@ -515,7 +558,7 @@ OFCondition DSRDocument::read(DcmItem &dataset,
             PredecessorDocuments.read(dataset, flags);
             /* need to check sequence in two steps (avoids additional getAndCheck... method) */
             searchCond = getElementFromDataset(dataset, PerformedProcedureCode);
-            checkElementValue(PerformedProcedureCode, "1", "2", searchCond, "SRDocumentGeneralModule");
+            checkElementValue(PerformedProcedureCode, "1-n", "2", searchCond, "SRDocumentGeneralModule");
             PertinentOtherEvidence.read(dataset, flags);
             ReferencedInstances.read(dataset, flags);
         }
@@ -529,8 +572,8 @@ OFCondition DSRDocument::read(DcmItem &dataset,
 
         /* update internal enumerated values and perform additional checks */
 
-        /* Key Object Selection Documents do not contain the SR Document General Module */
-        if (documentType != DT_KeyObjectSelectionDocument)
+        /* not all SR IODs contain the SR Document General Module */
+        if (usesSRDocumentGeneralModule(documentType))
         {
             /* get and check PreliminaryFlag (if present) */
             if (!PreliminaryFlag.isEmpty())
@@ -543,8 +586,8 @@ OFCondition DSRDocument::read(DcmItem &dataset,
             CompletionFlagEnum = enumeratedValueToCompletionFlag(getStringValueFromElement(CompletionFlag, tmpString));
             if (CompletionFlagEnum == CF_invalid)
                 printUnknownValueWarningMessage("CompletionFlag", tmpString.c_str());
-            else if ((CompletionFlagEnum == CF_Partial) && (documentType == DT_XRayRadiationDoseSR))
-                DCMSR_WARN("Invalid value for CompletionFlag, should be 'COMPLETE' for X-Ray Radiation Dose SR");
+            else if ((documentType == DT_XRayRadiationDoseSR) && (CompletionFlagEnum != CF_Complete))
+                DCMSR_WARN("Invalid value for Completion Flag, should be 'COMPLETE' for X-Ray Radiation Dose SR");
             /* get and check VerificationFlag / VerifyingObserverSequence */
             VerificationFlagEnum = enumeratedValueToVerificationFlag(getStringValueFromElement(VerificationFlag, tmpString));
             if (VerificationFlagEnum == VF_invalid)
@@ -552,7 +595,8 @@ OFCondition DSRDocument::read(DcmItem &dataset,
             else if (VerificationFlagEnum == VF_Verified)
                 checkElementValue(VerifyingObserver, "1-n", "1", obsSearchCond, "SRDocumentGeneralModule");
         }
-        SpecificCharacterSetEnum = definedTermToCharacterSet(getStringValueFromElement(SpecificCharacterSet, tmpString));
+        getStringValueFromElement(SpecificCharacterSet, tmpString, -1 /* all components */);
+        SpecificCharacterSetEnum = definedTermToCharacterSet(tmpString);
         /* check SpecificCharacterSet */
         if ((SpecificCharacterSetEnum == CS_invalid) && !tmpString.empty())
             printUnknownValueWarningMessage("SpecificCharacterSet", tmpString.c_str());
@@ -571,6 +615,7 @@ OFCondition DSRDocument::readPatientData(DcmItem &dataset,
     // --- Patient Module ---
     getAndCheckElementFromDataset(dataset, PatientName, "1", "2", "PatientModule");
     getAndCheckElementFromDataset(dataset, PatientID, "1", "2", "PatientModule");
+    getAndCheckElementFromDataset(dataset, IssuerOfPatientID, "1", "3", "PatientModule");
     getAndCheckElementFromDataset(dataset, PatientBirthDate, "1", "2", "PatientModule");
     getAndCheckElementFromDataset(dataset, PatientSex, "1", "2", "PatientModule");
     /* always return success */
@@ -589,6 +634,9 @@ OFCondition DSRDocument::readStudyData(DcmItem &dataset,
     getAndCheckElementFromDataset(dataset, StudyID, "1", "2", "GeneralStudyModule");
     getAndCheckElementFromDataset(dataset, AccessionNumber, "1", "2", "GeneralStudyModule");
     getAndCheckElementFromDataset(dataset, StudyDescription, "1", "3", "GeneralStudyModule");
+    // --- Patient Study Module ---
+    getAndCheckElementFromDataset(dataset, PatientSize, "1", "3", "PatientStudyModule");
+    getAndCheckElementFromDataset(dataset, PatientWeight, "1", "3", "PatientStudyModule");
     /* also read data from Patient Module */
     return readPatientData(dataset, flags);
 }
@@ -601,23 +649,34 @@ OFCondition DSRDocument::write(DcmItem &dataset,
     /* only write valid documents */
     if (isValid())
     {
+        DCMSR_DEBUG("Writing SR document to DICOM dataset");
         /* update all DICOM attributes */
         updateAttributes();
 
         /* checking particular values */
-        if ((CompletionFlagEnum == CF_Partial) && (getDocumentType() == DT_XRayRadiationDoseSR))
-            DCMSR_WARN("Invalid value for CompletionFlag, should be 'COMPLETE' for X-Ray Radiation Dose SR");
+        if ((getDocumentType() == DT_XRayRadiationDoseSR) && (CompletionFlagEnum != CF_Complete))
+            DCMSR_WARN("Invalid value for Completion Flag, should be 'COMPLETE' for X-Ray Radiation Dose SR");
 
         /* write general document attributes */
 
         // --- SOP Common Module ---
         addElementToDataset(result, dataset, new DcmUniqueIdentifier(SOPClassUID), "1", "1", "SOPCommonModule");
         addElementToDataset(result, dataset, new DcmUniqueIdentifier(SOPInstanceUID), "1", "1", "SOPCommonModule");
-        addElementToDataset(result, dataset, new DcmCodeString(SpecificCharacterSet), "1-n", "1C", "SOPCommonModule");
+        /* never write specific character set for ASCII (default character repertoire) */
+        if (SpecificCharacterSetEnum != CS_ASCII)
+            addElementToDataset(result, dataset, new DcmCodeString(SpecificCharacterSet), "1-n", "1C", "SOPCommonModule");
         addElementToDataset(result, dataset, new DcmDate(InstanceCreationDate), "1", "3", "SOPCommonModule");
         addElementToDataset(result, dataset, new DcmTime(InstanceCreationTime), "1", "3", "SOPCommonModule");
         addElementToDataset(result, dataset, new DcmUniqueIdentifier(InstanceCreatorUID), "1", "3", "SOPCommonModule");
         CodingSchemeIdentification.write(dataset);
+        if (requiresTimezoneModule(getDocumentType()))
+        {
+            // --- Timezone Module ---
+            addElementToDataset(result, dataset, new DcmShortString(TimezoneOffsetFromUTC), "1", "1", "TimezoneModule");
+        } else {
+            // --- SOP Common Module ---
+            addElementToDataset(result, dataset, new DcmShortString(TimezoneOffsetFromUTC), "1", "3", "SOPCommonModule");
+        }
 
         // --- General Study Module ---
         addElementToDataset(result, dataset, new DcmUniqueIdentifier(StudyInstanceUID), "1", "1", "GeneralStudyModule");
@@ -631,8 +690,13 @@ OFCondition DSRDocument::write(DcmItem &dataset,
         // --- Patient Module ---
         addElementToDataset(result, dataset, new DcmPersonName(PatientName), "1", "2", "PatientModule");
         addElementToDataset(result, dataset, new DcmLongString(PatientID), "1", "2", "PatientModule");
+        addElementToDataset(result, dataset, new DcmLongString(IssuerOfPatientID), "1", "3", "PatientModule");
         addElementToDataset(result, dataset, new DcmDate(PatientBirthDate), "1", "2", "PatientModule");
         addElementToDataset(result, dataset, new DcmCodeString(PatientSex), "1", "2", "PatientModule");
+
+        // --- Patient Study Module ---
+        addElementToDataset(result, dataset, new DcmDecimalString(PatientSize), "1", "3", "PatientStudyModule");
+        addElementToDataset(result, dataset, new DcmDecimalString(PatientWeight), "1", "3", "PatientStudyModule");
 
         if (requiresEnhancedEquipmentModule(getDocumentType()))
         {
@@ -649,8 +713,17 @@ OFCondition DSRDocument::write(DcmItem &dataset,
             addElementToDataset(result, dataset, new DcmLongString(SoftwareVersions), "1-n", "3", "GeneralEquipmentModule");
         }
 
+        // --- Synchronization Module ---
+        if (requiresSynchronizationModule(getDocumentType()) /* module required for some IODs */ ||
+            !SynchronizationFrameOfReferenceUID.isEmpty() || !SynchronizationTrigger.isEmpty() || !AcquisitionTimeSynchronized.isEmpty())
+        {
+            addElementToDataset(result, dataset, new DcmUniqueIdentifier(SynchronizationFrameOfReferenceUID), "1", "1", "SynchronizationModule");
+            addElementToDataset(result, dataset, new DcmCodeString(SynchronizationTrigger), "1", "1", "SynchronizationModule");
+            addElementToDataset(result, dataset, new DcmCodeString(AcquisitionTimeSynchronized), "1", "1", "SynchronizationModule");
+        }
+
         // --- SR Document Series Module / Key Object Document Series Module ---
-        if (getDocumentType() == DT_KeyObjectSelectionDocument)
+        if (usesKeyObjectDocumentSeriesModule(getDocumentType()))
         {
             addElementToDataset(result, dataset, new DcmCodeString(Modality), "1", "1", "KeyObjectDocumentSeriesModule");
             addElementToDataset(result, dataset, new DcmUniqueIdentifier(SeriesInstanceUID), "1", "1", "KeyObjectDocumentSeriesModule");
@@ -676,7 +749,7 @@ OFCondition DSRDocument::write(DcmItem &dataset,
         }
 
         // --- SR Document General Module / Key Object Document Module ---
-        if (getDocumentType() == DT_KeyObjectSelectionDocument)
+        if (usesKeyObjectDocumentModule(getDocumentType()))
         {
             addElementToDataset(result, dataset, new DcmIntegerString(InstanceNumber), "1", "1", "KeyObjectDocumentModule");
             addElementToDataset(result, dataset, new DcmDate(ContentDate), "1", "1", "KeyObjectDocumentModule");
@@ -695,7 +768,7 @@ OFCondition DSRDocument::write(DcmItem &dataset,
                 PredecessorDocuments.write(dataset);    /* optional */
             /* always write empty sequence since not yet fully supported */
             PerformedProcedureCode.clear();
-            addElementToDataset(result, dataset, new DcmSequenceOfItems(PerformedProcedureCode), "1", "2", "SRDocumentGeneralModule");
+            addElementToDataset(result, dataset, new DcmSequenceOfItems(PerformedProcedureCode), "1-n", "2", "SRDocumentGeneralModule");
             if (result.good())
                 result = PertinentOtherEvidence.write(dataset);
             if (result.good())
@@ -720,6 +793,7 @@ OFCondition DSRDocument::readXML(const OFString &filename,
                                  const size_t flags)
 {
     DSRXMLDocument doc;
+    DCMSR_DEBUG("Reading SR document from XML format");
     /* read, parse and validate XML document */
     OFCondition result = doc.read(filename, flags);
     if (result.good())
@@ -790,6 +864,10 @@ OFCondition DSRDocument::readXMLDocumentHeader(DSRXMLDocument &doc,
                     doc.printUnexpectedNodeWarning(cursor);
                 }
             }
+            else if (doc.matchNode(cursor, "timezone"))
+            {
+                doc.getElementFromNodeContent(cursor, TimezoneOffsetFromUTC, NULL, OFTrue /*encoding*/);
+            }
             else if (doc.matchNode(cursor, "modality"))
             {
                 OFString tmpString;
@@ -797,10 +875,25 @@ OFCondition DSRDocument::readXMLDocumentHeader(DSRXMLDocument &doc,
                 if (doc.getStringFromNodeContent(cursor, tmpString) != documentTypeToModality(getDocumentType()))
                     DCMSR_WARN("Invalid value for 'modality' ... ignoring");
             }
+            else if (doc.matchNode(cursor, "device"))
+            {
+                doc.getElementFromNodeContent(doc.getNamedChildNode(cursor, "manufacturer", OFFalse /*required*/), Manufacturer, NULL, OFTrue /*encoding*/);
+                doc.getElementFromNodeContent(doc.getNamedChildNode(cursor, "model"), ManufacturerModelName, NULL, OFTrue /*encoding*/);
+                doc.getElementFromNodeContent(doc.getNamedChildNode(cursor, "serial", OFFalse /*required*/), DeviceSerialNumber, NULL, OFTrue /*encoding*/);
+                doc.getElementFromNodeContent(doc.getNamedChildNode(cursor, "version", OFFalse /*required*/), SoftwareVersions, NULL, OFTrue /*encoding*/);
+            }
+            else if (doc.matchNode(cursor, "manufacturer"))
+                doc.getElementFromNodeContent(cursor, Manufacturer, "manufacturer", OFTrue /*encoding*/);
+            else if (doc.matchNode(cursor, "synchronization"))
+            {
+                doc.getElementFromAttribute(cursor, SynchronizationFrameOfReferenceUID, "uid");
+                doc.getElementFromNodeContent(doc.getNamedChildNode(cursor, "trigger"), SynchronizationTrigger);
+                doc.getElementFromNodeContent(doc.getNamedChildNode(cursor, "acquisitiontime"), AcquisitionTimeSynchronized);
+            }
             else if (doc.matchNode(cursor, "referringphysician"))
             {
                 /* goto sub-element "name" */
-                const DSRXMLCursor childNode = doc.getNamedNode(cursor.getChild(), "name");
+                const DSRXMLCursor childNode = doc.getNamedChildNode(cursor, "name");
                 if (childNode.valid())
                 {
                     /* Referring Physician's Name */
@@ -831,7 +924,7 @@ OFCondition DSRDocument::readXMLDocumentHeader(DSRXMLDocument &doc,
                     result = CurrentRequestedProcedureEvidence.readXML(doc, cursor.getChild(), flags);
                 else if (typeString == "Pertinent Other")
                 {
-                    if (getDocumentType() != DT_KeyObjectSelectionDocument)
+                    if (usesSRDocumentGeneralModule(getDocumentType()))
                         result = PertinentOtherEvidence.readXML(doc, cursor.getChild(), flags);
                     else
                         doc.printUnexpectedNodeWarning(cursor);
@@ -846,14 +939,7 @@ OFCondition DSRDocument::readXMLDocumentHeader(DSRXMLDocument &doc,
             }
             else if (doc.matchNode(cursor, "document"))
                 result = readXMLDocumentData(doc, cursor.getChild(), flags);
-            else if (doc.matchNode(cursor, "device"))
-            {
-                doc.getElementFromNodeContent(doc.getNamedNode(cursor.getChild(), "manufacturer"), Manufacturer, NULL, OFTrue /*encoding*/);
-                doc.getElementFromNodeContent(doc.getNamedNode(cursor.getChild(), "model"), ManufacturerModelName, NULL, OFTrue /*encoding*/);
-                doc.getElementFromNodeContent(doc.getNamedNode(cursor.getChild(), "serial", OFFalse /*required*/), DeviceSerialNumber, NULL, OFTrue /*encoding*/);
-                doc.getElementFromNodeContent(doc.getNamedNode(cursor.getChild(), "version", OFFalse /*required*/), SoftwareVersions, NULL, OFTrue /*encoding*/);
-            }
-            else if (doc.getElementFromNodeContent(cursor, Manufacturer, "manufacturer", OFTrue /*encoding*/).bad())
+            else
                 doc.printUnexpectedNodeWarning(cursor);
             /* print node error message (if any) */
             doc.printGeneralNodeError(cursor, result);
@@ -887,11 +973,15 @@ OFCondition DSRDocument::readXMLPatientData(const DSRXMLDocument &doc,
             else if (doc.matchNode(cursor, "birthday"))
             {
                 /* Patient's Birth Date */
-                DSRDateTreeNode::getValueFromXMLNodeContent(doc, doc.getNamedNode(cursor.getChild(), "date"), tmpString);
+                DSRDateTreeNode::getValueFromXMLNodeContent(doc, doc.getNamedChildNode(cursor, "date"), tmpString);
                 PatientBirthDate.putOFStringArray(tmpString);
             }
             else if (doc.getElementFromNodeContent(cursor, PatientID, "id").bad() &&
-                     doc.getElementFromNodeContent(cursor, PatientSex, "sex").bad())
+                     doc.getElementFromNodeContent(cursor, IssuerOfPatientID, "issuer").bad() &&
+                     doc.getElementFromNodeContent(cursor, PatientSex, "sex").bad() &&
+                     /* strictly speaking, Patient's Size and Weight belong to the Study IE */
+                     doc.getElementFromNodeContent(cursor, PatientSize, "size").bad() &&
+                     doc.getElementFromNodeContent(cursor, PatientWeight, "weight").bad())
             {
                 doc.printUnexpectedNodeWarning(cursor);
             }
@@ -905,14 +995,20 @@ OFCondition DSRDocument::readXMLPatientData(const DSRXMLDocument &doc,
 
 OFCondition DSRDocument::readXMLStudyData(const DSRXMLDocument &doc,
                                           DSRXMLCursor cursor,
-                                          const size_t /*flags*/)
+                                          const size_t flags)
 {
     OFCondition result = SR_EC_InvalidDocument;
     if (cursor.valid())
     {
         OFString tmpString;
         /* get Study Instance UID from XML attribute */
-        result = doc.getElementFromAttribute(cursor, StudyInstanceUID, "uid");
+        if (flags & XF_acceptEmptyStudySeriesInstanceUID)
+        {
+            if (doc.getElementFromAttribute(cursor, StudyInstanceUID, "uid", OFFalse /*encoding*/, OFFalse /*required*/).bad())
+                doc.printMissingAttributeWarning(cursor, "uid");
+            result = EC_Normal;
+        } else
+            result = doc.getElementFromAttribute(cursor, StudyInstanceUID, "uid");
         /* goto first sub-element */
         cursor.gotoChild();
         /* iterate over all nodes */
@@ -922,7 +1018,7 @@ OFCondition DSRDocument::readXMLStudyData(const DSRXMLDocument &doc,
             if (doc.matchNode(cursor, "accession"))
             {
                 /* goto sub-element "number" */
-                doc.getElementFromNodeContent(doc.getNamedNode(cursor.getChild(), "number"), AccessionNumber);
+                doc.getElementFromNodeContent(doc.getNamedChildNode(cursor, "number"), AccessionNumber);
             }
             else if (doc.matchNode(cursor, "date"))
             {
@@ -951,14 +1047,20 @@ OFCondition DSRDocument::readXMLStudyData(const DSRXMLDocument &doc,
 
 OFCondition DSRDocument::readXMLSeriesData(const DSRXMLDocument &doc,
                                            DSRXMLCursor cursor,
-                                           const size_t /*flags*/)
+                                           const size_t flags)
 {
     OFCondition result = SR_EC_InvalidDocument;
     if (cursor.valid())
     {
         OFString tmpString;
         /* get Series Instance UID from XML attribute */
-        result = doc.getElementFromAttribute(cursor, SeriesInstanceUID, "uid");
+        if (flags & XF_acceptEmptyStudySeriesInstanceUID)
+        {
+            if (doc.getElementFromAttribute(cursor, SeriesInstanceUID, "uid", OFFalse /*encoding*/, OFFalse /*required*/).bad())
+                doc.printMissingAttributeWarning(cursor, "uid");
+            result = EC_Normal;
+        } else
+            result = doc.getElementFromAttribute(cursor, SeriesInstanceUID, "uid");
         /* goto first sub-element */
         cursor.gotoChild();
         /* iterate over all nodes */
@@ -994,14 +1096,20 @@ OFCondition DSRDocument::readXMLSeriesData(const DSRXMLDocument &doc,
 
 OFCondition DSRDocument::readXMLInstanceData(const DSRXMLDocument &doc,
                                              DSRXMLCursor cursor,
-                                             const size_t /*flags*/)
+                                             const size_t flags)
 {
     OFCondition result = SR_EC_InvalidDocument;
     if (cursor.valid())
     {
         OFString tmpString;
         /* get SOP Instance UID from XML attribute */
-        result = doc.getElementFromAttribute(cursor, SOPInstanceUID, "uid");
+        if (flags & XF_acceptEmptyStudySeriesInstanceUID)
+        {
+            if (doc.getElementFromAttribute(cursor, SOPInstanceUID, "uid", OFFalse /*encoding*/, OFFalse /*required*/).bad())
+                doc.printMissingAttributeWarning(cursor, "uid");
+            result = EC_Normal;
+        } else
+            result = doc.getElementFromAttribute(cursor, SOPInstanceUID, "uid");
         /* goto first sub-element */
         cursor.gotoChild();
         /* iterate over all nodes */
@@ -1010,11 +1118,13 @@ OFCondition DSRDocument::readXMLInstanceData(const DSRXMLDocument &doc,
             /* check for known element tags */
             if (doc.matchNode(cursor, "creation"))
             {
+                /* Instance Creator UID */
+                doc.getElementFromAttribute(cursor, InstanceCreatorUID, "uid", OFFalse /*encoding*/, OFFalse /*required*/);
                 /* Instance Creation Date */
-                DSRDateTreeNode::getValueFromXMLNodeContent(doc, doc.getNamedNode(cursor.getChild(), "date"), tmpString);
+                DSRDateTreeNode::getValueFromXMLNodeContent(doc, doc.getNamedChildNode(cursor, "date"), tmpString);
                 InstanceCreationDate.putOFStringArray(tmpString);
                 /* Instance Creation Time */
-                DSRTimeTreeNode::getValueFromXMLNodeContent(doc, doc.getNamedNode(cursor.getChild(), "time"), tmpString);
+                DSRTimeTreeNode::getValueFromXMLNodeContent(doc, doc.getNamedChildNode(cursor, "time"), tmpString);
                 InstanceCreationTime.putOFStringArray(tmpString);
             }
             else if (doc.getElementFromNodeContent(cursor, InstanceNumber, "number").bad())
@@ -1037,34 +1147,35 @@ OFCondition DSRDocument::readXMLDocumentData(const DSRXMLDocument &doc,
     if (cursor.valid())
     {
         OFString tmpString;
-        const E_DocumentType documentType = getDocumentType();
+        /* check whether general SR modules are used */
+        const OFBool usesGeneralSRModules = usesSRDocumentGeneralModule(getDocumentType());
         result = EC_Normal;
         /* iterate over all nodes */
         while (cursor.valid() && result.good())
         {
             /* check for known element tags
-               (Key Object Selection Documents do not contain the SR Document General Module) */
-            if ((documentType != DT_KeyObjectSelectionDocument) && doc.matchNode(cursor, "preliminary"))
+               (not all SR IODs contain the SR Document General Module) */
+            if (usesGeneralSRModules && doc.matchNode(cursor, "preliminary"))
             {
                 /* Preliminary Flag */
                 PreliminaryFlagEnum = enumeratedValueToPreliminaryFlag(doc.getStringFromAttribute(cursor, tmpString, "flag"));
                 if (PreliminaryFlagEnum == PF_invalid)
                     printUnknownValueWarningMessage("PreliminaryFlag", tmpString.c_str());
             }
-            else if ((documentType != DT_KeyObjectSelectionDocument) && doc.matchNode(cursor, "completion"))
+            else if (usesGeneralSRModules && doc.matchNode(cursor, "completion"))
             {
                 /* Completion Flag */
                 CompletionFlagEnum = enumeratedValueToCompletionFlag(doc.getStringFromAttribute(cursor, tmpString, "flag"));
                 if (CompletionFlagEnum != CF_invalid)
                 {
                     /* Completion Flag Description (optional) */
-                    const DSRXMLCursor childCursor = doc.getNamedNode(cursor.getChild(), "description", OFFalse /*required*/);
+                    const DSRXMLCursor childCursor = doc.getNamedChildNode(cursor, "description", OFFalse /*required*/);
                     if (childCursor.valid())
                         doc.getElementFromNodeContent(childCursor, CompletionFlagDescription, NULL /*name*/, OFTrue /*encoding*/);
                 } else
                     printUnknownValueWarningMessage("CompletionFlag", tmpString.c_str());
             }
-            else if ((documentType != DT_KeyObjectSelectionDocument) && doc.matchNode(cursor, "verification"))
+            else if (usesGeneralSRModules && doc.matchNode(cursor, "verification"))
             {
                 /* Verification Flag */
                 VerificationFlagEnum = enumeratedValueToVerificationFlag(doc.getStringFromAttribute(cursor, tmpString, "flag"));
@@ -1078,7 +1189,7 @@ OFCondition DSRDocument::readXMLDocumentData(const DSRXMLDocument &doc,
                 } else
                     printUnknownValueWarningMessage("VerificationFlag", tmpString.c_str());
             }
-            else if ((documentType != DT_KeyObjectSelectionDocument) && doc.matchNode(cursor, "predecessor"))
+            else if (usesGeneralSRModules && doc.matchNode(cursor, "predecessor"))
             {
                 /* Predecessor Documents Sequence (optional) */
                 result = PredecessorDocuments.readXML(doc, cursor.getChild(), flags);
@@ -1090,15 +1201,14 @@ OFCondition DSRDocument::readXMLDocumentData(const DSRXMLDocument &doc,
             }
             else if (doc.matchNode(cursor, "content"))
             {
-                const DSRXMLCursor childCursor = cursor.getChild();
                 /* Content Date */
-                DSRDateTreeNode::getValueFromXMLNodeContent(doc, doc.getNamedNode(childCursor, "date"), tmpString);
+                DSRDateTreeNode::getValueFromXMLNodeContent(doc, doc.getNamedChildNode(cursor, "date"), tmpString);
                 ContentDate.putOFStringArray(tmpString);
                 /* Content Time */
-                DSRTimeTreeNode::getValueFromXMLNodeContent(doc, doc.getNamedNode(childCursor, "time"), tmpString);
+                DSRTimeTreeNode::getValueFromXMLNodeContent(doc, doc.getNamedChildNode(cursor, "time"), tmpString);
                 ContentTime.putOFStringArray(tmpString);
                 /* proceed with document tree */
-                result = DocumentTree.readXML(doc, childCursor, flags);
+                result = DocumentTree.readXML(doc, cursor.getChild(), flags);
             } else
                 doc.printUnexpectedNodeWarning(cursor);
             /* print node error message (if any) */
@@ -1182,23 +1292,23 @@ OFCondition DSRDocument::writeXML(STD_NAMESPACE ostream &stream,
     /* only write valid documents */
     if (isValid())
     {
+        DCMSR_DEBUG("Writing SR document to XML format");
         /* used for multiple purposes */
         OFString tmpString;
         /* update all DICOM attributes */
         updateAttributes();
+        /* check whether general SR modules are used */
+        const OFBool usesGeneralSRModules = usesSRDocumentGeneralModule(getDocumentType());
 
         // --- XML document structure (start) ---
 
         stream << "<?xml version=\"1.0\"";
         /* optional character set */
         tmpString = characterSetToXMLName(SpecificCharacterSetEnum);
-        if (!tmpString.empty())
-        {
-            if (tmpString != "?")
-                stream << " encoding=\"" << tmpString << "\"";
-            else
-                DCMSR_WARN("Cannot map Specific Character Set to equivalent XML encoding");
-        }
+        if (!tmpString.empty() && (tmpString != "?"))
+            stream << " encoding=\"" << tmpString << "\"";
+        else if (!SpecificCharacterSet.isEmpty())
+            DCMSR_WARN("Cannot map Specific Character Set to equivalent XML encoding");
         stream << "?>" << OFendl;
 
         stream << "<report";
@@ -1222,6 +1332,7 @@ OFCondition DSRDocument::writeXML(STD_NAMESPACE ostream &stream,
         stream << dcmFindNameOfUID(tmpString.c_str(), "" /* empty value as default */);
         stream << "</sopclass>" << OFendl;
         writeStringFromElementToXML(stream, SpecificCharacterSet, "charset", (flags & XF_writeEmptyTags) > 0);
+        writeStringFromElementToXML(stream, TimezoneOffsetFromUTC, "timezone", (flags & XF_writeEmptyTags) > 0);
         writeStringFromElementToXML(stream, Modality, "modality", (flags & XF_writeEmptyTags) > 0);
         /* check for additional device information */
         if (!ManufacturerModelName.isEmpty())
@@ -1235,6 +1346,18 @@ OFCondition DSRDocument::writeXML(STD_NAMESPACE ostream &stream,
         } else
             writeStringFromElementToXML(stream, Manufacturer, "manufacturer", (flags & XF_writeEmptyTags) > 0);
 
+        if ((flags & XF_writeEmptyTags) || !SynchronizationFrameOfReferenceUID.isEmpty() ||
+            !SynchronizationTrigger.isEmpty() || !AcquisitionTimeSynchronized.isEmpty())
+        {
+            stream << "<synchronization";
+            if (!SynchronizationFrameOfReferenceUID.isEmpty())
+                stream << " uid=\"" << getMarkupStringFromElement(SynchronizationFrameOfReferenceUID, tmpString) << "\"";
+            stream << ">" << OFendl;
+            writeStringFromElementToXML(stream, SynchronizationTrigger, "trigger", (flags & XF_writeEmptyTags) > 0);
+            writeStringFromElementToXML(stream, AcquisitionTimeSynchronized, "acquisitiontime", (flags & XF_writeEmptyTags) > 0);
+            stream << "</synchronization>" << OFendl;
+        }
+
         if ((flags & XF_writeEmptyTags) || !ReferringPhysicianName.isEmpty())
         {
             stream << "<referringphysician>" << OFendl;
@@ -1244,6 +1367,7 @@ OFCondition DSRDocument::writeXML(STD_NAMESPACE ostream &stream,
 
         stream << "<patient>" << OFendl;
         writeStringFromElementToXML(stream, PatientID, "id", (flags & XF_writeEmptyTags) > 0);
+        writeStringFromElementToXML(stream, IssuerOfPatientID, "issuer", (flags & XF_writeEmptyTags) > 0);
         writeStringFromElementToXML(stream, PatientName, "name", (flags & XF_writeEmptyTags) > 0);
         if ((flags & XF_writeEmptyTags) || !PatientBirthDate.isEmpty())
         {
@@ -1253,6 +1377,9 @@ OFCondition DSRDocument::writeXML(STD_NAMESPACE ostream &stream,
             stream << "</birthday>" << OFendl;
         }
         writeStringFromElementToXML(stream, PatientSex, "sex", (flags & XF_writeEmptyTags) > 0);
+        /* strictly speaking, Patient's Size and Weight belong to the Study IE */
+        writeStringFromElementToXML(stream, PatientSize, "size", (flags & XF_writeEmptyTags) > 0);
+        writeStringFromElementToXML(stream, PatientWeight, "weight", (flags & XF_writeEmptyTags) > 0);
         stream << "</patient>" << OFendl;
 
         stream << "<study uid=\"" << getMarkupStringFromElement(StudyInstanceUID, tmpString) << "\">" << OFendl;
@@ -1297,27 +1424,27 @@ OFCondition DSRDocument::writeXML(STD_NAMESPACE ostream &stream,
         }
         stream << "</instance>" << OFendl;
 
-        if ((flags & XF_writeEmptyTags) || !CodingSchemeIdentification.empty())
+        if ((flags & XF_writeEmptyTags) || !CodingSchemeIdentification.isEmpty())
         {
             stream << "<coding>" << OFendl;
             CodingSchemeIdentification.writeXML(stream, flags);
             stream << "</coding>" << OFendl;
         }
-        if ((flags & XF_writeEmptyTags) || !CurrentRequestedProcedureEvidence.empty())
+        if ((flags & XF_writeEmptyTags) || !CurrentRequestedProcedureEvidence.isEmpty())
         {
             stream << "<evidence type=\"Current Requested Procedure\">" << OFendl;
             CurrentRequestedProcedureEvidence.writeXML(stream, flags);
             stream << "</evidence>" << OFendl;
         }
-        if (getDocumentType() != DT_KeyObjectSelectionDocument)
+        if (usesGeneralSRModules)
         {
-            if ((flags & XF_writeEmptyTags) || !PertinentOtherEvidence.empty())
+            if ((flags & XF_writeEmptyTags) || !PertinentOtherEvidence.isEmpty())
             {
                 stream << "<evidence type=\"Pertinent Other\">" << OFendl;
                 PertinentOtherEvidence.writeXML(stream, flags);
                 stream << "</evidence>" << OFendl;
             }
-            if ((flags & XF_writeEmptyTags) || !ReferencedInstances.empty())
+            if ((flags & XF_writeEmptyTags) || !ReferencedInstances.isEmpty())
             {
                 stream << "<reference>" << OFendl;
                 ReferencedInstances.writeXML(stream, flags);
@@ -1326,7 +1453,7 @@ OFCondition DSRDocument::writeXML(STD_NAMESPACE ostream &stream,
         }
 
         stream << "<document>" << OFendl;
-        if (getDocumentType() != DT_KeyObjectSelectionDocument)
+        if (usesGeneralSRModules)
         {
             if (!PreliminaryFlag.isEmpty())
                 stream << "<preliminary flag=\"" << getStringValueFromElement(PreliminaryFlag, tmpString) << "\"/>" << OFendl;
@@ -1364,14 +1491,14 @@ OFCondition DSRDocument::writeXML(STD_NAMESPACE ostream &stream,
             }
             stream << "</verification>" << OFendl;
 
-            if ((flags & XF_writeEmptyTags) || !PredecessorDocuments.empty())
+            if ((flags & XF_writeEmptyTags) || !PredecessorDocuments.isEmpty())
             {
                 stream << "<predecessor>" << OFendl;
                 PredecessorDocuments.writeXML(stream, flags);
                 stream << "</predecessor>" << OFendl;
             }
         }
-        if ((flags & XF_writeEmptyTags) || !IdenticalDocuments.empty())
+        if ((flags & XF_writeEmptyTags) || !IdenticalDocuments.isEmpty())
         {
             stream << "<identical>" << OFendl;
             IdenticalDocuments.writeXML(stream, flags);
@@ -1418,17 +1545,22 @@ void DSRDocument::renderHTMLPatientData(STD_NAMESPACE ostream &stream,
     }
     if (!PatientBirthDate.isEmpty())
     {
-       if (!patientStr.empty())
-           patientStr += ", ";
-       patientStr += '*';
-       patientStr += dicomToReadableDate(getStringValueFromElement(PatientBirthDate, tmpString), string2);
+        if (!patientStr.empty())
+            patientStr += ", ";
+        patientStr += '*';
+        patientStr += dicomToReadableDate(getStringValueFromElement(PatientBirthDate, tmpString), string2);
     }
     if (!PatientID.isEmpty())
     {
-       if (!patientStr.empty())
-           patientStr += ", ";
-       patientStr += '#';
-       patientStr += convertToHTMLString(getStringValueFromElement(PatientID, tmpString), htmlString, flags);
+        if (!patientStr.empty())
+            patientStr += ", ";
+        patientStr += '#';
+        patientStr += convertToHTMLString(getStringValueFromElement(PatientID, tmpString), htmlString, flags);
+        if (!IssuerOfPatientID.isEmpty())
+        {
+            patientStr += ":";
+            patientStr += convertToHTMLString(getStringValueFromElement(IssuerOfPatientID, tmpString), htmlString, flags);
+        }
     }
     if (!patientStr.empty())
         stream << " (" << patientStr << ")";
@@ -1537,7 +1669,9 @@ OFCondition DSRDocument::renderHTML(STD_NAMESPACE ostream &stream,
         /* used for HTML tmpString conversion */
         OFString htmlString;
         /* update only some DICOM attributes */
-        updateAttributes(OFFalse /* updateAll */);
+        updateAttributes(OFFalse /*updateAll*/);
+        /* check whether general SR modules are used */
+        const OFBool usesGeneralSRModules = usesSRDocumentGeneralModule(getDocumentType());
 
         // --- HTML/XHTML document structure (start) ---
 
@@ -1589,11 +1723,7 @@ OFCondition DSRDocument::renderHTML(STD_NAMESPACE ostream &stream,
                 if (newFlags & HF_copyStyleSheetContent)
                 {
                     /* copy content from CSS file */
-#ifdef HAVE_IOS_NOCREATE
-                    STD_NAMESPACE ifstream cssFile(styleSheet, STD_NAMESPACE ios::in | STD_NAMESPACE ios::nocreate);
-#else
-                    STD_NAMESPACE ifstream cssFile(styleSheet, STD_NAMESPACE ios::in);
-#endif
+                    STD_NAMESPACE ifstream cssFile(styleSheet, OFopenmode_in_nocreate);
                     if (cssFile)
                     {
                         char c;
@@ -1715,7 +1845,7 @@ OFCondition DSRDocument::renderHTML(STD_NAMESPACE ostream &stream,
                 stream << "</td>" << OFendl;
                 stream << "</tr>" << OFendl;
             }
-            if (getDocumentType() != DT_KeyObjectSelectionDocument)
+            if (usesGeneralSRModules)
             {
                 /* preliminary flag */
                 if (!PreliminaryFlag.isEmpty())
@@ -1740,7 +1870,7 @@ OFCondition DSRDocument::renderHTML(STD_NAMESPACE ostream &stream,
                     stream << "</tr>" << OFendl;
                 }
                 /* predecessor documents */
-                if (!PredecessorDocuments.empty())
+                if (!PredecessorDocuments.isEmpty())
                 {
                     stream << "<tr>" << OFendl;
                     stream << "<td><b>Predecessor Docs:</b></td>" << OFendl;
@@ -1749,7 +1879,7 @@ OFCondition DSRDocument::renderHTML(STD_NAMESPACE ostream &stream,
                 }
             }
             /* identical documents */
-            if (!IdenticalDocuments.empty())
+            if (!IdenticalDocuments.isEmpty())
             {
                 stream << "<tr>" << OFendl;
                 stream << "<td><b>Identical Docs:</b></td>" << OFendl;
@@ -1757,14 +1887,14 @@ OFCondition DSRDocument::renderHTML(STD_NAMESPACE ostream &stream,
                 stream << "</tr>" << OFendl;
             }
             /* referenced instances */
-            if (!ReferencedInstances.empty())
+            if (!ReferencedInstances.isEmpty())
             {
                 stream << "<tr>" << OFendl;
                 stream << "<td><b>Referenced Objects:</b></td>" << OFendl;
                 renderHTMLReferenceList(stream, ReferencedInstances, flags);
                 stream << "</tr>" << OFendl;
             }
-            if (getDocumentType() != DT_KeyObjectSelectionDocument)
+            if (usesGeneralSRModules)
             {
                 /* verification flag */
                 stream << "<tr>" << OFendl;
@@ -1901,10 +2031,37 @@ OFCondition DSRDocument::setTree(const DSRDocumentTree &tree)
 }
 
 
-OFCondition DSRDocument::setTreeFromRootTemplate(DSRRootTemplate &rootTemplate)
+OFCondition DSRDocument::setTreeFromRootTemplate(DSRRootTemplate &rootTemplate,
+                                                 const OFBool expandTree)
 {
-    /* call the functions doing the real work */
-    return setTree(rootTemplate.getTree());
+    OFCondition result = EC_Normal;
+    /* check whether to expand the included templates (if any) */
+    if (expandTree)
+    {
+        DSRDocumentSubTree *tree = NULL;
+        /* expand tree managed by the template and replace the currently stored tree */
+        result = rootTemplate.getTree().createExpandedSubTree(tree);
+        if (result.good())
+            result = DocumentTree.changeDocumentType(rootTemplate.getDocumentType(), OFTrue /*deleteTree*/);
+        if (result.good())
+            result = DocumentTree.insertSubTree(tree, AM_belowCurrent, RT_unknown, OFFalse /*deleteIfFail*/);
+        /* update IOD-specific DICOM attributes */
+        updateAttributes(OFFalse /*updateAll*/);
+        /* in case of error, free memory */
+        if (result.bad())
+            delete tree;
+    } else {
+        /* call the functions doing the real work */
+        result = setTree(rootTemplate.getTree());
+    }
+    return result;
+}
+
+
+const char *DSRDocument::getSpecificCharacterSet() const
+{
+    /* never return NULL */
+    return OFSTRING_GUARD(getStringValueFromElement(SpecificCharacterSet));
 }
 
 
@@ -1930,8 +2087,8 @@ DSRTypes::E_PreliminaryFlag DSRDocument::getPreliminaryFlag() const
 OFCondition DSRDocument::setPreliminaryFlag(const E_PreliminaryFlag flag)
 {
     OFCondition result = EC_IllegalCall;
-    /* not applicable to Key Object Selection Documents */
-    if (getDocumentType() != DT_KeyObjectSelectionDocument)
+    /* not all SR IODs contain the SR Document General Module */
+    if (usesSRDocumentGeneralModule(getDocumentType()))
     {
         PreliminaryFlagEnum = flag;
         result = EC_Normal;
@@ -1952,7 +2109,13 @@ DSRTypes::E_VerificationFlag DSRDocument::getVerificationFlag() const
 }
 
 
-size_t DSRDocument::getNumberOfVerifyingObservers()
+OFBool DSRDocument::hasVerifyingObservers() const
+{
+    return (VerifyingObserver.card() > 0);
+}
+
+
+size_t DSRDocument::getNumberOfVerifyingObservers() const
 {
     return OFstatic_cast(size_t, VerifyingObserver.card());
 }
@@ -2009,24 +2172,32 @@ OFCondition DSRDocument::getVerifyingObserver(const size_t idx,
 
 DSRSOPInstanceReferenceList &DSRDocument::getPredecessorDocuments()
 {
+    /* pass current value of specific character set */
+    PredecessorDocuments.setSpecificCharacterSet(getSpecificCharacterSet());
     return PredecessorDocuments;
 }
 
 
 DSRSOPInstanceReferenceList &DSRDocument::getIdenticalDocuments()
 {
+    /* pass current value of specific character set */
+    IdenticalDocuments.setSpecificCharacterSet(getSpecificCharacterSet());
     return IdenticalDocuments;
 }
 
 
 DSRSOPInstanceReferenceList &DSRDocument::getCurrentRequestedProcedureEvidence()
 {
+    /* pass current value of specific character set */
+    CurrentRequestedProcedureEvidence.setSpecificCharacterSet(getSpecificCharacterSet());
     return CurrentRequestedProcedureEvidence;
 }
 
 
 DSRSOPInstanceReferenceList &DSRDocument::getPertinentOtherEvidence()
 {
+    /* pass current value of specific character set */
+    PredecessorDocuments.setSpecificCharacterSet(getSpecificCharacterSet());
     return PertinentOtherEvidence;
 }
 
@@ -2039,6 +2210,8 @@ DSRReferencedInstanceList &DSRDocument::getReferencedInstances()
 
 DSRCodingSchemeIdentificationList &DSRDocument::getCodingSchemeIdentification()
 {
+    /* pass current value of specific character set */
+    CodingSchemeIdentification.setSpecificCharacterSet(getSpecificCharacterSet());
     return CodingSchemeIdentification;
 }
 
@@ -2101,6 +2274,13 @@ OFCondition DSRDocument::getInstanceCreatorUID(OFString &value,
 }
 
 
+OFCondition DSRDocument::getTimezoneOffsetFromUTC(OFString &value,
+                                                  const signed long pos) const
+{
+    return getStringValueFromElement(TimezoneOffsetFromUTC, value, pos);
+}
+
+
 OFCondition DSRDocument::getPatientName(OFString &value,
                                         const signed long pos) const
 {
@@ -2119,6 +2299,20 @@ OFCondition DSRDocument::getPatientSex(OFString &value,
                                        const signed long pos) const
 {
     return getStringValueFromElement(PatientSex, value, pos);
+}
+
+
+OFCondition DSRDocument::getPatientSize(OFString &value,
+                                        const signed long pos) const
+{
+    return getStringValueFromElement(PatientSize, value, pos);
+}
+
+
+OFCondition DSRDocument::getPatientWeight(OFString &value,
+                                          const signed long pos) const
+{
+    return getStringValueFromElement(PatientWeight, value, pos);
 }
 
 
@@ -2175,6 +2369,27 @@ OFCondition DSRDocument::getSoftwareVersions(OFString &value,
                                              const signed long pos) const
 {
     return getStringValueFromElement(SoftwareVersions, value, pos);
+}
+
+
+OFCondition DSRDocument::getSynchronizationFrameOfReferenceUID(OFString &value,
+                                                               const signed long pos) const
+{
+    return getStringValueFromElement(SynchronizationFrameOfReferenceUID, value, pos);
+}
+
+
+OFCondition DSRDocument::getSynchronizationTrigger(OFString &value,
+                                                   const signed long pos) const
+{
+    return getStringValueFromElement(SynchronizationTrigger, value, pos);
+}
+
+
+OFCondition DSRDocument::getAcquisitionTimeSynchronized(OFString &value,
+                                                        const signed long pos) const
+{
+    return getStringValueFromElement(AcquisitionTimeSynchronized, value, pos);
 }
 
 
@@ -2248,6 +2463,13 @@ OFCondition DSRDocument::getPatientID(OFString &value,
 }
 
 
+OFCondition DSRDocument::getIssuerOfPatientID(OFString &value,
+                                              const signed long pos) const
+{
+    return getStringValueFromElement(IssuerOfPatientID, value, pos);
+}
+
+
 OFCondition DSRDocument::getSeriesNumber(OFString &value,
                                          const signed long pos) const
 {
@@ -2274,11 +2496,14 @@ OFCondition DSRDocument::getAccessionNumber(OFString &value,
 OFCondition DSRDocument::setSpecificCharacterSet(const OFString &value,
                                                  const OFBool check)
 {
-    /* we only support a single value, i.e. no code extensions */
-    OFCondition result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
+    OFCondition result = (check) ? DcmCodeString::checkStringValue(value, "1-n") : EC_Normal;
     if (result.good())
     {
+        /* try to map the given string to an enum value */
         SpecificCharacterSetEnum = definedTermToCharacterSet(value);
+        if (SpecificCharacterSetEnum == CS_unknown)
+            DCMSR_WARN("Setting unknown/unsupported value for Specific Character Set: " << value);
+        /* in any case, store the passed string value */
         result = SpecificCharacterSet.putOFStringArray(value);
     }
     return result;
@@ -2289,11 +2514,11 @@ OFCondition DSRDocument::setCompletionFlagDescription(const OFString &value,
                                                       const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
-    /* not applicable to Key Object Selection Documents */
-    if (getDocumentType() != DT_KeyObjectSelectionDocument)
+    /* not all SR IODs contain the SR Document General Module */
+    if (usesSRDocumentGeneralModule(getDocumentType()))
     {
         if (check)
-            result = DcmLongString::checkStringValue(value, "1");
+            result = DcmLongString::checkStringValue(value, "1", getSpecificCharacterSet());
         if (result.good())
             result = CompletionFlagDescription.putOFStringArray(value);
     }
@@ -2301,10 +2526,20 @@ OFCondition DSRDocument::setCompletionFlagDescription(const OFString &value,
 }
 
 
+OFCondition DSRDocument::setTimezoneOffsetFromUTC(const OFString &value,
+                                                  const OFBool check)
+{
+    OFCondition result = (check) ? DcmShortString::checkStringValue(value, "1", getSpecificCharacterSet()) : EC_Normal;
+    if (result.good())
+        result = TimezoneOffsetFromUTC.putOFStringArray(value);
+    return result;
+}
+
+
 OFCondition DSRDocument::setPatientName(const OFString &value,
                                         const OFBool check)
 {
-    OFCondition result = (check) ? DcmPersonName::checkStringValue(value, "1") : EC_Normal;
+    OFCondition result = (check) ? DcmPersonName::checkStringValue(value, "1", getSpecificCharacterSet()) : EC_Normal;
     if (result.good())
         result = PatientName.putOFStringArray(value);
     return result;
@@ -2331,10 +2566,30 @@ OFCondition DSRDocument::setPatientSex(const OFString &value,
 }
 
 
+OFCondition DSRDocument::setPatientSize(const OFString &value,
+                                        const OFBool check)
+{
+    OFCondition result = (check) ? DcmDecimalString::checkStringValue(value, "1") : EC_Normal;
+    if (result.good())
+        result = PatientSize.putOFStringArray(value);
+    return result;
+}
+
+
+OFCondition DSRDocument::setPatientWeight(const OFString &value,
+                                          const OFBool check)
+{
+    OFCondition result = (check) ? DcmDecimalString::checkStringValue(value, "1") : EC_Normal;
+    if (result.good())
+        result = PatientWeight.putOFStringArray(value);
+    return result;
+}
+
+
 OFCondition DSRDocument::setReferringPhysicianName(const OFString &value,
                                                    const OFBool check)
 {
-    OFCondition result = (check) ? DcmPersonName::checkStringValue(value, "1") : EC_Normal;
+    OFCondition result = (check) ? DcmPersonName::checkStringValue(value, "1", getSpecificCharacterSet()) : EC_Normal;
     if (result.good())
         result = ReferringPhysicianName.putOFStringArray(value);
     return result;
@@ -2344,7 +2599,7 @@ OFCondition DSRDocument::setReferringPhysicianName(const OFString &value,
 OFCondition DSRDocument::setStudyDescription(const OFString &value,
                                              const OFBool check)
 {
-    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
+    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1", getSpecificCharacterSet()) : EC_Normal;
     if (result.good())
         result = StudyDescription.putOFStringArray(value);
     return result;
@@ -2354,7 +2609,7 @@ OFCondition DSRDocument::setStudyDescription(const OFString &value,
 OFCondition DSRDocument::setSeriesDescription(const OFString &value,
                                               const OFBool check)
 {
-    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
+    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1", getSpecificCharacterSet()) : EC_Normal;
     if (result.good())
         result = SeriesDescription.putOFStringArray(value);
     return result;
@@ -2364,7 +2619,7 @@ OFCondition DSRDocument::setSeriesDescription(const OFString &value,
 OFCondition DSRDocument::setProtocolName(const OFString &value,
                                          const OFBool check)
 {
-    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
+    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1", getSpecificCharacterSet()) : EC_Normal;
     if (result.good())
         result = ProtocolName.putOFStringArray(value);
     return result;
@@ -2374,7 +2629,7 @@ OFCondition DSRDocument::setProtocolName(const OFString &value,
 OFCondition DSRDocument::setManufacturer(const OFString &value,
                                          const OFBool check)
 {
-    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
+    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1", getSpecificCharacterSet()) : EC_Normal;
     if (result.good())
         result = Manufacturer.putOFStringArray(value);
     return result;
@@ -2384,7 +2639,7 @@ OFCondition DSRDocument::setManufacturer(const OFString &value,
 OFCondition DSRDocument::setManufacturerModelName(const OFString &value,
                                                   const OFBool check)
 {
-    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
+    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1", getSpecificCharacterSet()) : EC_Normal;
     if (result.good())
         result = ManufacturerModelName.putOFStringArray(value);
     return result;
@@ -2394,7 +2649,7 @@ OFCondition DSRDocument::setManufacturerModelName(const OFString &value,
 OFCondition DSRDocument::setDeviceSerialNumber(const OFString &value,
                                                const OFBool check)
 {
-    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
+    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1", getSpecificCharacterSet()) : EC_Normal;
     if (result.good())
         result = DeviceSerialNumber.putOFStringArray(value);
     return result;
@@ -2404,9 +2659,39 @@ OFCondition DSRDocument::setDeviceSerialNumber(const OFString &value,
 OFCondition DSRDocument::setSoftwareVersions(const OFString &value,
                                              const OFBool check)
 {
-    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1-n") : EC_Normal;
+    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1-n", getSpecificCharacterSet()) : EC_Normal;
     if (result.good())
         result = SoftwareVersions.putOFStringArray(value);
+    return result;
+}
+
+
+OFCondition DSRDocument::setSynchronizationFrameOfReferenceUID(const OFString &value,
+                                                               const OFBool check)
+{
+    OFCondition result = (check) ? DcmUniqueIdentifier::checkStringValue(value, "1") : EC_Normal;
+    if (result.good())
+        result = SynchronizationFrameOfReferenceUID.putOFStringArray(value);
+    return result;
+}
+
+
+OFCondition DSRDocument::setSynchronizationTrigger(const OFString &value,
+                                                   const OFBool check)
+{
+    OFCondition result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
+    if (result.good())
+        result = SynchronizationTrigger.putOFStringArray(value);
+    return result;
+}
+
+
+OFCondition DSRDocument::setAcquisitionTimeSynchronized(const OFString &value,
+                                                        const OFBool check)
+{
+    OFCondition result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
+    if (result.good())
+        result = AcquisitionTimeSynchronized.putOFStringArray(value);
     return result;
 }
 
@@ -2474,7 +2759,7 @@ OFCondition DSRDocument::setSeriesTime(const OFString &value,
 OFCondition DSRDocument::setStudyID(const OFString &value,
                                     const OFBool check)
 {
-    OFCondition result = (check) ? DcmShortString::checkStringValue(value, "1") : EC_Normal;
+    OFCondition result = (check) ? DcmShortString::checkStringValue(value, "1", getSpecificCharacterSet()) : EC_Normal;
     if (result.good())
         result = StudyID.putOFStringArray(value);
     return result;
@@ -2484,9 +2769,19 @@ OFCondition DSRDocument::setStudyID(const OFString &value,
 OFCondition DSRDocument::setPatientID(const OFString &value,
                                       const OFBool check)
 {
-    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
+    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1", getSpecificCharacterSet()) : EC_Normal;
     if (result.good())
         result = PatientID.putOFStringArray(value);
+    return result;
+}
+
+
+OFCondition DSRDocument::setIssuerOfPatientID(const OFString &value,
+                                              const OFBool check)
+{
+    OFCondition result = (check) ? DcmLongString::checkStringValue(value, "1", getSpecificCharacterSet()) : EC_Normal;
+    if (result.good())
+        result = IssuerOfPatientID.putOFStringArray(value);
     return result;
 }
 
@@ -2514,7 +2809,7 @@ OFCondition DSRDocument::setInstanceNumber(const OFString &value,
 OFCondition DSRDocument::setAccessionNumber(const OFString &value,
                                             const OFBool check)
 {
-    OFCondition result = (check) ? DcmShortString::checkStringValue(value, "1") : EC_Normal;
+    OFCondition result = (check) ? DcmShortString::checkStringValue(value, "1", getSpecificCharacterSet()) : EC_Normal;
     if (result.good())
         result = AccessionNumber.putOFStringArray(value);
     return result;
@@ -2533,7 +2828,10 @@ void DSRDocument::createNewStudy()
     StudyID.clear();
     AccessionNumber.clear();
     StudyDescription.clear();
-    /* also creates new study (since UID is empty) and SOP instance */
+    /* also need to clear the attributes from the Patient Study Module */
+    PatientSize.clear();
+    PatientWeight.clear();
+    /* the following method also creates new a study (since UID is empty) and SOP instance */
     createNewSeries();
 }
 
@@ -2618,8 +2916,8 @@ OFCondition DSRDocument::changeDocumentType(const E_DocumentType documentType)
 OFCondition DSRDocument::createRevisedVersion(const OFBool clearList)
 {
     OFCondition result = EC_IllegalCall;
-    /* not applicable to Key Object Selection Documents */
-    if (getDocumentType() != DT_KeyObjectSelectionDocument)
+    /* not all SR IODs contain the SR Document General Module */
+    if (usesSRDocumentGeneralModule(getDocumentType()))
     {
         /* check whether document is already completed */
         if (CompletionFlagEnum == CF_Complete)
@@ -2665,14 +2963,14 @@ OFCondition DSRDocument::completeDocument(const OFString &description,
                                           const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
-    /* not applicable to Key Object Selection Documents */
-    if (getDocumentType() != DT_KeyObjectSelectionDocument)
+    /* not all SR IODs contain the SR Document General Module */
+    if (usesSRDocumentGeneralModule(getDocumentType()))
     {
         /* if document is not already completed */
         if (CompletionFlagEnum != CF_Complete)
         {
             /* check parameter for conformance with VR and VM (if needed) */
-            result = (check) ? DcmLongString::checkStringValue(description, "1") : EC_Normal;
+            result = (check) ? DcmLongString::checkStringValue(description, "1", getSpecificCharacterSet()) : EC_Normal;
             if (result.good())
             {
                 /* completed for now and ever */
@@ -2703,8 +3001,8 @@ OFCondition DSRDocument::verifyDocument(const OFString &observerName,
                                         const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
-    /* not applicable to Key Object Selection Documents */
-    if (getDocumentType() != DT_KeyObjectSelectionDocument)
+    /* not all SR IODs contain the SR Document General Module */
+    if (usesSRDocumentGeneralModule(getDocumentType()))
     {
         /* verify completed documents only */
         if (CompletionFlagEnum == CF_Complete)
@@ -2718,9 +3016,9 @@ OFCondition DSRDocument::verifyDocument(const OFString &observerName,
                     if (observerCode.isEmpty() || observerCode.isValid())
                         result = EC_Normal;
                     if (result.good())
-                        result = DcmPersonName::checkStringValue(observerName, "1");
+                        result = DcmPersonName::checkStringValue(observerName, "1", getSpecificCharacterSet());
                     if (result.good())
-                        result = DcmLongString::checkStringValue(organization, "1");
+                        result = DcmLongString::checkStringValue(organization, "1", getSpecificCharacterSet());
                     if (result.good())
                         result = DcmDateTime::checkStringValue(dateTime, "1");
                 } else {
@@ -2787,8 +3085,11 @@ OFCondition DSRDocument::finalizeDocument()
 }
 
 
-void DSRDocument::updateAttributes(const OFBool updateAll)
+void DSRDocument::updateAttributes(const OFBool updateAll,
+                                   const OFBool verboseMode)
 {
+    if (verboseMode)
+        DCMSR_DEBUG("Updating " << (updateAll ? "all " : "") << "DICOM header attributes");
     const E_DocumentType documentType = getDocumentType();
     /* retrieve SOP class UID from internal document type */
     SOPClassUID.putString(documentTypeToSOPClassUID(documentType));
@@ -2796,6 +3097,14 @@ void DSRDocument::updateAttributes(const OFBool updateAll)
     Modality.putString(documentTypeToModality(documentType));
     if (updateAll)
     {
+        OFString tmpString;
+        /* determine local timezone (if required) */
+        if (requiresTimezoneModule(documentType) && TimezoneOffsetFromUTC.isEmpty())
+        {
+            DCMSR_DEBUG("  Determining local timezone for Timezone Offset From UTC");
+            TimezoneOffsetFromUTC.putOFStringArray(localTimezone(tmpString));
+        }
+
         /* create new instance number if required (type 1) */
         if (InstanceNumber.isEmpty())
             InstanceNumber.putString("1");
@@ -2807,7 +3116,8 @@ void DSRDocument::updateAttributes(const OFBool updateAll)
         /* create new SOP instance UID if required */
         if (SOPInstanceUID.isEmpty())
         {
-            OFString tmpString;
+            if (verboseMode)
+                DCMSR_DEBUG("  Generating new value for SOP Instance UID");
             SOPInstanceUID.putString(dcmGenerateUniqueIdentifier(uid, SITE_INSTANCE_UID_ROOT));
             /* set instance creation date to current date (YYYYMMDD) */
             InstanceCreationDate.putOFStringArray(currentDate(tmpString));
@@ -2818,10 +3128,18 @@ void DSRDocument::updateAttributes(const OFBool updateAll)
         }
         /* create new study instance UID if required */
         if (StudyInstanceUID.isEmpty())
+        {
+            if (verboseMode)
+                DCMSR_DEBUG("  Generating new value for Study Instance UID");
             StudyInstanceUID.putString(dcmGenerateUniqueIdentifier(uid, SITE_STUDY_UID_ROOT));
+        }
         /* create new series instance UID if required */
         if (SeriesInstanceUID.isEmpty())
+        {
+            if (verboseMode)
+                DCMSR_DEBUG("  Generating new value for Series Instance UID");
             SeriesInstanceUID.putString(dcmGenerateUniqueIdentifier(uid, SITE_SERIES_UID_ROOT));
+        }
 
         /* check and set content date if required */
         if (ContentDate.isEmpty())
@@ -2830,18 +3148,9 @@ void DSRDocument::updateAttributes(const OFBool updateAll)
         if (ContentTime.isEmpty())
             ContentTime.putString(getStringValueFromElement(InstanceCreationTime));
     }
-    if (documentType == DT_KeyObjectSelectionDocument)
+    /* not all SR IODs contain the SR Document General Module */
+    if (usesSRDocumentGeneralModule(documentType))
     {
-        /* these flags are not used for Key Object Selection Documents */
-        PreliminaryFlagEnum = PF_invalid;
-        CompletionFlagEnum = CF_invalid;
-        VerificationFlagEnum = VF_invalid;
-        PreliminaryFlag.clear();
-        CompletionFlag.clear();
-        CompletionFlagDescription.clear();
-        VerificationFlag.clear();
-        VerifyingObserver.clear();
-    } else {
         /* set preliminary flag */
         PreliminaryFlag.putString(preliminaryFlagToEnumeratedValue(PreliminaryFlagEnum));
         /* check and adjust completion flag if required */
@@ -2852,5 +3161,15 @@ void DSRDocument::updateAttributes(const OFBool updateAll)
         if (VerificationFlagEnum == VF_invalid)
             VerificationFlagEnum = VF_Unverified;
         VerificationFlag.putString(verificationFlagToEnumeratedValue(VerificationFlagEnum));
+    } else {
+        /* if not, reset the various flags and clear related information */
+        PreliminaryFlagEnum = PF_invalid;
+        CompletionFlagEnum = CF_invalid;
+        VerificationFlagEnum = VF_invalid;
+        PreliminaryFlag.clear();
+        CompletionFlag.clear();
+        CompletionFlagDescription.clear();
+        VerificationFlag.clear();
+        VerifyingObserver.clear();
     }
 }

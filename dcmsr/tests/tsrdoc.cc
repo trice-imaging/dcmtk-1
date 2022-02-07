@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2014-2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2014-2021, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation are maintained by
@@ -24,7 +24,64 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #include "dcmtk/ofstd/oftest.h"
+
 #include "dcmtk/dcmsr/dsrdoc.h"
+
+
+OFTEST(dcmsr_setAndGetPatientData)
+{
+    DSRDocument doc;
+    OFString value;
+    /* check whether the values are set correctly */
+    OFCHECK(doc.setPatientName("Dow^John").good());
+    OFCHECK(doc.getPatientName(value).good());
+    OFCHECK_EQUAL(value, "Dow^John");
+    OFCHECK(doc.setPatientBirthDate("19600707").good());
+    OFCHECK(doc.getPatientBirthDate(value).good());
+    OFCHECK_EQUAL(value, "19600707");
+    OFCHECK(doc.setPatientID("0815").good());
+    OFCHECK(doc.getPatientID(value).good());
+    OFCHECK_EQUAL(value, "0815");
+    OFCHECK(doc.setIssuerOfPatientID("The Assigning Authority").good());
+    OFCHECK(doc.getIssuerOfPatientID(value).good());
+    OFCHECK_EQUAL(value, "The Assigning Authority");
+    OFCHECK(doc.setPatientSex("M").good());
+    OFCHECK(doc.getPatientSex(value).good());
+    OFCHECK_EQUAL(value, "M");
+    /* also check some recently introduced attributes */
+    OFCHECK(doc.setPatientSize("1.88").good());
+    OFCHECK(doc.getPatientSize(value).good());
+    OFCHECK_EQUAL(value, "1.88");
+    OFCHECK(doc.setPatientWeight("80").good());
+    OFCHECK(doc.getPatientWeight(value).good());
+    OFCHECK_EQUAL(value, "80");
+}
+
+
+OFTEST(dcmsr_setSpecificCharacterSet)
+{
+    /* first, create an SR document and set the character set */
+    DSRDocument doc;
+    OFCHECK_EQUAL(doc.getSpecificCharacterSetType(), DSRTypes::CS_ASCII);
+    OFCHECK(doc.setSpecificCharacterSet("ISO_IR 100").good());
+    /* then pass a value with special or invalid characters to a setXXX() method */
+    OFCHECK(doc.setPatientName("Riesmeier^J\366rg", OFTrue /*check*/).good());
+    OFCHECK(doc.setPatientName("^^^^^^", OFTrue /*check*/).bad());
+    OFCHECK(doc.setPatientName("^^^^^^", OFFalse /*check*/).good());
+    OFCHECK(doc.setStudyDescription("not allowed: \n\010\r\014", OFTrue /*check*/).bad());
+    OFCHECK(doc.setStudyDescription("not allowed: \n\010\r\014", OFFalse /*check*/).good());
+    /* disable VR checker by setting and invalid character set and try again */
+    OFCHECK(doc.setSpecificCharacterSet("UNKNOWN").good());
+    OFCHECK_EQUAL(doc.getSpecificCharacterSetType(), DSRTypes::CS_invalid);
+    OFCHECK(doc.setPatientName("^^^^^^", OFTrue /*check*/).good());
+    OFCHECK(doc.setStudyDescription("not allowed: \n\010\r\014", OFTrue /*check*/).good());
+    /* set default character repertoire (ASCII) and try again */
+    OFCHECK(doc.setSpecificCharacterSet("").good());
+    OFCHECK_EQUAL(doc.getSpecificCharacterSetType(), DSRTypes::CS_ASCII);
+    OFCHECK(doc.setPatientName("Riesmeier^J\366rg", OFTrue /*check*/).bad());
+    OFCHECK(doc.setSpecificCharacterSet("ISO_IR 6").good());
+    OFCHECK_EQUAL(doc.getSpecificCharacterSetType(), DSRTypes::CS_ASCII);
+}
 
 
 OFTEST(dcmsr_changeDocumentType_1)
@@ -63,7 +120,7 @@ OFTEST(dcmsr_changeDocumentType_2)
     /* and, try to change the document type */
     OFCHECK(doc.changeDocumentType(DSRTypes::DT_BasicTextSR).bad());
     OFCHECK(doc.changeDocumentType(DSRTypes::DT_EnhancedSR).bad());
-    OFCHECK(doc.changeDocumentType(DSRTypes::DT_ColonCadSR).bad());
+    OFCHECK(doc.changeDocumentType(DSRTypes::DT_XRayRadiationDoseSR).bad());
     OFCHECK(doc.changeDocumentType(DSRTypes::DT_Comprehensive3DSR).good());
     OFCHECK(doc.changeDocumentType(DSRTypes::DT_ComprehensiveSR).good());
 }

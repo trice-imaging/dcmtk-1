@@ -98,17 +98,21 @@
 
 METHODDEF(void)
 jpeg_undifference1(j_decompress_ptr cinfo, int comp_index,
-           JDIFFROW diff_buf, JDIFFROW prev_row,
+           const JDIFFROW diff_buf, const JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
+  (void)cinfo;
+  (void)comp_index;
   UNDIFFERENCE_1D(INITIAL_PREDICTOR2);
 }
 
 METHODDEF(void)
 jpeg_undifference2(j_decompress_ptr cinfo, int comp_index,
-           JDIFFROW diff_buf, JDIFFROW prev_row,
+           const JDIFFROW diff_buf, const JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
+  (void)cinfo;
+  (void)comp_index;
   UNDIFFERENCE_2D(PREDICTOR2);
   JPEG_UNUSED(Rc);
   JPEG_UNUSED(Rb);
@@ -116,9 +120,11 @@ jpeg_undifference2(j_decompress_ptr cinfo, int comp_index,
 
 METHODDEF(void)
 jpeg_undifference3(j_decompress_ptr cinfo, int comp_index,
-           JDIFFROW diff_buf, JDIFFROW prev_row,
+           const JDIFFROW diff_buf, const JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
+  (void)cinfo;
+  (void)comp_index;
   UNDIFFERENCE_2D(PREDICTOR3);
   JPEG_UNUSED(Rc);
   JPEG_UNUSED(Rb);
@@ -126,9 +132,11 @@ jpeg_undifference3(j_decompress_ptr cinfo, int comp_index,
 
 METHODDEF(void)
 jpeg_undifference4(j_decompress_ptr cinfo, int comp_index,
-           JDIFFROW diff_buf, JDIFFROW prev_row,
+           const JDIFFROW diff_buf, const JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
+  (void)cinfo;
+  (void)comp_index;
   UNDIFFERENCE_2D(PREDICTOR4);
   JPEG_UNUSED(Rc);
   JPEG_UNUSED(Rb);
@@ -136,9 +144,11 @@ jpeg_undifference4(j_decompress_ptr cinfo, int comp_index,
 
 METHODDEF(void)
 jpeg_undifference5(j_decompress_ptr cinfo, int comp_index,
-           JDIFFROW diff_buf, JDIFFROW prev_row,
+           const JDIFFROW diff_buf, const JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
+  (void)cinfo;
+  (void)comp_index;
   SHIFT_TEMPS
   UNDIFFERENCE_2D(PREDICTOR5);
   JPEG_UNUSED(Rc);
@@ -147,9 +157,11 @@ jpeg_undifference5(j_decompress_ptr cinfo, int comp_index,
 
 METHODDEF(void)
 jpeg_undifference6(j_decompress_ptr cinfo, int comp_index,
-           JDIFFROW diff_buf, JDIFFROW prev_row,
+           const JDIFFROW diff_buf, const JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
+  (void)cinfo;
+  (void)comp_index;
   SHIFT_TEMPS
   UNDIFFERENCE_2D(PREDICTOR6);
   JPEG_UNUSED(Rc);
@@ -158,9 +170,11 @@ jpeg_undifference6(j_decompress_ptr cinfo, int comp_index,
 
 METHODDEF(void)
 jpeg_undifference7(j_decompress_ptr cinfo, int comp_index,
-           JDIFFROW diff_buf, JDIFFROW prev_row,
+           const JDIFFROW diff_buf, const JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
+  (void)cinfo;
+  (void)comp_index;
   SHIFT_TEMPS
   UNDIFFERENCE_2D(PREDICTOR7);
   JPEG_UNUSED(Rc);
@@ -177,9 +191,11 @@ jpeg_undifference7(j_decompress_ptr cinfo, int comp_index,
 
 METHODDEF(void)
 jpeg_undifference_first_row(j_decompress_ptr cinfo, int comp_index,
-                JDIFFROW diff_buf, JDIFFROW prev_row,
+                const JDIFFROW diff_buf, JDIFFROW prev_row,
                 JDIFFROW undiff_buf, JDIMENSION width)
 {
+
+  (void)prev_row;
   j_lossless_d_ptr losslsd = (j_lossless_d_ptr) cinfo->codec;
 
   UNDIFFERENCE_1D(INITIAL_PREDICTORx);

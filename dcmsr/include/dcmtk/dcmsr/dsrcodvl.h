@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2019, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,7 +28,6 @@
 
 #include "dcmtk/dcmsr/dsrtypes.h"
 
-#include "dcmtk/ofstd/ofstring.h"
 #include "dcmtk/ofstd/ofexbl.h"
 
 
@@ -52,7 +51,7 @@ class DCMTK_DCMSR_EXPORT DSRBasicCodedEntry
      ** @param  codeValue               identifier of the code to be set that is unambiguous
      *                                  within the coding scheme.  (VR=SH/UC/UR, mandatory)
      *  @param  codingSchemeDesignator  identifier of the coding scheme in which the code for
-     *                                  a term is defined.  (VR=SH, mandatory)
+     *                                  a term is defined.  (VR=SH, conditional)
      *  @param  codeMeaning             human-readable translation of the 'codeValue'.  Can be
      *                                  used for display when code dictionary is not available.
      *                                  (VR=LO, mandatory)
@@ -72,7 +71,7 @@ class DCMTK_DCMSR_EXPORT DSRBasicCodedEntry
      ** @param  codeValue               identifier of the code to be set that is unambiguous
      *                                  within the coding scheme.  (VR=SH/UC/UR, mandatory)
      *  @param  codingSchemeDesignator  identifier of the coding scheme in which the code for
-     *                                  a term is defined.  (VR=SH, mandatory)
+     *                                  a term is defined.  (VR=SH, conditional)
      *  @param  codingSchemeVersion     version of the coding scheme.  May be used to identify
      *                                  the version of a coding scheme if necessary to resolve
      *                                  ambiguity in the 'codeValue' or 'codeMeaning'.  (VR=SH,
@@ -97,9 +96,9 @@ class DCMTK_DCMSR_EXPORT DSRBasicCodedEntry
     const DSRTypes::E_CodeValueType CodeValueType;
     /// Code Value (VR=SH/UC/UR, type 1)
     const OFString CodeValue;
-    /// Coding Scheme Designator (VR=SH, type 1)
+    /// Coding Scheme Designator (VR=SH, type 1C)
     const OFString CodingSchemeDesignator;
-    /// Coding Scheme Version (VR=SH, 1C)
+    /// Coding Scheme Version (VR=SH, type 1C)
     const OFString CodingSchemeVersion;
     /// Code Meaning (VR=LO, type 1)
     const OFString CodeMeaning;
@@ -136,7 +135,7 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
      ** @param  codeValue               identifier of the code to be set that is unambiguous
      *                                  within the coding scheme.  (VR=SH/UC/UR, mandatory)
      *  @param  codingSchemeDesignator  identifier of the coding scheme in which the code for
-     *                                  a term is defined.  (VR=SH, mandatory)
+     *                                  a term is defined.  (VR=SH, conditional)
      *  @param  codeMeaning             human-readable translation of the 'codeValue'.  Can be
      *                                  used for display when code dictionary is not available.
      *                                  (VR=LO, mandatory)
@@ -160,7 +159,7 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
      ** @param  codeValue               identifier of the code to be set that is unambiguous
      *                                  within the coding scheme.  (VR=SH/UC/UR, mandatory)
      *  @param  codingSchemeDesignator  identifier of the coding scheme in which the code for
-     *                                  a term is defined.  (VR=SH, mandatory)
+     *                                  a term is defined.  (VR=SH, conditional)
      *  @param  codingSchemeVersion     version of the coding scheme.  May be used to identify
      *                                  the version of a coding scheme if necessary to resolve
      *                                  ambiguity in the 'codeValue' or 'codeMeaning'.  (VR=SH,
@@ -198,21 +197,40 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
      */
     DSRCodedEntryValue &operator=(const DSRCodedEntryValue &codedEntryValue);
 
-    /** comparison operator.
-     *  Two codes are equal if the code value, coding scheme designator and the (optional)
-     *  coding scheme version are equal.  The code meaning is not relevant for this check.
-     ** @param  codedEntryValue  code which should be compared to the current one
+    /** comparison operator "equal".
+     *  Two codes are equal if the code value, the coding scheme designator and the (optional)
+     *  coding scheme version are equal.  The code meaning or attributes from the "Enhanced
+     *  Encoding Mode" are not used for this check.
+     ** @param  codedEntryValue  code that should be compared to the current one
      ** @return OFTrue if both codes are equal, OFFalse otherwise
      */
     OFBool operator==(const DSRCodedEntryValue &codedEntryValue) const;
 
-    /** comparison operator.
-     *  Two codes are equal if the code value, coding scheme designator and the (optional)
-     *  coding scheme version are equal.  The code meaning is not relevant for this check.
-     ** @param  basicCodedEntry  code which should be compared to the current one
+    /** comparison operator "not equal".
+     *  Two codes are not equal if either the code value or the coding scheme designator
+     *  or the (optional) coding scheme version are not equal.  The code meaning is not
+     *  used for this check.
+     ** @param  codedEntryValue  code that should be compared to the current one
+     ** @return OFTrue if both codes are not equal, OFFalse otherwise
+     */
+    OFBool operator!=(const DSRCodedEntryValue &codedEntryValue) const;
+
+    /** comparison operator "equal".
+     *  Two codes are equal if the code value, the coding scheme designator and the (optional)
+     *  coding scheme version are equal.  The code meaning is not used for this check.
+     ** @param  basicCodedEntry  code that should be compared to the current one
      ** @return OFTrue if both codes are equal, OFFalse otherwise
      */
     OFBool operator==(const DSRBasicCodedEntry &basicCodedEntry) const;
+
+    /** comparison operator "not equal".
+     *  Two codes are not equal if either the code value or the coding scheme designator
+     *  or the (optional) coding scheme version are not equal.  The code meaning is not
+     *  used for this check.
+     ** @param  basicCodedEntry  code that should be compared to the current one
+     ** @return OFTrue if both codes are not equal, OFFalse otherwise
+     */
+    OFBool operator!=(const DSRBasicCodedEntry &basicCodedEntry) const;
 
     /** clear all internal variables.
      *  Since an empty code is invalid the code becomes invalid afterwards.
@@ -220,7 +238,7 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
     virtual void clear();
 
     /** check whether the current code is valid.  This check only covers the "Basic Coded Entry
-     *  Attributes".  See checkCode() for details.
+     *  Attributes".  An empty code is not valid.  See checkCode() for details.
      ** @return OFTrue if code is valid, OFFalse otherwise
      */
     virtual OFBool isValid() const;
@@ -230,6 +248,14 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
      ** @return OFTrue if code is empty, OFFalse otherwise
      */
     virtual OFBool isEmpty() const;
+
+    /** check whether the current code is complete, i.e.\ whether the three (two for URN code
+     *  value) mandatory components of the code are non-empty.  This is just a basic check
+     *  that might be useful for "validating" input data.  See isValid() for a more
+     *  sophisticated way of checking the current code.
+     ** @return OFTrue if code is complete, OFFalse otherwise
+     */
+    virtual OFBool isComplete() const;
 
     /** print code.
      *  The output of a typical code triple looks like this: (1234,99_OFFIS_DCMTK,"Code
@@ -253,7 +279,7 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
      *  However, this method always reads the first item from the given sequence.  If another
      *  item should be read (e.g. a modifier), the method readSequenceItem() should be used.
      ** @param  dataset  DICOM dataset from which the code sequence should be read
-     *  @param  tagKey   DICOM tag specifying the attribute (= sequence) which should be read
+     *  @param  tagKey   DICOM tag specifying the attribute (= sequence) that should be read
      *  @param  type     value type of the sequence (valid value: "1", "2", something else).
      *                   This parameter is used for checking purpose, any difference is
      *                   reported.
@@ -281,7 +307,7 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
 
     /** write code sequence to dataset
      ** @param  dataset  DICOM dataset to which the code sequence should be written
-     *  @param  tagKey   DICOM tag specifying the attribute (= sequence) which should be
+     *  @param  tagKey   DICOM tag specifying the attribute (= sequence) that should be
      *                   written
      ** @return status, EC_Normal if successful, an error code otherwise
      */
@@ -294,7 +320,7 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     OFCondition writeSequenceItem(DcmItem &item,
-                                  const DcmTagKey &tagKey);
+                                  const DcmTagKey &tagKey) const;
 
     /** read code from XML document.
      *  Please note that only the "Basic Coded Entry Attributes" are supported by this method.
@@ -491,7 +517,7 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
      ** @param  codeValue               identifier of the code to be set that is unambiguous
      *                                  within the coding scheme.  (VR=SH/UC/UR, mandatory)
      *  @param  codingSchemeDesignator  identifier of the coding scheme in which the code for
-     *                                  a term is defined.  (VR=SH, mandatory)
+     *                                  a term is defined.  (VR=SH, conditional)
      *                                  Designators beginning with "99" and the designator
      *                                  "L" are defined to be private or local coding schemes.
      *  @param  codeMeaning             human-readable translation of the 'codeValue'.  Can be
@@ -523,7 +549,7 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
      ** @param  codeValue               identifier of the code to be set that is unambiguous
      *                                  within the coding scheme.  (VR=SH, mandatory)
      *  @param  codingSchemeDesignator  identifier of the coding scheme in which the code for
-     *                                  a term is defined.  (VR=SH, mandatory)
+     *                                  a term is defined.  (VR=SH, conditional)
      *                                  Designators beginning with "99" and the designator
      *                                  "L" are defined to be private or local coding schemes.
      *  @param  codingSchemeVersion     version of the coding scheme.  May be used to identify
@@ -563,9 +589,7 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
 
     /** specify the "Enhanced Encoding Mode" for this code.
      *  This method should be used for private context groups, which are not identified by a
-     *  context identifier and mapping resource.  Before setting the code, it is usually
-     *  checked.  If the code is invalid, the current code is not replaced and remains
-     *  unchanged.
+     *  context identifier and mapping resource.
      ** @param  contextUID  uniquely identifies the context group.  (VR=UI, mandatory)
      *  @param  check       if enabled, the given value is checked for validity (conformance
      *                      with corresponding VR and VM) before setting it.  An empty value
@@ -637,7 +661,7 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
 
     /** write code to dataset.
      *  This method also supports the attributes from the "Enhanced Encoding Mode".
-     ** @param  dataset    DICOM dataset to which the code should be written
+     ** @param  dataset  DICOM dataset to which the code should be written
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     OFCondition writeItem(DcmItem &dataset) const;
@@ -645,9 +669,10 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
   // --- static helper functions ---
 
     /** check the specified code for validity.
-     *  Currently, the only checks performed are that the three mandatory string values are
-     *  non-empty and that all four values conform to the corresponding VR and VM.  Later on,
-     *  it might also be checked whether the specified code really belongs to the coding
+     *  Currently, the only checks performed are that the three (two for URN code value)
+     *  mandatory string values are non-empty and that all four values conform to the
+     *  corresponding VR and VM.  Later on, it might also be checked whether the specified
+     *  code really belongs to the coding
      *  scheme, etc.  This requires the presence of the relevant code dictionaries, though.
      ** @param  codeValue               code value to be checked
      *  @param  codingSchemeDesignator  coding scheme designator to be checked
@@ -667,7 +692,7 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
      *  Please note that the check that is currently performed is very simple.  So, the user
      *  is advised to passed the correct type (short, long or URN) to the appropriate method
      *  and should not rely on this automatic detection.  Specifically, URN values are only
-     *  detected by the prefix "urn:" (i.e. no URL allowed), and the maximum length of a
+     *  detected by the prefix "urn:" or by the substring "://".  The maximum length of a
      *  short code value is determined based on the number of bytes (not characters, since
      *  the character set is unknown to this function - and to this class).
      ** @param  codeValue  code value to be checked
@@ -684,9 +709,9 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
     DSRTypes::E_CodeValueType CodeValueType;
     /// Code Value (VR=SH/UC/UR, type 1)
     OFString CodeValue;
-    /// Coding Scheme Designator (VR=SH, type 1)
+    /// Coding Scheme Designator (VR=SH, type 1C)
     OFString CodingSchemeDesignator;
-    /// Coding Scheme Version (VR=SH, 1C)
+    /// Coding Scheme Version (VR=SH, type 1C)
     OFString CodingSchemeVersion;
     /// Code Meaning (VR=LO, type 1)
     OFString CodeMeaning;
@@ -701,6 +726,10 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
     OFString ContextUID;
     /// Mapping Resource (VR=CS, type 1C)
     OFString MappingResource;
+    /// Mapping Resource UID (VR=UI, type 3)
+     // - tbd: optional attribute not yet supported
+    /// Mapping Resource Name (VR=LO, type 3)
+     // - tbd: optional attribute not yet supported
     /// Context Group Version (VR=DT, type 1C)
     OFString ContextGroupVersion;
     /// Context Group Local Version (VR=DT, type 1C)
@@ -708,6 +737,17 @@ class DCMTK_DCMSR_EXPORT DSRCodedEntryValue
     /// Context Group Extension Creator UID (VR=UI, type 1C)
     OFString ContextGroupExtensionCreatorUID;
 };
+
+
+/** output stream operator for coded entry values.
+ *  Internally, the DSRCodedEntryValue::print() method is used, i.e. the output looks
+ *  like this: (1234,99_OFFIS_DCMTK,"Code Meaning") or (cm,UCUM[1.4],"centimeter")
+ *  @param  stream           output stream to which the coded entry value is printed
+ *  @param  codedEntryValue  coded entry value to be printed
+ *  @return reference to output stream
+ */
+DCMTK_DCMSR_EXPORT STD_NAMESPACE ostream &operator<<(STD_NAMESPACE ostream &stream,
+                                                     const DSRCodedEntryValue& codedEntryValue);
 
 
 #endif

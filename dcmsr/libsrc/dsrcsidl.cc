@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2003-2015, OFFIS e.V.
+ *  Copyright (C) 2003-2016, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,10 +26,19 @@
 #include "dcmtk/dcmsr/dsrcsidl.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
 
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcuid.h"
+#include "dcmtk/dcmdata/dcvrcs.h"
+#include "dcmtk/dcmdata/dcvrlo.h"
+#include "dcmtk/dcmdata/dcvrsh.h"
+#include "dcmtk/dcmdata/dcvrst.h"
+#include "dcmtk/dcmdata/dcvrui.h"
+
 
 DSRCodingSchemeIdentificationList::DSRCodingSchemeIdentificationList()
   : ItemList(),
-    Iterator()
+    Iterator(),
+    SpecificCharacterSet()
 {
     /* initialize list cursor */
     Iterator = ItemList.end();
@@ -56,10 +65,12 @@ void DSRCodingSchemeIdentificationList::clear()
     /* make sure that the list is empty */
     ItemList.clear();
     Iterator = ItemList.end();
+    /* also clear other members */
+    SpecificCharacterSet.clear();
 }
 
 
-OFBool DSRCodingSchemeIdentificationList::empty() const
+OFBool DSRCodingSchemeIdentificationList::isEmpty() const
 {
     return ItemList.empty();
 }
@@ -133,7 +144,7 @@ OFCondition DSRCodingSchemeIdentificationList::write(DcmItem &dataset) const
                     putStringValueToDataset(*ditem, DCM_CodingSchemeExternalID, item->CodingSchemeExternalID, OFFalse /*allowEmpty*/);
                 else if (!item->CodingSchemeExternalID.empty())
                 {
-                    DCMSR_WARN("Both CodingSchemeUID and CodingSchemeExternalID present for \""
+                    DCMSR_WARN("Both Coding Scheme UID and Coding Scheme External ID present for \""
                         << item->CodingSchemeDesignator << "\", the latter will be ignored");
                 }
                 putStringValueToDataset(*ditem, DCM_CodingSchemeName, item->CodingSchemeName, OFFalse /*allowEmpty*/);
@@ -219,6 +230,16 @@ OFCondition DSRCodingSchemeIdentificationList::writeXML(STD_NAMESPACE ostream &s
 }
 
 
+OFCondition DSRCodingSchemeIdentificationList::setSpecificCharacterSet(const OFString &value,
+                                                                       const OFBool check)
+{
+    OFCondition result = (check) ? DcmCodeString::checkStringValue(value, "1-n") : EC_Normal;
+    if (result.good())
+        SpecificCharacterSet = value;
+    return result;
+}
+
+
 OFCondition DSRCodingSchemeIdentificationList::addPrivateDcmtkCodingScheme()
 {
     /* add private coding scheme (if not already existent) */
@@ -251,8 +272,8 @@ OFCondition DSRCodingSchemeIdentificationList::addItem(const OFString &codingSch
                 result = EC_MemoryExhausted;
             }
         } else {
-            DCMSR_WARN("CodingSchemeDesignator \"" << codingSchemeDesignator
-                << "\" already exists in CodingSchemeIdentificationSequence ... overwriting");
+            DCMSR_WARN("Coding Scheme Designator \"" << codingSchemeDesignator
+                << "\" already exists in Coding Scheme Identification Sequence ... overwriting");
             /* gotoItem() was successful, set item pointer */
             item = *Iterator;
         }
@@ -272,7 +293,7 @@ OFCondition DSRCodingSchemeIdentificationList::addItem(const OFString &codingSch
     else if (check)
     {
         /* check whether the passed value is valid */
-        result = DcmShortString::checkStringValue(codingSchemeDesignator, "1");
+        result = DcmShortString::checkStringValue(codingSchemeDesignator, "1", SpecificCharacterSet);
     }
     if (result.good())
     {
@@ -297,13 +318,13 @@ OFCondition DSRCodingSchemeIdentificationList::addItem(const OFString &codingSch
     else if (check)
     {
         /* check whether the passed values are valid */
-        result = DcmShortString::checkStringValue(codingSchemeDesignator, "1");
+        result = DcmShortString::checkStringValue(codingSchemeDesignator, "1", SpecificCharacterSet);
         if (result.good())
             result = DcmUniqueIdentifier::checkStringValue(codingSchemeUID, "1");
         if (result.good())
-            result = DcmShortText::checkStringValue(codingSchemeName);
+            result = DcmShortText::checkStringValue(codingSchemeName, SpecificCharacterSet);
         if (result.good())
-            result = DcmShortText::checkStringValue(responsibleOrganization);
+            result = DcmShortText::checkStringValue(responsibleOrganization, SpecificCharacterSet);
     }
     if (result.good())
     {
@@ -516,7 +537,7 @@ OFCondition DSRCodingSchemeIdentificationList::setCodingSchemeRegistry(const OFS
     if (item != NULL)
     {
         /* set the value (if valid) */
-        result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
+        result = (check) ? DcmLongString::checkStringValue(value, "1", SpecificCharacterSet) : EC_Normal;
         if (result.good())
             item->CodingSchemeRegistry = value;
     }
@@ -550,7 +571,7 @@ OFCondition DSRCodingSchemeIdentificationList::setCodingSchemeExternalID(const O
     if (item != NULL)
     {
         /* set the value (if valid) */
-        result = (check) ? DcmShortText::checkStringValue(value) : EC_Normal;
+        result = (check) ? DcmShortText::checkStringValue(value, SpecificCharacterSet) : EC_Normal;
         if (result.good())
             item->CodingSchemeExternalID = value;
     }
@@ -567,7 +588,7 @@ OFCondition DSRCodingSchemeIdentificationList::setCodingSchemeName(const OFStrin
     if (item != NULL)
     {
         /* set the value (if valid) */
-        result = (check) ? DcmShortText::checkStringValue(value) : EC_Normal;
+        result = (check) ? DcmShortText::checkStringValue(value, SpecificCharacterSet) : EC_Normal;
         if (result.good())
             item->CodingSchemeName = value;
     }
@@ -584,7 +605,7 @@ OFCondition DSRCodingSchemeIdentificationList::setCodingSchemeVersion(const OFSt
     if (item != NULL)
     {
         /* set the value (if valid) */
-        result = (check) ? DcmShortString::checkStringValue(value, "1") : EC_Normal;
+        result = (check) ? DcmShortString::checkStringValue(value, "1", SpecificCharacterSet) : EC_Normal;
         if (result.good())
             item->CodingSchemeVersion = value;
     }
@@ -601,7 +622,7 @@ OFCondition DSRCodingSchemeIdentificationList::setCodingSchemeResponsibleOrganiz
     if (item != NULL)
     {
         /* set the value (if valid) */
-        result = (check) ? DcmShortText::checkStringValue(value) : EC_Normal;
+        result = (check) ? DcmShortText::checkStringValue(value, SpecificCharacterSet) : EC_Normal;
         if (result.good())
             item->CodingSchemeResponsibleOrganization = value;
     }

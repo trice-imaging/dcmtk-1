@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2012-2015, OFFIS e.V.
+ *  Copyright (C) 2012-2020, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,7 +20,6 @@
  */
 
 #include "dcmtk/config/osconfig.h" /* make sure OS specific configuration is included first */
-
 #include "dcmtk/dcmnet/scpcfg.h"
 #include "dcmtk/dcmnet/diutil.h"
 
@@ -40,7 +39,8 @@ DcmSCPConfig::DcmSCPConfig() :
   m_verbosePCMode(OFFalse),
   m_connectionTimeout(1000),
   m_respondWithCalledAETitle(OFTrue),
-  m_progressNotificationMode(OFTrue)
+  m_progressNotificationMode(OFTrue),
+  m_tLayer(NULL)
 {
 }
 
@@ -197,6 +197,13 @@ void DcmSCPConfig::setProgressNotificationMode(const OFBool mode)
 
 // ----------------------------------------------------------------------------
 
+void DcmSCPConfig::setAlwaysAcceptDefaultRole(const OFBool enabled)
+{
+  m_assocConfig.setAlwaysAcceptDefaultRole(enabled);
+}
+
+// ----------------------------------------------------------------------------
+
 /* Get methods for SCP settings and current association information */
 
 OFBool DcmSCPConfig::getRefuseAssociation() const
@@ -290,6 +297,27 @@ OFBool DcmSCPConfig::getProgressNotificationMode() const
 
 // ----------------------------------------------------------------------------
 
+OFBool DcmSCPConfig::transportLayerEnabled() const
+{
+  return (m_tLayer != NULL);
+}
+
+// ----------------------------------------------------------------------------
+
+DcmTransportLayer * DcmSCPConfig::getTransportLayer() const
+{
+    return m_tLayer;
+}
+
+// ----------------------------------------------------------------------------
+
+void DcmSCPConfig::setTransportLayer(DcmTransportLayer *tlayer)
+{
+  m_tLayer = tlayer;
+}
+
+// ----------------------------------------------------------------------------
+
 // Reads association configuration from config file
 OFCondition DcmSCPConfig::loadAssociationCfgFile(const OFString &assocFile)
 {
@@ -317,8 +345,34 @@ OFCondition DcmSCPConfig::setAndCheckAssociationProfile(const OFString &profileN
   if (profileName.empty())
     return EC_IllegalParameter;
 
-  DCMNET_TRACE("Setting and checking SCP association profile");
+  DCMNET_TRACE("Setting and checking SCP association profile " << profileName);
   OFString mangledName;
+  OFCondition result = checkAssociationProfile(profileName, mangledName);
+  if (result.good())
+  {
+    m_assocCfgProfileName = mangledName;
+    DCMNET_TRACE("Setting SCP association profile to (mangled name) " << mangledName);
+  }
+  return result;
+}
+
+// ----------------------------------------------------------------------------
+
+OFString DcmSCPConfig::getActiveAssociationProfile() const
+{
+  return m_assocCfgProfileName;
+}
+
+// ----------------------------------------------------------------------------
+
+OFCondition DcmSCPConfig::checkAssociationProfile(const OFString& profileName,
+                                                  OFString& mangledName) const
+{
+  if (profileName.empty())
+    return EC_IllegalParameter;
+
+  DCMNET_TRACE("Checking SCP association profile " << profileName);
+  mangledName.clear();
   OFCondition result;
 
   /* perform name mangling for config file key */
@@ -331,16 +385,15 @@ OFCondition DcmSCPConfig::setAndCheckAssociationProfile(const OFString &profileN
   /* check profile */
   if (result.good() && !m_assocConfig.isKnownProfile(mangledName.c_str()))
   {
-    DCMNET_ERROR("No association profile named \"" << profileName << "\" in association configuration");
-    result = EC_IllegalParameter; // TODO: need to find better error code
+    DCMNET_ERROR("No association profile named \"" << profileName << "\" in association configuration, " <<
+      "did you forget to add presentation contexts?");
+    result = NET_EC_InvalidSCPAssociationProfile;
   }
   if (result.good() && !m_assocConfig.isValidSCPProfile(mangledName.c_str()))
   {
     DCMNET_ERROR("The association profile named \"" << profileName << "\" is not a valid SCP association profile");
-    result = EC_IllegalParameter; // TODO: need to find better error code
+    result = NET_EC_InvalidSCPAssociationProfile;
   }
-  if (result.good())
-    m_assocCfgProfileName = mangledName;
 
   return result;
 }
@@ -372,12 +425,16 @@ OFCondition DcmSCPConfig::addPresentationContext(const OFString &abstractSyntax,
 
   // create role key and amend configuration (if required)
   OFString DCMSCP_RO_KEY;
-  if ( role != ASC_SC_ROLE_DEFAULT )
+  DCMSCP_RO_KEY = profileName;
+  DCMSCP_RO_KEY += "_ROLEKEY";
+  result = m_assocConfig.createEmptyRoleList(DCMSCP_RO_KEY.c_str());
+  if (result.good() && (role != ASC_SC_ROLE_DEFAULT))
   {
-    DCMSCP_RO_KEY = profileName;
-    DCMSCP_RO_KEY += "_ROLEKEY";
     result = m_assocConfig.addRole(DCMSCP_RO_KEY.c_str(), abstractSyntax.c_str(), role);
   }
+  if (result.bad())
+    return result;
+
 
   // create new profile if required and add presentation context as just defined.
   // we always use the same presentation context list.
@@ -390,7 +447,7 @@ OFCondition DcmSCPConfig::addPresentationContext(const OFString &abstractSyntax,
     {
       // finally add new presentation context to list and profile to configuration
       if ( result.good() ) result = m_assocConfig.addPresentationContext(DCMSCP_PC_KEY.c_str(), abstractSyntax.c_str(), DCMSCP_TS_KEY.c_str());
-      if ( result.good() ) result = m_assocConfig.addProfile(profileName.c_str(), DCMSCP_PC_KEY.c_str(), DCMSCP_RO_KEY.empty() ? NULL : DCMSCP_RO_KEY.c_str());
+      if ( result.good() ) result = m_assocConfig.addProfile(profileName.c_str(), DCMSCP_PC_KEY.c_str(), DCMSCP_RO_KEY.c_str());
     }
     else
     {

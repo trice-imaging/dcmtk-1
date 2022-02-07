@@ -1,12 +1,23 @@
-// Disable some warnings.
-// We're testing if a tuple containing floats can be initialized from a tuple of
-// ints, which is required by the standard. But this gives precision warnings
-// on some compilers / at some settings and we don't want to see these warnings.
-#ifdef __GNUG__
-#pragma GCC diagnostic ignored "-Wconversion"
-#elif defined(_MSC_VER)
-#pragma warning(disable: 4244)
-#endif
+/*
+ *
+ *  Copyright (C) 2014-2021, OFFIS e.V.
+ *  All rights reserved.  See COPYRIGHT file for details.
+ *
+ *  This software and supporting documentation were developed by
+ *
+ *    OFFIS e.V.
+ *    R&D Division Health
+ *    Escherweg 2
+ *    D-26121 Oldenburg, Germany
+ *
+ *
+ *  Module:  ofstd
+ *
+ *  Author:  Jan Schlamelcher
+ *
+ *  Purpose: unit test for OFtuple
+ *
+ */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
@@ -14,6 +25,14 @@
 #include "dcmtk/ofstd/oftest.h"
 #include "dcmtk/ofstd/oftuple.h"
 #include "dcmtk/ofstd/ofstring.h"
+#include "dcmtk/ofstd/ofdiag.h"      /* for DCMTK_DIAGNOSTIC macros */
+
+// Disable some warnings.
+// We're testing if a tuple containing floats can be initialized from a tuple of
+// ints, which is required by the standard. But this gives precision warnings
+// on some compilers / at some settings and we don't want to see these warnings.
+#include DCMTK_DIAGNOSTIC_IGNORE_CONST_EXPRESSION_WARNING
+#include DCMTK_DIAGNOSTIC_IGNORE_IMPLICIT_CONVERSION
 
 OFTEST(ofstd_tuple)
 {

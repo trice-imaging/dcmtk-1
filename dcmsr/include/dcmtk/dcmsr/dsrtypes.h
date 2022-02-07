@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,14 +26,17 @@
 
 #include "dcmtk/config/osconfig.h"   /* make sure OS specific configuration is included first */
 
-#include "dcmtk/dcmdata/dctk.h"
+#include "dcmtk/dcmsr/dsdefine.h"
+
+#include "dcmtk/dcmdata/dcelem.h"
+#include "dcmtk/dcmdata/dcitem.h"
+#include "dcmtk/dcmdata/dcsequen.h"
 
 #include "dcmtk/ofstd/ofstream.h"
+#include "dcmtk/ofstd/ofstring.h"
 #include "dcmtk/ofstd/oftypes.h"
 #include "dcmtk/ofstd/ofcond.h"
 #include "dcmtk/oflog/oflog.h"
-
-#include "dcmtk/dcmsr/dsdefine.h"
 
 
 // global definitions for logging mechanism provided by the oflog module
@@ -213,6 +216,15 @@ extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_CodedEntryInStandardConte
 /// normal: a given coded entry is known as an extension of the context group
 extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_CodedEntryIsExtensionOfContextGroup;
 
+/// error: a value violates the value set constraint of a particular template row
+extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_ValueSetConstraintViolated;
+
+/// error: the internally managed structure of a template class is invalid
+extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_InvalidTemplateStructure;
+
+/// error: cannot process document tree with included templates
+extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_CannotProcessIncludedTemplates;
+
 //@}
 
 
@@ -232,7 +244,7 @@ class DCMTK_DCMSR_EXPORT DSRTypes
 
   // --- constant declarations ---
 
-    /** @name read() flags.
+    /** @name read() flags
      *  These flags can be combined and passed to the read() methods.
      *  The 'shortcut' flags can be used for common combinations.
      */
@@ -261,7 +273,7 @@ class DCMTK_DCMSR_EXPORT DSRTypes
     //@}
 
 
-    /** @name renderHTML() flags.
+    /** @name renderHTML() flags
      *  These flags can be combined and passed to the renderHMTL() methods.
      *  Please note that only the 'external' flags can be used from outside
      *  this library.  The 'shortcut' flags can be used for common combinations.
@@ -342,7 +354,7 @@ class DCMTK_DCMSR_EXPORT DSRTypes
     //@}
 
 
-    /** @name read/writeXML() flags.
+    /** @name read/writeXML() flags
      *  These flags can be combined and passed to the read/writeXML() methods.
      *  The 'shortcut' flags can be used for common combinations.
      */
@@ -380,6 +392,12 @@ class DCMTK_DCMSR_EXPORT DSRTypes
 
     /// read/write: template identification element encloses content items
     static const size_t XF_templateElementEnclosesItems;
+
+    /// write: add comments with details at beginning/end of included template (might be useful for debugging purposes)
+    static const size_t XF_addCommentsForIncludedTemplate;
+
+    /// read: accept empty Study/Series/SOP Instance UID attribute values (must be filled later)
+    static const size_t XF_acceptEmptyStudySeriesInstanceUID;
 
     /// shortcut: combines all XF_xxxAsAttribute write flags (see above)
     static const size_t XF_encodeEverythingAsAttribute;
@@ -431,13 +449,22 @@ class DCMTK_DCMSR_EXPORT DSRTypes
     /// print annotation of a content item (optional, e.g. user-defined information)
     static const size_t PF_printAnnotation;
 
+    /// do not print internal "included template" nodes (position counter is still increased)
+    static const size_t PF_hideIncludedTemplateNodes;
+
+    /// do not count internal "included template" nodes (only with PF_hideIncludedTemplateNodes)
+    static const size_t PF_dontCountIncludedTemplateNodes;
+
+    /// print text "empty code" for empty codes (instead of "invalid code")
+    static const size_t PF_printEmptyCodes;
+
     /// shortcut: print all codes (combines all PF_printXxxCodes flags, see above)
     static const size_t PF_printAllCodes;
     //@}
 
 
     /** @name checkByReferenceRelationships() modes
-     *  These flags can be combined and passed to the checkByReferenceRelationships() method.
+     *  These modes can be combined and passed to the checkByReferenceRelationships() method.
      */
     //@{
 
@@ -452,9 +479,23 @@ class DCMTK_DCMSR_EXPORT DSRTypes
     //@}
 
 
+    /** @name checkByReferenceRelationships() bit masks
+     *  These bit masks are used to "filter" valid flags passed to checkByReferenceRelationships().
+     */
+    //@{
+
+    /// bit mask (filter) for valid print flags (see PF_xxx)
+    static const size_t CB_maskPrintFlags;
+
+    /// bit mask (filter) for valid read flags (see RF_xxx)
+    static const size_t CB_maskReadFlags;
+
+    //@}
+
+
   // --- type definitions ---
 
-    /** SR document types
+    /** SR document types (DICOM IOD)
      */
     enum E_DocumentType
     {
@@ -480,6 +521,8 @@ class DCMTK_DCMSR_EXPORT DSRTypes
         DT_ProcedureLog,
         /// DICOM IOD: X-Ray Radiation Dose SR
         DT_XRayRadiationDoseSR,
+        /// DICOM IOD: Enhanced X-Ray Radiation Dose SR (not yet implemented)
+        DT_EnhancedXRayRadiationDoseSR,
         /// DICOM IOD: Spectacle Prescription Report
         DT_SpectaclePrescriptionReport,
         /// DICOM IOD: Macular Grid Thickness and Volume Report
@@ -492,8 +535,20 @@ class DCMTK_DCMSR_EXPORT DSRTypes
         DT_RadiopharmaceuticalRadiationDoseSR,
         /// DICOM IOD: Extensible SR (not yet implemented)
         DT_ExtensibleSR,
+        /// DICOM IOD: Acquisition Context SR
+        DT_AcquisitionContextSR,
+        /// DICOM IOD: Simplified Adult Echo SR
+        DT_SimplifiedAdultEchoSR,
+        /// DICOM IOD: Patient Radiation Dose SR
+        DT_PatientRadiationDoseSR,
+        /// DICOM IOD: Performed Imaging Agent Administration SR
+        DT_PerformedImagingAgentAdministrationSR,
+        /// DICOM IOD: Planned Imaging Agent Administration SR
+        DT_PlannedImagingAgentAdministrationSR,
+        /// DICOM IOD: Rendition Selection Document
+        DT_RenditionSelectionDocument,
         /// internal type used to mark the last entry
-        DT_last = DT_ExtensibleSR
+        DT_last = DT_RenditionSelectionDocument
     };
 
     /** SR relationship types
@@ -562,8 +617,10 @@ class DCMTK_DCMSR_EXPORT DSRTypes
         VT_Container,
         /// internal type used to indicate by-reference relationships
         VT_byReference,
+        /// internal type used to indicate (enclose) included templates
+        VT_includedTemplate,
         /// internal type used to mark the last entry
-        VT_last = VT_byReference
+        VT_last = VT_includedTemplate
     };
 
     /** Softcopy presentation state types.  Used for content item IMAGE.
@@ -584,12 +641,20 @@ class DCMTK_DCMSR_EXPORT DSRTypes
         PT_Blending,
         /// XA/XRF Grayscale Softcopy Presentation State (XGSPS)
         PT_XAXRFGrayscale,
-        /// Grayscale Planar MPR Volumetric Presentation State (GPVPS)
+        /// Grayscale Planar MPR Volumetric Presentation State (GP-VPS)
         PT_GrayscalePlanarMPR,
-        /// Compositing Planar MPR Volumetric Presentation State (CPVPS)
+        /// Compositing Planar MPR Volumetric Presentation State (CP-VPS)
         PT_CompositingPlanarMPR,
+        /// Advanced Blending Presentation State (ABPS)
+        PT_AdvancedBlending,
+        /// Volume Rendering Volumetric Presentation State (VR-VPS)
+        PT_VolumeRendering,
+        /// Segmented Volume Rendering Volumetric Presentation State (SVR-VPS)
+        PT_SegmentedVolumeRendering,
+        /// Multiple Volume Rendering Volumetric Presentation State (MVR-VPS)
+        PT_MultipleVolumeRendering,
         /// internal type used to mark the last entry
-        PT_last = PT_CompositingPlanarMPR
+        PT_last = PT_MultipleVolumeRendering
     };
 
     /** SR graphic types.  Used for content item SCOORD.
@@ -728,6 +793,8 @@ class DCMTK_DCMSR_EXPORT DSRTypes
         CS_unknown = CS_invalid,
         /// ISO 646 (ISO-IR 6): ASCII
         CS_ASCII,
+        /// internal type used to indicate the default character set
+        CS_default = CS_ASCII,
         /// ISO-IR 100: Latin alphabet No. 1
         CS_Latin1,
         /// ISO-IR 101: Latin alphabet No. 2
@@ -746,10 +813,18 @@ class DCMTK_DCMSR_EXPORT DSRTypes
         CS_Hebrew,
         /// ISO-IR 148: Latin alphabet No. 5
         CS_Latin5,
-        /// ISO-IR 13: Japanese (Katakana/Romaji)
-        CS_Japanese,
         /// ISO-IR 166: Thai
         CS_Thai,
+        /// ISO-IR 13/87: Japanese (Katakana/Romaji/Kanji)
+        CS_Japanese,
+        /// ISO-IR 6/149: Korean (Hangul/Hanja)
+        CS_Korean,
+        /// ISO-IR 6/58: Chinese
+        CS_ChineseISO,
+        /// GB18030: Chinese
+        CS_ChineseGB18030,
+        /// GBK: Chinese
+        CS_ChineseGBK,
         /// UTF-8: Unicode in UTF-8
         CS_UTF8,
         /// internal type used to mark the last entry
@@ -822,11 +897,51 @@ class DCMTK_DCMSR_EXPORT DSRTypes
     static const char *documentTypeToDocumentTitle(const E_DocumentType documentType,
                                                    OFString &documentTitle);
 
-    /** check whether SR document type requires Enhanced General Equipment Module
+    /** check whether a given SR document type requires the Enhanced General Equipment Module
      ** @param  documentType  SR document type to be checked
-     ** @return OFTrue if Enhanced General Equipment Module is required, OFFalse otherwise
+     ** @return OFTrue if the Enhanced General Equipment Module is required, OFFalse otherwise
      */
     static OFBool requiresEnhancedEquipmentModule(const E_DocumentType documentType);
+
+    /** check whether a given SR document type requires the Timezone Module
+     ** @param  documentType  SR document type to be checked
+     ** @return OFTrue if the Timezone Module is required, OFFalse otherwise
+     */
+    static OFBool requiresTimezoneModule(const E_DocumentType documentType);
+
+    /** check whether a given SR document type requires the Synchronization Module
+     ** @param  documentType  SR document type to be checked
+     ** @return OFTrue if the Synchronization Module is required, OFFalse otherwise
+     */
+    static OFBool requiresSynchronizationModule(const E_DocumentType documentType);
+
+    /** check whether a given SR document type uses the SR Document Series Module
+     *  (instead of the Key Object Document Series Module)
+     ** @param  documentType  SR document type to be checked
+     ** @return OFTrue if the SR Document Series Module is used, OFFalse otherwise
+     */
+    static OFBool usesSRDocumentSeriesModule(const E_DocumentType documentType);
+
+    /** check whether a given SR document type uses the Key Object Document Series Module
+     *  (instead of the SR Document Series Module)
+     ** @param  documentType  SR document type to be checked
+     ** @return OFTrue if the Key Object Document Series Module is used, OFFalse otherwise
+     */
+    static OFBool usesKeyObjectDocumentSeriesModule(const E_DocumentType documentType);
+
+    /** check whether a given SR document type uses the SR Document General Module
+     *  (instead of the Key Object Document Module)
+     ** @param  documentType  SR document type to be checked
+     ** @return OFTrue if the SR Document General Module is used, OFFalse otherwise
+     */
+    static OFBool usesSRDocumentGeneralModule(const E_DocumentType documentType);
+
+    /** check whether a given SR document type uses the Key Object Document Module
+     *  (instead of the SR Document General Module)
+     ** @param  documentType  SR document type to be checked
+     ** @return OFTrue if the Key Object Document Module is used, OFFalse otherwise
+     */
+    static OFBool usesKeyObjectDocumentModule(const E_DocumentType documentType);
 
     /** convert relationship type to DICOM defined term
      ** @param  relationshipType  relationship type to be converted
@@ -1022,7 +1137,8 @@ class DCMTK_DCMSR_EXPORT DSRTypes
      */
     static E_VerificationFlag enumeratedValueToVerificationFlag(const OFString &enumeratedValue);
 
-    /** convert DICOM defined term to character set
+    /** convert DICOM defined term to character set.
+     *  An empty defined term is mapped to DSRTypes::CS_default (which is ASCII).
      ** @param  definedTerm  defined term to be converted
      ** @return character set if successful, DSRTypes::CS_invalid otherwise
      */
@@ -1045,7 +1161,6 @@ class DCMTK_DCMSR_EXPORT DSRTypes
     static const OFString &currentDate(OFString &dateString);
 
     /** get current time in DICOM 'TM' format. (HHMMSS)
-     *  The optional UTC notation (e.g. +0100) is currently not supported.
      ** @param  timeString  string used to store the current time
      *                      ('000000' if current time could not be retrieved)
      ** @return resulting character string (see 'timeString')
@@ -1061,6 +1176,13 @@ class DCMTK_DCMSR_EXPORT DSRTypes
      ** @return resulting character string (see 'dateTimeString')
      */
     static const OFString &currentDateTime(OFString &dateTimeString);
+
+    /** get local timezone in DICOM format. (&ZZXX)
+     ** @param  timezoneString  string used to store the local timezone
+     *                          ('+0000' if timezone could not be retrieved)
+     ** @return resulting character string (see 'timezoneString')
+     */
+    static const OFString &localTimezone(OFString &timezoneString);
 
     /** convert DICOM date string to readable format.
      *  The ISO format "YYYY-MM-DD" is used for the readable format.

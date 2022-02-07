@@ -2,7 +2,7 @@
 # and 'DCMTKConfig.cmake'. These files are created within the build tree
 # but also are installed with DCMTK.
 # The files can be utilized (no matter whether they are installed or just
-# located within the build tree) by external  projects in order to use
+# located within the build tree) by external projects in order to use
 # the related DCMTK build.
 # In order to accomplish that, the files provide hints to the external project
 # which libraries and executables are available, and which build options have
@@ -13,17 +13,23 @@
 # DCMTKTargets.cmake will contain list of available DCMTK executables and libs
 # DCMTKConfigVersion.cmake provides checking of DCMTK version compatibility
 # DCMTKConfig.cmake will contain options used to build this DCMTK package
-#
-#
+
+# Start with clean DCMTKTargets.cmake and fill it by appending
+file(WRITE "${CMAKE_BINARY_DIR}/DCMTKTargets.cmake" "")
+
 # Get and store all executable targets to DCMTKTargets.cmake within build's main dir
-GET_PROPERTY(DCMTK_EXECUTABLE_TARGETS GLOBAL PROPERTY DCMTK_EXECUTABLE_TARGETS)
-EXPORT(TARGETS ${DCMTK_EXECUTABLE_TARGETS} APPEND FILE ${DCMTK_BUILD_CMKDIR}/DCMTKTargets.cmake)
+get_property(DCMTK_EXECUTABLE_TARGETS GLOBAL PROPERTY DCMTK_EXECUTABLE_TARGETS)
+export(TARGETS ${DCMTK_EXECUTABLE_TARGETS} APPEND FILE "${CMAKE_BINARY_DIR}/DCMTKTargets.cmake" NAMESPACE DCMTK::)
+
 # Get and store libraries to DCMTKTargets.cmake within the build's main dir
-GET_PROPERTY(DCMTK_LIBRARY_TARGETS GLOBAL PROPERTY DCMTK_LIBRARY_TARGETS)
-EXPORT(TARGETS ${DCMTK_LIBRARY_TARGETS} APPEND FILE ${DCMTK_BUILD_CMKDIR}/DCMTKTargets.cmake)
+get_property(DCMTK_LIBRARY_TARGETS GLOBAL PROPERTY DCMTK_LIBRARY_TARGETS)
+export(TARGETS config ${DCMTK_LIBRARY_TARGETS} APPEND FILE "${CMAKE_BINARY_DIR}/DCMTKTargets.cmake" NAMESPACE DCMTK::)
+
+# Add interface library for conveniently linking to all libraries via DCMTK::DCMTK
+export(TARGETS DCMTK APPEND FILE "${CMAKE_BINARY_DIR}/DCMTKTargets.cmake" NAMESPACE DCMTK::)
 
 # Create DCMTConfigVersion.cmake with basic DCMTK version information (build tree)
-SET(DCMTK_CONFIG_VERSION ${DCMTK_BUILD_CMKDIR}/DCMTKConfigVersion.cmake)
+set(DCMTK_CONFIG_VERSION "${CMAKE_BINARY_DIR}/DCMTKConfigVersion.cmake")
 WRITE_BASIC_PACKAGE_VERSION_FILE(
     ${DCMTK_CONFIG_VERSION}
     VERSION ${DCMTK_MAJOR_VERSION}.${DCMTK_MINOR_VERSION}.${DCMTK_BUILD_VERSION}
@@ -36,46 +42,46 @@ WRITE_BASIC_PACKAGE_VERSION_FILE(
 # build and install tree versions of the file.
 
 # Case 1: Configure 'DCMTKConfig.cmake' for a build tree.
-SET(DCMTK_CMKDIR_CONFIG ${DCMTK_BUILD_CMKDIR})
+set(DCMTK_CMKDIR_CONFIG "${CMAKE_BINARY_DIR}")
 # Collect include paths
-SET(DCMTK_INCLUDE_DIR_CONFIGS
+set(DCMTK_INCLUDE_DIR_CONFIGS
     "SET_AND_CHECK(DCMTK_config_INCLUDE_DIR \"${DCMTK_BINARY_DIR}/config/include/dcmtk/config\")")
-FOREACH(module ${DCMTK_MODULES})
-    SET(DCMTK_INCLUDE_DIR_CONFIGS
+foreach(module ${DCMTK_MODULES})
+    set(DCMTK_INCLUDE_DIR_CONFIGS
         "${DCMTK_INCLUDE_DIR_CONFIGS}\nSET_AND_CHECK(DCMTK_${module}_INCLUDE_DIR \"${DCMTK_SOURCE_DIR}/${module}/include/dcmtk/${module}\")")
-ENDFOREACH(module)
-SET(DCMTK_CONFIG_CODE "####### Expanded from \@DCMTK_CONFIG_CODE\@ #######\n")
-SET(DCMTK_CONFIG_CODE "${DCMTK_CONFIG_CODE}list(APPEND DCMTK_INCLUDE_DIRS \"${DCMTK_BINARY_DIR}/config/include\")\n")
-FOREACH(module ${DCMTK_MODULES})
-    SET(DCMTK_CONFIG_CODE "${DCMTK_CONFIG_CODE}list(APPEND DCMTK_INCLUDE_DIRS \"${DCMTK_SOURCE_DIR}/${module}/include\")\n")
-ENDFOREACH(module)
-SET(DCMTK_CONFIG_CODE "${DCMTK_CONFIG_CODE}##################################################")
-SET(dcmtk_config ${DCMTK_BUILD_CMKDIR}/DCMTKConfig.cmake)
+endforeach()
+set(DCMTK_CONFIG_CODE "####### Expanded from \@DCMTK_CONFIG_CODE\@ #######\n")
+set(DCMTK_CONFIG_CODE "${DCMTK_CONFIG_CODE}list(APPEND DCMTK_INCLUDE_DIRS \"${DCMTK_BINARY_DIR}/config/include\")\n")
+foreach(module ${DCMTK_MODULES})
+    set(DCMTK_CONFIG_CODE "${DCMTK_CONFIG_CODE}list(APPEND DCMTK_INCLUDE_DIRS \"${DCMTK_SOURCE_DIR}/${module}/include\")\n")
+endforeach()
+set(DCMTK_CONFIG_CODE "${DCMTK_CONFIG_CODE}##################################################")
+set(dcmtk_config "${CMAKE_BINARY_DIR}/DCMTKConfig.cmake")
 # Actually configure file and write it to build's main directory
 CONFIGURE_PACKAGE_CONFIG_FILE(
-    CMake/DCMTKConfig.cmake.in
+    ${DCMTK_SOURCE_DIR}/CMake/DCMTKConfig.cmake.in
     ${dcmtk_config}
-    INSTALL_DESTINATION ${CMAKE_BINARY_DIR}
+    INSTALL_DESTINATION "${CMAKE_BINARY_DIR}"
     PATH_VARS DCMTK_CMKDIR_CONFIG DCMTK_INCLUDE_DIR_CONFIGS
     NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 
 # Case 2: Configure 'DCMTKConfig.cmake' for an install tree
-SET(DCMTK_CMKDIR_CONFIG ${DCMTK_INSTALL_CMKDIR})
+set(DCMTK_CMKDIR_CONFIG "${DCMTK_INSTALL_CMKDIR}")
 # Collect include paths
-SET(DCMTK_INCLUDE_DIR_CONFIGS
+set(DCMTK_INCLUDE_DIR_CONFIGS
     "SET_AND_CHECK(DCMTK_config_INCLUDE_DIR \"\${PACKAGE_PREFIX_DIR}/include/dcmtk/config\")")
-FOREACH(module ${DCMTK_MODULES})
-    SET(DCMTK_INCLUDE_DIR_CONFIGS
+foreach(module ${DCMTK_MODULES})
+    set(DCMTK_INCLUDE_DIR_CONFIGS
         "${DCMTK_INCLUDE_DIR_CONFIGS}\nSET_AND_CHECK(DCMTK_${module}_INCLUDE_DIR \"\${PACKAGE_PREFIX_DIR}/include/dcmtk/${module}\")")
-ENDFOREACH(module)
-SET(DCMTK_CONFIG_CODE "####### Expanded from \@DCMTK_CONFIG_CODE\@ #######\n")
-SET(DCMTK_CONFIG_CODE "${DCMTK_CONFIG_CODE}list(APPEND DCMTK_INCLUDE_DIRS \"\${PACKAGE_PREFIX_DIR}/include\")\n")
-SET(DCMTK_CONFIG_CODE "${DCMTK_CONFIG_CODE}##################################################")
-SET(dcmtk_install_config ${CMAKE_BINARY_DIR}/CMakeFiles/DCMTKConfig.cmake)
+endforeach()
+set(DCMTK_CONFIG_CODE "####### Expanded from \@DCMTK_CONFIG_CODE\@ #######\n")
+set(DCMTK_CONFIG_CODE "${DCMTK_CONFIG_CODE}list(APPEND DCMTK_INCLUDE_DIRS \"\${PACKAGE_PREFIX_DIR}/include\")\n")
+set(DCMTK_CONFIG_CODE "${DCMTK_CONFIG_CODE}##################################################")
+set(DCMTK_INSTALL_CONFIG "${CMAKE_BINARY_DIR}/CMakeFiles/DCMTKConfig.cmake")
 # Actually configure file and set rule to install it to installation subdir
 CONFIGURE_PACKAGE_CONFIG_FILE(
-    CMake/DCMTKConfig.cmake.in
-    ${dcmtk_install_config}
-    INSTALL_DESTINATION ${CMAKE_INSTALL_PREFIX}/${DCMTK_INSTALL_CMKDIR}
+    ${DCMTK_SOURCE_DIR}/CMake/DCMTKConfig.cmake.in
+    "${DCMTK_INSTALL_CONFIG}"
+    INSTALL_DESTINATION "${DCMTK_INSTALL_CMKDIR}"
     PATH_VARS DCMTK_CMKDIR_CONFIG DCMTK_INCLUDE_DIR_CONFIGS
     NO_CHECK_REQUIRED_COMPONENTS_MACRO)

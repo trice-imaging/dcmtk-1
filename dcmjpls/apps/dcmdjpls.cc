@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2007-2014, OFFIS e.V.
+ *  Copyright (C) 2007-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,15 +20,6 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
-
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
-
-#ifdef HAVE_GUSI_H
-#include <GUSI.h>
-#endif
 
 #include "dcmtk/dcmdata/dctk.h"
 #include "dcmtk/dcmdata/cmdlnarg.h"
@@ -63,12 +54,6 @@ static char rcsid[] = "$dcmtk: " OFFIS_CONSOLE_APPLICATION " v"
 
 int main(int argc, char *argv[])
 {
-
-#ifdef HAVE_GUSI_H
-  GUSISetup(GUSIwithSIOUXSockets);
-  GUSISetup(GUSIwithInternetSockets);
-#endif
-
   const char *opt_ifname = NULL;
   const char *opt_ofname = NULL;
 
@@ -79,8 +64,9 @@ int main(int argc, char *argv[])
   OFCmdUnsignedInt opt_filepad = 0;
   OFCmdUnsignedInt opt_itempad = 0;
   E_FileReadMode opt_readMode = ERM_autoDetect;
-  E_FileWriteMode opt_writeMode = EWM_fileformat;
+  E_FileWriteMode opt_writeMode = EWM_createNewMeta;
   E_TransferSyntax opt_ixfer = EXS_Unknown;
+  OFBool opt_forceSingleFragmentPerFrame = OFFalse;
 
   // parameter
   JLS_UIDCreation opt_uidcreation = EJLSUC_default;
@@ -123,6 +109,8 @@ LICENSE_FILE_DECLARE_COMMAND_LINE_OPTIONS
     cmd.addSubGroup("SOP Instance UID:");
       cmd.addOption("--uid-default",            "+ud",    "keep same SOP Instance UID (default)");
       cmd.addOption("--uid-always",             "+ua",    "always assign new UID");
+    cmd.addSubGroup("workaround options for incorrect JPEG-LS encodings:");
+      cmd.addOption("--workaround-incpl",       "+wi",    "enable workaround for incomplete JPEG-LS data");
     cmd.addSubGroup("other processing options:");
       cmd.addOption("--ignore-offsettable",     "+io",    "ignore offset table when decompressing");
 
@@ -194,6 +182,7 @@ LICENSE_FILE_EVALUATE_COMMAND_LINE_OPTIONS
       if (cmd.findOption("--uid-always")) opt_uidcreation = EJLSUC_always;
       cmd.endOptionBlock();
 
+      if (cmd.findOption("--workaround-incpl")) opt_forceSingleFragmentPerFrame = OFTrue;
       if (cmd.findOption("--ignore-offsettable")) opt_ignoreOffsetTable = OFTrue;
 
       cmd.beginOptionBlock();
@@ -218,7 +207,7 @@ LICENSE_FILE_EVALUATE_COMMAND_LINE_OPTIONS
       cmd.endOptionBlock();
 
       cmd.beginOptionBlock();
-      if (cmd.findOption("--write-file")) opt_writeMode = EWM_fileformat;
+      if (cmd.findOption("--write-file")) opt_writeMode = EWM_createNewMeta;
       if (cmd.findOption("--write-dataset")) opt_writeMode = EWM_dataset;
       cmd.endOptionBlock();
 
@@ -265,7 +254,11 @@ LICENSE_FILE_EVALUATE_COMMAND_LINE_OPTIONS
     OFLOG_DEBUG(dcmdjplsLogger, rcsid << OFendl);
 
     // register global decompression codecs
-    DJLSDecoderRegistration::registerCodecs(opt_uidcreation, opt_planarconfig, opt_ignoreOffsetTable);
+    DJLSDecoderRegistration::registerCodecs(
+        opt_uidcreation,
+        opt_planarconfig,
+        opt_ignoreOffsetTable,
+        opt_forceSingleFragmentPerFrame);
 
     /* make sure data dictionary is loaded */
     if (!dcmDataDict.isDictionaryLoaded())
@@ -316,10 +309,6 @@ LICENSE_FILE_EVALUATE_COMMAND_LINE_OPTIONS
     }
 
     OFLOG_INFO(dcmdjplsLogger, "creating output file " << opt_ofname);
-
-    // update file meta information with new SOP Instance UID
-    if (opt_uidcreation && (opt_writeMode == EWM_fileformat))
-        opt_writeMode = EWM_updateMeta;
 
     fileformat.loadAllDataIntoMemory();
     error = fileformat.saveFile(opt_ofname, opt_oxfer, opt_oenctype, opt_oglenc, opt_opadenc,

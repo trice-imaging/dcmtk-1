@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2003-2014, OFFIS e.V.
+ *  Copyright (C) 2003-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -49,9 +49,12 @@ OFBool DSRMammographyCadSRConstraintChecker::isTemplateSupportRequired() const
 }
 
 
-const char *DSRMammographyCadSRConstraintChecker::getRootTemplateIdentifier() const
+OFCondition DSRMammographyCadSRConstraintChecker::getRootTemplateIdentification(OFString &templateIdentifier,
+                                                                                OFString &mappingResource) const
 {
-    return "4000";
+    templateIdentifier = "4000";
+    mappingResource = "DCMR";
+    return EC_Normal;
 }
 
 
@@ -83,11 +86,16 @@ OFBool DSRMammographyCadSRConstraintChecker::checkContentRelationship(const E_Va
                  (targetValueType == VT_Date) || (targetValueType == VT_Time) || (targetValueType == VT_PName) ||
                  (targetValueType == VT_UIDRef) || (targetValueType == VT_Composite);
     }
+    /* new row introduced with CP-2084 */
+    else if ((relationshipType == RT_hasObsContext) && (sourceValueType == VT_Container))
+    {
+        result = (targetValueType == VT_Container);
+    }
     /* row 3 of the table */
     else if ((relationshipType == RT_hasAcqContext) && !byReference && (sourceValueType == VT_Image))
     {
         result = (targetValueType == VT_Text) || (targetValueType == VT_Code) || (targetValueType == VT_Date) ||
-                 (targetValueType == VT_Time) || (targetValueType == VT_Num);
+                 (targetValueType == VT_Time) || (targetValueType == VT_Num)  || (targetValueType == VT_UIDRef) /* see CP-2053 */;
     }
     /* row 4 of the table */
     else if ((relationshipType == RT_hasConceptMod) && !byReference &&

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2012, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,11 +21,6 @@
 
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
-
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
 
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/dcmdata/dcpxitem.h"
@@ -51,6 +46,13 @@ DcmPixelItem::DcmPixelItem(const DcmTag &tag,
 DcmPixelItem::DcmPixelItem(const DcmPixelItem &old)
   : DcmOtherByteOtherWord(old)
 {
+}
+
+
+DcmPixelItem &DcmPixelItem::operator=(const DcmPixelItem &obj)
+{
+  DcmOtherByteOtherWord::operator=(obj);
+  return *this;
 }
 
 
@@ -124,6 +126,24 @@ DcmItem *DcmPixelItem::getParentItem()
 // ********************************
 
 
+Uint32 DcmPixelItem::calcElementLength(const E_TransferSyntax xfer,
+                                       const E_EncodingType enctype)
+{
+    /* silence unused arguments warnings */
+    OFstatic_cast(void, xfer);
+    OFstatic_cast(void, enctype);
+    /* get length of the pixel data */
+    Uint32 valueLength = getLengthField();
+    /* make sure the value did not overflow, clamp it otherwise. */
+    if (OFStandard::check32BitAddOverflow(valueLength, 8))
+      return OFnumeric_limits<Uint32>::max();
+    return valueLength + 8;
+}
+
+
+// ********************************
+
+
 OFCondition DcmPixelItem::writeTagAndLength(DcmOutputStream &outStream,
                                             const E_TransferSyntax oxfer,
                                             Uint32 &writtenBytes) const
@@ -179,17 +199,27 @@ OFCondition DcmPixelItem::createOffsetTable(const DcmOffsetList &offsetList)
             OFListConstIterator(Uint32) first = offsetList.begin();
             OFListConstIterator(Uint32) last = offsetList.end();
             unsigned long idx = 0;
+            OFBool overflow = OFFalse;
             while ((first != last) && result.good())
             {
-                // check for odd offset values, should never happen at this point
-                if (current & 1)
+                // check for 32-bit unsigned integer overflow (during previous iteration) and report on this
+                if (overflow)
                 {
-                    DCMDATA_WARN("DcmPixelItem: odd frame size (" << current << ") found for frame #"
+                    DCMDATA_WARN("DcmPixelItem: offset value exceeds maximum (32-bit unsigned integer) for frame #"
+                        << (idx + 1) << ", cannot create offset table");
+                    result = EC_InvalidBasicOffsetTable;
+                }
+                // check for odd offset values, should never happen at this point (if list was filled by an encoder)
+                else if (current & 1)
+                {
+                    DCMDATA_WARN("DcmPixelItem: odd offset value (" << current << ") for frame #"
                         << (idx + 1) << ", cannot create offset table");
                     result = EC_InvalidBasicOffsetTable;
                 } else {
+                    // value "current" is proven to be valid
                     array[idx++] = current;
-                    current += *first;
+                    // check for 32-bit unsigned integer overflow (but report only during next iteration)
+                    overflow = !OFStandard::safeAdd(current, *first, current);
                     ++first;
                 }
             }
@@ -207,52 +237,59 @@ OFCondition DcmPixelItem::createOffsetTable(const DcmOffsetList &offsetList)
 }
 
 
-OFCondition DcmPixelItem::writeXML(STD_NAMESPACE ostream&out,
+OFCondition DcmPixelItem::writeXML(STD_NAMESPACE ostream &out,
                                    const size_t flags)
 {
-    /* XML start tag for "item" */
-    out << "<pixel-item";
-    /* value length in bytes = 0..max */
-    out << " len=\"" << getLengthField() << "\"";
-    /* value loaded = no (or absent)*/
-    if (!valueLoaded())
-        out << " loaded=\"no\"";
-    /* pixel item contains binary data */
-    if (!(flags & DCMTypes::XF_writeBinaryData))
-        out << " binary=\"hidden\"";
-    else if (flags & DCMTypes::XF_encodeBase64)
-        out << " binary=\"base64\"";
-    else
-        out << " binary=\"yes\"";
-    out << ">";
-    /* write element value (if loaded) */
-    if (valueLoaded() && (flags & DCMTypes::XF_writeBinaryData))
+    if (flags & DCMTypes::XF_useNativeModel)
     {
-        /* encode binary data as Base64 */
-        if (flags & DCMTypes::XF_encodeBase64)
+        /* in Native DICOM Model, there is no concept of a "pixel item" */
+        return makeOFCondition(OFM_dcmdata, EC_CODE_CannotConvertToXML, OF_error,
+            "Cannot convert Pixel Item to Native DICOM Model");
+    } else {
+        /* XML start tag for "item" */
+        out << "<pixel-item";
+        /* value length in bytes = 0..max */
+        out << " len=\"" << getLengthField() << "\"";
+        /* value loaded = no (or absent)*/
+        if (!valueLoaded())
+            out << " loaded=\"no\"";
+        /* pixel item contains binary data */
+        if (!(flags & DCMTypes::XF_writeBinaryData))
+            out << " binary=\"hidden\"";
+        else if (flags & DCMTypes::XF_encodeBase64)
+            out << " binary=\"base64\"";
+        else
+            out << " binary=\"yes\"";
+        out << ">";
+        /* write element value (if loaded) */
+        if (valueLoaded() && (flags & DCMTypes::XF_writeBinaryData))
         {
-            /* pixel items always contain 8 bit data, therefore, byte swapping not required */
-            OFStandard::encodeBase64(out, OFstatic_cast(Uint8 *, getValue()), OFstatic_cast(size_t, getLengthField()));
-        } else {
-            /* get and check 8 bit data */
-            Uint8 *byteValues = NULL;
-            if (getUint8Array(byteValues).good() && (byteValues != NULL))
+            /* encode binary data as Base64 */
+            if (flags & DCMTypes::XF_encodeBase64)
             {
-                const unsigned long count = getLengthField();
-                out << STD_NAMESPACE hex << STD_NAMESPACE setfill('0');
-                /* print byte values in hex mode */
-                out << STD_NAMESPACE setw(2) << OFstatic_cast(int, *(byteValues++));
-                for (unsigned long i = 1; i < count; i++)
-                    out << "\\" << STD_NAMESPACE setw(2) << OFstatic_cast(int, *(byteValues++));
-                /* reset i/o manipulators */
-                out << STD_NAMESPACE dec << STD_NAMESPACE setfill(' ');
+                /* pixel items always contain 8 bit data, therefore, byte swapping not required */
+                OFStandard::encodeBase64(out, OFstatic_cast(Uint8 *, getValue()), OFstatic_cast(size_t, getLengthField()));
+            } else {
+                /* get and check 8 bit data */
+                Uint8 *byteValues = NULL;
+                if (getUint8Array(byteValues).good() && (byteValues != NULL))
+                {
+                    const unsigned long count = getLengthField();
+                    out << STD_NAMESPACE hex << STD_NAMESPACE setfill('0');
+                    /* print byte values in hex mode */
+                    out << STD_NAMESPACE setw(2) << OFstatic_cast(int, *(byteValues++));
+                    for (unsigned long i = 1; i < count; i++)
+                        out << "\\" << STD_NAMESPACE setw(2) << OFstatic_cast(int, *(byteValues++));
+                    /* reset i/o manipulators */
+                    out << STD_NAMESPACE dec << STD_NAMESPACE setfill(' ');
+                }
             }
         }
+        /* XML end tag for "item" */
+        out << "</pixel-item>" << OFendl;
+        /* always report success */
+        return EC_Normal;
     }
-    /* XML end tag for "item" */
-    out << "</pixel-item>" << OFendl;
-    /* always report success */
-    return EC_Normal;
 }
 
 

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1997-2012, OFFIS e.V.
+ *  Copyright (C) 1997-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -33,7 +33,7 @@
 #define OFSTRING_GUARD(c_string) ((c_string != NULL) ? (c_string) : "")
 
 
-#ifdef HAVE_STD_STRING
+#ifdef HAVE_STL_STRING
 /*
 ** Use the ANSI Standard string class
 */
@@ -43,18 +43,13 @@
 #define OFString std::string
 #define OFString_npos std::string::npos
 
-#else /* not HAVE_STD_STRING */
+#else /* not HAVE_STL_STRING */
 
 /*
 ** Declare our own string class
 */
 
-#define INCLUDE_CASSERT
-#define INCLUDE_CSTRING
-#define INCLUDE_CSTDLIB
-#define INCLUDE_LIBC
-#define INCLUDE_UNISTD
-#include "dcmtk/ofstd/ofstdinc.h"
+#include <cassert>
 
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/oftypes.h"
@@ -1104,6 +1099,6 @@ DCMTK_OFSTD_EXPORT OFBool operator>= (const OFString& lhs, const char* rhs);
  */
 DCMTK_OFSTD_EXPORT OFBool operator>= (const OFString& lhs, char rhs);
 
-#endif /* HAVE_STD_STRING */
+#endif /* HAVE_STL_STRING */
 
 #endif /* OFSTRING_H */

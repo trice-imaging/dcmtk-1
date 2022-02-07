@@ -102,7 +102,7 @@ DCMTK_DCMNET_EXPORT void DU_stripTrailingSpaces(char *s);
 DCMTK_DCMNET_EXPORT void DU_stripLeadingSpaces(char *s);
 DCMTK_DCMNET_EXPORT void DU_stripLeadingAndTrailingSpaces(char *s);
 
-DCMTK_DCMNET_EXPORT OFBool DU_getStringDOElement(DcmItem *obj, DcmTagKey t, char *s);
+DCMTK_DCMNET_EXPORT OFBool DU_getStringDOElement(DcmItem *obj, DcmTagKey t, char *s, size_t bufsize);
 DCMTK_DCMNET_EXPORT OFBool DU_putStringDOElement(DcmItem *obj, DcmTagKey t, const char *s);
 DCMTK_DCMNET_EXPORT OFBool DU_getShortDOElement(DcmItem *obj, DcmTagKey t, Uint16 *us);
 DCMTK_DCMNET_EXPORT OFBool DU_putShortDOElement(DcmItem *obj, DcmTagKey t, Uint16 us);
@@ -110,13 +110,17 @@ DCMTK_DCMNET_EXPORT OFBool DU_putShortDOElement(DcmItem *obj, DcmTagKey t, Uint1
 DCMTK_DCMNET_EXPORT OFBool DU_findSOPClassAndInstanceInDataSet(
   DcmItem *obj,
   char* sopClass,
+  size_t sopClassSize,
   char* sopInstance,
+  size_t sopInstanceSize,
   OFBool tolerateSpacePaddedUIDs = OFFalse);
 
 DCMTK_DCMNET_EXPORT OFBool DU_findSOPClassAndInstanceInFile(
   const char *fname,
   char* sopClass,
+  size_t sopClassSize,
   char* sopInstance,
+  size_t sopInstanceSize,
   OFBool tolerateSpacePaddedUIDs = OFFalse);
 
 DCMTK_DCMNET_EXPORT const char *DU_cechoStatusString(Uint16 statusCode);
@@ -131,5 +135,17 @@ DCMTK_DCMNET_EXPORT const char *DU_nsetStatusString(Uint16 statusCode);
 DCMTK_DCMNET_EXPORT const char *DU_nactionStatusString(Uint16 statusCode);
 DCMTK_DCMNET_EXPORT const char *DU_ndeleteStatusString(Uint16 statusCode);
 DCMTK_DCMNET_EXPORT const char *DU_neventReportStatusString(Uint16 statusCode);
+
+/** Logs result of a select() call. According to the select() documentation,
+ *  a value of > 1 means that data has arrived. This is logged on TRACE level
+ *  since it should be a very regular case. If select() returns 0, a timeout
+ *  has occurred, and in case of -1 another error happened (e.g. interrupt).
+ *  These two events are logged to DEBUG log level.
+ *  Note that this function makes use of errno (Unix) or WSAGetLastError()
+ *  (Windows aka Winsock), so it must be called right after the select() call
+ *  since otherwise the error might be already cleared or modified.
+ *  @param  selectReturnValue The return value returned by select()
+ */
+DCMTK_DCMNET_EXPORT void DU_logSelectResult(int selectReturnValue);
 
 #endif

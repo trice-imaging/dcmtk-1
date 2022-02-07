@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2013, OFFIS e.V.
+ *  Copyright (C) 1998-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,11 +26,6 @@
 #include "dcmtk/dcmpstat/dvpsdef.h"     /* for constants */
 #include "dcmtk/ofstd/ofstd.h"       /* for class OFStandard */
 
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#define INCLUDE_CCTYPE
-#include "dcmtk/ofstd/ofstdinc.h"
-
 #ifndef HAVE_WINDOWS_H
 /* some Unix operating systems do not define a prototype for strncasecmp
  * although the function is known.
@@ -54,7 +49,6 @@ extern "C" int strncasecmp(const char *s1, const char *s2, size_t n);
 #define L0_CERTIFICATE                  "CERTIFICATE"
 #define L0_CHARACTERISTICS              "CHARACTERISTICS"
 #define L0_CHECK                        "CHECK"
-#define L0_CIPHERSUITES                 "CIPHERSUITES"
 #define L0_CODE                         "CODE"
 #define L0_CORRECTUIDPADDING            "CORRECTUIDPADDING"
 #define L0_DEFAULTILLUMINATION          "DEFAULTILLUMINATION"
@@ -120,6 +114,7 @@ extern "C" int strncasecmp(const char *s1, const char *s2, size_t n);
 #define L0_SUPPORTSTRIM                 "SUPPORTSTRIM"
 #define L0_TIMEOUT                      "TIMEOUT"
 #define L0_TLSDIRECTORY                 "TLSDIRECTORY"
+#define L0_TLSPROFILE                   "TLSPROFILE"
 #define L0_TYPE                         "TYPE"
 #define L0_USEPEMFORMAT                 "USEPEMFORMAT"
 #define L0_USERKEYDIRECTORY             "USERKEYDIRECTORY"
@@ -181,7 +176,7 @@ static Uint32 countValues(const char *str)
     Uint32 result = 0;
     if (*str) result++;
     char c;
-    while ((c = *str++)) if (c == '\\') result++;
+    while ((c = *str++) != '\0') if (c == '\\') result++;
     return result;
   }
   return 0;
@@ -1338,15 +1333,9 @@ const char *DVConfiguration::getTargetPrivateKeyPassword(const char *targetID)
   return getConfigEntry(L2_COMMUNICATION, targetID, L0_PRIVATEKEYPASSWORD);
 }
 
-Uint32 DVConfiguration::getTargetNumberOfCipherSuites(const char *targetID)
+const char *DVConfiguration::getTargetTLSProfile(const char *targetID)
 {
-  return countValues(getConfigEntry(L2_COMMUNICATION, targetID, L0_CIPHERSUITES));
-}
-
-const char *DVConfiguration::getTargetCipherSuite(const char *targetID, Uint32 idx, OFString& value)
-{
-  copyValue(getConfigEntry(L2_COMMUNICATION, targetID, L0_CIPHERSUITES), idx, value);
-  if (value.length()) return value.c_str(); else return NULL;
+  return getConfigEntry(L2_COMMUNICATION, targetID, L0_TLSPROFILE);
 }
 
 DVPSCertificateVerificationType DVConfiguration::getTargetPeerAuthentication(const char *targetID)

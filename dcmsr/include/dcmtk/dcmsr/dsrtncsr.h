@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2018, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,13 +26,11 @@
 
 #include "dcmtk/config/osconfig.h"   /* make sure OS specific configuration is included first */
 
-#include "dcmtk/ofstd/ofstring.h"
-#include "dcmtk/ofstd/ofstack.h"
-#include "dcmtk/ofstd/oflist.h"
-
-#include "dcmtk/dcmsr/dsdefine.h"
 #include "dcmtk/dcmsr/dsrtypes.h"
+#include "dcmtk/dcmsr/dsrposcn.h"
 #include "dcmtk/dcmsr/dsrtnant.h"
+
+#include "dcmtk/ofstd/ofstack.h"
 
 
 /*-----------------------*
@@ -46,9 +44,11 @@ class DSRTreeNode;
  *  class declaration  *
  *---------------------*/
 
-/** Class implementing a tree node cursor
+/** Class implementing a tree node cursor.
+ ** @tparam  T  template type used for the tree node pointers
  */
-template<typename T = DSRTreeNode> class DSRTreeNodeCursor
+template<typename T = DSRTreeNode>
+class DSRTreeNodeCursor
 {
 
   public:
@@ -62,10 +62,14 @@ template<typename T = DSRTreeNode> class DSRTreeNodeCursor
      */
     DSRTreeNodeCursor(const DSRTreeNodeCursor<T> &cursor);
 
-    /** constructor
-     ** @param  node  pointer to tree node used to initialize the cursor (set to this node)
+    /** constructor.
+     *  See comments on setCursor(T*) method.
+     ** @param  node      pointer to tree node used to initialize the cursor
+     *  @param  position  optional pointer to position counter that should be used to
+     *                    initialize the internal counter
      */
-    DSRTreeNodeCursor(T *node);
+    DSRTreeNodeCursor(T *node,
+                      const DSRPositionCounter *position = NULL);
 
     /** destructor
      */
@@ -77,13 +81,15 @@ template<typename T = DSRTreeNode> class DSRTreeNodeCursor
      */
     DSRTreeNodeCursor<T> &operator=(const DSRTreeNodeCursor<T> &cursor);
 
-    /** assignment operator
+    /** assignment operator.
+     *  See comments on setCursor(T*) method.
      ** @param  node  node to which the cursor should be set
      ** @return reference to modified cursor (this object)
      */
     DSRTreeNodeCursor<T> &operator=(T *node);
 
-    /** clear all member variables
+    /** clear all member variables.
+     *  The cursor becomes invalid afterwards (same state as after default construction).
      */
     virtual void clear();
 
@@ -99,32 +105,32 @@ template<typename T = DSRTreeNode> class DSRTreeNodeCursor
      *                         ("deep search") or on the first child level only
      ** @return number of children of the current node, 0 if none
      */
-    size_t countChildNodes(const OFBool searchIntoSub = OFTrue) const;
+    virtual size_t countChildNodes(const OFBool searchIntoSub = OFTrue) const;
 
     /** check whether the current node has a parent
      ** @return OFTrue if the current node has a parent, OFFalse otherwise
      */
-    OFBool hasParentNode() const;
+    inline OFBool hasParentNode() const;
 
     /** check whether the current node has any children
      ** @return OFTrue if the current node has any children, OFFalse otherwise
      */
-    OFBool hasChildNodes() const;
+    inline OFBool hasChildNodes() const;
 
     /** check whether the current node has a preceding sibling
      ** @return OFTrue if the current node has a preceding sibling, OFFalse otherwise
      */
-    OFBool hasPreviousNode() const;
+    inline OFBool hasPreviousNode() const;
 
     /** check whether the current node has a following sibling
      ** @return OFTrue if the current node has a following sibling, OFFalse otherwise
      */
-    OFBool hasNextNode() const;
+    inline OFBool hasNextNode() const;
 
     /** check whether the current node has any siblings
      ** @return OFTrue if the current node has any siblings, OFFalse otherwise
      */
-    OFBool hasSiblingNodes() const;
+    inline OFBool hasSiblingNodes() const;
 
     /** get pointer to current node
      ** @return pointer to current node (might be NULL)
@@ -135,7 +141,7 @@ template<typename T = DSRTreeNode> class DSRTreeNodeCursor
      *  Can be used to have a lookup to the parent node without changing the cursor.
      ** @return pointer to parent node (if any), NULL otherwise
      */
-    virtual const T *getParentNode();
+    virtual const T *getParentNode() const;
 
     /** get pointer to first child node.
      *  Can be used to have a lookup to the first child node without changing the cursor.
@@ -159,48 +165,56 @@ template<typename T = DSRTreeNode> class DSRTreeNodeCursor
      *  Please note that the first node might be identical to the current node.
      ** @return ID of the first node if successful, 0 otherwise
      */
-    size_t gotoFirst();
+    virtual size_t gotoFirst();
 
     /** goto last node on the same level (last sibling).
      *  Please note that the last node might be identical to the current node.
      ** @return ID of the last node if successful, 0 otherwise
      */
-    size_t gotoLast();
+    virtual size_t gotoLast();
 
     /** goto previous node on the same level (preceding sibling)
      ** @return ID of the previous node if successful, 0 otherwise
      */
-    size_t gotoPrevious();
+    virtual size_t gotoPrevious();
 
     /** goto next node on the same level (following sibling)
      ** @return ID of the next node if successful, 0 otherwise
      */
-    size_t gotoNext();
+    virtual size_t gotoNext();
 
     /** goto parent node (one level up)
      ** @return ID of the parent node if successful, 0 otherwise
      */
-    size_t goUp();
+    virtual size_t goUp();
 
     /** goto first child node (one level down)
      ** @return ID of the first child node if successful, 0 otherwise
      */
-    size_t goDown();
+    virtual size_t goDown();
 
-    /** iterate over all nodes. Starts from current position!
+    /** @copydoc goUp()
+     */
+    virtual size_t gotoParent();
+
+    /** @copydoc goDown()
+     */
+    virtual size_t gotoChild();
+
+    /** iterate over all nodes (starting from current position!)
      ** @param  searchIntoSub  flag indicating whether to search into sub-trees
      *                         ("deep search") or on the current level only
      ** @return ID of the next node if successful, 0 otherwise
      */
-    size_t iterate(const OFBool searchIntoSub = OFTrue);
+    virtual size_t iterate(const OFBool searchIntoSub = OFTrue);
 
-    /** set cursor to specified node. Starts from current position!
+    /** set cursor to specified node.  Starts search from current position.
      ** @param  searchID  ID of the node to set the cursor to
      ** @return ID of the new current node if successful, 0 otherwise
      */
     size_t gotoNode(const size_t searchID);
 
-    /** set cursor to specified node. Starts from current position!
+    /** set cursor to specified node.  Starts search from current position.
      ** @param  position   position string of the node to set the cursor to.
      *                     (the format is e.g. "1.2.3" for the third child of the
      *                     second child of the first node - see getPosition()).
@@ -210,24 +224,38 @@ template<typename T = DSRTreeNode> class DSRTreeNodeCursor
     size_t gotoNode(const OFString &position,
                     const char separator = '.');
 
-    /** set cursor to specified node. Starts from current position!
+    /** set cursor to specified node.  Starts search from current position.
      ** @param  annotation  annotation of the node to set the cursor to
      ** @return ID of the new current node if successful, 0 otherwise
      */
     size_t gotoNode(const DSRTreeNodeAnnotation &annotation);
+
+    /** set cursor to specified node.  Starts search from current position.
+     *  This method requires that T implements the comparison operator "not equal".
+     ** @param  nodeValue  value of the node to set the cursor to
+     ** @return ID of the new current node if successful, 0 otherwise
+     */
+    size_t gotoNode(const T &nodeValue);
 
     /** get current node ID.
      *  The node ID uniquely identifies a content item in the document tree.  Most of
      *  the navigation methods above do return this ID too.
      ** @return ID of the current node if valid, 0 otherwise
      */
-    size_t getNodeID() const;
+    inline size_t getNodeID() const;
 
     /** get current level.
      *  The level starts with 1 for the root node, then 2 for its child nodes, etc.
      ** @return number of the current level if valid, 0 otherwise
      */
-    size_t getLevel() const;
+    inline size_t getLevel() const;
+
+    /** get reference to internal position counter.
+     *  Please note that this method allows for manipulating the internal position
+     *  counter, so handle with care!
+     ** @return reference to internal position counter
+     */
+    inline DSRPositionCounter &getPositionCounter();
 
     /** get position string of the current node.
      *  Specifies the position of each node by means of a dot separated string of
@@ -240,32 +268,52 @@ template<typename T = DSRTreeNode> class DSRTreeNodeCursor
      *  @param  separator  character used to separate the figures (default: '.')
      ** @return reference to the resulting position string (empty if invalid)
      */
-    const OFString &getPosition(OFString &position,
-                                const char separator = '.') const;
+    inline const OFString &getPosition(OFString &position,
+                                       const char separator = '.') const;
 
 
   protected:
+
+    /** fast, non-throwing swap function.
+     *  The time complexity of this function is constant.
+     ** @param  cursor  cursor to swap with
+     */
+    void swap(DSRTreeNodeCursor<T> &cursor);
 
     /** clear the internal node cursor stack
      */
     void clearNodeCursorStack();
 
+    /** get cursor
+     ** @return reference to cursor (this object)
+     */
+    inline const DSRTreeNodeCursor<T> &getCursor() const;
+
+    /** set cursor to specified object
+     ** @param  cursor  object to set this cursor to
+     */
+    inline void setCursor(const DSRTreeNodeCursor<T> &cursor);
+
     /** set cursor to specified node.
-     *  Clears the internal position list/stack and sets the position counter to 1.
+     *  Clears the internal position counter and sets the position of the current level
+     *  to 1 (if the passed 'node' is valid) or 0 (if the 'node' is invalid).
      ** @param  node  node to which the cursor should be set
      ** @return ID of the new current node if successful, 0 otherwise
      */
     size_t setCursor(T *node);
+
+    /** get pointer to first child node
+     ** @return pointer to first child node (if any), NULL otherwise
+     */
+    T *getChild() const;
 
     /// pointer to current node
     T *NodeCursor;
     /// stack of node pointers. Used to store the cursor position of upper levels.
     OFStack<T *> NodeCursorStack;
 
-    /// current position within the current level
-    size_t Position;
-    /// list of position counters in upper levels
-    OFList<size_t> PositionList;
+    /// counter for the current position within the current level and on upper levels
+    DSRPositionCounter Position;
 };
 
 
@@ -277,8 +325,7 @@ template<typename T>
 DSRTreeNodeCursor<T>::DSRTreeNodeCursor()
   : NodeCursor(NULL),
     NodeCursorStack(),
-    Position(0),
-    PositionList()
+    Position()
 {
 }
 
@@ -287,19 +334,27 @@ template<typename T>
 DSRTreeNodeCursor<T>::DSRTreeNodeCursor(const DSRTreeNodeCursor<T> &cursor)
   : NodeCursor(cursor.NodeCursor),
     NodeCursorStack(cursor.NodeCursorStack),
-    Position(cursor.Position),
-    PositionList(cursor.PositionList)
+    Position(cursor.Position)
 {
 }
 
 
 template<typename T>
-DSRTreeNodeCursor<T>::DSRTreeNodeCursor(T *node)
+DSRTreeNodeCursor<T>::DSRTreeNodeCursor(T *node,
+                                        const DSRPositionCounter *position)
   : NodeCursor(node),
     NodeCursorStack(),
-    Position((node != NULL) ? 1 : 0),
-    PositionList()
+    Position()
 {
+    /* check whether a valid position counter is given */
+    if (position != NULL)
+    {
+        if (position->isValid())
+            Position = *position;
+        else
+            Position.initialize(NodeCursor != NULL, position->getFlags());
+    } else
+        Position.initialize(NodeCursor != NULL);
 }
 
 
@@ -312,11 +367,7 @@ DSRTreeNodeCursor<T>::~DSRTreeNodeCursor()
 template<typename T>
 DSRTreeNodeCursor<T> &DSRTreeNodeCursor<T>::operator=(const DSRTreeNodeCursor<T> &cursor)
 {
-    NodeCursor = cursor.NodeCursor;
-    NodeCursorStack = cursor.NodeCursorStack;
-    Position = cursor.Position;
-    /* copy position list (operator= is not private anymore in class OFList) */
-    PositionList = cursor.PositionList;
+    setCursor(cursor);
     return *this;
 }
 
@@ -334,8 +385,7 @@ void DSRTreeNodeCursor<T>::clear()
 {
     NodeCursor = NULL;
     clearNodeCursorStack();
-    Position = 0;
-    PositionList.clear();
+    Position.clear();
 }
 
 
@@ -343,14 +393,6 @@ template<typename T>
 OFBool DSRTreeNodeCursor<T>::isValid() const
 {
     return (NodeCursor != NULL);
-}
-
-
-template<typename T>
-void DSRTreeNodeCursor<T>::clearNodeCursorStack()
-{
-    while (!NodeCursorStack.empty())
-        NodeCursorStack.pop();
 }
 
 
@@ -417,14 +459,11 @@ T *DSRTreeNodeCursor<T>::getNode() const
 
 
 template<typename T>
-const T *DSRTreeNodeCursor<T>::getParentNode()
+const T *DSRTreeNodeCursor<T>::getParentNode() const
 {
     T *node = NULL;
     if (hasParentNode())
-    {
-        /* this method is not "const" because of OFStack.top() */
         node = NodeCursorStack.top();
-    }
     return node;
 }
 
@@ -456,23 +495,6 @@ const T *DSRTreeNodeCursor<T>::getNextNode() const
     if (NodeCursor != NULL)
         node = NodeCursor->getNext();
     return node;
-}
-
-
-template<typename T>
-size_t DSRTreeNodeCursor<T>::setCursor(T *node)
-{
-    size_t nodeID = 0;
-    NodeCursor = node;
-    clearNodeCursorStack();
-    PositionList.clear();
-    if (NodeCursor != NULL)
-    {
-        nodeID = NodeCursor->getIdent();
-        Position = 1;
-    } else
-        Position = 0;
-    return nodeID;
 }
 
 
@@ -558,11 +580,7 @@ size_t DSRTreeNodeCursor<T>::goUp()
             {
                 NodeCursor = cursor;
                 nodeID = NodeCursor->getIdent();
-                if (!PositionList.empty())
-                {
-                    Position = PositionList.back();
-                    PositionList.pop_back();
-                }
+                Position.goUp();
             }
         }
     }
@@ -581,14 +599,24 @@ size_t DSRTreeNodeCursor<T>::goDown()
             NodeCursorStack.push(NodeCursor);
             NodeCursor = NodeCursor->getDown();
             nodeID = NodeCursor->getIdent();
-            if (Position > 0)
-            {
-                PositionList.push_back(Position);
-                Position = 1;
-            }
+            Position.goDown();
         }
     }
     return nodeID;
+}
+
+
+template<typename T>
+size_t DSRTreeNodeCursor<T>::gotoParent()
+{
+    return goUp();
+}
+
+
+template<typename T>
+size_t DSRTreeNodeCursor<T>::gotoChild()
+{
+    return goDown();
 }
 
 
@@ -604,11 +632,7 @@ size_t DSRTreeNodeCursor<T>::iterate(const OFBool searchIntoSub)
             NodeCursorStack.push(NodeCursor);
             NodeCursor = NodeCursor->getDown();
             nodeID = NodeCursor->getIdent();
-            if (Position > 0)
-            {
-                PositionList.push_back(Position);
-                Position = 1;
-            }
+            Position.goDown();
         }
         else if (NodeCursor->getNext() != NULL)
         {
@@ -623,11 +647,7 @@ size_t DSRTreeNodeCursor<T>::iterate(const OFBool searchIntoSub)
                 {
                     NodeCursor = NodeCursorStack.top();
                     NodeCursorStack.pop();
-                    if (!PositionList.empty())
-                    {
-                        Position = PositionList.back();
-                        PositionList.pop_back();
-                    }
+                    Position.goUp();
                 } else
                     NodeCursor = NULL;
             } while ((NodeCursor != NULL) && (NodeCursor->getNext() == NULL));
@@ -728,6 +748,20 @@ size_t DSRTreeNodeCursor<T>::gotoNode(const DSRTreeNodeAnnotation &annotation)
 
 
 template<typename T>
+size_t DSRTreeNodeCursor<T>::gotoNode(const T &nodeValue)
+{
+    size_t nodeID = 0;
+    if (NodeCursor != NULL)
+    {
+        nodeID = NodeCursor->getIdent();
+        while ((nodeID > 0) && (*NodeCursor != nodeValue))
+            nodeID = iterate();
+    }
+    return nodeID;
+}
+
+
+template<typename T>
 size_t DSRTreeNodeCursor<T>::getNodeID() const
 {
     size_t nodeID = 0;
@@ -748,27 +782,76 @@ size_t DSRTreeNodeCursor<T>::getLevel() const
 
 
 template<typename T>
+DSRPositionCounter &DSRTreeNodeCursor<T>::getPositionCounter()
+{
+    return Position;
+}
+
+
+template<typename T>
 const OFString &DSRTreeNodeCursor<T>::getPosition(OFString &position,
                                                   const char separator) const
 {
-    position.clear();
-    if (Position > 0)
-    {
-        char stringBuf[20];
-        const OFListConstIterator(size_t) endPos = PositionList.end();
-        OFListConstIterator(size_t) iterator = PositionList.begin();
-        while (iterator != endPos)
-        {
-            if (!position.empty())
-                position += separator;
-            position += DSRTypes::numberToString(*iterator, stringBuf);
-            iterator++;
-        }
-        if (!position.empty())
-            position += separator;
-        position += DSRTypes::numberToString(Position, stringBuf);
-    }
-    return position;
+    return Position.getString(position, separator);
+}
+
+
+// protected methods
+
+template<typename T>
+void DSRTreeNodeCursor<T>::swap(DSRTreeNodeCursor<T> &cursor)
+{
+    /* swap all members */
+    OFswap(NodeCursor, cursor.NodeCursor);
+    OFswap(NodeCursorStack, cursor.NodeCursorStack);
+    OFswap(Position, cursor.Position);
+}
+
+
+template<typename T>
+void DSRTreeNodeCursor<T>::clearNodeCursorStack()
+{
+    while (!NodeCursorStack.empty())
+        NodeCursorStack.pop();
+}
+
+
+template<typename T>
+const DSRTreeNodeCursor<T> &DSRTreeNodeCursor<T>::getCursor() const
+{
+    return *this;
+}
+
+
+template<typename T>
+void DSRTreeNodeCursor<T>::setCursor(const DSRTreeNodeCursor<T> &cursor)
+{
+    NodeCursor = cursor.NodeCursor;
+    NodeCursorStack = cursor.NodeCursorStack;
+    Position = cursor.Position;
+}
+
+
+template<typename T>
+size_t DSRTreeNodeCursor<T>::setCursor(T *node)
+{
+    size_t nodeID = 0;
+    NodeCursor = node;
+    if (NodeCursor != NULL)
+        nodeID = NodeCursor->getIdent();
+    clearNodeCursorStack();
+    Position.initialize(NodeCursor != NULL);
+    return nodeID;
+}
+
+
+template<typename T>
+T *DSRTreeNodeCursor<T>::getChild() const
+{
+    T *node = NULL;
+    if (NodeCursor != NULL)
+        node = NodeCursor->getDown();
+    return node;
 }
 
 

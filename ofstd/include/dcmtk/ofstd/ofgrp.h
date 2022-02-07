@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2012, OFFIS e.V.
+ *  Copyright (C) 2012-2018, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -34,7 +34,9 @@ BEGIN_EXTERN_C
 END_EXTERN_C
 
 #ifdef HAVE_WINDOWS_H
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #endif
 
@@ -51,10 +53,12 @@ END_EXTERN_C
  *  OFGroup object is invalid or not with the overloaded operators
  *  "operator !" and "operator OFBool". Therefore, it behaves quite the same
  *  way as pointers in this regard.
+ *  @remark This class is only available if DCMTK detected a system offering
+ *    support for the the <grp.h> header file.
  *  @note The downside of this non-POD class is that it leads to some
  *    unnecessary string copy operations. The resulting performance penalty
  *    should be insignificant. However, implementing this class based on
- *    auto_ptr / unique_ptr or using c++11 move sematics would prevent that,
+ *    auto_ptr / unique_ptr or using c++11 move semantics would prevent that,
  *    if somebody thinks it is necessary.
  */
 class OFStandard::OFGroup

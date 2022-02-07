@@ -1,3 +1,24 @@
+/*
+ *
+ *  Copyright (C) 2014-2017, OFFIS e.V.
+ *  All rights reserved.  See COPYRIGHT file for details.
+ *
+ *  This software and supporting documentation were developed by
+ *
+ *    OFFIS e.V.
+ *    R&D Division Health
+ *    Escherweg 2
+ *    D-26121 Oldenburg, Germany
+ *
+ *
+ *  Module:  ofstd
+ *
+ *  Author:  Jan Schlamelcher
+ *
+ *  Purpose: unit test for OFoptional
+ *
+ */
+
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #define OFTEST_OFSTD_ONLY
@@ -64,7 +85,7 @@ OFTEST(ofstd_optional)
     OFCHECK( o1 && *o1 == 23 );
 #endif
 
-#ifdef DCMTK_USE_CXX11_STL
+#ifdef HAVE_CXX11
     OFoptional<test> o3( 2, OFFalse );
 #else // C++11
     OFoptional<test> o3( test( 2, OFFalse ) );
@@ -85,7 +106,7 @@ OFTEST(ofstd_optional)
     OFCHECK( !o3 );
 #endif
 
-#ifdef DCMTK_USE_CXX11_STL
+#ifdef HAVE_CXX11
     o3.emplace( 0, OFFalse );
 #else // C++11
     o3 = test( 0, OFFalse );

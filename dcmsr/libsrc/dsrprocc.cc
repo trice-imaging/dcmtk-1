@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2003-2014, OFFIS e.V.
+ *  Copyright (C) 2003-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -45,13 +45,16 @@ OFBool DSRProcedureLogConstraintChecker::isByReferenceAllowed() const
 
 OFBool DSRProcedureLogConstraintChecker::isTemplateSupportRequired() const
 {
-    return OFTrue;
+    return OFFalse;
 }
 
 
-const char *DSRProcedureLogConstraintChecker::getRootTemplateIdentifier() const
+OFCondition DSRProcedureLogConstraintChecker::getRootTemplateIdentification(OFString &templateIdentifier,
+                                                                            OFString &mappingResource) const
 {
-    return "3001";
+    templateIdentifier.clear();
+    mappingResource.clear();
+    return EC_Normal;
 }
 
 
@@ -83,6 +86,11 @@ OFBool DSRProcedureLogConstraintChecker::checkContentRelationship(const E_ValueT
         {
             result = (targetValueType == VT_Text)     || (targetValueType == VT_Code)   || (targetValueType == VT_Num)  ||
                      (targetValueType == VT_DateTime) || (targetValueType == VT_UIDRef) || (targetValueType == VT_PName);
+        }
+        /* new row introduced with CP-2084 */
+        else if ((relationshipType == RT_hasObsContext) && (sourceValueType == VT_Container))
+        {
+            result = (targetValueType == VT_Container);
         }
         /* row 3 of the table */
         else if ((relationshipType == RT_hasAcqContext) && ((sourceValueType == VT_Container) ||

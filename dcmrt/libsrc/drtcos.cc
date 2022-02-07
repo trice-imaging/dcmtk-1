@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTCompensatorSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -37,7 +37,8 @@ DRTCompensatorSequence::Item::Item(const OFBool emptyDefaultItem)
     CompensatorType(DCM_CompensatorType),
     MaterialID(DCM_MaterialID),
     SourceToCompensatorDistance(DCM_SourceToCompensatorDistance),
-    SourceToCompensatorTrayDistance(DCM_SourceToCompensatorTrayDistance)
+    SourceToCompensatorTrayDistance(DCM_SourceToCompensatorTrayDistance),
+    TrayAccessoryCode(DCM_TrayAccessoryCode)
 {
 }
 
@@ -60,7 +61,8 @@ DRTCompensatorSequence::Item::Item(const Item &copy)
     CompensatorType(copy.CompensatorType),
     MaterialID(copy.MaterialID),
     SourceToCompensatorDistance(copy.SourceToCompensatorDistance),
-    SourceToCompensatorTrayDistance(copy.SourceToCompensatorTrayDistance)
+    SourceToCompensatorTrayDistance(copy.SourceToCompensatorTrayDistance),
+    TrayAccessoryCode(copy.TrayAccessoryCode)
 {
 }
 
@@ -92,6 +94,7 @@ DRTCompensatorSequence::Item &DRTCompensatorSequence::Item::operator=(const Item
         MaterialID = copy.MaterialID;
         SourceToCompensatorDistance = copy.SourceToCompensatorDistance;
         SourceToCompensatorTrayDistance = copy.SourceToCompensatorTrayDistance;
+        TrayAccessoryCode = copy.TrayAccessoryCode;
     }
     return *this;
 }
@@ -109,6 +112,7 @@ void DRTCompensatorSequence::Item::clear()
         CompensatorID.clear();
         AccessoryCode.clear();
         CompensatorTrayID.clear();
+        TrayAccessoryCode.clear();
         SourceToCompensatorTrayDistance.clear();
         CompensatorDivergence.clear();
         CompensatorMountingPosition.clear();
@@ -132,6 +136,7 @@ OFBool DRTCompensatorSequence::Item::isEmpty()
            CompensatorID.isEmpty() &&
            AccessoryCode.isEmpty() &&
            CompensatorTrayID.isEmpty() &&
+           TrayAccessoryCode.isEmpty() &&
            SourceToCompensatorTrayDistance.isEmpty() &&
            CompensatorDivergence.isEmpty() &&
            CompensatorMountingPosition.isEmpty() &&
@@ -165,6 +170,7 @@ OFCondition DRTCompensatorSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, CompensatorID, "1", "3", "CompensatorSequence");
         getAndCheckElementFromDataset(item, AccessoryCode, "1", "3", "CompensatorSequence");
         getAndCheckElementFromDataset(item, CompensatorTrayID, "1", "3", "CompensatorSequence");
+        getAndCheckElementFromDataset(item, TrayAccessoryCode, "1", "3", "CompensatorSequence");
         getAndCheckElementFromDataset(item, SourceToCompensatorTrayDistance, "1", "2", "CompensatorSequence");
         getAndCheckElementFromDataset(item, CompensatorDivergence, "1", "3", "CompensatorSequence");
         getAndCheckElementFromDataset(item, CompensatorMountingPosition, "1", "3", "CompensatorSequence");
@@ -194,6 +200,7 @@ OFCondition DRTCompensatorSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmShortString(CompensatorID), "1", "3", "CompensatorSequence");
         addElementToDataset(result, item, new DcmLongString(AccessoryCode), "1", "3", "CompensatorSequence");
         addElementToDataset(result, item, new DcmShortString(CompensatorTrayID), "1", "3", "CompensatorSequence");
+        addElementToDataset(result, item, new DcmLongString(TrayAccessoryCode), "1", "3", "CompensatorSequence");
         addElementToDataset(result, item, new DcmDecimalString(SourceToCompensatorTrayDistance), "1", "2", "CompensatorSequence");
         addElementToDataset(result, item, new DcmCodeString(CompensatorDivergence), "1", "3", "CompensatorSequence");
         addElementToDataset(result, item, new DcmCodeString(CompensatorMountingPosition), "1", "3", "CompensatorSequence");
@@ -488,6 +495,15 @@ OFCondition DRTCompensatorSequence::Item::getSourceToCompensatorTrayDistance(Flo
 }
 
 
+OFCondition DRTCompensatorSequence::Item::getTrayAccessoryCode(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(TrayAccessoryCode, value, pos);
+}
+
+
 OFCondition DRTCompensatorSequence::Item::setAccessoryCode(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -709,6 +725,19 @@ OFCondition DRTCompensatorSequence::Item::setSourceToCompensatorTrayDistance(con
 }
 
 
+OFCondition DRTCompensatorSequence::Item::setTrayAccessoryCode(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = TrayAccessoryCode.putOFStringArray(value);
+    }
+    return result;
+}
+
+
 // --- sequence class ---
 
 DRTCompensatorSequence::DRTCompensatorSequence(const OFBool emptyDefaultSequence)
@@ -812,7 +841,7 @@ OFBool DRTCompensatorSequence::isValid() const
 }
 
 
-unsigned long DRTCompensatorSequence::getNumberOfItems() const
+size_t DRTCompensatorSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -842,12 +871,12 @@ OFCondition DRTCompensatorSequence::gotoNextItem()
 }
 
 
-OFCondition DRTCompensatorSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTCompensatorSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -862,12 +891,12 @@ OFCondition DRTCompensatorSequence::gotoItem(const unsigned long num, OFListIter
 }
 
 
-OFCondition DRTCompensatorSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTCompensatorSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -882,7 +911,7 @@ OFCondition DRTCompensatorSequence::gotoItem(const unsigned long num, OFListCons
 }
 
 
-OFCondition DRTCompensatorSequence::gotoItem(const unsigned long num)
+OFCondition DRTCompensatorSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -918,7 +947,7 @@ const DRTCompensatorSequence::Item &DRTCompensatorSequence::getCurrentItem() con
 }
 
 
-OFCondition DRTCompensatorSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTCompensatorSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -928,7 +957,7 @@ OFCondition DRTCompensatorSequence::getItem(const unsigned long num, Item *&item
 }
 
 
-DRTCompensatorSequence::Item &DRTCompensatorSequence::getItem(const unsigned long num)
+DRTCompensatorSequence::Item &DRTCompensatorSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -938,7 +967,7 @@ DRTCompensatorSequence::Item &DRTCompensatorSequence::getItem(const unsigned lon
 }
 
 
-const DRTCompensatorSequence::Item &DRTCompensatorSequence::getItem(const unsigned long num) const
+const DRTCompensatorSequence::Item &DRTCompensatorSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -948,13 +977,13 @@ const DRTCompensatorSequence::Item &DRTCompensatorSequence::getItem(const unsign
 }
 
 
-DRTCompensatorSequence::Item &DRTCompensatorSequence::operator[](const unsigned long num)
+DRTCompensatorSequence::Item &DRTCompensatorSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTCompensatorSequence::Item &DRTCompensatorSequence::operator[](const unsigned long num) const
+const DRTCompensatorSequence::Item &DRTCompensatorSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -977,7 +1006,7 @@ OFCondition DRTCompensatorSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTCompensatorSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTCompensatorSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -1000,7 +1029,7 @@ OFCondition DRTCompensatorSequence::insertItem(const unsigned long pos, Item *&i
 }
 
 
-OFCondition DRTCompensatorSequence::removeItem(const unsigned long pos)
+OFCondition DRTCompensatorSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

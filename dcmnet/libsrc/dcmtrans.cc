@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2012, OFFIS e.V.
+ *  Copyright (C) 1998-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,17 +21,18 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
+#ifdef HAVE_WINDOWS_H
+// on Windows, we need Winsock2 for network functions
+#include <winsock2.h>
+#endif
+
 #include "dcmtk/dcmnet/dcmtrans.h"
 #include "dcmtk/dcmnet/dcompat.h"     /* compatibility code for certain Unix dialects such as SunOS */
 #include "dcmtk/dcmnet/diutil.h"
+#include "dcmtk/ofstd/ofvector.h"
 
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#define INCLUDE_CTIME
-#define INCLUDE_CERRNO
-#define INCLUDE_CSIGNAL
-#include "dcmtk/ofstd/ofstdinc.h"
+#include "dcmtk/ofstd/oftimer.h"
 
 BEGIN_EXTERN_C
 #ifdef HAVE_SYS_TIME_H
@@ -45,25 +46,45 @@ BEGIN_EXTERN_C
 #endif
 END_EXTERN_C
 
-#ifdef HAVE_WINDOWS_H
-#include <windows.h>
+#ifdef DCMTK_HAVE_POLL
+#include <poll.h>
 #endif
 
-#ifdef HAVE_GUSI_H
-#include <GUSI.h>	/* Use the Grand Unified Sockets Interface (GUSI) on Macintosh */
+/* platform independent definition of EINTR */
+enum
+{
+#ifdef HAVE_WINSOCK_H
+    DCMNET_EINTR = WSAEINTR
+#else
+    DCMNET_EINTR = EINTR
 #endif
+};
 
-DcmTransportConnection::DcmTransportConnection(int openSocket)
+OFGlobal<Sint32> dcmSocketSendTimeout(60);
+OFGlobal<Sint32> dcmSocketReceiveTimeout(60);
+
+DcmTransportConnection::DcmTransportConnection(DcmNativeSocketType openSocket)
 : theSocket(openSocket)
 {
-#ifndef HAVE_GUSI_H
   if (theSocket >= 0)
   {
-#ifndef DISABLE_SEND_TIMEOUT
+
+#ifdef DISABLE_SEND_TIMEOUT
+#ifdef _MSC_VER
+#pragma message("Warning: The macro DISABLE_SEND_TIMEOUT is not supported anymore. See 'macros.txt' for details.")
+#else
+#warning The macro DISABLE_SEND_TIMEOUT is not supported anymore. See "macros.txt" for details.
+#endif
+#endif
+
+    /* get global timeout for the send() function */
+    const Sint32 sendTimeout = dcmSocketSendTimeout.get();
+    if (sendTimeout >= 0)
     {
-      /* use a timeout of 60 seconds for the send() function */
-      const int sendTimeout = 60;
-      DCMNET_DEBUG("setting network send timeout to " << sendTimeout << " seconds");
+      if (sendTimeout == 0)
+        DCMNET_DEBUG("setting network send timeout to 0 (infinite)");
+      else
+        DCMNET_DEBUG("setting network send timeout to " << sendTimeout << " seconds");
 #ifdef HAVE_WINSOCK_H
       // for Windows, specify send timeout in milliseconds
       int timeoutVal = sendTimeout * 1000;
@@ -82,12 +103,22 @@ DcmTransportConnection::DcmTransportConnection(int openSocket)
         DCMNET_WARN("cannot set network send timeout to " << sendTimeout << " seconds");
       }
     }
+#ifdef DISABLE_RECV_TIMEOUT
+#ifdef _MSC_VER
+#pragma message("Warning: The macro DISABLE_RECV_TIMEOUT is not supported anymore. See 'macros.txt' for details.")
+#else
+#warning The macro DISABLE_RECV_TIMEOUT is not supported anymore. See "macros.txt" for details.
 #endif
-#ifndef DISABLE_RECV_TIMEOUT
+#endif
+
+    /* get global timeout for the recv() function */
+    const Sint32 recvTimeout = dcmSocketReceiveTimeout.get();
+    if (recvTimeout >= 0)
     {
-      /* use a timeout of 60 seconds for the recv() function */
-      const int recvTimeout = 60;
-      DCMNET_DEBUG("setting network receive timeout to " << recvTimeout << " seconds");
+      if (recvTimeout == 0)
+        DCMNET_DEBUG("setting network receive timeout to 0 (infinite)");
+      else
+        DCMNET_DEBUG("setting network receive timeout to " << recvTimeout << " seconds");
 #ifdef HAVE_WINSOCK_H
       // for Windows, specify receive timeout in milliseconds
       int timeoutVal = recvTimeout * 1000;
@@ -106,9 +137,7 @@ DcmTransportConnection::DcmTransportConnection(int openSocket)
         DCMNET_WARN("cannot set network receive timeout to " << recvTimeout << " seconds");
       }
     }
-#endif
   }
-#endif
 }
 
 DcmTransportConnection::~DcmTransportConnection()
@@ -136,12 +165,12 @@ OFBool DcmTransportConnection::safeSelectReadableAssociation(DcmTransportConnect
     {
       if (connections[i])
       {
-      	if (connections[i]->networkDataAvailable(timeToWait))
-      	{
-      	  i = connCount; /* break out of for loop */
-      	  found = OFTrue; /* break out of while loop */
-      	}
-      	timeToWait = 0;
+        if (connections[i]->networkDataAvailable(timeToWait))
+        {
+          i = connCount; /* break out of for loop */
+          found = OFTrue; /* break out of while loop */
+        }
+        timeToWait = 0;
       }
     } /* for */
     if (timeToWait == 1) return OFFalse; /* all entries NULL */
@@ -162,46 +191,104 @@ OFBool DcmTransportConnection::safeSelectReadableAssociation(DcmTransportConnect
 
 OFBool DcmTransportConnection::fastSelectReadableAssociation(DcmTransportConnection *connections[], int connCount, int timeout)
 {
+
+#ifdef _WIN32
+  SOCKET socketfd = INVALID_SOCKET;
+#else /* _WIN32 */
   int socketfd = -1;
+#endif /* _WIN32 */
+
+#ifdef DCMTK_HAVE_POLL
+  OFVector<struct pollfd> pfd;
+  pfd.reserve(connCount);
+  struct pollfd pfd1 = {0, POLLIN, 0};
+#else /* DCMTK_HAVE_POLL */
+  fd_set fdset;
+  FD_ZERO(&fdset);
+#ifdef _WIN32
+  SOCKET maxsocketfd = INVALID_SOCKET;
+#else /* _WIN32 */
   int maxsocketfd = -1;
+#endif /* _WIN32 */
+#endif /* DCMTK_HAVE_POLL */
+
   int i=0;
   struct timeval t;
-  fd_set fdset;
-
-  FD_ZERO(&fdset);
-  t.tv_sec = timeout;
-  t.tv_usec = 0;
+  OFTimer timer;
+  int lTimeout = timeout;
 
   for (i=0; i<connCount; i++)
   {
     if (connections[i])
     {
       socketfd = connections[i]->getSocket();
+#ifdef DCMTK_HAVE_POLL
+      pfd1.fd = socketfd;
+      pfd.push_back(pfd1);
+#else /* DCMTK_HAVE_POLL */
 #ifdef __MINGW32__
       /* on MinGW, FD_SET expects an unsigned first argument */
       FD_SET((unsigned int)socketfd, &fdset);
-#else
+#else /* __MINGW32__ */
       FD_SET(socketfd, &fdset);
-#endif
-
+#endif /* __MINGW32__ */
       if (socketfd > maxsocketfd) maxsocketfd = socketfd;
+#endif /* DCMTK_HAVE_POLL */
     }
   }
 
+  OFBool done = OFFalse;
+  while (!done)
+  {
+    // timeval can be undefined after the call to select, see
+    // http://man7.org/linux/man-pages/man2/select.2.html
+    t.tv_sec = lTimeout;
+    t.tv_usec = 0;
+
+#ifdef DCMTK_HAVE_POLL
+    int nfound = poll(&pfd[0], pfd.size(), t.tv_sec*1000+(t.tv_usec/1000));
+#else /* DCMTK_HAVE_POLL */
 #ifdef HAVE_INTP_SELECT
-  int nfound = select(maxsocketfd + 1, (int *)(&fdset), NULL, NULL, &t);
-#else
-  int nfound = select(maxsocketfd + 1, &fdset, NULL, NULL, &t);
-#endif
-  if (nfound<=0) return OFFalse;      /* none available for reading */
+    int nfound = select(OFstatic_cast(int, maxsocketfd + 1), (int *)(&fdset), NULL, NULL, &t);
+#else /* HAVE_INTP_SELECT */
+    // This is safe because on Win32 the first parameter of select() is ignored anyway
+    int nfound = select(OFstatic_cast(int, maxsocketfd + 1), &fdset, NULL, NULL, &t);
+#endif /* HAVE_INTP_SELECT */
+#endif /* DCMTK_HAVE_POLL */
+
+    if (nfound == 0) return OFFalse; // a regular timeout
+    else if (nfound > 0) done = OFTrue; // data available for reading
+    else
+    {
+        // check for interrupt call
+        if (OFStandard::getLastNetworkErrorCode().value() == DCMNET_EINTR)
+        {
+            int diff = OFstatic_cast(int, timer.getDiff());
+            if (diff < timeout)
+            {
+                lTimeout = timeout - diff;
+                continue; // retry
+            }
+        }
+        else
+        {
+            DCMNET_ERROR("socket select returned with error: " << OFStandard::getLastNetworkErrorCode().message());
+            return OFFalse;
+        }
+    }
+  }
 
   for (i=0; i<connCount; i++)
   {
     if (connections[i])
     {
-      socketfd = connections[i]->getSocket();
       /* if not available, set entry in array to NULL */
+#ifdef DCMTK_HAVE_POLL
+      if(!(pfd[i].revents & POLLIN)) connections[i] = NULL;
+#else
+      socketfd = connections[i]->getSocket();
       if (!FD_ISSET(socketfd, &fdset)) connections[i] = NULL;
+#endif
     }
   }
   return OFTrue;
@@ -226,7 +313,7 @@ void DcmTransportConnection::dumpConnectionParameters(STD_NAMESPACE ostream& out
 
 /* ================================================ */
 
-DcmTCPConnection::DcmTCPConnection(int openSocket)
+DcmTCPConnection::DcmTCPConnection(DcmNativeSocketType openSocket)
 : DcmTransportConnection(openSocket)
 {
 }
@@ -236,25 +323,25 @@ DcmTCPConnection::~DcmTCPConnection()
   close();
 }
 
-DcmTransportLayerStatus DcmTCPConnection::serverSideHandshake()
+OFCondition DcmTCPConnection::serverSideHandshake()
 {
-  return TCS_ok;
+  return EC_Normal;
 }
 
-DcmTransportLayerStatus DcmTCPConnection::clientSideHandshake()
+OFCondition DcmTCPConnection::clientSideHandshake()
 {
-  return TCS_ok;
+  return EC_Normal;
 }
 
-DcmTransportLayerStatus DcmTCPConnection::renegotiate(const char * /* newSuite */ )
+OFCondition DcmTCPConnection::renegotiate(const char * /* newSuite */ )
 {
-  return TCS_ok;
+  return EC_Normal;
 }
 
 ssize_t DcmTCPConnection::read(void *buf, size_t nbyte)
 {
 #ifdef HAVE_WINSOCK_H
-  return recv(getSocket(), (char *)buf, nbyte, 0);
+  return recv(getSocket(), (char *)buf, OFstatic_cast(int, nbyte), 0);
 #else
   return ::read(getSocket(), (char *)buf, nbyte);
 #endif
@@ -263,7 +350,7 @@ ssize_t DcmTCPConnection::read(void *buf, size_t nbyte)
 ssize_t DcmTCPConnection::write(void *buf, size_t nbyte)
 {
 #ifdef HAVE_WINSOCK_H
-  return send(getSocket(), (char *)buf, nbyte, 0);
+  return send(getSocket(), (char *)buf, OFstatic_cast(int, nbyte), 0);
 #else
   return ::write(getSocket(), (char *)buf, nbyte);
 #endif
@@ -271,7 +358,12 @@ ssize_t DcmTCPConnection::write(void *buf, size_t nbyte)
 
 void DcmTCPConnection::close()
 {
-  if (getSocket() != -1)
+  closeTransportConnection();
+}
+
+void DcmTCPConnection::closeTransportConnection()
+{
+  if (getSocket() != OFstatic_cast(DcmNativeSocketType, (-1)))
   {
 #ifdef HAVE_WINSOCK_H
     (void) shutdown(getSocket(), 1 /* SD_SEND */);
@@ -280,7 +372,7 @@ void DcmTCPConnection::close()
     (void) ::close(getSocket());
 #endif
   /* forget about this socket (now closed) */
-    setSocket(-1);
+    setSocket(OFstatic_cast(DcmNativeSocketType, (-1)));
   }
 }
 
@@ -297,9 +389,12 @@ unsigned long DcmTCPConnection::getPeerCertificate(void * /* buf */ , unsigned l
 OFBool DcmTCPConnection::networkDataAvailable(int timeout)
 {
   struct timeval t;
-  fd_set fdset;
   int nfound;
+  OFTimer timer;
+  int lTimeout = timeout;
 
+#ifndef DCMTK_HAVE_POLL
+  fd_set fdset;
   FD_ZERO(&fdset);
 
 #ifdef __MINGW32__
@@ -307,22 +402,64 @@ OFBool DcmTCPConnection::networkDataAvailable(int timeout)
   FD_SET((unsigned int) getSocket(), &fdset);
 #else
   FD_SET(getSocket(), &fdset);
-#endif
+#endif /* __MINGW32__ */
+#endif /* DCMTK_HAVE_POLL */
 
-  t.tv_sec = timeout;
-  t.tv_usec = 0;
-
-#ifdef HAVE_INTP_SELECT
-  nfound = select(getSocket() + 1, (int *)(&fdset), NULL, NULL, &t);
-#else
-  nfound = select(getSocket() + 1, &fdset, NULL, NULL, &t);
-#endif
-  if (nfound <= 0) return OFFalse;
-  else
+  while (1)
   {
-    if (FD_ISSET(getSocket(), &fdset)) return OFTrue;
-    else return OFFalse;  /* This should not really happen */
+      // timeval can be undefined after the call to select, see
+      // http://man7.org/linux/man-pages/man2/select.2.html
+      t.tv_sec = lTimeout;
+      t.tv_usec = 0;
+
+#ifdef DCMTK_HAVE_POLL
+  struct pollfd pfd[] =
+  {
+    { getSocket(), POLLIN, 0 }
+  };
+  nfound = poll(pfd, 1, t.tv_sec*1000+(t.tv_usec/1000));
+#else
+#ifdef HAVE_INTP_SELECT
+      nfound = select(OFstatic_cast(int, getSocket() + 1), (int *)(&fdset), NULL, NULL, &t);
+#else
+      // This is safe because on Win32 the first parameter of select() is ignored anyway
+      nfound = select(OFstatic_cast(int, getSocket() + 1), &fdset, NULL, NULL, &t);
+#endif /* HAVE_INTP_SELECT */
+#endif /* DCMTK_HAVE_POLL */
+
+      if (nfound < 0)
+      {
+        // check for interrupt call
+        if (OFStandard::getLastNetworkErrorCode().value() == DCMNET_EINTR)
+        {
+            int diff = OFstatic_cast(int, timer.getDiff());
+            if (diff < timeout)
+            {
+                lTimeout = timeout - diff;
+                continue; // retry
+            }
+        }
+        else
+        {
+            DCMNET_ERROR("socket select returned with error: " << OFStandard::getLastNetworkErrorCode().message());
+            return OFFalse;
+        }
+      }
+      if (nfound == 0)
+      {
+        return OFFalse; // a regular timeout
+      }
+      else
+      {
+#ifdef DCMTK_HAVE_POLL
+        if (pfd[0].revents & POLLIN) return OFTrue;
+#else
+        if (FD_ISSET(getSocket(), &fdset)) return OFTrue;
+#endif
+        else return OFFalse;  /* This should not really happen */
+      }
   }
+  return OFFalse;
 }
 
 OFBool DcmTCPConnection::isTransparentConnection()
@@ -334,27 +471,4 @@ OFString& DcmTCPConnection::dumpConnectionParameters(OFString& str)
 {
   str = "Transport connection: TCP/IP, unencrypted.";
   return str;
-}
-
-const char *DcmTCPConnection::errorString(DcmTransportLayerStatus code)
-{
-  switch (code)
-  {
-    case TCS_ok:
-      return "no error";
-      /* break; */
-    case TCS_noConnection:
-      return "no secure connection in place";
-      /* break; */
-    case TCS_tlsError:
-      return "TLS error";
-      /* break; */
-    case TCS_illegalCall:
-      return "illegal call";
-      /* break; */
-    case TCS_unspecifiedError:
-      return "unspecified error";
-      /* break; */
-  }
-  return "unknown error code";
 }

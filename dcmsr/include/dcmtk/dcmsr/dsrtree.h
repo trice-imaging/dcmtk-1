@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2018, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,6 +28,8 @@
 
 #include "dcmtk/dcmsr/dsrtypes.h"
 #include "dcmtk/dcmsr/dsrtncsr.h"
+
+#include "dcmtk/ofstd/ofutil.h"
 
 
 /*-----------------------*
@@ -224,7 +226,7 @@ template<typename T = DSRTreeNode> class DSRTree
     /** check whether tree has any nodes
      ** @return OFTrue if tree is empty, OFFalse otherwise
      */
-    OFBool isEmpty() const;
+    inline OFBool isEmpty() const;
 
     /** count number of nodes in the tree.
      *  This method iterates over all nodes that are stored in the tree.
@@ -236,12 +238,12 @@ template<typename T = DSRTreeNode> class DSRTree
      *  The node ID uniquely identifies a content item in the document tree.
      ** @return ID of the next node to be created (should never be 0)
      */
-    size_t getNextNodeID() const;
+    inline size_t getNextNodeID() const;
 
     /** set internal cursor to root node
      ** @return ID of root node if successful, 0 otherwise
      */
-    size_t gotoRoot();
+    inline size_t gotoRoot();
 
     /** set internal cursor to specified node
      ** @param  searchID       ID of the node to set the cursor to
@@ -263,7 +265,7 @@ template<typename T = DSRTreeNode> class DSRTree
     size_t gotoNode(const OFString &reference,
                     const OFBool startFromRoot = OFTrue);
 
-    /** set cursor to specified node. Starts from current position!
+    /** set internal cursor to specified node
      ** @param  annotation     annotation of the node to set the cursor to
      *  @param  startFromRoot  flag indicating whether to start from the root node
      *                         or the current one
@@ -272,16 +274,36 @@ template<typename T = DSRTreeNode> class DSRTree
     size_t gotoNode(const DSRTreeNodeAnnotation &annotation,
                     const OFBool startFromRoot = OFTrue);
 
+    /** set internal cursor to specified node (given by its value).
+     *  This method requires that T implements the comparison operator "not equal".
+     ** @param  nodeValue      value of the node to set the cursor to
+     *  @param  startFromRoot  flag indicating whether to start from the root node
+     *                         or the current one
+     ** @return ID of the new current node if successful, 0 otherwise
+     */
+    size_t gotoNode(const T &nodeValue,
+                    const OFBool startFromRoot = OFTrue);
+
     /** add new node to the current one.
      *  Please note that no copy of the given node is created.  Therefore, the node
      *  should be created with new() - do not use a reference to a local variable.
-     *  If the node could be added successfully the cursor is set to it automatically.
+     *  If the node could be added successfully, the cursor is set to it automatically.
      ** @param  node     pointer to the new node to be added
      *  @param  addMode  flag specifying at which position to add the new node
-     ** @return ID of the new added node if successful, 0 otherwise
+     ** @return ID of the new node if successful, 0 otherwise
      */
     virtual size_t addNode(T *node,
                            const E_AddMode addMode = AM_afterCurrent);
+
+    /** replace current node by the given one.
+     *  Please note that no copy of the given node is created.  Therefore, the node
+     *  should be created with new() - do not use a reference to a local variable.  If
+     *  the node could be replaced successfully, the "old" node (and all of its child
+     *  nodes) are deleted, and the cursor is set to the new one.
+     ** @param  node  pointer to the new node to replace the current one
+     ** @return ID of the new node if successful, 0 otherwise
+     */
+    virtual size_t replaceNode(T *node);
 
     /** extract current node from tree.
      *  Please note that not only the specified node but also all of its child nodes are
@@ -306,13 +328,13 @@ template<typename T = DSRTreeNode> class DSRTree
      */
     virtual size_t removeNode();
 
-    /** extract a subtree i.e.\ a fragment from this tree.
+    /** extract a subtree, i.e.\ a fragment from this tree.
      *  The subtree is specified by the current node, which becomes the root of the subtree.
      ** @return pointer to the extracted subtree, NULL in case of error
      */
     virtual DSRTree<T> *extractSubTree();
 
-    /** clone a subtree i.e.\ a fragment of this tree.
+    /** clone a subtree, i.e.\ a fragment of this tree.
      *  The cloning starts with the current node and ends with the given node.
      ** @param  stopAfterNodeID  ID of the node after which the cloning should stop.
      *                           By default (0), the process ends after cloning the
@@ -331,7 +353,8 @@ template<typename T = DSRTreeNode> class DSRTree
     DSRTree(T *rootNode);
 
     /** special copy constructor that clones a particular subtree only
-     ** @param  startCursor      first node of the subtree to be copied
+     ** @param  startCursor      cursor pointing to first node of the subtree to be
+     *                           copied
      *  @param  stopAfterNodeID  ID of the node after which the cloning should stop
      */
     DSRTree(const DSRTreeNodeCursor<T> &startCursor,
@@ -347,6 +370,12 @@ template<typename T = DSRTreeNode> class DSRTree
      ** @return pointer to root node, might be NULL (empty tree)
      */
     virtual T *getRoot() const;
+
+    /** delete a tree given by its root node.
+     *  Please note that the given 'rootNode' pointer becomes invalid afterwards.
+     ** @param  rootNode  pointer to the root node of the tree to be deleted
+     */
+    virtual void deleteTreeFromRootNode(T *rootNode);
 
 
   private:
@@ -549,12 +578,9 @@ void DSRTree<T>::clearAnnotations()
     DSRTreeNodeCursor<T> cursor(RootNode);
     if (cursor.isValid())
     {
-        T *node;
         /* iterate over all nodes */
         do {
-            node = cursor.getNode();
-            if (node != NULL)
-                node->clearAnnotation();
+            cursor.getNode()->clearAnnotation();
         } while (cursor.iterate());
     }
 }
@@ -647,6 +673,17 @@ size_t DSRTree<T>::gotoNode(const DSRTreeNodeAnnotation &annotation,
 
 
 template<typename T>
+size_t DSRTree<T>::gotoNode(const T &nodeValue,
+                            const OFBool startFromRoot)
+{
+    if (startFromRoot)
+        gotoRoot();
+    /* call the real function */
+    return DSRTreeNodeCursor<T>::gotoNode(nodeValue);
+}
+
+
+template<typename T>
 size_t DSRTree<T>::addNode(T *node,
                            const E_AddMode addMode)
 {
@@ -684,14 +721,13 @@ size_t DSRTree<T>::addNode(T *node,
                     else if (!this->NodeCursorStack.empty() && (this->Position == 1))
                         this->NodeCursorStack.top()->Down = node;
                     this->NodeCursor->Prev = lastNode;
+                    /* check whether root node has been replaced */
+                    if (this->NodeCursor == this->RootNode)
+                        this->RootNode = node;
                     break;
                 case AM_belowCurrent:
                     /* store old position */
-                    if (this->Position > 0)
-                    {
-                        this->PositionList.push_back(this->Position);
-                        this->Position = 1;
-                    }
+                    this->Position.goDown();
                     this->NodeCursorStack.push(this->NodeCursor);
                     /* parent node has already child nodes */
                     if (this->NodeCursor->Down != NULL)
@@ -712,11 +748,7 @@ size_t DSRTree<T>::addNode(T *node,
                     break;
                 case AM_belowCurrentBeforeFirstChild:
                     /* store old position */
-                    if (this->Position > 0)
-                    {
-                        this->PositionList.push_back(this->Position);
-                        this->Position = 1;
-                    }
+                    this->Position.goDown();
                     this->NodeCursorStack.push(this->NodeCursor);
                     /* parent node has already child nodes */
                     if (this->NodeCursor->Down != NULL)
@@ -733,10 +765,61 @@ size_t DSRTree<T>::addNode(T *node,
             }
             this->NodeCursor = node;
         } else {
+            /* originally, the tree was empty */
             this->RootNode = this->NodeCursor = node;
-            this->Position = 1;
+            this->Position.initialize();
         }
         nodeID = this->NodeCursor->getIdent();
+    }
+    return nodeID;
+}
+
+
+template<typename T>
+size_t DSRTree<T>::replaceNode(T *node)
+{
+    size_t nodeID = 0;
+    /* make sure that 'node' points to a single node or to the "root" of a subtree */
+    if ((node != NULL) && (node->Prev == NULL))
+    {
+        if (this->NodeCursor != NULL)
+        {
+            /* connect to previous node */
+            if (this->NodeCursor->Prev != NULL)
+            {
+                (this->NodeCursor->Prev)->Next = node;
+                /* remove reference to former sibling */
+                this->NodeCursor->Prev = NULL;
+            } else {
+                /* is there any direct parent node? */
+                if (!this->NodeCursorStack.empty())
+                {
+                    DSRTreeNode *parent = this->NodeCursorStack.top();
+                    if (parent != NULL)
+                        parent->Down = node;
+                }
+            }
+            /* connect to next node */
+            if (this->NodeCursor->Next != NULL)
+            {
+                DSRTreeNode *lastNode = node;
+                /* goto last node (sibling), if any */
+                while (lastNode->Next != NULL)
+                    lastNode = lastNode->Next;
+                (this->NodeCursor->Next)->Prev = lastNode;
+                lastNode->Next = this->NodeCursor->Next;
+                /* remove reference to former sibling */
+                this->NodeCursor->Next = NULL;
+            }
+            /* check whether root node has been replaced */
+            if (this->NodeCursor == this->RootNode)
+                this->RootNode = node;
+            /* free memory of old (now replaced) node */
+            deleteTreeFromRootNode(this->NodeCursor);
+            /* set cursor to new node */
+            this->NodeCursor = node;
+            nodeID = node->getIdent();
+        }
     }
     return nodeID;
 }
@@ -783,20 +866,18 @@ T *DSRTree<T>::extractNode()
             {
                 this->NodeCursor = this->NodeCursorStack.top();
                 this->NodeCursorStack.pop();
-                this->Position = this->PositionList.back();
-                this->PositionList.pop_back();
+                this->Position.goUp();
                 /* should never be NULL, but ... */
                 if (this->NodeCursor != NULL)
                     this->NodeCursor->Down = NULL;
                 else
                 {
                     this->RootNode = NULL;                  // tree is now empty
-                    this->Position = 0;
+                    this->Position.clear();
                 }
             } else {
                 this->RootNode = this->NodeCursor = NULL;   // tree is now empty
-                this->Position = 0;
-                this->PositionList.clear();
+                this->Position.clear();
             }
         }
         /* remove references to former siblings */
@@ -881,6 +962,8 @@ DSRTree<T> *DSRTree<T>::cloneSubTree(const size_t stopAfterNodeID) const
 template<typename T>
 void DSRTree<T>::swap(DSRTree<T> &tree)
 {
+    /* swap inherited node cursor */
+    DSRTreeNodeCursor<T>::swap(tree);
     /* swap pointer to the root tree node */
     OFswap(RootNode, tree.RootNode);
 }
@@ -890,6 +973,15 @@ template<typename T>
 T *DSRTree<T>::getRoot() const
 {
     return RootNode;
+}
+
+
+template<typename T>
+void DSRTree<T>::deleteTreeFromRootNode(T *rootNode)
+{
+    /* create a temporary tree object from the given node, */
+    /* the content will be deleted during destruction */
+    DSRTree<T> tree(rootNode);
 }
 
 

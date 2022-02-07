@@ -6,8 +6,9 @@
 #ifndef CHARLS_UTIL
 #define CHARLS_UTIL
 
-#define INCLUDE_CSTDDEF
-#include "dcmtk/ofstd/ofstdinc.h"
+#include <cstddef>
+#include "dcmtk/ofstd/oftypes.h"
+
 #include "pubtypes.h"
 
 #ifndef MAX
@@ -22,6 +23,7 @@
 #define ABS(a)              (((a) > 0) ? (a) : -(a))
 #endif
 
+class alloc_fail { };
 
 inline LONG log_2(LONG n)
 {

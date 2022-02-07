@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,17 +25,17 @@
 
 #include "dcmtk/dcmsr/dsrtcosp.h"
 
-#define INCLUDE_CSTDIO
-#include "dcmtk/ofstd/ofstdinc.h"
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcvrul.h"
 
-#ifdef HAVE_EXPLICIT_TEMPLATE_SPECIALIZATION
-#define EXPLICIT_SPECIALIZATION template<>
-#else
-#define EXPLICIT_SPECIALIZATION
-#endif
 
-/* declared in class DSRListOfItems<T> */
-EXPLICIT_SPECIALIZATION const Uint32 DSRListOfItems<Uint32>::EmptyItem = 0;
+template<>
+const Uint32& DSRgetEmptyItem<Uint32>()
+{
+    // no need to be thread-safe, since it is only an int
+    static const Uint32 t = 0;
+    return t;
+}
 
 
 DSRReferencedSamplePositionList::DSRReferencedSamplePositionList()
@@ -144,7 +144,9 @@ OFCondition DSRReferencedSamplePositionList::putString(const char *stringValue)
         /* retrieve sample positions from string */
         while (result.good() && (ptr != NULL))
         {
-#if SIZEOF_LONG == 8
+#ifdef SCNu32
+            if (sscanf(ptr, "%" SCNu32, &value) == 1)
+#elif SIZEOF_LONG == 8
             if (sscanf(ptr, "%u", &value) == 1)
 #else
             if (sscanf(ptr, "%lu", &value) == 1)

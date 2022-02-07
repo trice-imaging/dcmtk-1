@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2015, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,20 +24,11 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #ifdef HAVE_WINDOWS_H
-#include <windows.h>     /* this includes either winsock.h or winsock2.h */
-#else
-#ifdef HAVE_WINSOCK_H
-#include <winsock.h>     /* include winsock.h directly i.e. on MacOS */
+// on Windows, we need Winsock2 for getting network adapter information
+#include <winsock2.h>
+#include <iphlpapi.h>
+#include <ws2tcpip.h>
 #endif
-#endif
-
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#define INCLUDE_CTIME
-#define INCLUDE_LIBC
-#define INCLUDE_UNISTD
-#include "dcmtk/ofstd/ofstdinc.h"
 
 BEGIN_EXTERN_C
 #ifdef HAVE_SYS_TIME_H
@@ -70,6 +61,10 @@ BEGIN_EXTERN_C
 #endif
 #endif
 
+#ifdef __MINGW32__
+#include <winerror.h> /* needed for NO_ERROR constant on MinGW */
+#endif
+
 END_EXTERN_C
 
 #include "dcmtk/ofstd/ofstream.h"
@@ -79,7 +74,8 @@ END_EXTERN_C
 #include "dcmtk/ofstd/ofcrc32.h"
 #include "dcmtk/ofstd/ofdefine.h"
 #include "dcmtk/ofstd/ofstd.h"
-#include "dcmtk/ofstd/ofnetdb.h"
+#include "dcmtk/ofstd/ofvector.h"
+#include "dcmtk/ofstd/ofsockad.h"
 
 struct UIDNameMap {
     const char* uid;
@@ -122,6 +118,10 @@ static const UIDNameMap uidNameMap[] = {
     { UID_DeflatedExplicitVRLittleEndianTransferSyntax,        "DeflatedLittleEndianExplicit" },
     { UID_JPEG2000LosslessOnlyTransferSyntax,                  "JPEG2000LosslessOnly" },
     { UID_JPEG2000TransferSyntax,                              "JPEG2000" },
+    { UID_JPEG2000Part2MulticomponentImageCompressionLosslessOnlyTransferSyntax, "JPEG2000MulticomponentLosslessOnly" },
+    { UID_JPEG2000Part2MulticomponentImageCompressionTransferSyntax,             "JPEG2000Multicomponent" },
+    { UID_JPIPReferencedTransferSyntax,                        "JPIPReferenced" },
+    { UID_JPIPReferencedDeflateTransferSyntax,                 "JPIPReferencedDeflate" },
     { UID_MPEG2MainProfileAtMainLevelTransferSyntax,           "MPEG2MainProfile@MainLevel" },
     { UID_MPEG2MainProfileAtHighLevelTransferSyntax,           "MPEG2MainProfile@HighLevel" },
     { UID_MPEG4HighProfileLevel4_1TransferSyntax,              "MPEG4HighProfile/Level4.1" },
@@ -129,14 +129,18 @@ static const UIDNameMap uidNameMap[] = {
     { UID_MPEG4HighProfileLevel4_2_For2DVideoTransferSyntax,   "MPEG4HighProfile/Level4.2For2DVideo" },
     { UID_MPEG4HighProfileLevel4_2_For3DVideoTransferSyntax,   "MPEG4HighProfile/Level4.2For3DVideo" },
     { UID_MPEG4StereoHighProfileLevel4_2TransferSyntax,        "MPEG4StereoHighProfile/Level4.2" },
-    { UID_JPEG2000Part2MulticomponentImageCompressionLosslessOnlyTransferSyntax, "JPEG2000MulticomponentLosslessOnly" },
-    { UID_JPEG2000Part2MulticomponentImageCompressionTransferSyntax,             "JPEG2000Multicomponent" },
-    { UID_JPIPReferencedTransferSyntax,                        "JPIPReferenced" },
-    { UID_JPIPReferencedDeflateTransferSyntax,                 "JPIPReferencedDeflate" },
+    { UID_HEVCMainProfileLevel5_1TransferSyntax,               "HEVCMainProfile/Level5.1" },
+    { UID_HEVCMain10ProfileLevel5_1TransferSyntax,             "HEVCMain10Profile/Level5.1" },
+    { UID_SMPTEST2110_20_UncompressedProgressiveActiveVideoTransferSyntax, "SMPTEST2110-20:UncompressedProgressiveActiveVideo" },
+    { UID_SMPTEST2110_20_UncompressedInterlacedActiveVideoTransferSyntax, "SMPTEST2110-20:UncompressedInterlacedActiveVideo" },
+    { UID_SMPTEST2110_30_PCMDigitalAudioTransferSyntax,        "SMPTEST2110-30:PCMDigitalAudio" },
     { UID_RFC2557MIMEEncapsulationTransferSyntax,              "RFC2557MIMEEncapsulation" },
     { UID_XMLEncodingTransferSyntax,                           "XMLEncoding" },
+    { UID_PrivateGE_LEI_WithBigEndianPixelDataTransferSyntax,  "PrivateGELittleEndianImplicitWithBigEndianPixelData" },
 
-    // Storage
+    // Storage (DICOM)
+    { UID_AcquisitionContextSRStorage,                         "AcquisitionContextSRStorage" },
+    { UID_AdvancedBlendingPresentationStateStorage,            "AdvancedBlendingPresentationStateStorage" },
     { UID_AmbulatoryECGWaveformStorage,                        "AmbulatoryECGWaveformStorage" },
     { UID_ArterialPulseWaveformStorage,                        "ArterialPulseWaveformStorage" },
     { UID_AutorefractionMeasurementsStorage,                   "AutorefractionMeasurementsStorage" },
@@ -144,28 +148,41 @@ static const UIDNameMap uidNameMap[] = {
     { UID_BasicTextSRStorage,                                  "BasicTextSRStorage" },
     { UID_BasicVoiceAudioWaveformStorage,                      "BasicVoiceAudioWaveformStorage" },
     { UID_BlendingSoftcopyPresentationStateStorage,            "BlendingSoftcopyPresentationStateStorage" },
+    { UID_BodyPositionWaveformStorage,                         "BodyPositionWaveformStorage" },
     { UID_BreastProjectionXRayImageStorageForPresentation,     "BreastProjectionXRayImageStorageForPresentation" },
     { UID_BreastProjectionXRayImageStorageForProcessing,       "BreastProjectionXRayImageStorageForProcessing" },
     { UID_BreastTomosynthesisImageStorage,                     "BreastTomosynthesisImageStorage" },
     { UID_CardiacElectrophysiologyWaveformStorage,             "CardiacElectrophysiologyWaveformStorage" },
+    { UID_CArmPhotonElectronRadiationRecordStorage,            "CArmPhotonElectronRadiationRecordStorage" },
+    { UID_CArmPhotonElectronRadiationStorage,                  "CArmPhotonElectronRadiationStorage" },
     { UID_ChestCADSRStorage,                                   "ChestCADSRStorage" },
     { UID_ColonCADSRStorage,                                   "ColonCADSRStorage" },
+    { UID_ColorPaletteStorage,                                 "ColorPaletteStorage" },
     { UID_ColorSoftcopyPresentationStateStorage,               "ColorSoftcopyPresentationStateStorage" },
     { UID_CompositingPlanarMPRVolumetricPresentationStateStorage, "CompositingPlanarMPRVolumetricPresentationStateStorage" },
     { UID_Comprehensive3DSRStorage,                            "Comprehensive3DSRStorage" },
     { UID_ComprehensiveSRStorage,                              "ComprehensiveSRStorage" },
     { UID_ComputedRadiographyImageStorage,                     "ComputedRadiographyImageStorage" },
+    { UID_ContentAssessmentResultsStorage,                     "ContentAssessmentResultsStorage" },
     { UID_CornealTopographyMapStorage,                         "CornealTopographyMapStorage" },
+    { UID_CTDefinedProcedureProtocolStorage,                   "CTDefinedProcedureProtocolStorage" },
     { UID_CTImageStorage,                                      "CTImageStorage" },
+    { UID_CTPerformedProcedureProtocolStorage,                 "CTPerformedProcedureProtocolStorage" },
     { UID_DeformableSpatialRegistrationStorage,                "DeformableSpatialRegistrationStorage" },
+    { UID_DermoscopicPhotographyImageStorage,                  "DermoscopicPhotographyImageStorage" },
     { UID_DigitalIntraOralXRayImageStorageForPresentation,     "DigitalIntraOralXRayImageStorageForPresentation" },
     { UID_DigitalIntraOralXRayImageStorageForProcessing,       "DigitalIntraOralXRayImageStorageForProcessing" },
     { UID_DigitalMammographyXRayImageStorageForPresentation,   "DigitalMammographyXRayImageStorageForPresentation" },
     { UID_DigitalMammographyXRayImageStorageForProcessing,     "DigitalMammographyXRayImageStorageForProcessing" },
     { UID_DigitalXRayImageStorageForPresentation,              "DigitalXRayImageStorageForPresentation" },
     { UID_DigitalXRayImageStorageForProcessing,                "DigitalXRayImageStorageForProcessing" },
+    { UID_ElectromyogramWaveformStorage,                       "ElectromyogramWaveformStorage" },
+    { UID_ElectrooculogramWaveformStorage,                     "ElectrooculogramWaveformStorage" },
     { UID_EncapsulatedCDAStorage,                              "EncapsulatedCDAStorage" },
+    { UID_EncapsulatedMTLStorage,                              "EncapsulatedMTLStorage" },
+    { UID_EncapsulatedOBJStorage,                              "EncapsulatedOBJStorage" },
     { UID_EncapsulatedPDFStorage,                              "EncapsulatedPDFStorage" },
+    { UID_EncapsulatedSTLStorage,                              "EncapsulatedSTLStorage" },
     { UID_EnhancedCTImageStorage,                              "EnhancedCTImageStorage" },
     { UID_EnhancedMRColorImageStorage,                         "EnhancedMRColorImageStorage" },
     { UID_EnhancedMRImageStorage,                              "EnhancedMRImageStorage" },
@@ -173,6 +190,7 @@ static const UIDNameMap uidNameMap[] = {
     { UID_EnhancedSRStorage,                                   "EnhancedSRStorage" },
     { UID_EnhancedUSVolumeStorage,                             "EnhancedUSVolumeStorage" },
     { UID_EnhancedXAImageStorage,                              "EnhancedXAImageStorage" },
+    { UID_EnhancedXRayRadiationDoseSRStorage,                  "EnhancedXRayRadiationDoseSRStorage" },
     { UID_EnhancedXRFImageStorage,                             "EnhancedXRFImageStorage" },
     { UID_ExtensibleSRStorage,                                 "ExtensibleSRStorage" },
     { UID_GeneralAudioWaveformStorage,                         "GeneralAudioWaveformStorage" },
@@ -197,38 +215,62 @@ static const UIDNameMap uidNameMap[] = {
     { UID_MacularGridThicknessAndVolumeReportStorage,          "MacularGridThicknessAndVolumeReportStorage" },
     { UID_MammographyCADSRStorage,                             "MammographyCADSRStorage" },
     { UID_MediaStorageDirectoryStorage,                        "MediaStorageDirectoryStorage" },
+    { UID_MicroscopyBulkSimpleAnnotationsStorage,              "MicroscopyBulkSimple​AnnotationsStorage​" },
     { UID_MRImageStorage,                                      "MRImageStorage" },
     { UID_MRSpectroscopyStorage,                               "MRSpectroscopyStorage" },
+    { UID_MultichannelRespiratoryWaveformStorage,              "MultichannelRespiratoryWaveformStorage" },
     { UID_MultiframeGrayscaleByteSecondaryCaptureImageStorage, "MultiframeGrayscaleByteSecondaryCaptureImageStorage" },
     { UID_MultiframeGrayscaleWordSecondaryCaptureImageStorage, "MultiframeGrayscaleWordSecondaryCaptureImageStorage" },
     { UID_MultiframeSingleBitSecondaryCaptureImageStorage,     "MultiframeSingleBitSecondaryCaptureImageStorage" },
     { UID_MultiframeTrueColorSecondaryCaptureImageStorage,     "MultiframeTrueColorSecondaryCaptureImageStorage" },
+    { UID_MultipleVolumeRenderingVolumetricPresentationStateStorage, "MultipleVolumeRenderingVolumetricPresentationStateStorage" },
     { UID_NuclearMedicineImageStorage,                         "NuclearMedicineImageStorage" },
     { UID_OphthalmicAxialMeasurementsStorage,                  "OphthalmicAxialMeasurementsStorage" },
+    { UID_OphthalmicOpticalCoherenceTomographyBscanVolumeAnalysisStorage, "OphthalmicOpticalCoherenceTomographyBscanVolumeAnalysisStorage" },
+    { UID_OphthalmicOpticalCoherenceTomographyEnFaceImageStorage, "OphthalmicOpticalCoherenceTomographyEnFaceImageStorage" },
     { UID_OphthalmicPhotography16BitImageStorage,              "OphthalmicPhotography16BitImageStorage" },
     { UID_OphthalmicPhotography8BitImageStorage,               "OphthalmicPhotography8BitImageStorage" },
     { UID_OphthalmicThicknessMapStorage,                       "OphthalmicThicknessMapStorage" },
     { UID_OphthalmicTomographyImageStorage,                    "OphthalmicTomographyImageStorage" },
     { UID_OphthalmicVisualFieldStaticPerimetryMeasurementsStorage, "OphthalmicVisualFieldStaticPerimetryMeasurementsStorage" },
     { UID_ParametricMapStorage,                                "ParametricMapStorage" },
+    { UID_PatientRadiationDoseSRStorage,                       "PatientRadiationDoseSRStorage" },
+    { UID_PerformedImagingAgentAdministrationSRStorage,        "PerformedImagingAgentAdministrationSRStorage" },
+    { UID_PlannedImagingAgentAdministrationSRStorage,          "PlannedImagingAgentAdministrationSRStorage" },
     { UID_PositronEmissionTomographyImageStorage,              "PositronEmissionTomographyImageStorage" },
     { UID_ProcedureLogStorage,                                 "ProcedureLogStorage" },
+    { UID_ProtocolApprovalStorage,                             "ProtocolApprovalStorage" },
     { UID_PseudoColorSoftcopyPresentationStateStorage,         "PseudoColorSoftcopyPresentationStateStorage" },
     { UID_RadiopharmaceuticalRadiationDoseSRStorage,           "RadiopharmaceuticalRadiationDoseSRStorage" },
     { UID_RawDataStorage,                                      "RawDataStorage" },
     { UID_RealWorldValueMappingStorage,                        "RealWorldValueMappingStorage" },
     { UID_RespiratoryWaveformStorage,                          "RespiratoryWaveformStorage" },
+    { UID_RoboticArmRadiationStorage,                          "RoboticArmRadiationStorage" },
+    { UID_RoboticRadiationRecordStorage,                       "RoboticRadiationRecordStorage" },
+    { UID_RoutineScalpElectroencephalogramWaveformStorage,     "RoutineScalpElectroencephalogramWaveformStorage" },
+    { UID_RTBeamsDeliveryInstructionStorage,                   "RTBeamsDeliveryInstructionStorage" },
     { UID_RTBeamsTreatmentRecordStorage,                       "RTBeamsTreatmentRecordStorage" },
+    { UID_RTBrachyApplicationSetupDeliveryInstructionStorage,  "RTBrachyApplicationSetupDeliveryInstructionStorage" },
     { UID_RTBrachyTreatmentRecordStorage,                      "RTBrachyTreatmentRecordStorage" },
     { UID_RTDoseStorage,                                       "RTDoseStorage" },
     { UID_RTImageStorage,                                      "RTImageStorage" },
     { UID_RTIonBeamsTreatmentRecordStorage,                    "RTIonBeamsTreatmentRecordStorage" },
     { UID_RTIonPlanStorage,                                    "RTIonPlanStorage" },
+    { UID_RTPhysicianIntentStorage,                            "RTPhysicianIntentStorage" },
     { UID_RTPlanStorage,                                       "RTPlanStorage" },
+    { UID_RTRadiationRecordSetStorage,                         "RTRadiationRecordSetStorage" },
+    { UID_RTRadiationSalvageRecordStorage,                     "RTRadiationSalvageRecordStorage" },
+    { UID_RTRadiationSetDeliveryInstructionStorage,            "RTRadiationSetDeliveryInstructionStorage" },
+    { UID_RTRadiationSetStorage,                               "RTRadiationSetStorage" },
+    { UID_RTSegmentAnnotationStorage,                          "RTSegmentAnnotationStorage" },
     { UID_RTStructureSetStorage,                               "RTStructureSetStorage" },
+    { UID_RTTreatmentPreparationStorage,                       "RTTreatmentPreparationStorage" },
     { UID_RTTreatmentSummaryRecordStorage,                     "RTTreatmentSummaryRecordStorage" },
     { UID_SecondaryCaptureImageStorage,                        "SecondaryCaptureImageStorage" },
     { UID_SegmentationStorage,                                 "SegmentationStorage" },
+    { UID_SegmentedVolumeRenderingVolumetricPresentationStateStorage, "SegmentedVolumeRenderingVolumetricPresentationStateStorage" },
+    { UID_SimplifiedAdultEchoSRStorage,                        "SimplifiedAdultEchoSRStorage" },
+    { UID_SleepElectroencephalogramWaveformStorage,            "SleepElectroencephalogramWaveformStorage" },
     { UID_SpatialFiducialsStorage,                             "SpatialFiducialsStorage" },
     { UID_SpatialRegistrationStorage,                          "SpatialRegistrationStorage" },
     { UID_SpectaclePrescriptionReportStorage,                  "SpectaclePrescriptionReportStorage" },
@@ -237,6 +279,9 @@ static const UIDNameMap uidNameMap[] = {
     { UID_SurfaceScanMeshStorage,                              "SurfaceScanMeshStorage" },
     { UID_SurfaceScanPointCloudStorage,                        "SurfaceScanPointCloudStorage" },
     { UID_SurfaceSegmentationStorage,                          "SurfaceSegmentationStorage" },
+    { UID_TomotherapeuticRadiationRecordStorage,               "TomotherapeuticRadiationRecordStorage" },
+    { UID_TomotherapeuticRadiationStorage,                     "TomotherapeuticRadiationStorage" },
+    { UID_TractographyResultsStorage,                          "TractographyResultsStorage" },
     { UID_TwelveLeadECGWaveformStorage,                        "TwelveLeadECGWaveformStorage" },
     { UID_UltrasoundImageStorage,                              "UltrasoundImageStorage" },
     { UID_UltrasoundMultiframeImageStorage,                    "UltrasoundMultiframeImageStorage" },
@@ -249,8 +294,11 @@ static const UIDNameMap uidNameMap[] = {
     { UID_VLPhotographicImageStorage,                          "VLPhotographicImageStorage" },
     { UID_VLSlideCoordinatesMicroscopicImageStorage,           "VLSlideCoordinatesMicroscopicImageStorage" },
     { UID_VLWholeSlideMicroscopyImageStorage,                  "VLWholeSlideMicroscopyImageStorage" },
+    { UID_VolumeRenderingVolumetricPresentationStateStorage,   "VolumeRenderingVolumetricPresentationStateStorage" },
     { UID_WideFieldOphthalmicPhotographyStereographicProjectionImageStorage, "WideFieldOphthalmicPhotographyStereographicProjectionImageStorage" },
-    { UID_WideFieldOphthalmicPhotography3DCoordinatesImageStorage, "OphthalmicPhotography3DCoordinatesImageStorage" },
+    { UID_WideFieldOphthalmicPhotography3DCoordinatesImageStorage, "WideFieldOphthalmicPhotography3DCoordinatesImageStorage" },
+    { UID_XADefinedProcedureProtocolStorage,                   "XADefinedProcedureProtocolStorage" },
+    { UID_XAPerformedProcedureProtocolStorage,                 "XAPerformedProcedureProtocolStorage" },
     { UID_XAXRFGrayscaleSoftcopyPresentationStateStorage,      "XAXRFGrayscaleSoftcopyPresentationStateStorage" },
     { UID_XRay3DAngiographicImageStorage,                      "XRay3DAngiographicImageStorage" },
     { UID_XRay3DCraniofacialImageStorage,                      "XRay3DCraniofacialImageStorage" },
@@ -270,13 +318,16 @@ static const UIDNameMap uidNameMap[] = {
     { UID_RETIRED_UltrasoundImageStorage,                      "RETIRED_UltrasoundImageStorage" },
     { UID_RETIRED_UltrasoundMultiframeImageStorage,            "RETIRED_UltrasoundMultiframeImageStorage" },
     { UID_RETIRED_VLImageStorage,                              "RETIRED_VLImageStorage" },
-    { UID_RETIRED_VLMultiFrameImageStorage,                    "RETIRED_VLMultiFrameImageStorage" },
+    { UID_RETIRED_VLMultiframeImageStorage,                    "RETIRED_VLMultiframeImageStorage" },
     { UID_RETIRED_XRayAngiographicBiPlaneImageStorage,         "RETIRED_XRayAngiographicBiPlaneImageStorage" },
     // Storage (DICOS)
     { UID_DICOS_CTImageStorage,                                "DICOS_CTImageStorage" },
     { UID_DICOS_DigitalXRayImageStorageForPresentation,        "DICOS_DigitalXRayImageStorageForPresentation" },
     { UID_DICOS_DigitalXRayImageStorageForProcessing,          "DICOS_DigitalXRayImageStorageForProcessing" },
     { UID_DICOS_ThreatDetectionReportStorage,                  "DICOS_ThreatDetectionReportStorage" },
+    { UID_DICOS_2DAITStorage,                                  "DICOS_2DAITStorage" },
+    { UID_DICOS_3DAITStorage,                                  "DICOS_3DAITStorage" },
+    { UID_DICOS_QuadrupoleResonanceStorage,                    "DICOS_QuadrupoleResonanceStorage" },
     // Storage (DICONDE)
     { UID_DICONDE_EddyCurrentImageStorage,                     "DICONDE_EddyCurrentImageStorage" },
     { UID_DICONDE_EddyCurrentMultiframeImageStorage,           "DICONDE_EddyCurrentMultiframeImageStorage" },
@@ -295,7 +346,7 @@ static const UIDNameMap uidNameMap[] = {
     { UID_MOVECompositeInstanceRootRetrieve,                         "MOVECompositeInstanceRootRetrieve" },
     { UID_RETIRED_MOVEPatientStudyOnlyQueryRetrieveInformationModel, "RETIRED_MOVEPatientStudyOnlyQueryRetrieveInformationModel" },
 
-    // Worklist
+    // Modality Worklist
     { UID_FINDModalityWorklistInformationModel,                "FINDModalityWorklistInformationModel" },
 
     // General Purpose Worklist
@@ -309,8 +360,7 @@ static const UIDNameMap uidNameMap[] = {
     { UID_ModalityPerformedProcedureStepRetrieveSOPClass,      "ModalityPerformedProcedureStepRetrieveSOPClass" },
     { UID_ModalityPerformedProcedureStepSOPClass,              "ModalityPerformedProcedureStepSOPClass" },
 
-    // Radiotherapy Treatment Delivery
-    { UID_RTBeamsDeliveryInstructionStorage,                   "RTBeamsDeliveryInstructionStorage" },
+    // Radiotherapy
     { UID_RTConventionalMachineVerification,                   "RTConventionalMachineVerification" },
     { UID_RTIonMachineVerification,                            "RTIonMachineVerification" },
 
@@ -320,6 +370,7 @@ static const UIDNameMap uidNameMap[] = {
     { UID_UnifiedProcedureStepWatchSOPClass,                   "UnifiedProcedureStepWatchSOPClass" },
     { UID_UnifiedProcedureStepPullSOPClass,                    "UnifiedProcedureStepPullSOPClass" },
     { UID_UnifiedProcedureStepEventSOPClass,                   "UnifiedProcedureStepEventSOPClass" },
+    { UID_UnifiedProcedureStepQuerySOPClass,                   "UnifiedProcedureStepQuerySOPClass" },
     { UID_UPSGlobalSubscriptionSOPInstance,                    "UPSGlobalSubscriptionSOPInstance" },
     { UID_UPSFilteredGlobalSubscriptionSOPInstance,            "UPSFilteredGlobalSubscriptionSOPInstance" },
 
@@ -338,8 +389,7 @@ static const UIDNameMap uidNameMap[] = {
     { UID_CardiacRelevantPatientInformationQuery,              "CardiacRelevantPatientInformationQuery" },
     { UID_GeneralRelevantPatientInformationQuery,              "GeneralRelevantPatientInformationQuery" },
 
-    // Color Palette Storage and Query/Retrieve
-    { UID_ColorPaletteStorage,                                 "ColorPaletteStorage" },
+    // Color Palette Query/Retrieve
     { UID_FINDColorPaletteInformationModel,                    "FINDColorPaletteInformationModel" },
     { UID_MOVEColorPaletteInformationModel,                    "MOVEColorPaletteInformationModel" },
     { UID_GETColorPaletteInformationModel,                     "GETColorPaletteInformationModel" },
@@ -354,6 +404,16 @@ static const UIDNameMap uidNameMap[] = {
     { UID_FINDImplantTemplateGroupInformationModel,            "FINDImplantTemplateGroupInformationModel" },
     { UID_MOVEImplantTemplateGroupInformationModel,            "MOVEImplantTemplateGroupInformationModel" },
     { UID_GETImplantTemplateGroupInformationModel,             "GETImplantTemplateGroupInformationModel" },
+
+    // Defined Procedure Protocol Query/Retrieve
+    { UID_FINDDefinedProcedureProtocolInformationModel,        "FINDDefinedProcedureProtocolInformationModel" },
+    { UID_MOVEDefinedProcedureProtocolInformationModel,        "MOVEDefinedProcedureProtocolInformationModel" },
+    { UID_GETDefinedProcedureProtocolInformationModel,         "GETDefinedProcedureProtocolInformationModel" },
+
+    // Protocol Approval Query/Retrieve
+    { UID_FINDProtocolApprovalInformationModel,                "FINDProtocolApprovalInformationModel" },
+    { UID_MOVEProtocolApprovalInformationModel,                "MOVEProtocolApprovalInformationModel" },
+    { UID_GETProtocolApprovalInformationModel,                 "GETProtocolApprovalInformationModel" },
 
     // Print
     { UID_BasicAnnotationBoxSOPClass,                          "BasicAnnotationBoxSOPClass" },
@@ -417,6 +477,12 @@ static const UIDNameMap uidNameMap[] = {
     { UID_DisplaySystemSOPClass,                               "DisplaySystemSOPClass" },
     { UID_DisplaySystemSOPInstance,                            "DisplaySystemSOPInstance" },
 
+    // Real-Time Video
+    { UID_VideoEndoscopicImageRealTimeCommunication,           "VideoEndoscopicImageRealTimeCommunication" },
+    { UID_VideoPhotographicImageRealTimeCommunication,         "VideoPhotographicImageRealTimeCommunication" },
+    { UID_AudioWaveformRealTimeCommunication,                  "AudioWaveformRealTimeCommunication" },
+    { UID_RenditionSelectionDocumentRealTimeCommunication,     "RenditionSelectionDocumentRealTimeCommunication" },
+
     // Other
     { UID_RETIRED_BasicStudyContentNotificationSOPClass,       "RETIRED_BasicStudyContentNotificationSOPClass" },
     { UID_RETIRED_StudyComponentManagementSOPClass,            "RETIRED_StudyComponentManagementSOPClass" },
@@ -473,6 +539,7 @@ static const UIDNameMap uidNameMap[] = {
     // Well-known Frame of References
     { UID_ICBM452T1FrameOfReference,                           "ICBM452T1FrameOfReference" },
     { UID_ICBMSingleSubjectMRIFrameOfReference,                "ICBMSingleSubjectMRIFrameOfReference" },
+    { UID_IEC61217FixedCoordinateSystemFrameOfReference,       "IEC61217FixedCoordinateSystemFrameOfReference" },
     { UID_SPM2AVG152PDFrameOfReference,                        "SPM2AVG152PDFrameOfReference" },
     { UID_SPM2AVG152T1FrameOfReference,                        "SPM2AVG152T1FrameOfReference" },
     { UID_SPM2AVG152T2FrameOfReference,                        "SPM2AVG152T2FrameOfReference" },
@@ -490,7 +557,13 @@ static const UIDNameMap uidNameMap[] = {
     { UID_SPM2T2FrameOfReference,                              "SPM2T2FrameOfReference" },
     { UID_SPM2TRANSMFrameOfReference,                          "SPM2TRANSMFrameOfReference" },
     { UID_SPM2WHITEFrameOfReference,                           "SPM2WHITEFrameOfReference" },
+    { UID_StandardRoboticCoordinateSystemFrameOfReference,     "StandardRoboticCoordinateSystemFrameOfReference" },
     { UID_TalairachBrainAtlasFrameOfReference,                 "TalairachBrainAtlasFrameOfReference" },
+    { UID_SRI24FrameOfReference,                               "SRI24FrameOfReferenc" },
+    { UID_Colin27FrameOfReference,                             "Colin27FrameOfReference" },
+    { UID_LPBA40AIRFrameOfReference,                           "LPBA40AIRFrameOfReference" },
+    { UID_LPBA40FLIRTFrameOfReference,                         "LPBA40FLIRTFrameOfReference" },
+    { UID_LPBA40SPM5FrameOfReference,                          "LPBA40SPM5FrameOfReference" },
 
     // UTC Synchronization Frame of Reference
     { UID_UniversalCoordinatedTimeSynchronizationFrameOfReference, "UniversalCoordinatedTimeSynchronizationFrameOfReference" },
@@ -500,6 +573,10 @@ static const UIDNameMap uidNameMap[] = {
     { UID_HotMetalBlueColorPaletteSOPInstance,                 "HotMetalBlueColorPaletteSOPInstance" },
     { UID_PET20StepColorPaletteSOPInstance,                    "PET20StepColorPaletteSOPInstance" },
     { UID_PETColorPaletteSOPInstance,                          "PETColorPaletteSOPInstance" },
+    { UID_SpringColorPaletteSOPInstance,                       "SpringColorPaletteSOPInstance" },
+    { UID_SummerColorPaletteSOPInstance,                       "SummerColorPaletteSOPInstance" },
+    { UID_FallColorPaletteSOPInstance,                         "FallColorPaletteSOPInstance" },
+    { UID_WinterColorPaletteSOPInstance,                       "WinterColorPaletteSOPInstance" },
 
     // Draft Supplements
     { UID_DRAFT_RTBeamsDeliveryInstructionStorage,             "DRAFT_RTBeamsDeliveryInstructionStorage" },
@@ -525,14 +602,16 @@ static const int uidNameMap_size = OFstatic_cast(int, sizeof(uidNameMap) / sizeo
 /** an array of const strings containing all known Storage SOP Classes
  *  that fit into the conventional PATIENT-STUDY-SERIES-INSTANCE information
  *  model, i.e. everything a Storage SCP might want to store in a PACS.
- *  Special cases such as hanging protocol storage or the Storage SOP Class
- *  are not included in this list.
+ *  Special cases such as the Hanging Protocol or Color Palette Storage SOP
+ *  Class are not included in this list but in dcmNonPatientStorageSOPClassUIDs.
  *
  *  THIS LIST CONTAINS ALL STORAGE SOP CLASSES INCLUDING RETIRED ONES
  *  AND IS (MUCH) LARGER THAN 64 ENTRIES.
  */
 
 const char* dcmAllStorageSOPClassUIDs[] = {
+    UID_AcquisitionContextSRStorage,
+    UID_AdvancedBlendingPresentationStateStorage,
     UID_AmbulatoryECGWaveformStorage,
     UID_ArterialPulseWaveformStorage,
     UID_AutorefractionMeasurementsStorage,
@@ -540,10 +619,13 @@ const char* dcmAllStorageSOPClassUIDs[] = {
     UID_BasicTextSRStorage,
     UID_BasicVoiceAudioWaveformStorage,
     UID_BlendingSoftcopyPresentationStateStorage,
+    UID_BodyPositionWaveformStorage,
     UID_BreastProjectionXRayImageStorageForPresentation,
     UID_BreastProjectionXRayImageStorageForProcessing,
     UID_BreastTomosynthesisImageStorage,
     UID_CardiacElectrophysiologyWaveformStorage,
+    UID_CArmPhotonElectronRadiationRecordStorage,
+    UID_CArmPhotonElectronRadiationStorage,
     UID_ChestCADSRStorage,
     UID_ColonCADSRStorage,
     UID_ColorSoftcopyPresentationStateStorage,
@@ -551,17 +633,25 @@ const char* dcmAllStorageSOPClassUIDs[] = {
     UID_Comprehensive3DSRStorage,
     UID_ComprehensiveSRStorage,
     UID_ComputedRadiographyImageStorage,
+    UID_ContentAssessmentResultsStorage,
     UID_CornealTopographyMapStorage,
     UID_CTImageStorage,
+    UID_CTPerformedProcedureProtocolStorage,
     UID_DeformableSpatialRegistrationStorage,
+    UID_DermoscopicPhotographyImageStorage,
     UID_DigitalIntraOralXRayImageStorageForPresentation,
     UID_DigitalIntraOralXRayImageStorageForProcessing,
     UID_DigitalMammographyXRayImageStorageForPresentation,
     UID_DigitalMammographyXRayImageStorageForProcessing,
     UID_DigitalXRayImageStorageForPresentation,
     UID_DigitalXRayImageStorageForProcessing,
+    UID_ElectromyogramWaveformStorage,
+    UID_ElectrooculogramWaveformStorage,
     UID_EncapsulatedCDAStorage,
+    UID_EncapsulatedMTLStorage,
+    UID_EncapsulatedOBJStorage,
     UID_EncapsulatedPDFStorage,
+    UID_EncapsulatedSTLStorage,
     UID_EnhancedCTImageStorage,
     UID_EnhancedMRColorImageStorage,
     UID_EnhancedMRImageStorage,
@@ -569,17 +659,15 @@ const char* dcmAllStorageSOPClassUIDs[] = {
     UID_EnhancedSRStorage,
     UID_EnhancedUSVolumeStorage,
     UID_EnhancedXAImageStorage,
+    UID_EnhancedXRayRadiationDoseSRStorage,
     UID_EnhancedXRFImageStorage,
     UID_ExtensibleSRStorage,
     UID_GeneralAudioWaveformStorage,
     UID_GeneralECGWaveformStorage,
-    UID_GenericImplantTemplateStorage,
     UID_GrayscalePlanarMPRVolumetricPresentationStateStorage,
     UID_GrayscaleSoftcopyPresentationStateStorage,
     UID_HemodynamicWaveformStorage,
-    UID_ImplantAssemblyTemplateStorage,
     UID_ImplantationPlanSRDocumentStorage,
-    UID_ImplantTemplateGroupStorage,
     UID_IntraocularLensCalculationsStorage,
     UID_IntravascularOpticalCoherenceTomographyImageStorageForPresentation,
     UID_IntravascularOpticalCoherenceTomographyImageStorageForProcessing,
@@ -591,20 +679,28 @@ const char* dcmAllStorageSOPClassUIDs[] = {
     UID_LensometryMeasurementsStorage,
     UID_MacularGridThicknessAndVolumeReportStorage,
     UID_MammographyCADSRStorage,
+    UID_MicroscopyBulkSimpleAnnotationsStorage,
     UID_MRImageStorage,
     UID_MRSpectroscopyStorage,
+    UID_MultichannelRespiratoryWaveformStorage,
     UID_MultiframeGrayscaleByteSecondaryCaptureImageStorage,
     UID_MultiframeGrayscaleWordSecondaryCaptureImageStorage,
     UID_MultiframeSingleBitSecondaryCaptureImageStorage,
     UID_MultiframeTrueColorSecondaryCaptureImageStorage,
+    UID_MultipleVolumeRenderingVolumetricPresentationStateStorage,
     UID_NuclearMedicineImageStorage,
     UID_OphthalmicAxialMeasurementsStorage,
+    UID_OphthalmicOpticalCoherenceTomographyBscanVolumeAnalysisStorage,
+    UID_OphthalmicOpticalCoherenceTomographyEnFaceImageStorage,
     UID_OphthalmicPhotography16BitImageStorage,
     UID_OphthalmicPhotography8BitImageStorage,
     UID_OphthalmicThicknessMapStorage,
     UID_OphthalmicTomographyImageStorage,
     UID_OphthalmicVisualFieldStaticPerimetryMeasurementsStorage,
     UID_ParametricMapStorage,
+    UID_PatientRadiationDoseSRStorage,
+    UID_PerformedImagingAgentAdministrationSRStorage,
+    UID_PlannedImagingAgentAdministrationSRStorage,
     UID_PositronEmissionTomographyImageStorage,
     UID_ProcedureLogStorage,
     UID_PseudoColorSoftcopyPresentationStateStorage,
@@ -612,18 +708,32 @@ const char* dcmAllStorageSOPClassUIDs[] = {
     UID_RawDataStorage,
     UID_RealWorldValueMappingStorage,
     UID_RespiratoryWaveformStorage,
+    UID_RoboticArmRadiationStorage,
+    UID_RoboticRadiationRecordStorage,
+    UID_RoutineScalpElectroencephalogramWaveformStorage,
     UID_RTBeamsDeliveryInstructionStorage,
     UID_RTBeamsTreatmentRecordStorage,
+    UID_RTBrachyApplicationSetupDeliveryInstructionStorage,
     UID_RTBrachyTreatmentRecordStorage,
     UID_RTDoseStorage,
     UID_RTImageStorage,
     UID_RTIonBeamsTreatmentRecordStorage,
     UID_RTIonPlanStorage,
+    UID_RTPhysicianIntentStorage,
     UID_RTPlanStorage,
+    UID_RTRadiationRecordSetStorage,
+    UID_RTRadiationSalvageRecordStorage,
+    UID_RTRadiationSetDeliveryInstructionStorage,
+    UID_RTRadiationSetStorage,
+    UID_RTSegmentAnnotationStorage,
     UID_RTStructureSetStorage,
+    UID_RTTreatmentPreparationStorage,
     UID_RTTreatmentSummaryRecordStorage,
     UID_SecondaryCaptureImageStorage,
     UID_SegmentationStorage,
+    UID_SegmentedVolumeRenderingVolumetricPresentationStateStorage,
+    UID_SimplifiedAdultEchoSRStorage,
+    UID_SleepElectroencephalogramWaveformStorage,
     UID_SpatialFiducialsStorage,
     UID_SpatialRegistrationStorage,
     UID_SpectaclePrescriptionReportStorage,
@@ -632,6 +742,9 @@ const char* dcmAllStorageSOPClassUIDs[] = {
     UID_SurfaceScanMeshStorage,
     UID_SurfaceScanPointCloudStorage,
     UID_SurfaceSegmentationStorage,
+    UID_TomotherapeuticRadiationRecordStorage,
+    UID_TomotherapeuticRadiationStorage,
+    UID_TractographyResultsStorage,
     UID_TwelveLeadECGWaveformStorage,
     UID_UltrasoundImageStorage,
     UID_UltrasoundMultiframeImageStorage,
@@ -644,14 +757,18 @@ const char* dcmAllStorageSOPClassUIDs[] = {
     UID_VLPhotographicImageStorage,
     UID_VLSlideCoordinatesMicroscopicImageStorage,
     UID_VLWholeSlideMicroscopyImageStorage,
+    UID_VolumeRenderingVolumetricPresentationStateStorage,
     UID_WideFieldOphthalmicPhotographyStereographicProjectionImageStorage,
     UID_WideFieldOphthalmicPhotography3DCoordinatesImageStorage,
+    UID_XAPerformedProcedureProtocolStorage,
     UID_XAXRFGrayscaleSoftcopyPresentationStateStorage,
     UID_XRay3DAngiographicImageStorage,
     UID_XRay3DCraniofacialImageStorage,
     UID_XRayAngiographicImageStorage,
     UID_XRayRadiationDoseSRStorage,
     UID_XRayRadiofluoroscopicImageStorage,
+    // non-patient DICOM objects:
+    // - do not add them here but in dcmNonPatientStorageSOPClassUIDs
     // retired
     UID_RETIRED_HardcopyColorImageStorage,
     UID_RETIRED_HardcopyGrayscaleImageStorage,
@@ -665,7 +782,7 @@ const char* dcmAllStorageSOPClassUIDs[] = {
     UID_RETIRED_UltrasoundImageStorage,
     UID_RETIRED_UltrasoundMultiframeImageStorage,
     UID_RETIRED_VLImageStorage,
-    UID_RETIRED_VLMultiFrameImageStorage,
+    UID_RETIRED_VLMultiframeImageStorage,
     UID_RETIRED_XRayAngiographicBiPlaneImageStorage,
     // draft
     UID_DRAFT_SRAudioStorage,
@@ -679,13 +796,35 @@ const char* dcmAllStorageSOPClassUIDs[] = {
     UID_DICOS_DigitalXRayImageStorageForPresentation,
     UID_DICOS_DigitalXRayImageStorageForProcessing,
     UID_DICOS_ThreatDetectionReportStorage,
+    UID_DICOS_2DAITStorage,
+    UID_DICOS_3DAITStorage,
+    UID_DICOS_QuadrupoleResonanceStorage,
     // DICONDE
     UID_DICONDE_EddyCurrentImageStorage,
     UID_DICONDE_EddyCurrentMultiframeImageStorage,
     NULL
 };
 
-const int numberOfAllDcmStorageSOPClassUIDs = OFstatic_cast(int, sizeof(dcmAllStorageSOPClassUIDs) / sizeof(const char*) - 1);
+const int numberOfDcmAllStorageSOPClassUIDs = OFstatic_cast(int, sizeof(dcmAllStorageSOPClassUIDs) / sizeof(const char*) - 1);
+
+
+/** an array of const strings containing all known Storage SOP Classes
+ *  that do not fit into the conventional PATIENT-STUDY-SERIES-INSTANCE
+ *  information model. See function dcmIsaStorageSOPClassUID().
+ */
+
+const char* dcmNonPatientStorageSOPClassUIDs[] = {
+    UID_ColorPaletteStorage,
+    UID_CTDefinedProcedureProtocolStorage,
+    UID_GenericImplantTemplateStorage,
+    UID_HangingProtocolStorage,
+    UID_ImplantAssemblyTemplateStorage,
+    UID_ImplantTemplateGroupStorage,
+    UID_ProtocolApprovalStorage,
+    UID_XADefinedProcedureProtocolStorage,
+    // end marker (important!)
+    NULL
+};
 
 
 /*  an array of const strings containing all storage SOP classes that
@@ -731,17 +870,17 @@ const char* dcmLongSCUStorageSOPClassUIDs[] = {
     UID_EnhancedXRFImageStorage,
     UID_GeneralAudioWaveformStorage,
     UID_GeneralECGWaveformStorage,
-    UID_GenericImplantTemplateStorage,
     UID_GrayscaleSoftcopyPresentationStateStorage,
     UID_HemodynamicWaveformStorage,
-    UID_ImplantAssemblyTemplateStorage,
     UID_ImplantationPlanSRDocumentStorage,
-    UID_ImplantTemplateGroupStorage,
     UID_IntraocularLensCalculationsStorage,
     UID_IntravascularOpticalCoherenceTomographyImageStorageForPresentation,
     UID_IntravascularOpticalCoherenceTomographyImageStorageForProcessing,
     UID_KeratometryMeasurementsStorage,
     UID_KeyObjectSelectionDocumentStorage,
+    UID_LegacyConvertedEnhancedCTImageStorage,
+    UID_LegacyConvertedEnhancedMRImageStorage,
+    UID_LegacyConvertedEnhancedPETImageStorage,
     UID_LensometryMeasurementsStorage,
     UID_MacularGridThicknessAndVolumeReportStorage,
     UID_MammographyCADSRStorage,
@@ -803,19 +942,66 @@ const char* dcmLongSCUStorageSOPClassUIDs[] = {
     UID_XRayRadiationDoseSRStorage,
     UID_XRayRadiofluoroscopicImageStorage,
     // recently approved
+//  UID_AcquisitionContextSRStorage,
+//  UID_AdvancedBlendingPresentationStateStorage,
+//  UID_BodyPositionWaveformStorage,
 //  UID_BreastProjectionXRayImageStorageForPresentation,
 //  UID_BreastProjectionXRayImageStorageForProcessing,
-//  UID_CompositingPlanarMPRVolumetricPresentationStateStorage
+//  UID_CArmPhotonElectronRadiationRecordStorage,
+//  UID_CArmPhotonElectronRadiationStorage,
+//  UID_CompositingPlanarMPRVolumetricPresentationStateStorage,
+//  UID_ContentAssessmentResultsStorage,
 //  UID_CornealTopographyMapStorage,
+//  UID_CTPerformedProcedureProtocolStorage,
+//  UID_DermoscopicPhotographyImageStorage,
+//  UID_ElectromyogramWaveformStorage,
+//  UID_ElectrooculogramWaveformStorage,
+//  UID_EncapsulatedMTLStorage,
+//  UID_EncapsulatedOBJStorage,
+//  UID_EncapsulatedSTLStorage,
+//  UID_EnhancedXRayRadiationDoseSRStorage,
 //  UID_ExtensibleSRStorage,
-//  UID_GrayscalePlanarMPRVolumetricPresentationStateStorage
-//  UID_LegacyConvertedEnhancedCTImageStorage,
-//  UID_LegacyConvertedEnhancedMRImageStorage,
-//  UID_LegacyConvertedEnhancedPETImageStorage,
+//  UID_GrayscalePlanarMPRVolumetricPresentationStateStorage,
+//  UID_MicroscopyBulkSimpleAnnotationsStorage,
+//  UID_MultichannelRespiratoryWaveformStorage,
+//  UID_MultipleVolumeRenderingVolumetricPresentationStateStorage,
+//  UID_OphthalmicOpticalCoherenceTomographyBscanVolumeAnalysisStorage,
+//  UID_OphthalmicOpticalCoherenceTomographyEnFaceImageStorage,
 //  UID_ParametricMapStorage,
+//  UID_PatientRadiationDoseSRStorage,
+//  UID_PerformedImagingAgentAdministrationSRStorage,
+//  UID_PlannedImagingAgentAdministrationSRStorage,
 //  UID_RadiopharmaceuticalRadiationDoseSRStorage,
+//  UID_RoboticArmRadiationStorage,
+//  UID_RoboticRadiationRecordStorage,
+//  UID_RoutineScalpElectroencephalogramWaveformStorage,
+//  UID_RTBrachyApplicationSetupDeliveryInstructionStorage,
+//  UID_RTPhysicianIntentStorage,
+//  UID_RTRadiationRecordSetStorage,
+//  UID_RTRadiationSalvageRecordStorage,
+//  UID_RTRadiationSetDeliveryInstructionStorage,
+//  UID_RTRadiationSetStorage,
+//  UID_RTSegmentAnnotationStorage,
+//  UID_RTTreatmentPreparationStorage,
+//  UID_SegmentedVolumeRenderingVolumetricPresentationStateStorage,
+//  UID_SimplifiedAdultEchoSRStorage,
+//  UID_SleepElectroencephalogramWaveformStorage,
+//  UID_TomotherapeuticRadiationRecordStorage,
+//  UID_TomotherapeuticRadiationStorage,
+//  UID_TractographyResultsStorage,
+//  UID_VolumeRenderingVolumetricPresentationStateStorage,
 //  UID_WideFieldOphthalmicPhotographyStereographicProjectionImageStorage,
 //  UID_WideFieldOphthalmicPhotography3DCoordinatesImageStorage,
+//  UID_XAPerformedProcedureProtocolStorage,
+    // non-patient
+//  UID_ColorPaletteStorage,
+//  UID_CTDefinedProcedureProtocolStorage,
+//  UID_GenericImplantTemplateStorage,
+//  UID_HangingProtocolStorage,
+//  UID_ImplantAssemblyTemplateStorage,
+//  UID_ImplantTemplateGroupStorage,
+//  UID_ProtocolApprovalStorage,
+//  UID_XADefinedProcedureProtocolStorage,
     // retired
     UID_RETIRED_HardcopyColorImageStorage,
     UID_RETIRED_HardcopyGrayscaleImageStorage,
@@ -829,7 +1015,7 @@ const char* dcmLongSCUStorageSOPClassUIDs[] = {
     UID_RETIRED_UltrasoundImageStorage,
     UID_RETIRED_UltrasoundMultiframeImageStorage,
     UID_RETIRED_VLImageStorage,
-    UID_RETIRED_VLMultiFrameImageStorage,
+    UID_RETIRED_VLMultiframeImageStorage,
     UID_RETIRED_XRayAngiographicBiPlaneImageStorage,
     // draft
 //  UID_DRAFT_RTBeamsDeliveryInstructionStorage,
@@ -843,6 +1029,9 @@ const char* dcmLongSCUStorageSOPClassUIDs[] = {
 //  UID_DICOS_DigitalXRayImageStorageForPresentation,
 //  UID_DICOS_DigitalXRayImageStorageForProcessing,
 //  UID_DICOS_ThreatDetectionReportStorage,
+//  UID_DICOS_2DAITStorage,
+//  UID_DICOS_3DAITStorage,
+//  UID_DICOS_QuadrupoleResonanceStorage,
     // DICONDE
 //  UID_DICONDE_EddyCurrentImageStorage,
 //  UID_DICONDE_EddyCurrentMultiframeImageStorage,
@@ -958,6 +1147,7 @@ const char* dcmImageSOPClassUIDs[] = {
     UID_ComputedRadiographyImageStorage,
     UID_CTImageStorage,
     UID_CornealTopographyMapStorage,
+    UID_DermoscopicPhotographyImageStorage,
     UID_DigitalIntraOralXRayImageStorageForPresentation,
     UID_DigitalIntraOralXRayImageStorageForProcessing,
     UID_DigitalMammographyXRayImageStorageForPresentation,
@@ -982,6 +1172,8 @@ const char* dcmImageSOPClassUIDs[] = {
     UID_MultiframeSingleBitSecondaryCaptureImageStorage,
     UID_MultiframeTrueColorSecondaryCaptureImageStorage,
     UID_NuclearMedicineImageStorage,
+    UID_OphthalmicOpticalCoherenceTomographyBscanVolumeAnalysisStorage,
+    UID_OphthalmicOpticalCoherenceTomographyEnFaceImageStorage,
     UID_OphthalmicPhotography16BitImageStorage,
     UID_OphthalmicPhotography8BitImageStorage,
     UID_OphthalmicThicknessMapStorage,
@@ -1013,7 +1205,7 @@ const char* dcmImageSOPClassUIDs[] = {
     UID_RETIRED_UltrasoundImageStorage,
     UID_RETIRED_UltrasoundMultiframeImageStorage,
     UID_RETIRED_VLImageStorage,
-    UID_RETIRED_VLMultiFrameImageStorage,
+    UID_RETIRED_VLMultiframeImageStorage,
     UID_RETIRED_XRayAngiographicBiPlaneImageStorage,
     // DICOS
     UID_DICOS_CTImageStorage,
@@ -1029,8 +1221,8 @@ const int numberOfDcmImageSOPClassUIDs = OFstatic_cast(int, sizeof(dcmImageSOPCl
 
 
 typedef struct {
-    const char *sopClass;
-    const char *modality;
+    const char *sopClass;       /* official UID value */
+    const char *modality;       /* short character code */
     unsigned long averageSize;  /* can be way, way out */
 } DcmModalityTable;
 
@@ -1043,155 +1235,204 @@ typedef struct {
 ** the size of an image being transmitted).
 */
 static const DcmModalityTable modalities[] = {
-    { UID_AmbulatoryECGWaveformStorage,                            "ECA", 4096 },
-    { UID_ArterialPulseWaveformStorage,                            "WVa", 4096 },
-    { UID_AutorefractionMeasurementsStorage,                       "OPa", 4096 },
-    { UID_BasicStructuredDisplayStorage,                           "SD",  4096 },
-    { UID_BasicTextSRStorage,                                      "SRt", 4096 },
-    { UID_BasicVoiceAudioWaveformStorage,                          "AUV", 4096 },
-    { UID_BlendingSoftcopyPresentationStateStorage,                "PSb", 4096 },
-    { UID_BreastProjectionXRayImageStorageForPresentation,         "BX",  4096 * 4096 * 2 },
-    { UID_BreastProjectionXRayImageStorageForProcessing,           "BP",  4096 * 4096 * 2 },
-    { UID_BreastTomosynthesisImageStorage,                         "BT",  4096 * 4096 * 2 },
-    { UID_CardiacElectrophysiologyWaveformStorage,                 "WVc", 4096 },
-    { UID_ChestCADSRStorage,                                       "SRh", 4096 },
-    { UID_ColonCADSRStorage,                                       "SRo", 4096 },
-    { UID_ColorSoftcopyPresentationStateStorage,                   "PSc", 4096 },
-    { UID_CompositingPlanarMPRVolumetricPresentationStateStorage,  "VPc", 4096 },
-    { UID_Comprehensive3DSRStorage,                                "SR3", 4096 },
-    { UID_ComprehensiveSRStorage,                                  "SRc", 4096 },
-    { UID_ComputedRadiographyImageStorage,                         "CR",  2048 * 2048 * 2 },
-    { UID_CornealTopographyMapStorage,                             "CM",  512 * 512 },
-    { UID_CTImageStorage,                                          "CT",  512 * 512 * 2 },
-    { UID_DeformableSpatialRegistrationStorage,                    "RGd", 4096 },
-    { UID_DigitalIntraOralXRayImageStorageForPresentation,         "DXo", 1024 * 1024 * 2 },
-    { UID_DigitalIntraOralXRayImageStorageForProcessing,           "DPo", 1024 * 1024 * 2 },
-    { UID_DigitalMammographyXRayImageStorageForPresentation,       "DXm", 4096 * 4096 * 2 },
-    { UID_DigitalMammographyXRayImageStorageForProcessing,         "DPm", 4096 * 4096 * 2 },
-    { UID_DigitalXRayImageStorageForPresentation,                  "DX",  2048 * 2048 * 2 },
-    { UID_DigitalXRayImageStorageForProcessing,                    "DP",  2048 * 2048 * 2 },
-    { UID_EncapsulatedCDAStorage,                                  "CDA", 4096 },
-    { UID_EncapsulatedPDFStorage,                                  "PDF", 1024 * 1024 },
-    { UID_EnhancedCTImageStorage,                                  "CTe", 256 * 512 * 512 },
-    { UID_EnhancedMRColorImageStorage,                             "MRc", 256 * 512 * 512 * 3 },
-    { UID_EnhancedMRImageStorage,                                  "MRe", 256 * 512 * 512 },
-    { UID_EnhancedPETImageStorage,                                 "PIe", 512 * 512 * 2 },
-    { UID_EnhancedSRStorage,                                       "SRe", 4096 },
-    { UID_EnhancedUSVolumeStorage,                                 "USe", 512 * 512 },
-    { UID_EnhancedXAImageStorage,                                  "XAe", 256 * 512 * 512 },
-    { UID_EnhancedXRFImageStorage,                                 "RFe", 256 * 512 * 512 },
-    { UID_ExtensibleSRStorage,                                     "SRx", 4096 },
-    { UID_GeneralAudioWaveformStorage,                             "AUG", 4096 },
-    { UID_GeneralECGWaveformStorage,                               "ECG", 4096 },
-    { UID_GenericImplantTemplateStorage,                           "IT",  4096 },
-    { UID_GrayscalePlanarMPRVolumetricPresentationStateStorage,    "VPg", 4096 },
-    { UID_GrayscaleSoftcopyPresentationStateStorage,               "PSg", 4096 },
-    { UID_HemodynamicWaveformStorage,                              "WVh", 4096 },
-    { UID_ImplantAssemblyTemplateStorage,                          "ITa", 4096 },
-    { UID_ImplantationPlanSRDocumentStorage,                       "SRi", 4096 },
-    { UID_ImplantTemplateGroupStorage,                             "ITg", 4096 },
-    { UID_IntraocularLensCalculationsStorage,                      "OPc", 4096 },
+    { UID_AcquisitionContextSRStorage,                             "SRa",  4096 },
+    { UID_AdvancedBlendingPresentationStateStorage,                "PSa",  4096 },
+    { UID_AmbulatoryECGWaveformStorage,                            "ECA",  4096 },
+    { UID_ArterialPulseWaveformStorage,                            "WVa",  4096 },
+    { UID_AutorefractionMeasurementsStorage,                       "OPa",  4096 },
+    { UID_BasicStructuredDisplayStorage,                           "SD",   4096 },
+    { UID_BasicTextSRStorage,                                      "SRt",  4096 },
+    { UID_BasicVoiceAudioWaveformStorage,                          "AUV",  4096 },
+    { UID_BlendingSoftcopyPresentationStateStorage,                "PSb",  4096 },
+    { UID_BodyPositionWaveformStorage,                             "WVb",  4096 },
+    { UID_BreastProjectionXRayImageStorageForPresentation,         "BX",   4096 * 4096 * 2 },
+    { UID_BreastProjectionXRayImageStorageForProcessing,           "BP",   4096 * 4096 * 2 },
+    { UID_BreastTomosynthesisImageStorage,                         "BT",   4096 * 4096 * 2 },
+    { UID_CardiacElectrophysiologyWaveformStorage,                 "WVc",  4096 },
+    { UID_CArmPhotonElectronRadiationRecordStorage,                "RRc",  4096 },
+    { UID_CArmPhotonElectronRadiationStorage,                      "Rca",  4096 },
+    { UID_ChestCADSRStorage,                                       "SRh",  4096 },
+    { UID_ColonCADSRStorage,                                       "SRo",  4096 },
+    { UID_ColorPaletteStorage,                                     "CP",   4096 },
+    { UID_ColorSoftcopyPresentationStateStorage,                   "PSc",  4096 },
+    { UID_CompositingPlanarMPRVolumetricPresentationStateStorage,  "VPc",  4096 },
+    { UID_Comprehensive3DSRStorage,                                "SR3",  4096 },
+    { UID_ComprehensiveSRStorage,                                  "SRc",  4096 },
+    { UID_ComputedRadiographyImageStorage,                         "CR",   2048 * 2048 * 2 },
+    { UID_ContentAssessmentResultsStorage,                         "AS",   4096 },
+    { UID_CornealTopographyMapStorage,                             "CM",   512 * 512 },
+    { UID_CTDefinedProcedureProtocolStorage,                       "PPcd", 4096 },  /* was PPd */
+    { UID_CTImageStorage,                                          "CT",   512 * 512 * 2 },
+    { UID_CTPerformedProcedureProtocolStorage,                     "PPcp", 4096 },  /* was PPp */
+    { UID_DeformableSpatialRegistrationStorage,                    "RGd",  4096 },
+    { UID_DermoscopicPhotographyImageStorage,                      "VLd",  768 * 576 * 3 },
+    { UID_DigitalIntraOralXRayImageStorageForPresentation,         "DXo",  1024 * 1024 * 2 },
+    { UID_DigitalIntraOralXRayImageStorageForProcessing,           "DPo",  1024 * 1024 * 2 },
+    { UID_DigitalMammographyXRayImageStorageForPresentation,       "DXm",  4096 * 4096 * 2 },
+    { UID_DigitalMammographyXRayImageStorageForProcessing,         "DPm",  4096 * 4096 * 2 },
+    { UID_DigitalXRayImageStorageForPresentation,                  "DX",   2048 * 2048 * 2 },
+    { UID_DigitalXRayImageStorageForProcessing,                    "DP",   2048 * 2048 * 2 },
+    { UID_ElectromyogramWaveformStorage,                           "EMG",  4096 },
+    { UID_ElectrooculogramWaveformStorage,                         "EOG",  4096 },
+    { UID_EncapsulatedCDAStorage,                                  "CDA",  4096 },
+    { UID_EncapsulatedMTLStorage,                                  "MTL",  4096 },
+    { UID_EncapsulatedOBJStorage,                                  "OBJ",  4096 },
+    { UID_EncapsulatedPDFStorage,                                  "PDF",  1024 * 1024 },
+    { UID_EncapsulatedSTLStorage,                                  "STL",  4096 },
+    { UID_EnhancedCTImageStorage,                                  "CTe",  256 * 512 * 512 },
+    { UID_EnhancedMRColorImageStorage,                             "MRc",  256 * 512 * 512 * 3 },
+    { UID_EnhancedMRImageStorage,                                  "MRe",  256 * 512 * 512 },
+    { UID_EnhancedPETImageStorage,                                 "PIe",  512 * 512 * 2 },
+    { UID_EnhancedSRStorage,                                       "SRe",  4096 },
+    { UID_EnhancedUSVolumeStorage,                                 "USe",  512 * 512 },
+    { UID_EnhancedXAImageStorage,                                  "XAe",  256 * 512 * 512 },
+    { UID_EnhancedXRayRadiationDoseSRStorage,                      "SRde", 4096 },
+    { UID_EnhancedXRFImageStorage,                                 "RFe",  256 * 512 * 512 },
+    { UID_ExtensibleSRStorage,                                     "SRx",  4096 },
+    { UID_GeneralAudioWaveformStorage,                             "AUG",  4096 },
+    { UID_GeneralECGWaveformStorage,                               "ECG",  4096 },
+    { UID_GenericImplantTemplateStorage,                           "IT",   4096 },
+    { UID_GrayscalePlanarMPRVolumetricPresentationStateStorage,    "VPg",  4096 },
+    { UID_GrayscaleSoftcopyPresentationStateStorage,               "PSg",  4096 },
+    { UID_HangingProtocolStorage,                                  "HP",   4096 },
+    { UID_HemodynamicWaveformStorage,                              "WVh",  4096 },
+    { UID_ImplantAssemblyTemplateStorage,                          "ITa",  4096 },
+    { UID_ImplantationPlanSRDocumentStorage,                       "SRi",  4096 },
+    { UID_ImplantTemplateGroupStorage,                             "ITg",  4096 },
+    { UID_IntraocularLensCalculationsStorage,                      "OPc",  4096 },
     { UID_IntravascularOpticalCoherenceTomographyImageStorageForPresentation, "OCt", 512 * 512 },
     { UID_IntravascularOpticalCoherenceTomographyImageStorageForProcessing, "OCp", 512 * 512 },
-    { UID_KeratometryMeasurementsStorage,                          "OPk", 4096 },
-    { UID_KeyObjectSelectionDocumentStorage,                       "KO",  4096 },
-    { UID_LegacyConvertedEnhancedCTImageStorage,                   "CTl", 512 * 512 * 2 },
-    { UID_LegacyConvertedEnhancedMRImageStorage,                   "MRl", 256 * 256 * 2 },
-    { UID_LegacyConvertedEnhancedPETImageStorage,                  "PIl", 512 * 512 * 2 },
-    { UID_LensometryMeasurementsStorage,                           "OPl", 4096 },
-    { UID_MacularGridThicknessAndVolumeReportStorage,              "SRg", 4096 },
-    { UID_MammographyCADSRStorage,                                 "SRm", 4096 },
-    { UID_MRImageStorage,                                          "MR",  256 * 256 * 2 },
-    { UID_MRSpectroscopyStorage,                                   "MRs", 256 * 512 * 512 },
-    { UID_MultiframeGrayscaleByteSecondaryCaptureImageStorage,     "SCb", 512 * 512 },
-    { UID_MultiframeGrayscaleWordSecondaryCaptureImageStorage,     "SCw", 512 * 512 * 2 },
-    { UID_MultiframeSingleBitSecondaryCaptureImageStorage,         "SCs", 1024 * 1024 },  /* roughly an A4 300dpi scan */
-    { UID_MultiframeTrueColorSecondaryCaptureImageStorage,         "SCc", 512 * 512 * 3 },
-    { UID_NuclearMedicineImageStorage,                             "NM",  64 * 64 * 2 },
-    { UID_OphthalmicAxialMeasurementsStorage,                      "OPx", 4096 },
-    { UID_OphthalmicPhotography16BitImageStorage,                  "OPw", 768 * 576 * 6 },
-    { UID_OphthalmicPhotography8BitImageStorage,                   "OPb", 768 * 576 * 3 },
-    { UID_OphthalmicThicknessMapStorage,                           "OPm", 768 * 576 },
-    { UID_OphthalmicTomographyImageStorage,                        "OPt", 768 * 576 * 3 },
-    { UID_OphthalmicVisualFieldStaticPerimetryMeasurementsStorage, "OPp", 4096 },
-    { UID_ParametricMapStorage,                                    "PM",  256 * 256 * 4 },
-    { UID_PositronEmissionTomographyImageStorage,                  "PI",  512 * 512 * 2 },
-    { UID_ProcedureLogStorage,                                     "SRp", 4096 },
-    { UID_PseudoColorSoftcopyPresentationStateStorage,             "PSp", 4096 },
-    { UID_RadiopharmaceuticalRadiationDoseSRStorage,               "SRr", 4096 },
-    { UID_RawDataStorage,                                          "RAW", 512 * 512 * 256 },
-    { UID_RealWorldValueMappingStorage,                            "RWM", 4096 },
-    { UID_RespiratoryWaveformStorage,                              "WVr", 4096 },
-    { UID_RTBeamsDeliveryInstructionStorage,                       "RTd", 4096 },
-    { UID_RTBeamsTreatmentRecordStorage,                           "RTb", 4096 },
-    { UID_RTBrachyTreatmentRecordStorage,                          "RTr", 4096 },
-    { UID_RTDoseStorage,                                           "RD",  4096 },
-    { UID_RTImageStorage,                                          "RI",  4096 },
-    { UID_RTIonBeamsTreatmentRecordStorage,                        "RTi", 4096 },
-    { UID_RTIonPlanStorage,                                        "RPi", 4096 },
-    { UID_RTPlanStorage,                                           "RP" , 4096 },
-    { UID_RTStructureSetStorage,                                   "RS",  4096 },
-    { UID_RTTreatmentSummaryRecordStorage,                         "RTs", 4096 },
-    { UID_SecondaryCaptureImageStorage,                            "SC",  512 * 512 * 2 },
-    { UID_SegmentationStorage,                                     "SG",  4096 },
-    { UID_SpatialFiducialsStorage,                                 "FID", 4096 },
-    { UID_SpatialRegistrationStorage,                              "RGs", 4096 },
-    { UID_SpectaclePrescriptionReportStorage,                      "SRs", 4096 },
-    { UID_StereometricRelationshipStorage,                         "OPr", 4096 },
-    { UID_SubjectiveRefractionMeasurementsStorage,                 "OPs", 4096 },
-    { UID_SurfaceScanMeshStorage,                                  "SSm", 4096 },
-    { UID_SurfaceScanPointCloudStorage,                            "SSp", 4096 },
-    { UID_SurfaceSegmentationStorage,                              "SGs", 4096 },
-    { UID_TwelveLeadECGWaveformStorage,                            "TLE", 4096 },
-    { UID_UltrasoundImageStorage,                                  "US",  512 * 512 },
-    { UID_UltrasoundMultiframeImageStorage,                        "USm", 512 * 512 },
-    { UID_VideoEndoscopicImageStorage,                             "VVe", 768 * 576 * 3 },
-    { UID_VideoMicroscopicImageStorage,                            "VVm", 768 * 576 * 3 },
-    { UID_VideoPhotographicImageStorage,                           "VVp", 768 * 576 * 3 },
-    { UID_VisualAcuityMeasurementsStorage,                         "OPv", 4096 },
-    { UID_VLEndoscopicImageStorage,                                "VLe", 768 * 576 * 3 },
-    { UID_VLMicroscopicImageStorage,                               "VLm", 768 * 576 * 3 },
-    { UID_VLPhotographicImageStorage,                              "VLp", 768 * 576 * 3 },
-    { UID_VLSlideCoordinatesMicroscopicImageStorage,               "VLs", 768 * 576 * 3 },
-    { UID_VLWholeSlideMicroscopyImageStorage,                      "VLw", 10000 * 10000 * 3},
+    { UID_KeratometryMeasurementsStorage,                          "OPk",  4096 },
+    { UID_KeyObjectSelectionDocumentStorage,                       "KO",   4096 },
+    { UID_LegacyConvertedEnhancedCTImageStorage,                   "CTl",  512 * 512 * 2 },
+    { UID_LegacyConvertedEnhancedMRImageStorage,                   "MRl",  256 * 256 * 2 },
+    { UID_LegacyConvertedEnhancedPETImageStorage,                  "PIl",  512 * 512 * 2 },
+    { UID_LensometryMeasurementsStorage,                           "OPl",  4096 },
+    { UID_MacularGridThicknessAndVolumeReportStorage,              "SRg",  4096 },
+    { UID_MammographyCADSRStorage,                                 "SRm",  4096 },
+    { UID_MicroscopyBulkSimpleAnnotationsStorage,                  "MAs",  4096 },
+    { UID_MRImageStorage,                                          "MR",   256 * 256 * 2 },
+    { UID_MRSpectroscopyStorage,                                   "MRs",  256 * 512 * 512 },
+    { UID_MultichannelRespiratoryWaveformStorage,                  "WVm",  4096 },
+    { UID_MultiframeGrayscaleByteSecondaryCaptureImageStorage,     "SCb",  512 * 512 },
+    { UID_MultiframeGrayscaleWordSecondaryCaptureImageStorage,     "SCw",  512 * 512 * 2 },
+    { UID_MultiframeSingleBitSecondaryCaptureImageStorage,         "SCs",  1024 * 1024 },  /* roughly an A4 300dpi scan */
+    { UID_MultiframeTrueColorSecondaryCaptureImageStorage,         "SCc",  512 * 512 * 3 },
+    { UID_MultipleVolumeRenderingVolumetricPresentationStateStorage, "VPm" , 4096 },
+    { UID_NuclearMedicineImageStorage,                             "NM",   64 * 64 * 2 },
+    { UID_OphthalmicAxialMeasurementsStorage,                      "OPx",  4096 },
+    { UID_OphthalmicOpticalCoherenceTomographyBscanVolumeAnalysisStorage, "OCb" , 768 * 576 },
+    { UID_OphthalmicOpticalCoherenceTomographyEnFaceImageStorage,  "OCe",  768 * 576  * 2 },
+    { UID_OphthalmicPhotography16BitImageStorage,                  "OPw",  768 * 576 * 6 },
+    { UID_OphthalmicPhotography8BitImageStorage,                   "OPb",  768 * 576 * 3 },
+    { UID_OphthalmicThicknessMapStorage,                           "OPm",  768 * 576 },
+    { UID_OphthalmicTomographyImageStorage,                        "OPt",  768 * 576 * 3 },
+    { UID_OphthalmicVisualFieldStaticPerimetryMeasurementsStorage, "OPp",  4096 },
+    { UID_ParametricMapStorage,                                    "PM",   256 * 256 * 4 },
+    { UID_PatientRadiationDoseSRStorage,                           "SRq",  4096 },
+    { UID_PerformedImagingAgentAdministrationSRStorage,            "SRi",  4096 },
+    { UID_PlannedImagingAgentAdministrationSRStorage,              "SRj",  4096 },
+    { UID_PositronEmissionTomographyImageStorage,                  "PI",   512 * 512 * 2 },
+    { UID_ProcedureLogStorage,                                     "SRp",  4096 },
+    { UID_ProtocolApprovalStorage,                                 "PA",   4096 },
+    { UID_PseudoColorSoftcopyPresentationStateStorage,             "PSp",  4096 },
+    { UID_RadiopharmaceuticalRadiationDoseSRStorage,               "SRr",  4096 },
+    { UID_RawDataStorage,                                          "RAW",  512 * 512 * 256 },
+    { UID_RealWorldValueMappingStorage,                            "RWM",  4096 },
+    { UID_RespiratoryWaveformStorage,                              "WVr",  4096 },
+    { UID_RoboticArmRadiationStorage,                              "Rra",  4096 },  /* was RRr */
+    { UID_RoboticRadiationRecordStorage,                           "RRr",  4096 },
+    { UID_RoutineScalpElectroencephalogramWaveformStorage,         "EEG",  4096 },
+    { UID_RTBeamsDeliveryInstructionStorage,                       "RTd",  4096 },
+    { UID_RTBeamsTreatmentRecordStorage,                           "RTb",  4096 },
+    { UID_RTBrachyApplicationSetupDeliveryInstructionStorage,      "RTa",  4096 },
+    { UID_RTBrachyTreatmentRecordStorage,                          "RTr",  4096 },
+    { UID_RTDoseStorage,                                           "RD",   4096 },
+    { UID_RTImageStorage,                                          "RI",   4096 },
+    { UID_RTIonBeamsTreatmentRecordStorage,                        "RTi",  4096 },
+    { UID_RTIonPlanStorage,                                        "RPi",  4096 },
+    { UID_RTPlanStorage,                                           "RP" ,  4096 },
+    { UID_RTPhysicianIntentStorage,                                "RIp",  4096 },
+    { UID_RTRadiationRecordSetStorage,                             "RSr",  4096 },
+    { UID_RTRadiationSalvageRecordStorage,                         "RRs",  4096 },
+    { UID_RTRadiationSetDeliveryInstructionStorage,                "RSd",  4096 },
+    { UID_RTRadiationSetStorage,                                   "RSe",  4096 },  /* was RRs */
+    { UID_RTSegmentAnnotationStorage,                              "RAs",  4096 },  /* was RRs */
+    { UID_RTStructureSetStorage,                                   "RS",   4096 },
+    { UID_RTTreatmentPreparationStorage,                           "RTp",  4096 },
+    { UID_RTTreatmentSummaryRecordStorage,                         "RTs",  4096 },
+    { UID_SecondaryCaptureImageStorage,                            "SC",   512 * 512 * 2 },
+    { UID_SegmentationStorage,                                     "SG",   4096 },
+    { UID_SegmentedVolumeRenderingVolumetricPresentationStateStorage, "VPs", 4096 },
+    { UID_SimplifiedAdultEchoSRStorage,                            "SRu",  4096 },
+    { UID_SleepElectroencephalogramWaveformStorage,                "WVs",  4096 },
+    { UID_SpatialFiducialsStorage,                                 "FID",  4096 },
+    { UID_SpatialRegistrationStorage,                              "RGs",  4096 },
+    { UID_SpectaclePrescriptionReportStorage,                      "SRs",  4096 },
+    { UID_StereometricRelationshipStorage,                         "OPr",  4096 },
+    { UID_SubjectiveRefractionMeasurementsStorage,                 "OPs",  4096 },
+    { UID_SurfaceScanMeshStorage,                                  "SSm",  4096 },
+    { UID_SurfaceScanPointCloudStorage,                            "SSp",  4096 },
+    { UID_SurfaceSegmentationStorage,                              "SGs",  4096 },
+    { UID_TomotherapeuticRadiationRecordStorage,                   "RRt",  4096 },
+    { UID_TomotherapeuticRadiationStorage,                         "Rto",  4096 },  /* was RRt */
+    { UID_TractographyResultsStorage,                              "TR",   4096 },
+    { UID_TwelveLeadECGWaveformStorage,                            "TLE",  4096 },
+    { UID_UltrasoundImageStorage,                                  "US",   512 * 512 },
+    { UID_UltrasoundMultiframeImageStorage,                        "USm",  512 * 512 },
+    { UID_VideoEndoscopicImageStorage,                             "VVe",  768 * 576 * 3 },
+    { UID_VideoMicroscopicImageStorage,                            "VVm",  768 * 576 * 3 },
+    { UID_VideoPhotographicImageStorage,                           "VVp",  768 * 576 * 3 },
+    { UID_VisualAcuityMeasurementsStorage,                         "OPv",  4096 },
+    { UID_VLEndoscopicImageStorage,                                "VLe",  768 * 576 * 3 },
+    { UID_VLMicroscopicImageStorage,                               "VLm",  768 * 576 * 3 },
+    { UID_VLPhotographicImageStorage,                              "VLp",  768 * 576 * 3 },
+    { UID_VLSlideCoordinatesMicroscopicImageStorage,               "VLs",  768 * 576 * 3 },
+    { UID_VLWholeSlideMicroscopyImageStorage,                      "VLw",  10000 * 10000 * 3 },
+    { UID_VolumeRenderingVolumetricPresentationStateStorage,       "VPv",  4096 },
     { UID_WideFieldOphthalmicPhotographyStereographicProjectionImageStorage, "OWs", 768 * 576 * 3 },
-    { UID_WideFieldOphthalmicPhotography3DCoordinatesImageStorage, "OW3", 768 * 576 * 3 },
-    { UID_XAXRFGrayscaleSoftcopyPresentationStateStorage,          "PSx", 4096 },
-    { UID_XRay3DAngiographicImageStorage,                          "XA3", 256 * 512 * 512 },
-    { UID_XRay3DCraniofacialImageStorage,                          "XC3", 256 * 512 * 512 },
-    { UID_XRayAngiographicImageStorage,                            "XA",  256 * 512 * 512 },
-    { UID_XRayRadiationDoseSRStorage,                              "SRd", 4096 },
-    { UID_XRayRadiofluoroscopicImageStorage,                       "RF",  256 * 512 * 512 },
+    { UID_WideFieldOphthalmicPhotography3DCoordinatesImageStorage, "OW3",  768 * 576 * 3 },
+    { UID_XADefinedProcedureProtocolStorage,                       "PPxd", 4096 },
+    { UID_XAPerformedProcedureProtocolStorage,                     "PPxp", 4096 },
+    { UID_XAXRFGrayscaleSoftcopyPresentationStateStorage,          "PSx",  4096 },
+    { UID_XRay3DAngiographicImageStorage,                          "XA3",  256 * 512 * 512 },
+    { UID_XRay3DCraniofacialImageStorage,                          "XC3",  256 * 512 * 512 },
+    { UID_XRayAngiographicImageStorage,                            "XA",   256 * 512 * 512 },
+    { UID_XRayRadiationDoseSRStorage,                              "SRd",  4096 },
+    { UID_XRayRadiofluoroscopicImageStorage,                       "RF",   256 * 512 * 512 },
     // retired
-    { UID_RETIRED_HardcopyColorImageStorage,                       "HC",  4096 },
-    { UID_RETIRED_HardcopyGrayscaleImageStorage,                   "HG",  4096 },
-    { UID_RETIRED_NuclearMedicineImageStorage,                     "NMr", 64 * 64 * 2 },
-    { UID_RETIRED_StandaloneCurveStorage,                          "CV",  4096 },
-    { UID_RETIRED_StandaloneModalityLUTStorage,                    "ML",  4096 * 2 },
-    { UID_RETIRED_StandaloneOverlayStorage,                        "OV",  512 * 512 },
-    { UID_RETIRED_StandalonePETCurveStorage,                       "PC",  4096 },
-    { UID_RETIRED_StandaloneVOILUTStorage,                         "VO",  4096 * 2 },
-    { UID_RETIRED_StoredPrintStorage,                              "SP",  4096 },
-    { UID_RETIRED_UltrasoundImageStorage,                          "USr", 512 * 512 },
-    { UID_RETIRED_UltrasoundMultiframeImageStorage,                "USf", 512 * 512 },
-    { UID_RETIRED_VLImageStorage,                                  "VLr", 768 * 576 * 3 },
-    { UID_RETIRED_VLMultiFrameImageStorage,                        "VMr", 768 * 576 * 3 },
-    { UID_RETIRED_XRayAngiographicBiPlaneImageStorage,             "XB",  512 * 512 * 2 },
+    { UID_RETIRED_HardcopyColorImageStorage,                       "HC",   4096 },
+    { UID_RETIRED_HardcopyGrayscaleImageStorage,                   "HG",   4096 },
+    { UID_RETIRED_NuclearMedicineImageStorage,                     "NMr",  64 * 64 * 2 },
+    { UID_RETIRED_StandaloneCurveStorage,                          "CV",   4096 },
+    { UID_RETIRED_StandaloneModalityLUTStorage,                    "ML",   4096 * 2 },
+    { UID_RETIRED_StandaloneOverlayStorage,                        "OV",   512 * 512 },
+    { UID_RETIRED_StandalonePETCurveStorage,                       "PC",   4096 },
+    { UID_RETIRED_StandaloneVOILUTStorage,                         "VO",   4096 * 2 },
+    { UID_RETIRED_StoredPrintStorage,                              "SP",   4096 },
+    { UID_RETIRED_UltrasoundImageStorage,                          "USr",  512 * 512 },
+    { UID_RETIRED_UltrasoundMultiframeImageStorage,                "USf",  512 * 512 },
+    { UID_RETIRED_VLImageStorage,                                  "VLr",  768 * 576 * 3 },
+    { UID_RETIRED_VLMultiframeImageStorage,                        "VMr",  768 * 576 * 3 },
+    { UID_RETIRED_XRayAngiographicBiPlaneImageStorage,             "XB",   512 * 512 * 2 },
     // draft
-    { UID_DRAFT_RTBeamsDeliveryInstructionStorage,                 "RBd", 4096 },
-    { UID_DRAFT_SRAudioStorage,                                    "SR_", 4096 },  /* was "SRw" */
-    { UID_DRAFT_SRComprehensiveStorage,                            "SR_", 4096 },  /* was "SRx" */
-    { UID_DRAFT_SRDetailStorage,                                   "SR_", 4096 },  /* was "SRy" */
-    { UID_DRAFT_SRTextStorage,                                     "SR_", 4096 },  /* was "SRz" */
-    { UID_DRAFT_WaveformStorage,                                   "WVd", 4096 },
+    { UID_DRAFT_RTBeamsDeliveryInstructionStorage,                 "RB_d", 4096 },  /* was "RBd" */
+    { UID_DRAFT_SRAudioStorage,                                    "SR_a", 4096 },  /* was "SRw" */
+    { UID_DRAFT_SRComprehensiveStorage,                            "SR_c", 4096 },  /* was "SRx" */
+    { UID_DRAFT_SRDetailStorage,                                   "SR_d", 4096 },  /* was "SRy" */
+    { UID_DRAFT_SRTextStorage,                                     "SR_t", 4096 },  /* was "SRz" */
+    { UID_DRAFT_WaveformStorage,                                   "WV_d", 4096 },  /* was "WVd" */
     // DICOS
-    { UID_DICOS_CTImageStorage,                                    "CTs", 512 * 512 * 2 },
-    { UID_DICOS_DigitalXRayImageStorageForPresentation,            "DXs", 2048 * 2048 * 2 },
-    { UID_DICOS_DigitalXRayImageStorageForProcessing,              "DPs", 2048 * 2048 * 2 },
-    { UID_DICOS_ThreatDetectionReportStorage,                      "TDR", 4096 },
+    { UID_DICOS_CTImageStorage,                                    "CTs",  512 * 512 * 2 },
+    { UID_DICOS_DigitalXRayImageStorageForPresentation,            "DXs",  2048 * 2048 * 2 },
+    { UID_DICOS_DigitalXRayImageStorageForProcessing,              "DPs",  2048 * 2048 * 2 },
+    { UID_DICOS_ThreatDetectionReportStorage,                      "TDR",  4096 },
+    { UID_DICOS_2DAITStorage,                                      "AI2",  4096 },
+    { UID_DICOS_3DAITStorage,                                      "AI3",  4096 },
+    { UID_DICOS_QuadrupoleResonanceStorage,                        "QR",   4096 },
     // DICONDE
-    { UID_DICONDE_EddyCurrentImageStorage,                         "EC",  512 * 512 },
-    { UID_DICONDE_EddyCurrentMultiframeImageStorage,               "ECm", 512 * 512 }
+    { UID_DICONDE_EddyCurrentImageStorage,                         "EC",   512 * 512 },
+    { UID_DICONDE_EddyCurrentMultiframeImageStorage,               "ECm",  512 * 512 }
 };
 
 static const int numberOfDcmModalityTableEntries = OFstatic_cast(int, sizeof(modalities) / sizeof(DcmModalityTable));
@@ -1274,15 +1515,35 @@ dcmFindUIDFromName(const char* name)
 /*
 ** dcmIsaStorageSOPClassUID(const char* uid)
 ** Returns true if the uid is one of the Storage SOP Classes.
-** Performs a table lookup in the dcmAllStorageSOPClassUIDs table.
+** Performs a table lookup in the dcmAllStorageSOPClassUIDs,
+** dcmNonPatientStorageSOPClassUIDs and/or dcmImageSOPClassUIDs table.
 */
 OFBool
-dcmIsaStorageSOPClassUID(const char* uid)
+dcmIsaStorageSOPClassUID(const char* uid, const E_StorageSOPClassType type)
 {
     if (uid == NULL) return OFFalse;
-    for (int i = 0; i < numberOfAllDcmStorageSOPClassUIDs; i++) {
-      if (dcmAllStorageSOPClassUIDs[i] != NULL && strcmp(uid, dcmAllStorageSOPClassUIDs[i]) == 0) {
-        return OFTrue;
+    /* check for patient object */
+    if (type & ESSC_Patient) {
+      for (int i = 0; i < numberOfDcmAllStorageSOPClassUIDs; i++) {
+        if (dcmAllStorageSOPClassUIDs[i] != NULL && strcmp(uid, dcmAllStorageSOPClassUIDs[i]) == 0) {
+          return OFTrue;
+        }
+      }
+    }
+    /* check for non-patient object */
+    if (type & ESSC_NonPatient) {
+      for (int i = 0; dcmNonPatientStorageSOPClassUIDs[i] != NULL; i++) {
+        if (strcmp(uid, dcmNonPatientStorageSOPClassUIDs[i]) == 0) {
+          return OFTrue;
+        }
+      }
+    }
+    /* check for image object */
+    if (type & ESSC_Image) {
+      for (int i = 0; i < numberOfDcmImageSOPClassUIDs; i++) {
+        if (dcmImageSOPClassUIDs[i] != NULL && strcmp(uid, dcmImageSOPClassUIDs[i]) == 0) {
+          return OFTrue;
+        }
       }
     }
     return OFFalse;
@@ -1292,18 +1553,11 @@ dcmIsaStorageSOPClassUID(const char* uid)
 /*
 ** dcmIsImageStorageSOPClassUID(const char* uid)
 ** Returns true if the uid is one of the Image Storage SOP Classes.
-** Performs a table lookup in the dcmImageSOPClassUIDs table.
 */
 OFBool
 dcmIsImageStorageSOPClassUID(const char* uid)
 {
-    if (uid == NULL) return OFFalse;
-    for (int i = 0; i < numberOfDcmImageSOPClassUIDs; i++) {
-      if (dcmImageSOPClassUIDs[i] != NULL && strcmp(uid, dcmImageSOPClassUIDs[i]) == 0) {
-        return OFTrue;
-      }
-    }
-    return OFFalse;
+    return dcmIsaStorageSOPClassUID(uid, ESSC_Image);
 }
 
 // ********************************
@@ -1311,12 +1565,14 @@ dcmIsImageStorageSOPClassUID(const char* uid)
 #ifndef HAVE_GETHOSTID
 #if defined(HAVE_SYSINFO) && defined(HAVE_SYS_SYSTEMINFO_H)
 
+/* Implementation of gethostid() based on sysinfo().
+ * This implementation is used, for example, on Solaris.
+ */
 #include <sys/systeminfo.h>
 static long gethostid(void)
 {
-    char buf[256];
     if (sysinfo(SI_HW_SERIAL, buf, 128) == -1) {
-      DCMDATA_FATAL("sysinfo: " << OFStandard::strerror(errno, buf, sizeof(buf)));
+      DCMDATA_FATAL("sysinfo: " << OFStandard::getLastSystemErrorCode().message());
       exit(1);
     }
 #ifdef HAVE_STRTOUL
@@ -1336,215 +1592,47 @@ static long gethostid(void)
 */
 #if (defined(HAVE_GETHOSTNAME) && defined(HAVE_GETHOSTBYNAME)) || defined(HAVE_WINDOWS_H)
 
-// 16K should be large enough to handle everything pointed to by a struct hostent
-#define GETHOSTBYNAME_R_BUFSIZE 16384
+#ifdef _WIN32
 
-/* On Windows systems specify a routine to determine the MAC address of the Ethernet adapter */
-/* Special handling for MinGW which does not yet (as of MinGW 2.0) support snmp.h */
-#if defined(HAVE_WINDOWS_H) && !defined(__MINGW32__)
-
-#include <snmp.h>
-
-// Visual C++ prior to version 6 declared different type names
-// in <snmp.h>, so we need to define a mapping
-#if _MSC_VER < 1200
-typedef RFC1157VarBind     SnmpVarBind;
-typedef RFC1157VarBindList SnmpVarBindList;
-typedef AsnInteger         AsnInteger32;
-#define SNMP_PDU_GETNEXT   ASN_RFC1157_GETNEXTREQUEST
-#endif
-
-
-typedef int(WINAPI *pSnmpUtilOidCpy) (
-        OUT AsnObjectIdentifier *pOidDst,
-        IN AsnObjectIdentifier *pOidSrc);
-
-typedef int(WINAPI *pSnmpUtilOidNCmp) (
-        IN AsnObjectIdentifier *pOid1,
-        IN AsnObjectIdentifier *pOid2,
-        IN UINT nSubIds);
-
-typedef void(WINAPI *pSnmpUtilVarBindFree) (
-        IN OUT SnmpVarBind *pVb);
-
-typedef bool(WINAPI *pSnmpExtensionInit) (
-        IN DWORD dwTimeZeroReference,
-        OUT HANDLE *hPollForTrapEvent,
-        OUT AsnObjectIdentifier *supportedView);
-
-typedef bool(WINAPI *pSnmpExtensionTrap) (
-        OUT AsnObjectIdentifier *enterprise,
-        OUT AsnInteger32 *genericTrap,
-        OUT AsnInteger32 *specificTrap,
-        OUT AsnTimeticks *timeStamp,
-        OUT SnmpVarBindList *variableBindings);
-
-typedef bool(WINAPI *pSnmpExtensionQuery) (
-        IN BYTE requestType,
-        IN OUT SnmpVarBindList *variableBindings,
-        OUT AsnInteger32 *errorStatus,
-        OUT AsnInteger32 *errorIndex);
-
-typedef bool(WINAPI *pSnmpExtensionInitEx) (
-        OUT AsnObjectIdentifier *supportedView);
-
-typedef struct _ASTAT_
+/* On Windows systems specify a routine to determine the MAC address of the Ethernet adapter.
+ * This implementation uses Win32 system calls available on Windows 2000 and newer.
+ * A different implementation supporting Windows 95 was used in DCMTK releases up to 3.6.0,
+ * but that implementation does not work reliably anymore on Windows 10.
+ */
+static IP_ADAPTER_INFO* getMACAddresses(OFVector<Uint8>& buffer)
 {
-    ADAPTER_STATUS adapt;
-    NAME_BUFFER    NameBuff[30];
-} ASTAT, *PASTAT;
-
-/* get the MAC address of the (first) Ethernet adapter (6 bytes) */
-static unsigned char *getMACAddress(unsigned char buffer[6])
-{
-    OFBool success = OFFalse;
-    /* init return variable */
-    memzero(buffer, 6 * sizeof(unsigned char));
-    NCB ncb;
-    memzero(&ncb, sizeof(ncb));
-    /* reset the LAN adapter */
-    ncb.ncb_command = NCBRESET;
-    /* it is considered bad practice to hardcode the LANA number (should enumerate
-       adapters first), but at least this approach also works on Windows 9x */
-    ncb.ncb_lana_num = 0;
-    if (Netbios(&ncb) == NRC_GOODRET)
-    {
-        ASTAT Adapter;
-        /* prepare to get the adapter status block */
-        memzero(&ncb, sizeof(ncb));
-        ncb.ncb_command = NCBASTAT;
-        /* it is considered bad practice to hardcode the LANA number (should enumerate
-           adapters first), but at least this approach also works on Windows 9x */
-        ncb.ncb_lana_num = 0;
-        strcpy((char *)ncb.ncb_callname, "*");
-        ncb.ncb_buffer = (unsigned char *)&Adapter;
-        ncb.ncb_length = sizeof(Adapter);
-        /* get the adapter's info */
-        if (Netbios(&ncb) == 0)
-        {
-            /* store the MAC address */
-            buffer[0] = Adapter.adapt.adapter_address[0];
-            buffer[1] = Adapter.adapt.adapter_address[1];
-            buffer[2] = Adapter.adapt.adapter_address[2];
-            buffer[3] = Adapter.adapt.adapter_address[3];
-            buffer[4] = Adapter.adapt.adapter_address[4];
-            buffer[5] = Adapter.adapt.adapter_address[5];
-            success = OFTrue;
-        }
-    }
-    /* check whether NetBIOS routines succeeded, if not try the SNMP approach */
-    if (!success)
-    {
-        HINSTANCE m_hInst1, m_hInst2;
-        /* load the "SNMP Utility Library" dll and get the addresses of the functions necessary */
-        m_hInst1 = LoadLibrary("snmpapi.dll");
-        if (m_hInst1 >= (HINSTANCE)HINSTANCE_ERROR)
-        {
-            pSnmpUtilOidCpy m_Copy = (pSnmpUtilOidCpy)GetProcAddress(m_hInst1, "SnmpUtilOidCpy");
-            pSnmpUtilOidNCmp m_Compare = (pSnmpUtilOidNCmp)GetProcAddress(m_hInst1, "SnmpUtilOidNCmp");
-            pSnmpUtilVarBindFree m_BindFree = (pSnmpUtilVarBindFree)GetProcAddress(m_hInst1, "SnmpUtilVarBindFree");
-            /* load the "SNMP Internet MIB" dll and get the addresses of the functions necessary */
-            m_hInst2 = LoadLibrary("inetmib1.dll");
-            if (m_hInst2 >= (HINSTANCE)HINSTANCE_ERROR)
-            {
-                HANDLE PollForTrapEvent;
-                AsnObjectIdentifier SupportedView;
-                UINT OID_ifEntryType[] = {1, 3, 6, 1, 2, 1, 2, 2, 1, 3};
-                UINT OID_ifEntryNum[] = {1, 3, 6, 1, 2, 1, 2, 1};
-                UINT OID_ipMACEntAddr[] = {1, 3, 6, 1, 2, 1, 2, 2, 1, 6};
-                AsnObjectIdentifier MIB_ifMACEntAddr = {sizeof(OID_ipMACEntAddr) / sizeof(UINT), OID_ipMACEntAddr};
-                AsnObjectIdentifier MIB_ifEntryType = {sizeof(OID_ifEntryType) / sizeof(UINT), OID_ifEntryType};
-                AsnObjectIdentifier MIB_ifEntryNum = {sizeof(OID_ifEntryNum) / sizeof(UINT), OID_ifEntryNum};
-                SnmpVarBindList varBindList;
-                SnmpVarBind varBind[2];
-                AsnInteger32 errorStatus;
-                AsnInteger32 errorIndex;
-                AsnObjectIdentifier MIB_NULL = {0, 0};
-                int ret;
-                int dtmp;
-                int j = 0;
-                pSnmpExtensionInit m_Init = (pSnmpExtensionInit)GetProcAddress(m_hInst2, "SnmpExtensionInit");
-                /* pSnmpExtensionInitEx m_InitEx = (pSnmpExtensionInitEx)GetProcAddress(m_hInst2, "SnmpExtensionInitEx"); */
-                pSnmpExtensionQuery m_Query = (pSnmpExtensionQuery)GetProcAddress(m_hInst2, "SnmpExtensionQuery");
-                /* pSnmpExtensionTrap m_Trap = (pSnmpExtensionTrap)GetProcAddress(m_hInst2, "SnmpExtensionTrap"); */
-                m_Init(GetTickCount(), &PollForTrapEvent, &SupportedView);
-                /* initialize the variable list to be retrieved by m_Query */
-                varBindList.list = varBind;
-                varBind[0].name = MIB_NULL;
-                varBind[1].name = MIB_NULL;
-                /* copy in the OID to find the number of entries in the interface table */
-                varBindList.len = 1;        /* only retrieving one item */
-                m_Copy(&varBind[0].name, &MIB_ifEntryNum);
-                ret = m_Query(SNMP_PDU_GETNEXT, &varBindList, &errorStatus, &errorIndex);
-                varBindList.len = 2;
-                /* copy in the OID of ifType, the type of interface */
-                m_Copy(&varBind[0].name, &MIB_ifEntryType);
-                /* copy in the OID of ifPhysAddress, the address */
-                m_Copy(&varBind[1].name, &MIB_ifMACEntAddr);
-                do {
-                    /* Submit the query.  Responses will be loaded into varBindList.
-                       We can expect this call to succeed a # of times corresponding
-                       to the # of adapters reported to be in the system */
-                    ret = m_Query(SNMP_PDU_GETNEXT, &varBindList, &errorStatus, &errorIndex);
-                    if (!ret)
-                        ret = 1;
-                    else
-                    {
-                        /* confirm that the proper type has been returned */
-                        ret = m_Compare(&varBind[0].name, &MIB_ifEntryType, MIB_ifEntryType.idLength);
-                    }
-                    if (!ret)
-                    {
-                        j++;
-                        dtmp = varBind[0].value.asnValue.number;
-                        /* type 6 describes ethernet interfaces */
-                        if (dtmp == 6)
-                        {
-                            /* confirm that we have an address here */
-                            ret = m_Compare(&varBind[1].name, &MIB_ifMACEntAddr,MIB_ifMACEntAddr.idLength);
-                            if ((!ret) && (varBind[1].value.asnValue.address.stream != NULL))
-                            {
-                                if ((varBind[1].value.asnValue.address.stream[0] == 0x44) &&
-                                    (varBind[1].value.asnValue.address.stream[1] == 0x45) &&
-                                    (varBind[1].value.asnValue.address.stream[2] == 0x53) &&
-                                    (varBind[1].value.asnValue.address.stream[3] == 0x54) &&
-                                    (varBind[1].value.asnValue.address.stream[4] == 0x00))
-                                {
-                                    /* ignore all dial-up networking adapters */
-                                    continue;
-                                }
-                                if ((varBind[1].value.asnValue.address.stream[0] == 0x00) &&
-                                    (varBind[1].value.asnValue.address.stream[1] == 0x00) &&
-                                    (varBind[1].value.asnValue.address.stream[2] == 0x00) &&
-                                    (varBind[1].value.asnValue.address.stream[3] == 0x00) &&
-                                    (varBind[1].value.asnValue.address.stream[4] == 0x00) &&
-                                    (varBind[1].value.asnValue.address.stream[5] == 0x00))
-                                {
-                                    /* ignore NULL addresses returned by other network interfaces */
-                                    continue;
-                                }
-                                /* store the MAC address */
-                                buffer[0] = varBind[1].value.asnValue.address.stream[0];
-                                buffer[1] = varBind[1].value.asnValue.address.stream[1];
-                                buffer[2] = varBind[1].value.asnValue.address.stream[2];
-                                buffer[3] = varBind[1].value.asnValue.address.stream[3];
-                                buffer[4] = varBind[1].value.asnValue.address.stream[4];
-                                buffer[5] = varBind[1].value.asnValue.address.stream[5];
-                                ret = 1;    // we found an address -> exit
-                            }
-                        }
-                    }
-                } while (!ret);  /* Stop only on an error. An error will occur when we
-                                    go exhaust the list of interfaces to be examined */
-                FreeLibrary(m_hInst2);
-                /* free the bindings */
-                m_BindFree(&varBind[0]);
-                m_BindFree(&varBind[1]);
-            }
-            FreeLibrary(m_hInst1);
-        }
-    }
-    return buffer;
+  // get adapter info using OFVector to allocate memory
+  DWORD bufferSize = 0;
+  DWORD status = GetAdaptersInfo(OFnullptr, &bufferSize);
+  if (status == ERROR_BUFFER_OVERFLOW)
+  {
+    buffer.resize(bufferSize);
+    status = GetAdaptersInfo(OFreinterpret_cast(IP_ADAPTER_INFO*, &*buffer.begin()), &bufferSize);
+  }
+  if (status == ERROR_SUCCESS)
+    return OFreinterpret_cast(IP_ADAPTER_INFO*, &*buffer.begin());
+  // print out the error message for debugging
+  OFString message;
+  LPVOID errBuf = OFnullptr;
+  if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+      OFnullptr, status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), OFreinterpret_cast(LPTSTR, &errBuf), 0, OFnullptr) > 0)
+  {
+    message = OFstatic_cast(const char*, errBuf);
+    // remove "\r\n"
+    if (message.size() >= 2 && message.substr(message.length() - 2) == "\r\n")
+      message = message.substr(0, message.length() - 2);
+  }
+  LocalFree(errBuf);
+  if (!message.empty())
+  {
+    DCMDATA_WARN("GetAdaptersInfo() failed with the error: '" << message << '\'');
+  }
+  else
+  {
+    DCMDATA_WARN("GetAdaptersInfo() failed with an unknown error");
+  }
+  // a null pointer indicates that no adapter is available
+  return OFnullptr;
 }
 #endif
 
@@ -1556,35 +1644,41 @@ static long gethostid(void)
 #endif
 {
     long result = 0;
-#if (defined(HAVE_GETHOSTNAME) && defined(HAVE_GETHOSTBYNAME)) || defined(HAVE_WINDOWS_H)
+#if defined(HAVE_GETHOSTNAME) || defined(HAVE_WINDOWS_H)
     char name[1024];
-    char **p = NULL;
-    struct in_addr in;
-#ifdef HAVE_WINSOCK_H
-    WSAData winSockData;
-    /* we need at least version 1.1 */
-    WORD winSockVersionNeeded = MAKEWORD(1, 1);
-    WSAStartup(winSockVersionNeeded, &winSockData);
-#endif
+
     /*
-    ** Define the hostid to be the system's main TCP/IP address.
+    ** Define the hostid to be the system's main IP address.
     ** This is not perfect but it is better than nothing (i.e. using zero)
     */
+    OFStandard::initializeNetwork();
     if (gethostname(name, 1024) == 0)
     {
-        if (OFStandard::OFHostent hent = OFStandard::getHostByName(name))
+        struct sockaddr_in *sin = NULL;
+        struct sockaddr_in6 *sin6 = NULL;
+        long *lp = NULL;
+        OFSockAddr sa;
+        OFStandard::getAddressByHostname(name, sa);
+        switch (sa.getFamily())
         {
-            if (!hent.h_addr_list.empty())
-            {
-                memcpy(&in.s_addr, hent.h_addr_list.front().c_str(), sizeof(in.s_addr));
-                result = OFstatic_cast(long, in.s_addr);
-            }
+          case AF_INET:
+            sin = sa. getSockaddr_in();
+            result = OFstatic_cast(long, sin->sin_addr.s_addr);
+            break;
+          case AF_INET6:
+            sin6 = sa. getSockaddr_in6();
+            // interpret the first four bytes of the IPv6 address as a long
+            lp = OFreinterpret_cast(long *, &sin6->sin6_addr);
+            result = *lp;
+            break;
+          default:
+            // unknown protocol family. Do nothing.
+            break;
         }
     }
-#ifdef HAVE_WINSOCK_H
-    WSACleanup();
-#endif
-#endif /* defined(HAVE_GETHOSTNAME) && defined(HAVE_GETHOSTBYNAME) */
+
+    OFStandard::shutdownNetwork();
+#endif /* defined(HAVE_GETHOSTNAME) */
 /* on Windows systems determine some system specific information (e.g. MAC address) */
 #ifdef HAVE_WINDOWS_H
     OFCRC32 crc;
@@ -1594,24 +1688,25 @@ static long gethostid(void)
     /* get volume information of the system drive */
     char systemDrive[MAX_PATH];
     DWORD serialNumber = 0;
-    if (GetSystemDirectory(systemDrive, OFstatic_cast(UINT, sizeof(systemDrive))) >= 0)
+    if (GetSystemDirectoryA(systemDrive, OFstatic_cast(UINT, sizeof(systemDrive))) >= 0)
     {
         /* check for proper pathname */
         if ((strlen(systemDrive) >= 3) && (systemDrive[1] == ':') && (systemDrive[2] == '\\'))
         {
             /* truncate the pathname directly after the drive specification */
             systemDrive[3] = 0;
-            if (!GetVolumeInformation(systemDrive, NULL, 0, &serialNumber, NULL, NULL, NULL, 0))
+            if (!GetVolumeInformationA(systemDrive, NULL, 0, &serialNumber, NULL, NULL, NULL, 0))
                 serialNumber = 0;
         }
     }
     /* concatenate the host specific elements and compute a 32-bit checksum */
     crc.addBlock(&result /*ip address*/, OFstatic_cast(unsigned long, sizeof(result)));
-#ifndef __MINGW32__
-    /* on MinGW, getMacAddress() is not yet available. */
-    unsigned char buffer[6];
-    crc.addBlock(getMACAddress(buffer), sizeof(buffer));
-#endif
+    // add the MAC addresses of all adapters
+    {
+      OFVector<Uint8> buffer;
+      for (IP_ADAPTER_INFO* adapterInfo = getMACAddresses(buffer); adapterInfo; adapterInfo = adapterInfo->Next)
+        crc.addBlock(adapterInfo->Address, adapterInfo->AddressLength);
+    }
     crc.addBlock(&serialNumber, OFstatic_cast(unsigned long, sizeof(serialNumber)));
     crc.addBlock(&systemInfo.wProcessorLevel, OFstatic_cast(unsigned long, sizeof(systemInfo.wProcessorLevel)));
     crc.addBlock(&systemInfo.wProcessorRevision, OFstatic_cast(unsigned long, sizeof(systemInfo.wProcessorRevision)));

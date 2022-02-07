@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2010, OFFIS e.V.
+ *  Copyright (C) 2002-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,11 +22,6 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CCTYPE
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
-
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofconsol.h"
 #include "dcmtk/dcmimgle/didispfn.h"
@@ -45,11 +40,7 @@ int main(int argc, char *argv[])
     /* check number of arguments */
     if (argc == 3)
     {
-#ifdef HAVE_IOS_NOCREATE
-        STD_NAMESPACE ifstream input(argv[1], STD_NAMESPACE ios::in | STD_NAMESPACE ios::nocreate);
-#else
-        STD_NAMESPACE ifstream input(argv[1], STD_NAMESPACE ios::in);
-#endif
+        STD_NAMESPACE ifstream input(argv[1], OFopenmode_in_nocreate);
         if (input)
         {
             STD_NAMESPACE ofstream output(argv[2]);

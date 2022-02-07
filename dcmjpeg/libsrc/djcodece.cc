@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2001-2015, OFFIS e.V.
+ *  Copyright (C) 2001-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -47,9 +47,7 @@
 // dcmimgle includes
 #include "dcmtk/dcmimgle/dcmimage.h"  /* for class DicomImage */
 
-#define INCLUDE_CMATH
-#include "dcmtk/ofstd/ofstdinc.h"
-
+#include <cmath>
 
 DJCodecEncoder::DJCodecEncoder()
 : DcmCodec()
@@ -81,7 +79,8 @@ OFCondition DJCodecEncoder::decode(
   DcmPixelSequence * /* pixSeq */,
   DcmPolymorphOBOW& /* uncompressedPixelData */,
   const DcmCodecParameter * /* cp */,
-  const DcmStack& /* objStack */) const
+  const DcmStack& /* objStack */,
+  OFBool& /* removeOldRep */ ) const
 {
   // we are an encoder only
   return EC_IllegalCall;
@@ -111,7 +110,8 @@ OFCondition DJCodecEncoder::encode(
   const DcmRepresentationParameter * /* toRepParam */,
   DcmPixelSequence * & /* toPixSeq */,
   const DcmCodecParameter * /* cp */,
-  DcmStack & /* objStack */) const
+  DcmStack & /* objStack */,
+  OFBool& /* removeOldRep */) const
 {
   // we don't support re-coding for now
   return EC_IllegalCall;
@@ -124,9 +124,16 @@ OFCondition DJCodecEncoder::encode(
   const DcmRepresentationParameter * toRepParam,
   DcmPixelSequence * & pixSeq,
   const DcmCodecParameter *cp,
-  DcmStack & objStack) const
+  DcmStack & objStack,
+  OFBool& removeOldRep) const
 {
   OFCondition result = EC_Normal;
+
+  // this codec may modify the DICOM header such that the previous pixel
+  // representation is not valid anymore. Indicate this to the caller
+  // to trigger removal.
+  removeOldRep = OFTrue;
+
   // assume we can cast the codec parameter to what we need
   const DJCodecParameter *djcp = OFreinterpret_cast(const DJCodecParameter*, cp);
 
@@ -165,8 +172,14 @@ OFCondition DJCodecEncoder::encode(
         // YCbCr color image
         result = encodeColorImage(OFTrue, OFreinterpret_cast(DcmItem*, dataset), toRepParam, pixSeq, djcp, compressionRatio);
         break;
-      case EPI_Unknown:
       case EPI_Missing:
+        // photometric interpretation missing. If ACR-NEMA compatibility is activated, we treat this as MONOCHOME2, otherwise we report an error
+        if (djcp->getAcrNemaCompatibility())
+            result = encodeMonochromeImage(OFreinterpret_cast(DcmItem*, dataset), toRepParam, pixSeq, djcp, compressionRatio);
+            else result = EJ_UnsupportedPhotometricInterpretation;
+        break;
+      case EPI_Unknown:
+      default:
         // unknown color model - bail out
         result = EJ_UnsupportedPhotometricInterpretation;
         break;
@@ -246,9 +259,27 @@ OFCondition DJCodecEncoder::encodeColorImage(
   double uncompressedSize = 0.0;
   Uint16 compressedBits = OFstatic_cast(Uint16, cp->getForcedBitDepth());
 
+  // Check if image is continuous-tone, bail out otherwise.
+  // We check the value of BitsStored, which is not affected by any transformation such as MLUT.
+  Uint16 bitsStored = 0;
+  result = dataset->findAndGetUint16(DCM_BitsStored, bitsStored);
+  if (result.bad()) return result;
+
+  if ((bitsStored > 16) && isLosslessProcess())
+  {
+    DCMJPEG_WARN("Cannot lossless compress image with " << bitsStored << " bits/sample: JPEG supports max. 16 bits.");
+    return EJ_UnsupportedBitDepth;
+  }
+
+  if (bitsStored < 2)
+  {
+    DCMJPEG_WARN("Cannot compress image with " << bitsStored << " bit/sample: JPEG requires at least 2 bits.");
+    return EJ_UnsupportedBitDepth;
+  }
+
   // initialize settings with defaults for RGB mode
   OFBool monochromeMode = OFFalse;
-  size_t flags = 0; // flags for initialization of DicomImage
+  unsigned long flags = 0; // flags for initialization of DicomImage
   EP_Interpretation interpr = EPI_RGB;
   Uint16 samplesPerPixel = 3;
   const char *photometricInterpretation = "RGB";
@@ -297,7 +328,11 @@ OFCondition DJCodecEncoder::encodeColorImage(
   }
 
   if (dimage == NULL) result = EC_MemoryExhausted;
-  else if (dimage->getStatus() != EIS_Normal) result = EC_IllegalCall; // should return dimage->getStatus()
+  else if (dimage->getStatus() != EIS_Normal)
+  {
+    DCMJPEG_WARN("Color encoder: " << DicomImage::getString(dimage->getStatus()));
+    result = EC_IllegalCall;
+  }
 
   // don't render overlays
   if (result.good())
@@ -346,7 +381,7 @@ OFCondition DJCodecEncoder::encodeColorImage(
 
       // compute original image size in bytes, ignoring any padding bits.
       uncompressedSize = OFstatic_cast(double, columns * rows * dimage->getDepth() * frameCount * samplesPerPixel) / 8.0;
-      for (size_t i=0; (i<frameCount) && (result.good()); i++)
+      for (unsigned long i=0; (i<frameCount) && (result.good()); i++)
       {
         frame = dimage->getOutputData(bitsPerSample, i, 0);
         if (frame == NULL) result = EC_MemoryExhausted;
@@ -455,7 +490,7 @@ OFCondition DJCodecEncoder::encodeTrueLossless(
   {
     DcmItem *datsetItem = OFreinterpret_cast(DcmItem*, dataset);
     double compressionRatio = 0.0;
-    const Uint16* pixelData;
+    const Uint16* pixelData = NULL;
     size_t length = 0;
     Uint16 bitsAllocated = 0;
     Uint16 bitsStored = 0;
@@ -472,7 +507,7 @@ OFCondition DJCodecEncoder::encodeTrueLossless(
     OFBool planConfSwitched = OFFalse; // true if planar configuration was toggled
     DcmOffsetList offsetList;
     OFString photometricInterpretation;
-    DcmElement *dummyElem;
+    DcmElement *dummyElem = NULL;
 
     // get relevant attributes for encoding from dataset
     result = datsetItem->findAndGetUint16(DCM_BitsStored, bitsStored);
@@ -515,7 +550,7 @@ OFCondition DJCodecEncoder::encodeTrueLossless(
     }
 
     /* Set and check photometric interpretation (up to now: EPI_RGB)
-     * Only photometric interpretations, that are explicetly "supported" by the
+     * Only photometric interpretations, that are explicitly "supported" by the
      * IJG lib are set. For all others "unknown" is set. Some are even rejected here.
      */
     if (photometricInterpretation == "MONOCHROME1")
@@ -796,10 +831,9 @@ OFCondition DJCodecEncoder::updateDerivationDescription(
     // assume we can cast the codec parameter to what we need
     DJCodecParameter *djcp = OFconst_cast(DJCodecParameter*, cp);
 
-    if (djcp->getTrueLosslessMode())
-      result = DcmCodec::insertCodeSequence(dataset, DCM_DerivationCodeSequence, "DCM", "121327", "Full fidelity image");
-    else // pseudo-lossless mode may also result in lossy compression
+    if (!isLosslessProcess() || !djcp->getTrueLosslessMode())
       result = DcmCodec::insertCodeSequence(dataset, DCM_DerivationCodeSequence, "DCM", "113040", "Lossy Compression");
+
   }
   return result;
 }
@@ -884,7 +918,7 @@ OFCondition DJCodecEncoder::encodeMonochromeImage(
   compressionRatio = 0.0; // initialize if something goes wrong
   size_t compressedSize = 0;
   double uncompressedSize = 0.0;
-  size_t flags = 0; // flags for initialization of DicomImage
+  unsigned long flags = 0; // flags for initialization of DicomImage
 
   // variables needed if VOI mode is 0
   double minRange = 0.0;
@@ -911,10 +945,32 @@ OFCondition DJCodecEncoder::encodeMonochromeImage(
   if (cp->getAcrNemaCompatibility())
     flags |= CIF_AcrNemaCompatibility;
 
+  // Check if image is continuous-tone, bail out otherwise.
+  // We check the value of BitsStored, which is not affected by any transformation such as MLUT.
+  Uint16 bitsStored = 0;
+  result = dataset->findAndGetUint16(DCM_BitsStored, bitsStored);
+  if (result.bad()) return result;
+
+  if ((bitsStored > 16) && isLosslessProcess())
+  {
+    DCMJPEG_WARN("Cannot lossless compress image with " << bitsStored << " bits/sample: JPEG supports max. 16 bits.");
+    return EJ_UnsupportedBitDepth;
+  }
+
+  if (bitsStored < 2)
+  {
+    DCMJPEG_WARN("Cannot compress image with " << bitsStored << " bit/sample: JPEG requires at least 2 bits.");
+    return EJ_UnsupportedBitDepth;
+  }
+
   // create DicomImage object. Will fail if dcmimage has not been activated in main().
   // transfer syntax can be any uncompressed one.
   DicomImage dimage(dataset, EXS_LittleEndianImplicit, flags); // read all frames
-  if (dimage.getStatus() != EIS_Normal) result = EC_IllegalCall; // should return dimage.getStatus()
+  if (dimage.getStatus() != EIS_Normal)
+  {
+    DCMJPEG_WARN("Monochrome encoder: " << DicomImage::getString(dimage.getStatus()));
+    result = EC_IllegalCall;
+  }
 
   // don't render overlays
   dimage.hideAllOverlays();
@@ -929,7 +985,7 @@ OFCondition DJCodecEncoder::encodeMonochromeImage(
   if (result.good()) result = adjustOverlays(dataset, dimage);
 
   // VOI transformations should only be applied on the dataset level, not
-  // in nested items such as the Icon Image Sequence where we don't exect
+  // in nested items such as the Icon Image Sequence where we don't expect
   // a VOI window or LUT to be present
   size_t windowType = 0;
   if (dataset->ident() == EVR_dataset)
@@ -958,7 +1014,7 @@ OFCondition DJCodecEncoder::encodeMonochromeImage(
           if (classUID && ! cp->getConvertToSC())
           {
             // these three SOP classes use the X-Ray Image Module in which the meaning
-            // of the Modality LUT transformation is "inversersed" and, therefore,
+            // of the Modality LUT transformation is "inversed" and, therefore,
             // needs special handling.  This is not an issue if we're converting to
             // secondary capture anyway.
             if ((0 == strcmp(classUID, UID_XRayAngiographicImageStorage)) ||
@@ -999,14 +1055,14 @@ OFCondition DJCodecEncoder::encodeMonochromeImage(
         {
           size_t windowParameter = cp->getWindowParameter();
           if ((windowParameter < 1) || (windowParameter > dimage.getWindowCount())) result = EC_IllegalCall;
-          if (!dimage.setWindow(windowParameter - 1)) result = EC_IllegalCall;
+          if (!dimage.setWindow(OFstatic_cast(unsigned long, windowParameter - 1))) result = EC_IllegalCall;
         }
         break;
       case 2: // use the n-th VOI look up table from the image file
         {
           size_t windowParameter = cp->getWindowParameter();
           if ((windowParameter < 1) || (windowParameter > dimage.getVoiLutCount())) result = EC_IllegalCall;
-          if (!dimage.setVoiLut(windowParameter - 1)) result = EC_IllegalCall;
+          if (!dimage.setVoiLut(OFstatic_cast(unsigned long, windowParameter - 1))) result = EC_IllegalCall;
         }
         break;
       case 3: // Compute VOI window using min-max algorithm
@@ -1032,7 +1088,8 @@ OFCondition DJCodecEncoder::encodeMonochromeImage(
         {
          size_t left_pos=0, top_pos=0, width=0, height=0;
          cp->getROI(left_pos, top_pos, width, height);
-          if (!dimage.setRoiWindow(left_pos, top_pos, width, height)) result = EC_IllegalCall;
+          if (!dimage.setRoiWindow(OFstatic_cast(unsigned long, left_pos), OFstatic_cast(unsigned long, top_pos),
+             OFstatic_cast(unsigned long, width), OFstatic_cast(unsigned long, height))) result = EC_IllegalCall;
         }
         break;
       default: // includes case 0, which must not occur here
@@ -1141,7 +1198,7 @@ OFCondition DJCodecEncoder::encodeMonochromeImage(
       uncompressedSize = OFstatic_cast(double, columns * rows * pixelDepth * frameCount * samplesPerPixel) / 8.0;
       for (size_t i=0; (i<frameCount) && (result.good()); i++)
       {
-        frame = dimage.getOutputData(bitsPerSample, i, 0);
+        frame = dimage.getOutputData(bitsPerSample, OFstatic_cast(unsigned long, i), 0);
         if (frame == NULL) result = EC_MemoryExhausted;
         else
         {
@@ -1415,7 +1472,7 @@ OFCondition DJCodecEncoder::togglePlanarConfiguration8(
   const Uint16 samplesPerPixel,
   const Uint16 oldPlanarConfig)
 {
-  if ( (pixelData == NULL) || (numValues%samplesPerPixel != 0) )
+  if (pixelData == NULL)
     return EC_IllegalParameter;
   // allocate target buffer
   Uint8* px8 = new Uint8[numValues];
@@ -1451,7 +1508,7 @@ OFCondition DJCodecEncoder::togglePlanarConfiguration16(
   const Uint16 samplesPerPixel,
   const Uint16 oldPlanarConfig)
 {
-  if ( (pixelData == NULL) || (numValues%samplesPerPixel != 0) )
+  if (pixelData == NULL)
     return EC_IllegalParameter;
   // allocate target buffer
   Uint16* px16 = new Uint16[numValues];

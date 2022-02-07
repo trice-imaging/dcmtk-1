@@ -229,6 +229,7 @@ decompress_onepass (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
 METHODDEF(int)
 dummy_consume_data (j_decompress_ptr cinfo)
 {
+  (void)cinfo;
   return JPEG_SUSPENDED;    /* Always indicate nothing was done */
 }
 
@@ -417,7 +418,7 @@ smoothing_ok (j_decompress_ptr cinfo)
   int * coef_bits;
   int * coef_bits_latch;
 
-  if (! cinfo->process == JPROC_PROGRESSIVE || cinfo->coef_bits == NULL)
+  if ((! (cinfo->process == JPROC_PROGRESSIVE)) || cinfo->coef_bits == NULL)
     return FALSE;
 
   /* Allocate latch area if not already done */

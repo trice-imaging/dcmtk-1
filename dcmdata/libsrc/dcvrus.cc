@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2014, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,12 +24,13 @@
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/dcmdata/dcvrus.h"
 
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
-
-
 // ********************************
+
+
+DcmUnsignedShort::DcmUnsignedShort(const DcmTag &tag)
+  : DcmElement(tag, 0)
+{
+}
 
 
 DcmUnsignedShort::DcmUnsignedShort(const DcmTag &tag, const Uint32 len)
@@ -70,9 +71,20 @@ int DcmUnsignedShort::compare(const DcmElement& rhs) const
     myThis = OFconst_cast(DcmUnsignedShort*, this);
     myRhs =  OFstatic_cast(DcmUnsignedShort*, OFconst_cast(DcmElement*, &rhs));
 
+    /* compare number of values */
+    unsigned long thisNumValues = myThis->getNumberOfValues();
+    unsigned long rhsNumValues = myRhs->getNumberOfValues();
+    if (thisNumValues < rhsNumValues)
+    {
+        return -1;
+    }
+    else if (thisNumValues > rhsNumValues)
+    {
+        return 1;
+    }
+
     /* iterate over all components and test equality */
-    unsigned long thisVM = myThis->getVM();
-    for (unsigned long count = 0; count < thisVM; count++)
+    for (unsigned long count = 0; count < thisNumValues; count++)
     {
         Uint16 val = 0;
         if (myThis->getUint16(val, count).good())
@@ -89,22 +101,7 @@ int DcmUnsignedShort::compare(const DcmElement& rhs) const
                       return -1;
                   }
             }
-            else
-            {
-                break; // values equal until this point (rhs shorter)
-            }
         }
-    }
-
-    /* we get here if all values are equal. Now look at the number of components. */
-    unsigned long rhsVM = myRhs->getVM();
-    if (thisVM < rhsVM)
-    {
-        return -1;
-    }
-    else if (thisVM > rhsVM)
-    {
-        return 1;
     }
 
     /* all values as well as VM equal: objects are equal */
@@ -142,6 +139,12 @@ OFCondition DcmUnsignedShort::checkValue(const OFString &vm,
 
 unsigned long DcmUnsignedShort::getVM()
 {
+    return getNumberOfValues();
+}
+
+
+unsigned long DcmUnsignedShort::getNumberOfValues()
+{
     return OFstatic_cast(unsigned long, getLengthField() / sizeof(Uint16));
 }
 
@@ -149,7 +152,7 @@ unsigned long DcmUnsignedShort::getVM()
 // ********************************
 
 
-void DcmUnsignedShort::print(STD_NAMESPACE ostream&out,
+void DcmUnsignedShort::print(STD_NAMESPACE ostream &out,
                              const size_t flags,
                              const int level,
                              const char * /*pixelFileName*/,
@@ -162,40 +165,47 @@ void DcmUnsignedShort::print(STD_NAMESPACE ostream&out,
         errorFlag = getUint16Array(uintVals);
         if (uintVals != NULL)
         {
-            const unsigned long count = getVM();
-            const unsigned long maxLength = (flags & DCMTypes::PF_shortenLongTagValues) ?
-                DCM_OptPrintLineLength : OFstatic_cast(unsigned long, -1) /*unlimited*/;
-            unsigned long printedLength = 0;
-            unsigned long newLength = 0;
-            char buffer[32];
-            /* print line start with tag and VR */
-            printInfoLineStart(out, flags, level);
-            /* print multiple values */
-            for (unsigned int i = 0; i < count; i++, uintVals++)
+            const unsigned long count = getNumberOfValues();
+            /* double-check length field for valid value */
+            if (count > 0)
             {
-                /* check whether first value is printed (omit delimiter) */
-                if (i == 0)
-                    sprintf(buffer, "%hu", *uintVals);
-                else
-                    sprintf(buffer, "\\%hu", *uintVals);
-                /* check whether current value sticks to the length limit */
-                newLength = printedLength + OFstatic_cast(unsigned long, strlen(buffer));
-                if ((newLength <= maxLength) && ((i + 1 == count) || (newLength + 3 <= maxLength)))
+                const unsigned long maxLength = (flags & DCMTypes::PF_shortenLongTagValues) ?
+                    DCM_OptPrintLineLength : OFstatic_cast(unsigned long, -1) /*unlimited*/;
+                unsigned long printedLength = 0;
+                unsigned long newLength = 0;
+                char buffer[32];
+                /* print line start with tag and VR */
+                printInfoLineStart(out, flags, level);
+                /* print multiple values */
+                for (unsigned int i = 0; i < count; i++, uintVals++)
                 {
-                    out << buffer;
-                    printedLength = newLength;
-                } else {
-                    /* check whether output has been truncated */
-                    if (i + 1 < count)
+                    /* check whether first value is printed (omit delimiter) */
+                    if (i == 0)
+                        sprintf(buffer, "%hu", *uintVals);
+                    else
+                        sprintf(buffer, "\\%hu", *uintVals);
+                    /* check whether current value sticks to the length limit */
+                    newLength = printedLength + OFstatic_cast(unsigned long, strlen(buffer));
+                    if ((newLength <= maxLength) && ((i + 1 == count) || (newLength + 3 <= maxLength)))
                     {
-                        out << "...";
-                        printedLength += 3;
+                        out << buffer;
+                        printedLength = newLength;
+                    } else {
+                        /* check whether output has been truncated */
+                        if (i + 1 < count)
+                        {
+                            out << "...";
+                            printedLength += 3;
+                        }
+                        break;
                     }
-                    break;
                 }
+                /* print line end with length, VM and tag name */
+                printInfoLineEnd(out, flags, printedLength);
+            } else {
+                /* count can be zero if we have an invalid element with less than two bytes length */
+                printInfoLine(out, flags, level, "(invalid value)");
             }
-            /* print line end with length, VM and tag name */
-            printInfoLineEnd(out, flags, printedLength);
         } else
             printInfoLine(out, flags, level, "(no value available)");
     } else
@@ -346,4 +356,24 @@ OFCondition DcmUnsignedShort::verify(const OFBool autocorrect)
     } else
         errorFlag = EC_Normal;
     return errorFlag;
+}
+
+
+OFBool DcmUnsignedShort::matches(const DcmElement& candidate,
+                                 const OFBool enableWildCardMatching) const
+{
+  OFstatic_cast(void,enableWildCardMatching);
+  if (ident() == candidate.ident())
+  {
+    // some const casts to call the getter functions, I do not modify the values, I promise!
+    DcmUnsignedShort& key = OFconst_cast(DcmUnsignedShort&,*this);
+    DcmElement& can = OFconst_cast(DcmElement&,candidate);
+    Uint16 a, b;
+    for( unsigned long ui = 0; ui < key.getVM(); ++ui )
+      for( unsigned long uj = 0; uj < can.getVM(); ++uj )
+        if( key.getUint16( a, ui ).good() && can.getUint16( b, uj ).good() && a == b )
+          return OFTrue;
+    return key.getVM() == 0;
+  }
+  return OFFalse;
 }

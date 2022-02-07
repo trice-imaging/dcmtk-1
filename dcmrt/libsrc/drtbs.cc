@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTBeamSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -49,6 +49,7 @@ DRTBeamSequence::Item::Item(const OFBool emptyDefaultItem)
     PrimaryFluenceModeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     RadiationType(DCM_RadiationType),
     ReferencedBolusSequence(emptyDefaultItem /*emptyDefaultSequence*/),
+    ReferencedDoseReferenceSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     ReferencedDoseSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     ReferencedPatientSetupNumber(DCM_ReferencedPatientSetupNumber),
     ReferencedReferenceImageSequence(emptyDefaultItem /*emptyDefaultSequence*/),
@@ -93,6 +94,7 @@ DRTBeamSequence::Item::Item(const Item &copy)
     PrimaryFluenceModeSequence(copy.PrimaryFluenceModeSequence),
     RadiationType(copy.RadiationType),
     ReferencedBolusSequence(copy.ReferencedBolusSequence),
+    ReferencedDoseReferenceSequence(copy.ReferencedDoseReferenceSequence),
     ReferencedDoseSequence(copy.ReferencedDoseSequence),
     ReferencedPatientSetupNumber(copy.ReferencedPatientSetupNumber),
     ReferencedReferenceImageSequence(copy.ReferencedReferenceImageSequence),
@@ -145,6 +147,7 @@ DRTBeamSequence::Item &DRTBeamSequence::Item::operator=(const Item &copy)
         PrimaryFluenceModeSequence = copy.PrimaryFluenceModeSequence;
         RadiationType = copy.RadiationType;
         ReferencedBolusSequence = copy.ReferencedBolusSequence;
+        ReferencedDoseReferenceSequence = copy.ReferencedDoseReferenceSequence;
         ReferencedDoseSequence = copy.ReferencedDoseSequence;
         ReferencedPatientSetupNumber = copy.ReferencedPatientSetupNumber;
         ReferencedReferenceImageSequence = copy.ReferencedReferenceImageSequence;
@@ -200,6 +203,7 @@ void DRTBeamSequence::Item::clear()
         BlockSequence.clear();
         ApplicatorSequence.clear();
         GeneralAccessorySequence.clear();
+        ReferencedDoseReferenceSequence.clear();
         FinalCumulativeMetersetWeight.clear();
         NumberOfControlPoints.clear();
         ControlPointSequence.clear();
@@ -244,6 +248,7 @@ OFBool DRTBeamSequence::Item::isEmpty()
            BlockSequence.isEmpty() &&
            ApplicatorSequence.isEmpty() &&
            GeneralAccessorySequence.isEmpty() &&
+           ReferencedDoseReferenceSequence.isEmpty() &&
            FinalCumulativeMetersetWeight.isEmpty() &&
            NumberOfControlPoints.isEmpty() &&
            ControlPointSequence.isEmpty();
@@ -298,6 +303,7 @@ OFCondition DRTBeamSequence::Item::read(DcmItem &item)
         BlockSequence.read(item, "1-n", "1C", "BeamSequence");
         ApplicatorSequence.read(item, "1-n", "3", "BeamSequence");
         GeneralAccessorySequence.read(item, "1-n", "3", "BeamSequence");
+        ReferencedDoseReferenceSequence.read(item, "1-n", "3", "BeamSequence");
         getAndCheckElementFromDataset(item, FinalCumulativeMetersetWeight, "1", "1C", "BeamSequence");
         getAndCheckElementFromDataset(item, NumberOfControlPoints, "1", "1", "BeamSequence");
         ControlPointSequence.read(item, "1-n", "1", "BeamSequence");
@@ -348,6 +354,7 @@ OFCondition DRTBeamSequence::Item::write(DcmItem &item)
         if (result.good()) result = BlockSequence.write(item, "1-n", "1C", "BeamSequence");
         if (result.good()) result = ApplicatorSequence.write(item, "1-n", "3", "BeamSequence");
         if (result.good()) result = GeneralAccessorySequence.write(item, "1-n", "3", "BeamSequence");
+        if (result.good()) result = ReferencedDoseReferenceSequence.write(item, "1-n", "3", "BeamSequence");
         addElementToDataset(result, item, new DcmDecimalString(FinalCumulativeMetersetWeight), "1", "1C", "BeamSequence");
         addElementToDataset(result, item, new DcmIntegerString(NumberOfControlPoints), "1", "1", "BeamSequence");
         if (result.good()) result = ControlPointSequence.write(item, "1-n", "1", "BeamSequence");
@@ -1139,7 +1146,7 @@ OFBool DRTBeamSequence::isValid() const
 }
 
 
-unsigned long DRTBeamSequence::getNumberOfItems() const
+size_t DRTBeamSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -1169,12 +1176,12 @@ OFCondition DRTBeamSequence::gotoNextItem()
 }
 
 
-OFCondition DRTBeamSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTBeamSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -1189,12 +1196,12 @@ OFCondition DRTBeamSequence::gotoItem(const unsigned long num, OFListIterator(It
 }
 
 
-OFCondition DRTBeamSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTBeamSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -1209,7 +1216,7 @@ OFCondition DRTBeamSequence::gotoItem(const unsigned long num, OFListConstIterat
 }
 
 
-OFCondition DRTBeamSequence::gotoItem(const unsigned long num)
+OFCondition DRTBeamSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -1245,7 +1252,7 @@ const DRTBeamSequence::Item &DRTBeamSequence::getCurrentItem() const
 }
 
 
-OFCondition DRTBeamSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTBeamSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -1255,7 +1262,7 @@ OFCondition DRTBeamSequence::getItem(const unsigned long num, Item *&item)
 }
 
 
-DRTBeamSequence::Item &DRTBeamSequence::getItem(const unsigned long num)
+DRTBeamSequence::Item &DRTBeamSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -1265,7 +1272,7 @@ DRTBeamSequence::Item &DRTBeamSequence::getItem(const unsigned long num)
 }
 
 
-const DRTBeamSequence::Item &DRTBeamSequence::getItem(const unsigned long num) const
+const DRTBeamSequence::Item &DRTBeamSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -1275,13 +1282,13 @@ const DRTBeamSequence::Item &DRTBeamSequence::getItem(const unsigned long num) c
 }
 
 
-DRTBeamSequence::Item &DRTBeamSequence::operator[](const unsigned long num)
+DRTBeamSequence::Item &DRTBeamSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTBeamSequence::Item &DRTBeamSequence::operator[](const unsigned long num) const
+const DRTBeamSequence::Item &DRTBeamSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -1304,7 +1311,7 @@ OFCondition DRTBeamSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTBeamSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTBeamSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -1327,7 +1334,7 @@ OFCondition DRTBeamSequence::insertItem(const unsigned long pos, Item *&item)
 }
 
 
-OFCondition DRTBeamSequence::removeItem(const unsigned long pos)
+OFCondition DRTBeamSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2014, OFFIS e.V.
+ *  Copyright (C) 2000-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,8 +21,11 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#ifdef HAVE_GUSI_H
-#include <GUSI.h>
+#ifdef HAVE_WINDOWS_H
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#elif defined(HAVE_WINSOCK_H)
+#include <winsock.h>  /* include winsock.h directly i.e. on MacOS */
 #endif
 
 BEGIN_EXTERN_C
@@ -46,10 +49,6 @@ BEGIN_EXTERN_C
 #endif
 END_EXTERN_C
 
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CERRNO
-#define INCLUDE_CTIME
-#include "dcmtk/ofstd/ofstdinc.h"
 
 #include "dcmtk/dcmpstat/dvpsmsg.h"     /* for class DVPSIPCMessage */
 #include "dcmtk/dcmdata/cmdlnarg.h"    /* for prepareCmdLineArgs */
@@ -58,6 +57,7 @@ END_EXTERN_C
 #include "dcmtk/dcmdata/dcuid.h"
 #include "dcmtk/dcmnet/dcompat.h"     /* compatability routines */
 #include "dcmtk/dcmnet/dul.h"
+#include "dcmtk/dcmnet/diutil.h"
 
 #define OFFIS_CONSOLE_APPLICATION "msgserv"
 
@@ -91,24 +91,13 @@ static const char *applicationType(Uint32 i)
 
 int main(int argc, char *argv[])
 {
-
-#ifdef HAVE_GUSI_H
-    GUSISetup(GUSIwithSIOUXSockets);
-    GUSISetup(GUSIwithInternetSockets);
-#endif
+    OFStandard::initializeNetwork();
 
 #ifdef WITH_TCPWRAPPER
     // this code makes sure that the linker cannot optimize away
     // the DUL part of the network module where the external flags
     // for libwrap are defined. Needed on OpenBSD.
     dcmTCPWrapperDaemonName.set(NULL);
-#endif
-
-#ifdef HAVE_WINSOCK_H
-    WSAData winSockData;
-    /* we need at least version 1.1 */
-    WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
-    WSAStartup(winSockVersionNeeded, &winSockData);
 #endif
 
     OFCmdUnsignedInt opt_port = 0;                   /* listen port */
@@ -154,23 +143,29 @@ int main(int argc, char *argv[])
 #endif
 
     /* open listen socket */
+#ifdef _WIN32
+    SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s == INVALID_SOCKET)
+#else
     int s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0)
+#endif
     {
       OFLOG_FATAL(msgservLogger, "failed to create socket");
       return 10;
     }
 
-#ifdef HAVE_GUSI_H
-    /* GUSI always returns an error for setsockopt(...) */
-#else
     int reuse = 1;
+
+#ifdef _WIN32
+    if (setsockopt(s, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (char *) &reuse, sizeof(reuse)) < 0)
+#else
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(reuse)) < 0)
+#endif
     {
       OFLOG_FATAL(msgservLogger, "failed to set socket options");
       return 10;
     }
-#endif
 
     /* Name socket using wildcards */
     struct sockaddr_in server;
@@ -203,16 +198,25 @@ int main(int argc, char *argv[])
       t.tv_usec = 0;
 
 #ifdef HAVE_INTP_SELECT
-      nfound = select(s + 1, (int *)(&fdset), NULL, NULL, &t);
+      nfound = select(OFstatic_cast(int, s + 1), (int *)(&fdset), NULL, NULL, &t);
 #else
-      nfound = select(s + 1, &fdset, NULL, NULL, &t);
+      // the typecast is safe because Windows ignores the first select() parameter anyway
+      nfound = select(OFstatic_cast(int, s + 1), &fdset, NULL, NULL, &t);
 #endif
 
+      if (DCM_dcmnetLogger.isEnabledFor(OFLogger::DEBUG_LOG_LEVEL))
+      {
+          DU_logSelectResult(nfound);
+      }
 
       if (nfound > 0)
       {
         // incoming connection detected
+#ifdef _WIN32
+        SOCKET sock=0;
+#else
         int sock=0;
+#endif
         struct sockaddr from;
 #ifdef HAVE_DECLARATION_SOCKLEN_T
         socklen_t len = sizeof(from);
@@ -224,24 +228,29 @@ int main(int argc, char *argv[])
         do
         {
           sock = accept(s, &from, &len);
+#ifdef _WIN32
+        } while ((sock == INVALID_SOCKET)&&(errno == WSAEINTR));
+        if (sock == INVALID_SOCKET)
+#else
         } while ((sock == -1)&&(errno == EINTR));
-
         if (sock < 0)
+#endif
         {
           OFLOG_FATAL(msgservLogger, "unable to accept incoming connection");
           return 10;
         }
 
-#ifdef HAVE_GUSI_H
-        /* GUSI always returns an error for setsockopt(...) */
-#else
         reuse = 1;
+
+#ifdef _WIN32
+        if (setsockopt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (char *) &reuse, sizeof(reuse)) < 0)
+#else
         if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(reuse)) < 0)
+#endif
         {
           OFLOG_FATAL(msgservLogger, "failed to set socket options");
           return 10;
         }
-#endif
 
         // now we can handle the incoming connection
         DcmTCPConnection connection(sock);
@@ -345,9 +354,7 @@ int main(int argc, char *argv[])
       }
     }
 
-#ifdef HAVE_WINSOCK_H
-    WSACleanup();
-#endif
+    OFStandard::shutdownNetwork();
 
     return 0;
 }

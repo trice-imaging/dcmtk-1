@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2012, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were partly developed by
@@ -81,13 +81,6 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#define INCLUDE_CSTDARG
-#define INCLUDE_CERRNO
-#include "dcmtk/ofstd/ofstdinc.h"
-
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -97,6 +90,7 @@
 #include "dcmtk/dcmdata/dcelem.h"
 #include "dcmtk/dcmnet/diutil.h"
 #include "dcmtk/dcmnet/dimse.h"
+#include "dcmtk/ofstd/ofstd.h"
 #include "dimcmd.h"
 
 /*
@@ -182,7 +176,7 @@ addString(DcmDataset *obj, DcmTagKey t, char *s, OFBool keepPadding)
 
     if (! keepPadding) DU_stripLeadingAndTrailingSpaces(s);
 
-    ec = newDicomElement(e, tag);
+    ec = DcmItem::newDicomElement(e, tag);
     if (ec == EC_Normal && s != NULL) {
         ec = e->putString(s);
     }
@@ -207,7 +201,7 @@ getString(DcmDataset *obj, DcmTagKey t, char *s, int maxlen, OFBool *spacePadded
     if (ec == EC_Normal && elem != NULL) {
         if (elem->getLength() == 0) {
             s[0] = '\0';
-        } else if ((int)elem->getLength() > maxlen) {
+        } else if (elem->getLength() > (Uint32)maxlen) {
             return parseErrorWithMsg("dimcmd:getString: string too small", t);
         } else {
             ec =  elem->getString(aString);
@@ -255,7 +249,7 @@ addUS(DcmDataset *obj, DcmTagKey t, Uint16 us)
     DcmElement *e = NULL;
     DcmTag tag(t);
 
-    ec = newDicomElement(e, tag);
+    ec = DcmItem::newDicomElement(e, tag);
     if (ec == EC_Normal) {
         ec = e->putUint16(us);
     }
@@ -306,7 +300,7 @@ addUL(DcmDataset *obj, DcmTagKey t, Uint32 ul)
     DcmElement *e = NULL;
     DcmTag tag(t);
 
-    ec = newDicomElement(e, tag);
+    ec = DcmItem::newDicomElement(e, tag);
     if (ec == EC_Normal) {
         ec = e->putUint32(ul);
     }
@@ -367,7 +361,7 @@ addAttributeList(DcmDataset *obj, DcmTagKey t, Uint16 *lst, int listCount)
         return buildErrorWithMsg("dimcmd:addAttributeList: Error: Uneven listCount", t);
     }
 
-    ec = newDicomElement(e, tag);
+    ec = DcmItem::newDicomElement(e, tag);
     if (ec == EC_Normal) {
         ec = e->putUint16Array(lst, (listCount / 2));
     }
@@ -482,7 +476,7 @@ parseCommonRSP(DcmDataset *obj, Uint16 *command,
 static OFCondition
 buildCEchoRQ(T_DIMSE_C_EchoRQ * e, DcmDataset * obj)
 {
-    OFCondition cond = buildCommonRQ(obj, DIMSE_C_ECHO_RQ, e->MessageID, e->DataSetType); RET(cond);
+    OFCondition cond = buildCommonRQ(obj, DIMSE_C_ECHO_RQ, e->MessageID, OFstatic_cast(Uint16, e->DataSetType)); RET(cond);
     cond = addString(obj, DCM_AffectedSOPClassUID, e->AffectedSOPClassUID, OFFalse); RET(cond);
 
     return cond;
@@ -522,7 +516,7 @@ buildCEchoRSP(T_DIMSE_C_EchoRSP * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRSP(obj, DIMSE_C_ECHO_RSP,
         e->MessageIDBeingRespondedTo,
-        e->DataSetType, e->DimseStatus); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType), e->DimseStatus); RET(cond);
 
     /* build optional items */
     if (e->opts & O_ECHO_AFFECTEDSOPCLASSUID) {
@@ -570,7 +564,7 @@ static OFCondition
 buildCStoreRQ(T_DIMSE_C_StoreRQ * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRQ(obj, DIMSE_C_STORE_RQ, e->MessageID,
-        e->DataSetType); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType)); RET(cond);
 
     /* build other mandatory items */
     cond = addString(obj, DCM_AffectedSOPClassUID,
@@ -578,7 +572,7 @@ buildCStoreRQ(T_DIMSE_C_StoreRQ * e, DcmDataset * obj)
     cond = addString(obj, DCM_AffectedSOPInstanceUID,
         e->AffectedSOPInstanceUID, OFFalse); RET(cond);
     cond = addUS(obj, DCM_Priority,
-        e->Priority); RET(cond);
+        OFstatic_cast(Uint16, e->Priority)); RET(cond);
 
     /* build optional items */
     if (e->opts & O_STORE_MOVEORIGINATORAETITLE) {
@@ -645,7 +639,7 @@ buildCStoreRSP(T_DIMSE_C_StoreRSP * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRSP(obj, DIMSE_C_STORE_RSP,
         e->MessageIDBeingRespondedTo,
-        e->DataSetType, e->DimseStatus); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType), e->DimseStatus); RET(cond);
 
     /* build optional items */
     if (e->opts & O_STORE_AFFECTEDSOPCLASSUID) {
@@ -655,12 +649,12 @@ buildCStoreRSP(T_DIMSE_C_StoreRSP * e, DcmDataset * obj)
     if (e->opts & O_STORE_AFFECTEDSOPINSTANCEUID)
     {
         char instanceuid[DIC_UI_LEN + 10];
-        strcpy(instanceuid, e->AffectedSOPInstanceUID);
+        OFStandard::strlcpy(instanceuid, e->AffectedSOPInstanceUID, DIC_UI_LEN + 10);
         if ((e->opts & O_STORE_PEER_REQUIRES_EXACT_UID_COPY) &&
             (e->opts & O_STORE_RSP_BLANK_PADDING))
         {
             // restore illegal space padding.
-            strcat(instanceuid, " ");
+            OFStandard::strlcat(instanceuid, " ", DIC_UI_LEN + 10);
         }
         cond = addString(obj, DCM_AffectedSOPInstanceUID, instanceuid, OFTrue); RET(cond);
     }
@@ -710,13 +704,13 @@ buildCFindRQ(T_DIMSE_C_FindRQ * e, DcmDataset * obj)
 {
 
     OFCondition cond = buildCommonRQ(obj, DIMSE_C_FIND_RQ, e->MessageID,
-        e->DataSetType); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType)); RET(cond);
 
     /* build other mandatory items */
     cond = addString(obj, DCM_AffectedSOPClassUID,
         e->AffectedSOPClassUID, OFFalse); RET(cond);
     cond = addUS(obj, DCM_Priority,
-        e->Priority); RET(cond);
+        OFstatic_cast(Uint16, e->Priority)); RET(cond);
 
     return cond;
 }
@@ -759,7 +753,7 @@ buildCFindRSP(T_DIMSE_C_FindRSP * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRSP(obj, DIMSE_C_FIND_RSP,
         e->MessageIDBeingRespondedTo,
-        e->DataSetType, e->DimseStatus); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType), e->DimseStatus); RET(cond);
 
     /* build optional items */
     if (e->opts & O_FIND_AFFECTEDSOPCLASSUID) {
@@ -807,13 +801,13 @@ static OFCondition
 buildCGetRQ(T_DIMSE_C_GetRQ * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRQ(obj, DIMSE_C_GET_RQ, e->MessageID,
-        e->DataSetType); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType)); RET(cond);
 
     /* build other mandatory items */
     cond = addString(obj, DCM_AffectedSOPClassUID,
         e->AffectedSOPClassUID, OFFalse); RET(cond);
     cond = addUS(obj, DCM_Priority,
-        e->Priority); RET(cond);
+        OFstatic_cast(Uint16, e->Priority)); RET(cond);
 
     return cond;
 }
@@ -856,7 +850,7 @@ buildCGetRSP(T_DIMSE_C_GetRSP * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRSP(obj, DIMSE_C_GET_RSP,
         e->MessageIDBeingRespondedTo,
-        e->DataSetType, e->DimseStatus); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType), e->DimseStatus); RET(cond);
 
     /* build optional items */
     if (e->opts & O_GET_AFFECTEDSOPCLASSUID) {
@@ -936,12 +930,12 @@ static OFCondition
 buildCMoveRQ(T_DIMSE_C_MoveRQ * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRQ(obj, DIMSE_C_MOVE_RQ, e->MessageID,
-        e->DataSetType); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType)); RET(cond);
 
     /* build other mandatory items */
     cond = addString(obj, DCM_AffectedSOPClassUID,
         e->AffectedSOPClassUID, OFFalse); RET(cond);
-    cond = addUS(obj, DCM_Priority, e->Priority); RET(cond);
+    cond = addUS(obj, DCM_Priority, OFstatic_cast(Uint16, e->Priority)); RET(cond);
     cond = addString(obj, DCM_MoveDestination, e->MoveDestination, OFFalse); RET(cond);
 
     return cond;
@@ -987,7 +981,7 @@ buildCMoveRSP(T_DIMSE_C_MoveRSP * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRSP(obj, DIMSE_C_MOVE_RSP,
         e->MessageIDBeingRespondedTo,
-        e->DataSetType, e->DimseStatus); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType), e->DimseStatus); RET(cond);
 
     /* build optional items */
     if (e->opts & O_MOVE_AFFECTEDSOPCLASSUID) {
@@ -1069,7 +1063,7 @@ buildCCancelRQ(T_DIMSE_C_CancelRQ * e, DcmDataset * obj)
     OFCondition cond = addUS(obj, DCM_CommandField, DIMSE_C_CANCEL_RQ); RET(cond);
     cond = addUS(obj, DCM_MessageIDBeingRespondedTo,
         e->MessageIDBeingRespondedTo); RET(cond);
-    cond = addUS(obj, DCM_CommandDataSetType, e->DataSetType); RET(cond);
+    cond = addUS(obj, DCM_CommandDataSetType, OFstatic_cast(Uint16, e->DataSetType)); RET(cond);
 
     return EC_Normal;
 }
@@ -1108,7 +1102,7 @@ static OFCondition
 buildNEventReportRQ(T_DIMSE_N_EventReportRQ * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRQ(obj, DIMSE_N_EVENT_REPORT_RQ, e->MessageID,
-        e->DataSetType); RET(cond);
+       OFstatic_cast(Uint16,  e->DataSetType)); RET(cond);
     cond = addString(obj, DCM_AffectedSOPClassUID,
         e->AffectedSOPClassUID, OFFalse); RET(cond);
     cond = addString(obj, DCM_AffectedSOPInstanceUID,
@@ -1157,7 +1151,7 @@ buildNEventReportRSP(T_DIMSE_N_EventReportRSP * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRSP(obj, DIMSE_N_EVENT_REPORT_RSP,
         e->MessageIDBeingRespondedTo,
-        e->DataSetType, e->DimseStatus); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType), e->DimseStatus); RET(cond);
 
     /* build optional items */
     if (e->opts & O_NEVENTREPORT_AFFECTEDSOPCLASSUID) {
@@ -1220,7 +1214,7 @@ static OFCondition
 buildNGetRQ(T_DIMSE_N_GetRQ * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRQ(obj, DIMSE_N_GET_RQ, e->MessageID,
-        e->DataSetType); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType)); RET(cond);
     cond = addString(obj, DCM_RequestedSOPClassUID,
         e->RequestedSOPClassUID, OFFalse); RET(cond);
     cond = addString(obj, DCM_RequestedSOPInstanceUID,
@@ -1273,7 +1267,7 @@ static OFCondition
 buildNGetRSP(T_DIMSE_N_GetRSP * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRSP(obj, DIMSE_N_GET_RSP, e->MessageIDBeingRespondedTo,
-        e->DataSetType, e->DimseStatus); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType), e->DimseStatus); RET(cond);
 
     /* build optional items */
     if (e->opts & O_NGET_AFFECTEDSOPCLASSUID) {
@@ -1329,7 +1323,7 @@ static OFCondition
 buildNSetRQ(T_DIMSE_N_SetRQ * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRQ(obj, DIMSE_N_SET_RQ, e->MessageID,
-        e->DataSetType); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType)); RET(cond);
     cond = addString(obj, DCM_RequestedSOPClassUID,
         e->RequestedSOPClassUID, OFFalse); RET(cond);
     cond = addString(obj, DCM_RequestedSOPInstanceUID,
@@ -1372,7 +1366,7 @@ static OFCondition
 buildNSetRSP(T_DIMSE_N_SetRSP * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRSP(obj, DIMSE_N_SET_RSP, e->MessageIDBeingRespondedTo,
-        e->DataSetType, e->DimseStatus); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType), e->DimseStatus); RET(cond);
 
     /* build optional items */
     if (e->opts & O_NSET_AFFECTEDSOPCLASSUID) {
@@ -1428,7 +1422,7 @@ static OFCondition
 buildNActionRQ(T_DIMSE_N_ActionRQ * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRQ(obj, DIMSE_N_ACTION_RQ, e->MessageID,
-        e->DataSetType); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType)); RET(cond);
     cond = addString(obj, DCM_RequestedSOPClassUID,
         e->RequestedSOPClassUID, OFFalse); RET(cond);
     cond = addString(obj, DCM_RequestedSOPInstanceUID,
@@ -1477,7 +1471,7 @@ buildNActionRSP(T_DIMSE_N_ActionRSP * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRSP(obj, DIMSE_N_ACTION_RSP,
         e->MessageIDBeingRespondedTo,
-        e->DataSetType, e->DimseStatus); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType), e->DimseStatus); RET(cond);
 
     /* build optional items */
     if (e->opts & O_NACTION_AFFECTEDSOPCLASSUID) {
@@ -1540,7 +1534,7 @@ static OFCondition
 buildNCreateRQ(T_DIMSE_N_CreateRQ * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRQ(obj, DIMSE_N_CREATE_RQ, e->MessageID,
-        e->DataSetType); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType)); RET(cond);
     cond = addString(obj, DCM_AffectedSOPClassUID,
         e->AffectedSOPClassUID, OFFalse); RET(cond);
     /* build optional items */
@@ -1592,7 +1586,7 @@ buildNCreateRSP(T_DIMSE_N_CreateRSP * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRSP(obj, DIMSE_N_CREATE_RSP,
         e->MessageIDBeingRespondedTo,
-        e->DataSetType, e->DimseStatus); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType), e->DimseStatus); RET(cond);
 
     /* build optional items */
     if (e->opts & O_NCREATE_AFFECTEDSOPCLASSUID) {
@@ -1648,7 +1642,7 @@ static OFCondition
 buildNDeleteRQ(T_DIMSE_N_DeleteRQ * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRQ(obj, DIMSE_N_DELETE_RQ, e->MessageID,
-        e->DataSetType); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType)); RET(cond);
     cond = addString(obj, DCM_RequestedSOPClassUID,
         e->RequestedSOPClassUID, OFFalse); RET(cond);
     cond = addString(obj, DCM_RequestedSOPInstanceUID,
@@ -1692,7 +1686,7 @@ buildNDeleteRSP(T_DIMSE_N_DeleteRSP * e, DcmDataset * obj)
 {
     OFCondition cond = buildCommonRSP(obj, DIMSE_N_DELETE_RSP,
         e->MessageIDBeingRespondedTo,
-        e->DataSetType, e->DimseStatus); RET(cond);
+        OFstatic_cast(Uint16, e->DataSetType), e->DimseStatus); RET(cond);
 
     /* build optional items */
     if (e->opts & O_NDELETE_AFFECTEDSOPCLASSUID) {
@@ -1880,7 +1874,7 @@ DIMSE_parseCmdObject(T_DIMSE_Message *msg, DcmDataset *obj)
     }
 
     /* initialize msg structure */
-    bzero((char*)msg, sizeof(*msg));
+    memset((char*)msg, 0, sizeof(*msg));
     msg->CommandField = (T_DIMSE_Command)cmd;
 
     /* depending on the command, parse the rest of obj */

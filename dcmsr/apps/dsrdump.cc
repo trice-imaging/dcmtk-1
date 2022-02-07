@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2016, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,16 +23,17 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#include "dcmtk/dcmsr/dsrdoc.h"
-#include "dcmtk/dcmdata/cmdlnarg.h"
+#include "dcmtk/dcmsr/dsrdoc.h"       /* for main interface class DSRDocument */
+
+#include "dcmtk/dcmdata/dctk.h"       /* for typical set of "dcmdata" headers */
+
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofconapp.h"
-#include "dcmtk/dcmdata/dcuid.h"      /* for dcmtk version name */
 
 #ifdef WITH_ZLIB
 #include <zlib.h>                     /* for zlibVersion() */
 #endif
-#ifdef WITH_LIBICONV
+#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
 #include "dcmtk/ofstd/ofchrenc.h"     /* for OFCharacterEncoding */
 #endif
 
@@ -82,7 +83,7 @@ static OFCondition dumpFile(STD_NAMESPACE ostream &out,
     } else
         result = EC_MemoryExhausted;
 
-#ifdef WITH_LIBICONV
+#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
     if (result.good())
     {
         if (convertToUTF8)
@@ -95,6 +96,9 @@ static OFCondition dumpFile(STD_NAMESPACE ostream &out,
             }
         }
     }
+#else
+    // avoid compiler warning on unused variable
+    (void)convertToUTF8;
 #endif
     if (result.good())
     {
@@ -169,7 +173,7 @@ int main(int argc, char *argv[])
         cmd.addOption("--ignore-item-errors",   "-Ee",  "do not abort on content item errors, just warn\n(e.g. missing value type specific attributes)");
         cmd.addOption("--skip-invalid-items",   "-Ei",  "skip invalid content items (incl. sub-tree)");
         cmd.addOption("--disable-vr-checker",   "-Dv",  "disable check for VR-conformant string values");
-#ifdef WITH_LIBICONV
+#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
       cmd.addSubGroup("specific character set:");
         cmd.addOption("--convert-to-utf8",      "+U8",  "convert all element values that are affected\nby Specific Character Set (0008,0005) to UTF-8");
 #endif
@@ -211,7 +215,7 @@ int main(int argc, char *argv[])
             {
                 app.printHeader(OFTrue /*print host identifier*/);
                 COUT << OFendl << "External libraries used:";
-#if !defined(WITH_ZLIB) && !defined(WITH_LIBICONV)
+#if !defined(WITH_ZLIB) && !defined(DCMTK_ENABLE_CHARSET_CONVERSION)
                 COUT << " none" << OFendl;
 #else
                 COUT << OFendl;
@@ -219,7 +223,7 @@ int main(int argc, char *argv[])
 #ifdef WITH_ZLIB
                 COUT << "- ZLIB, Version " << zlibVersion() << OFendl;
 #endif
-#ifdef WITH_LIBICONV
+#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
                 COUT << "- " << OFCharacterEncoding::getLibraryVersionString() << OFendl;
 #endif
                 return 0;
@@ -276,7 +280,7 @@ int main(int argc, char *argv[])
             opt_readFlags |= DSRTypes::RF_skipInvalidContentItems;
         if (cmd.findOption("--disable-vr-checker"))
             dcmEnableVRCheckerForStringValues.set(OFFalse);
-#ifdef WITH_LIBICONV
+#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
         if (cmd.findOption("--convert-to-utf8")) opt_convertToUTF8 = OFTrue;
 #endif
 

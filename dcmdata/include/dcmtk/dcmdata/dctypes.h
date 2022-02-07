@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2014, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,9 +26,6 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 #include "dcmtk/oflog/oflog.h"
 #include "dcmtk/dcmdata/dcdefine.h"
-
-#define INCLUDE_CSTDLIB
-#include "dcmtk/ofstd/ofstdinc.h"
 
 BEGIN_EXTERN_C
 #ifdef HAVE_SYS_TYPES_H
@@ -228,6 +225,21 @@ struct DCMTK_DCMDATA_EXPORT DCMTypes
     /// write data in "Native DICOM Model" format as defined for Application Hosting (DICOM part 19).
     /// The default is to use the DCMTK-specific format.
     static const size_t XF_useNativeModel;
+
+    //@}
+
+    /** @name convertCharacterSet() flags.
+     *  These flags can be combined and passed to the convertCharacterSet() methods.
+     */
+    //@{
+
+    /// try to approximate characters that cannot be represented through similar
+    /// looking characters.  See DcmSpecificCharacterSet::getTransliterationMode().
+    static const size_t CF_transliterate;
+
+    /// discard characters that cannot be represented in destination character set.
+    /// See DcmSpecificCharacterSet::getDiscardIllegalSequenceMode().
+    static const size_t CF_discardIllegal;
 
     //@}
 };

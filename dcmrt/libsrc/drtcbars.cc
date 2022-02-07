@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTContrastBolusAdministrationRouteSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -32,7 +32,12 @@ DRTContrastBolusAdministrationRouteSequence::Item::Item(const OFBool emptyDefaul
     ContextGroupVersion(DCM_ContextGroupVersion),
     ContextIdentifier(DCM_ContextIdentifier),
     ContextUID(DCM_ContextUID),
-    MappingResource(DCM_MappingResource)
+    EquivalentCodeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
+    LongCodeValue(DCM_LongCodeValue),
+    MappingResource(DCM_MappingResource),
+    MappingResourceName(DCM_MappingResourceName),
+    MappingResourceUID(DCM_MappingResourceUID),
+    URNCodeValue(DCM_URNCodeValue)
 {
 }
 
@@ -50,7 +55,12 @@ DRTContrastBolusAdministrationRouteSequence::Item::Item(const Item &copy)
     ContextGroupVersion(copy.ContextGroupVersion),
     ContextIdentifier(copy.ContextIdentifier),
     ContextUID(copy.ContextUID),
-    MappingResource(copy.MappingResource)
+    EquivalentCodeSequence(copy.EquivalentCodeSequence),
+    LongCodeValue(copy.LongCodeValue),
+    MappingResource(copy.MappingResource),
+    MappingResourceName(copy.MappingResourceName),
+    MappingResourceUID(copy.MappingResourceUID),
+    URNCodeValue(copy.URNCodeValue)
 {
 }
 
@@ -76,7 +86,12 @@ DRTContrastBolusAdministrationRouteSequence::Item &DRTContrastBolusAdministratio
         ContextGroupVersion = copy.ContextGroupVersion;
         ContextIdentifier = copy.ContextIdentifier;
         ContextUID = copy.ContextUID;
+        EquivalentCodeSequence = copy.EquivalentCodeSequence;
+        LongCodeValue = copy.LongCodeValue;
         MappingResource = copy.MappingResource;
+        MappingResourceName = copy.MappingResourceName;
+        MappingResourceUID = copy.MappingResourceUID;
+        URNCodeValue = copy.URNCodeValue;
     }
     return *this;
 }
@@ -91,9 +106,14 @@ void DRTContrastBolusAdministrationRouteSequence::Item::clear()
         CodingSchemeDesignator.clear();
         CodingSchemeVersion.clear();
         CodeMeaning.clear();
+        LongCodeValue.clear();
+        URNCodeValue.clear();
+        EquivalentCodeSequence.clear();
         ContextIdentifier.clear();
         ContextUID.clear();
         MappingResource.clear();
+        MappingResourceUID.clear();
+        MappingResourceName.clear();
         ContextGroupVersion.clear();
         ContextGroupExtensionFlag.clear();
         ContextGroupLocalVersion.clear();
@@ -109,9 +129,14 @@ OFBool DRTContrastBolusAdministrationRouteSequence::Item::isEmpty()
            CodingSchemeDesignator.isEmpty() &&
            CodingSchemeVersion.isEmpty() &&
            CodeMeaning.isEmpty() &&
+           LongCodeValue.isEmpty() &&
+           URNCodeValue.isEmpty() &&
+           EquivalentCodeSequence.isEmpty() &&
            ContextIdentifier.isEmpty() &&
            ContextUID.isEmpty() &&
            MappingResource.isEmpty() &&
+           MappingResourceUID.isEmpty() &&
+           MappingResourceName.isEmpty() &&
            ContextGroupVersion.isEmpty() &&
            ContextGroupExtensionFlag.isEmpty() &&
            ContextGroupLocalVersion.isEmpty() &&
@@ -133,13 +158,18 @@ OFCondition DRTContrastBolusAdministrationRouteSequence::Item::read(DcmItem &ite
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, CodeValue, "1", "1", "ContrastBolusAdministrationRouteSequence");
-        getAndCheckElementFromDataset(item, CodingSchemeDesignator, "1", "1", "ContrastBolusAdministrationRouteSequence");
+        getAndCheckElementFromDataset(item, CodeValue, "1", "1C", "ContrastBolusAdministrationRouteSequence");
+        getAndCheckElementFromDataset(item, CodingSchemeDesignator, "1", "1C", "ContrastBolusAdministrationRouteSequence");
         getAndCheckElementFromDataset(item, CodingSchemeVersion, "1", "1C", "ContrastBolusAdministrationRouteSequence");
         getAndCheckElementFromDataset(item, CodeMeaning, "1", "1", "ContrastBolusAdministrationRouteSequence");
+        getAndCheckElementFromDataset(item, LongCodeValue, "1", "1C", "ContrastBolusAdministrationRouteSequence");
+        getAndCheckElementFromDataset(item, URNCodeValue, "1", "1C", "ContrastBolusAdministrationRouteSequence");
+        EquivalentCodeSequence.read(item, "1-n", "3", "ContrastBolusAdministrationRouteSequence");
         getAndCheckElementFromDataset(item, ContextIdentifier, "1", "3", "ContrastBolusAdministrationRouteSequence");
         getAndCheckElementFromDataset(item, ContextUID, "1", "3", "ContrastBolusAdministrationRouteSequence");
         getAndCheckElementFromDataset(item, MappingResource, "1", "1C", "ContrastBolusAdministrationRouteSequence");
+        getAndCheckElementFromDataset(item, MappingResourceUID, "1", "3", "ContrastBolusAdministrationRouteSequence");
+        getAndCheckElementFromDataset(item, MappingResourceName, "1", "3", "ContrastBolusAdministrationRouteSequence");
         getAndCheckElementFromDataset(item, ContextGroupVersion, "1", "1C", "ContrastBolusAdministrationRouteSequence");
         getAndCheckElementFromDataset(item, ContextGroupExtensionFlag, "1", "3", "ContrastBolusAdministrationRouteSequence");
         getAndCheckElementFromDataset(item, ContextGroupLocalVersion, "1", "1C", "ContrastBolusAdministrationRouteSequence");
@@ -157,13 +187,18 @@ OFCondition DRTContrastBolusAdministrationRouteSequence::Item::write(DcmItem &it
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmShortString(CodeValue), "1", "1", "ContrastBolusAdministrationRouteSequence");
-        addElementToDataset(result, item, new DcmShortString(CodingSchemeDesignator), "1", "1", "ContrastBolusAdministrationRouteSequence");
+        addElementToDataset(result, item, new DcmShortString(CodeValue), "1", "1C", "ContrastBolusAdministrationRouteSequence");
+        addElementToDataset(result, item, new DcmShortString(CodingSchemeDesignator), "1", "1C", "ContrastBolusAdministrationRouteSequence");
         addElementToDataset(result, item, new DcmShortString(CodingSchemeVersion), "1", "1C", "ContrastBolusAdministrationRouteSequence");
         addElementToDataset(result, item, new DcmLongString(CodeMeaning), "1", "1", "ContrastBolusAdministrationRouteSequence");
+        addElementToDataset(result, item, new DcmUnlimitedCharacters(LongCodeValue), "1", "1C", "ContrastBolusAdministrationRouteSequence");
+        addElementToDataset(result, item, new DcmUniversalResourceIdentifierOrLocator(URNCodeValue), "1", "1C", "ContrastBolusAdministrationRouteSequence");
+        if (result.good()) result = EquivalentCodeSequence.write(item, "1-n", "3", "ContrastBolusAdministrationRouteSequence");
         addElementToDataset(result, item, new DcmCodeString(ContextIdentifier), "1", "3", "ContrastBolusAdministrationRouteSequence");
         addElementToDataset(result, item, new DcmUniqueIdentifier(ContextUID), "1", "3", "ContrastBolusAdministrationRouteSequence");
         addElementToDataset(result, item, new DcmCodeString(MappingResource), "1", "1C", "ContrastBolusAdministrationRouteSequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(MappingResourceUID), "1", "3", "ContrastBolusAdministrationRouteSequence");
+        addElementToDataset(result, item, new DcmLongString(MappingResourceName), "1", "3", "ContrastBolusAdministrationRouteSequence");
         addElementToDataset(result, item, new DcmDateTime(ContextGroupVersion), "1", "1C", "ContrastBolusAdministrationRouteSequence");
         addElementToDataset(result, item, new DcmCodeString(ContextGroupExtensionFlag), "1", "3", "ContrastBolusAdministrationRouteSequence");
         addElementToDataset(result, item, new DcmDateTime(ContextGroupLocalVersion), "1", "1C", "ContrastBolusAdministrationRouteSequence");
@@ -264,12 +299,48 @@ OFCondition DRTContrastBolusAdministrationRouteSequence::Item::getContextUID(OFS
 }
 
 
+OFCondition DRTContrastBolusAdministrationRouteSequence::Item::getLongCodeValue(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(LongCodeValue, value, pos);
+}
+
+
 OFCondition DRTContrastBolusAdministrationRouteSequence::Item::getMappingResource(OFString &value, const signed long pos) const
 {
     if (EmptyDefaultItem)
         return EC_IllegalCall;
     else
         return getStringValueFromElement(MappingResource, value, pos);
+}
+
+
+OFCondition DRTContrastBolusAdministrationRouteSequence::Item::getMappingResourceName(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(MappingResourceName, value, pos);
+}
+
+
+OFCondition DRTContrastBolusAdministrationRouteSequence::Item::getMappingResourceUID(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(MappingResourceUID, value, pos);
+}
+
+
+OFCondition DRTContrastBolusAdministrationRouteSequence::Item::getURNCodeValue(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(URNCodeValue, value, pos);
 }
 
 
@@ -403,6 +474,19 @@ OFCondition DRTContrastBolusAdministrationRouteSequence::Item::setContextUID(con
 }
 
 
+OFCondition DRTContrastBolusAdministrationRouteSequence::Item::setLongCodeValue(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmUnlimitedCharacters::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = LongCodeValue.putOFStringArray(value);
+    }
+    return result;
+}
+
+
 OFCondition DRTContrastBolusAdministrationRouteSequence::Item::setMappingResource(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -411,6 +495,45 @@ OFCondition DRTContrastBolusAdministrationRouteSequence::Item::setMappingResourc
         result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
             result = MappingResource.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTContrastBolusAdministrationRouteSequence::Item::setMappingResourceName(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = MappingResourceName.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTContrastBolusAdministrationRouteSequence::Item::setMappingResourceUID(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmUniqueIdentifier::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = MappingResourceUID.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTContrastBolusAdministrationRouteSequence::Item::setURNCodeValue(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmUniversalResourceIdentifierOrLocator::checkStringValue(value) : EC_Normal;
+        if (result.good())
+            result = URNCodeValue.putOFStringArray(value);
     }
     return result;
 }
@@ -519,7 +642,7 @@ OFBool DRTContrastBolusAdministrationRouteSequence::isValid() const
 }
 
 
-unsigned long DRTContrastBolusAdministrationRouteSequence::getNumberOfItems() const
+size_t DRTContrastBolusAdministrationRouteSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -549,12 +672,12 @@ OFCondition DRTContrastBolusAdministrationRouteSequence::gotoNextItem()
 }
 
 
-OFCondition DRTContrastBolusAdministrationRouteSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTContrastBolusAdministrationRouteSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -569,12 +692,12 @@ OFCondition DRTContrastBolusAdministrationRouteSequence::gotoItem(const unsigned
 }
 
 
-OFCondition DRTContrastBolusAdministrationRouteSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTContrastBolusAdministrationRouteSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -589,7 +712,7 @@ OFCondition DRTContrastBolusAdministrationRouteSequence::gotoItem(const unsigned
 }
 
 
-OFCondition DRTContrastBolusAdministrationRouteSequence::gotoItem(const unsigned long num)
+OFCondition DRTContrastBolusAdministrationRouteSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -625,7 +748,7 @@ const DRTContrastBolusAdministrationRouteSequence::Item &DRTContrastBolusAdminis
 }
 
 
-OFCondition DRTContrastBolusAdministrationRouteSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTContrastBolusAdministrationRouteSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -635,7 +758,7 @@ OFCondition DRTContrastBolusAdministrationRouteSequence::getItem(const unsigned 
 }
 
 
-DRTContrastBolusAdministrationRouteSequence::Item &DRTContrastBolusAdministrationRouteSequence::getItem(const unsigned long num)
+DRTContrastBolusAdministrationRouteSequence::Item &DRTContrastBolusAdministrationRouteSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -645,7 +768,7 @@ DRTContrastBolusAdministrationRouteSequence::Item &DRTContrastBolusAdministratio
 }
 
 
-const DRTContrastBolusAdministrationRouteSequence::Item &DRTContrastBolusAdministrationRouteSequence::getItem(const unsigned long num) const
+const DRTContrastBolusAdministrationRouteSequence::Item &DRTContrastBolusAdministrationRouteSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -655,13 +778,13 @@ const DRTContrastBolusAdministrationRouteSequence::Item &DRTContrastBolusAdminis
 }
 
 
-DRTContrastBolusAdministrationRouteSequence::Item &DRTContrastBolusAdministrationRouteSequence::operator[](const unsigned long num)
+DRTContrastBolusAdministrationRouteSequence::Item &DRTContrastBolusAdministrationRouteSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTContrastBolusAdministrationRouteSequence::Item &DRTContrastBolusAdministrationRouteSequence::operator[](const unsigned long num) const
+const DRTContrastBolusAdministrationRouteSequence::Item &DRTContrastBolusAdministrationRouteSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -684,7 +807,7 @@ OFCondition DRTContrastBolusAdministrationRouteSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTContrastBolusAdministrationRouteSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTContrastBolusAdministrationRouteSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -707,7 +830,7 @@ OFCondition DRTContrastBolusAdministrationRouteSequence::insertItem(const unsign
 }
 
 
-OFCondition DRTContrastBolusAdministrationRouteSequence::removeItem(const unsigned long pos)
+OFCondition DRTContrastBolusAdministrationRouteSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

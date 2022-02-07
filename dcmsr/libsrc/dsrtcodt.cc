@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2017, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,14 +25,18 @@
 
 #include "dcmtk/dcmsr/dsrtcodt.h"
 
-#ifdef HAVE_EXPLICIT_TEMPLATE_SPECIALIZATION
-#define EXPLICIT_SPECIALIZATION template<>
-#else
-#define EXPLICIT_SPECIALIZATION
-#endif
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcvrdt.h"
 
-/* declared in class DSRListOfItems<T> */
-EXPLICIT_SPECIALIZATION const OFString DSRListOfItems<OFString>::EmptyItem;
+
+// global empty item object so it gets initialized and cleaned up by the linker
+const OFString OFStringEmptyItem;
+
+template<>
+const OFString& DSRgetEmptyItem<OFString>()
+{
+    return OFStringEmptyItem;
+}
 
 
 DSRReferencedDateTimeList::DSRReferencedDateTimeList()

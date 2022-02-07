@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2012, OFFIS e.V.
+ *  Copyright (C) 1998-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -15,7 +15,7 @@
  *
  *  Author:  Joerg Riesmeier
  *
- *  Purpose: Template class for command line arguments (Source)
+ *  Purpose: Handle command line arguments (Source)
  *
  */
 
@@ -31,7 +31,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
-
 
 /*---------------------*
  *  macro definitions  *
@@ -269,6 +268,13 @@ OFBool OFCommandLine::checkOption(const OFString &option,
     return result;
 }
 
+void OFCommandLine::addGeneralOptions(const int longCols,
+                                      const int shortCols)
+{
+    addGroup("general options:", longCols, shortCols + 2);
+        addOption("--help",    "-h", "print this help text and exit",      OFCommandLine::AF_Exclusive);
+        addOption("--version",       "print version information and exit", OFCommandLine::AF_Exclusive);
+}
 
 OFBool OFCommandLine::addOption(const char *longOpt,
                                 const char *shortOpt,
@@ -512,7 +518,7 @@ OFCommandLine::E_ParamValueStatus OFCommandLine::getParam(const int pos,
 OFCommandLine::E_ParamValueStatus OFCommandLine::getParamAndCheckMin(const int pos,
                                                                      OFCmdSignedInt &value,
                                                                      const OFCmdSignedInt low,
-                                                                     const OFBool incl)
+                                                                     const OFExplicitBool incl)
 {
     E_ParamValueStatus status = getParam(pos, value);
     if (status == PVS_Normal)
@@ -557,7 +563,7 @@ OFCommandLine::E_ParamValueStatus OFCommandLine::getParam(const int pos,
 OFCommandLine::E_ParamValueStatus OFCommandLine::getParamAndCheckMin(const int pos,
                                                                      OFCmdUnsignedInt &value,
                                                                      const OFCmdUnsignedInt low,
-                                                                     const OFBool incl)
+                                                                     const OFExplicitBool incl)
 {
     E_ParamValueStatus status = getParam(pos, value);
     if (status == PVS_Normal)
@@ -603,7 +609,7 @@ OFCommandLine::E_ParamValueStatus OFCommandLine::getParam(const int pos,
 OFCommandLine::E_ParamValueStatus OFCommandLine::getParamAndCheckMin(const int pos,
                                                                      OFCmdFloat &value,
                                                                      const OFCmdFloat low,
-                                                                     const OFBool incl)
+                                                                     const OFExplicitBool incl)
 {
     E_ParamValueStatus status = getParam(pos, value);
     if (status == PVS_Normal)
@@ -827,7 +833,7 @@ OFCommandLine::E_ValueStatus OFCommandLine::getValue(OFCmdSignedInt &value)
 
 OFCommandLine::E_ValueStatus OFCommandLine::getValueAndCheckMin(OFCmdSignedInt &value,
                                                                 const OFCmdSignedInt low,
-                                                                const OFBool incl)
+                                                                const OFExplicitBool incl)
 {
     E_ValueStatus status = getValue(value);
     if (status == VS_Normal)
@@ -876,7 +882,7 @@ OFCommandLine::E_ValueStatus OFCommandLine::getValue(OFCmdUnsignedInt &value)
 
 OFCommandLine::E_ValueStatus OFCommandLine::getValueAndCheckMin(OFCmdUnsignedInt &value,
                                                                 const OFCmdUnsignedInt low,
-                                                                const OFBool incl)
+                                                                const OFExplicitBool incl)
 {
     E_ValueStatus status = getValue(value);
     if (status == VS_Normal)
@@ -919,7 +925,7 @@ OFCommandLine::E_ValueStatus OFCommandLine::getValue(OFCmdFloat &value)
 
 OFCommandLine::E_ValueStatus OFCommandLine::getValueAndCheckMin(OFCmdFloat &value,
                                                                 const OFCmdFloat low,
-                                                                const OFBool incl)
+                                                                const OFExplicitBool incl)
 {
     E_ValueStatus status = getValue(value);
     if (status == VS_Normal)
@@ -1089,11 +1095,7 @@ OFCommandLine::E_ParseStatus OFCommandLine::parseCommandFile(const char *argValu
         /* skip '@' symbol in filename */
         const char *filename = argValue + 1;
         /* open command file */
-#ifdef HAVE_IOS_NOCREATE
-        STD_NAMESPACE ifstream cmdFile(filename, STD_NAMESPACE ios::in|STD_NAMESPACE ios::nocreate);
-#else
-        STD_NAMESPACE ifstream cmdFile(filename, STD_NAMESPACE ios::in);
-#endif
+        STD_NAMESPACE ifstream cmdFile(filename, OFopenmode_in_nocreate);
         if (cmdFile)
         {
             char c, block = 0;
@@ -1158,9 +1160,15 @@ OFCommandLine::E_ParseStatus OFCommandLine::parseCommandFile(const char *argValu
 #ifdef DCMTK_USE_WCHAR_T
 
 // Windows-specific version with wide character strings (UTF-16)
+#ifdef DEBUG
 OFCommandLine::E_ParseStatus OFCommandLine::parseCommandFile(const wchar_t *argValue,
                                                              const OFString &strValue,
                                                              OFList<OFString> &argList)
+#else
+OFCommandLine::E_ParseStatus OFCommandLine::parseCommandFile(const wchar_t *argValue,
+                                                             const OFString & /* strValue */,
+                                                             OFList<OFString> &argList)
+#endif
 {
     E_ParseStatus result = PS_NoArguments;
     /* check for command file parameter (syntax: "@filename") */
@@ -1169,11 +1177,7 @@ OFCommandLine::E_ParseStatus OFCommandLine::parseCommandFile(const wchar_t *argV
         /* skip '@' symbol in filename */
         const wchar_t *filename = argValue + 1;
         /* open command file */
-#ifdef HAVE_IOS_NOCREATE
-        STD_NAMESPACE wifstream cmdFile(filename, STD_NAMESPACE ios::in|STD_NAMESPACE ios::nocreate);
-#else
-        STD_NAMESPACE wifstream cmdFile(filename, STD_NAMESPACE ios::in);
-#endif
+        STD_NAMESPACE wifstream cmdFile(filename, OFopenmode_in_nocreate);
         if (cmdFile)
         {
             wchar_t c, block = 0;
@@ -1254,7 +1258,7 @@ OFCommandLine::E_ParseStatus OFCommandLine::parseCommandFile(const wchar_t *argV
 
 
 OFCommandLine::E_ParseStatus OFCommandLine::parseArgumentList(OFList<OFString> &argList,
-                                                              const int flags)
+                                                              const int /*flags*/)
 {
     ArgumentList.clear();                                                // initialize lists/positions
     ParamPosList.clear();

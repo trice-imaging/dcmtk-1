@@ -1,8 +1,8 @@
 # declare additional include directories
-INCLUDE_DIRECTORIES(${dcmtls_SOURCE_DIR}/include)
+include_directories("${dcmtls_SOURCE_DIR}/include")
 
 # declare executables
-DCMTK_ADD_EXECUTABLE(wlmscpfs wlmscpfs wlcefs)
+DCMTK_ADD_EXECUTABLE(wlmscpfs wlmscpfs.cc wlcefs.cc)
 
 # make sure executables are linked to the corresponding libraries
 DCMTK_TARGET_LINK_MODULES(wlmscpfs dcmwlm dcmnet dcmtls dcmdata oflog ofstd)

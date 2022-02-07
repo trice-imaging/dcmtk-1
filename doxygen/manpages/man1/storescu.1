@@ -1,4 +1,4 @@
-.TH "storescu" 1 "Thu Sep 24 2015" "Version 3.6.1" "OFFIS DCMTK" \" -*- nroff -*-
+.TH "storescu" 1 "Thu Jan 14 2021" "Version 3.6.6" "OFFIS DCMTK" \" -*- nroff -*-
 .nh
 .SH NAME
 storescu \- DICOM storage (C-STORE) SCU
@@ -87,6 +87,12 @@ input files:
 
   +r    --recurse
           recurse within specified directories
+
+  -rn   --no-rename
+          do not rename processed files (default)
+
+  +rn   --rename
+          append .done/.bad to processed files
 .fi
 .PP
 .SS "network options"
@@ -160,6 +166,21 @@ proposed transmission transfer syntaxes (not with --config-file):
   -xl   --propose-mpeg4-bd
           propose MPEG4 AVC/H.264 BD-compatible HP / Level 4.1 TS only
 
+  -x2   --propose-mpeg4-2-2d
+          propose MPEG4 AVC/H.264 HP / Level 4.2 TS for 2D Videos only
+
+  -x3   --propose-mpeg4-2-3d
+          propose MPEG4 AVC/H.264 HP / Level 4.2 TS for 3D Videos only
+
+  -xo   --propose-mpeg4-2-st
+          propose MPEG4 AVC/H.264 Stereo HP / Level 4.2 TS only
+
+  -x4   --propose-hevc
+          propose HEVC H.265 Main Profile / Level 5.1 TS only
+
+  -x5   --propose-hevc10
+          propose HEVC H.265 Main 10 Profile / Level 5.1 TS only
+
   -xr   --propose-rle
           propose RLE lossless TS
           and all uncompressed transfer syntaxes
@@ -171,6 +192,10 @@ proposed transmission transfer syntaxes (not with --config-file):
   -R    --required
           propose only required presentation contexts
           (default: propose all supported)
+
+          # This will also work with storage SOP classes that are
+          # supported by DCMTK but are not in the list of SOP classes
+          # proposed by default.
 
   +C    --combine
           combine proposed transfer syntaxes
@@ -206,6 +231,9 @@ user identity negotiation:
         --saml  [f]ilename: string
           read SAML request from file f
 
+        --jwt  [f]ilename: string
+          read JWT data from file f
+
   -rsp  --pos-response
           expect positive response
 
@@ -213,6 +241,9 @@ other network options:
 
   -to   --timeout  [s]econds: integer (default: unlimited)
           timeout for connection requests
+
+  -ts   --socket-timeout  [s]econds: integer (default: 60)
+          timeout for network socket (0 for none)
 
   -ta   --acse-timeout  [s]econds: integer (default: 30)
           timeout for ACSE messages
@@ -290,19 +321,40 @@ key and certificate file format:
 
 certification authority:
 
-  +cf   --add-cert-file  [c]ertificate filename: string
+  +cf   --add-cert-file  [f]ilename: string
           add certificate file to list of certificates
 
-  +cd   --add-cert-dir  [c]ertificate directory: string
+  +cd   --add-cert-dir  [d]irectory: string
           add certificates in d to list of certificates
+
+security profile:
+
+  +px   --profile-bcp195
+          BCP 195 TLS Profile (default)
+
+  +py   --profile-bcp195-nd
+          Non-downgrading BCP 195 TLS Profile
+
+  +pz   --profile-bcp195-ex
+          Extended BCP 195 TLS Profile
+
+  +pb   --profile-basic
+          Basic TLS Secure Transport Connection Profile (retired)
+
+  +pa   --profile-aes
+          AES TLS Secure Transport Connection Profile (retired)
+
+  +pn   --profile-null
+          Authenticated unencrypted communication
+          (retired, was used in IHE ATNA)
 
 ciphersuite:
 
+  +cc   --list-ciphers
+          show list of supported TLS ciphersuites and exit
+
   +cs   --cipher  [c]iphersuite name: string
           add ciphersuite to list of negotiated suites
-
-  +dp   --dhparam  [f]ilename: string
-          read DH parameters for DH/DSS ciphersuites
 
 pseudo random generator:
 
@@ -319,9 +371,6 @@ peer authentication:
 
   -rc   --require-peer-cert
           verify peer certificate, fail if absent (default)
-
-  -vc   --verify-peer-cert
-          verify peer certificate if present
 
   -ic   --ignore-peer-cert
           don't verify peer certificate
@@ -422,6 +471,11 @@ MPEG2MainProfileAtMainLevelTransferSyntax            1.2.840.10008.1.2.4.100
 MPEG2MainProfileAtHighLevelTransferSyntax            1.2.840.10008.1.2.4.101
 MPEG4HighProfileLevel4_1TransferSyntax               1.2.840.10008.1.2.4.102
 MPEG4BDcompatibleHighProfileLevel4_1TransferSyntax   1.2.840.10008.1.2.4.103
+MPEG4HighProfileLevel4_2_For2DVideoTransferSyntax    1.2.840.10008.1.2.4.104
+MPEG4HighProfileLevel4_2_For3DVideoTransferSyntax    1.2.840.10008.1.2.4.105
+MPEG4StereoHighProfileLevel4_2TransferSyntax         1.2.840.10008.1.2.4.106
+HEVCMainProfileLevel5_1TransferSyntax                1.2.840.10008.1.2.4.107
+HEVCMain10ProfileLevel5_1TransferSyntax              1.2.840.10008.1.2.4.108
 RLELosslessTransferSyntax                            1.2.840.10008.1.2.5
 .fi
 .PP
@@ -459,4 +513,4 @@ The default behavior should be preferred and the \fIDCMDICTPATH\fP environment v
 \fBstorescp\fP(1)
 .SH "COPYRIGHT"
 .PP
-Copyright (C) 1996-2014 by OFFIS e\&.V\&., Escherweg 2, 26121 Oldenburg, Germany\&.
+Copyright (C) 1996-2021 e\&.V\&., Escherweg 2, 26121 Oldenburg, Germany\&.

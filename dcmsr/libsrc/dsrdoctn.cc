@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2019, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,12 +24,17 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #include "dcmtk/dcmsr/dsrdoctn.h"
+#include "dcmtk/dcmsr/dsrdncsr.h"
 #include "dcmtk/dcmsr/dsrdtitn.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
 #include "dcmtk/dcmsr/dsriodcc.h"
 
-#include "dcmtk/ofstd/ofstring.h"
-#include "dcmtk/ofstd/ofstream.h"
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcuid.h"
+#include "dcmtk/dcmdata/dcvrcs.h"
+#include "dcmtk/dcmdata/dcvrdt.h"
+#include "dcmtk/dcmdata/dcvrui.h"
+#include "dcmtk/dcmdata/dcvrul.h"
 
 
 DSRDocumentTreeNode::DSRDocumentTreeNode(const E_RelationshipType relationshipType,
@@ -71,6 +76,24 @@ DSRDocumentTreeNode::DSRDocumentTreeNode(const DSRDocumentTreeNode &node)
 
 DSRDocumentTreeNode::~DSRDocumentTreeNode()
 {
+}
+
+
+OFBool DSRDocumentTreeNode::operator==(const DSRDocumentTreeNode &node) const
+{
+    /* only very basic information is used for comparing the two nodes */
+    return (RelationshipType == node.RelationshipType) &&
+           (ValueType == node.ValueType) &&
+           (ConceptName == node.ConceptName);
+}
+
+
+OFBool DSRDocumentTreeNode::operator!=(const DSRDocumentTreeNode &node) const
+{
+    /* only very basic information is used for comparing the two nodes */
+    return (RelationshipType != node.RelationshipType) ||
+           (ValueType != node.ValueType) ||
+           (ConceptName != node.ConceptName);
 }
 
 
@@ -136,6 +159,38 @@ OFCondition DSRDocumentTreeNode::print(STD_NAMESPACE ostream &stream,
 }
 
 
+OFCondition DSRDocumentTreeNode::printExtended(STD_NAMESPACE ostream &stream,
+                                               const size_t flags) const
+{
+    /* print observation date/time (optional) */
+    if (!ObservationDateTime.empty())
+    {
+        OFString tmpString;
+        DCMSR_PRINT_ANSI_ESCAPE_CODE(DCMSR_ANSI_ESCAPE_CODE_DELIMITER)
+        stream << " {" << dicomToReadableDateTime(ObservationDateTime, tmpString) << "}";
+    }
+    /* print annotation (optional) */
+    if (hasAnnotation() && (flags & PF_printAnnotation))
+    {
+        DCMSR_PRINT_ANSI_ESCAPE_CODE(DCMSR_ANSI_ESCAPE_CODE_ANNOTATION)
+        stream << "  \"" << getAnnotation().getText() << "\"";
+    }
+    /* print template identification (conditional) */
+    if (hasTemplateIdentification() && (flags & PF_printTemplateIdentification))
+    {
+        DCMSR_PRINT_ANSI_ESCAPE_CODE(DCMSR_ANSI_ESCAPE_CODE_DELIMITER)
+        stream << "  # ";
+        DCMSR_PRINT_ANSI_ESCAPE_CODE(DCMSR_ANSI_ESCAPE_CODE_TEMPLATE_ID)
+        stream << "TID " << TemplateIdentifier;
+        stream << " (" << MappingResource;
+        if (!MappingResourceUID.empty())
+            stream << ", " << MappingResourceUID;
+        stream << ")";
+    }
+    return EC_Normal;
+}
+
+
 OFCondition DSRDocumentTreeNode::read(DcmItem &dataset,
                                       const DSRIODConstraintChecker *constraintChecker,
                                       const size_t flags)
@@ -176,7 +231,7 @@ OFCondition DSRDocumentTreeNode::readXML(const DSRXMLDocument &doc,
         if (!(flags & XF_templateElementEnclosesItems))
         {
             /* check for optional template identification */
-            const DSRXMLCursor childCursor = doc.getNamedNode(cursor.getChild(), "template", OFFalse /*required*/);
+            const DSRXMLCursor childCursor = doc.getNamedChildNode(cursor, "template", OFFalse /*required*/);
             if (childCursor.valid())
             {
                 /* check whether information is stored as XML attributes */
@@ -186,26 +241,26 @@ OFCondition DSRDocumentTreeNode::readXML(const DSRXMLDocument &doc,
                     doc.getStringFromAttribute(childCursor, mappingResourceUID, "uid", OFFalse /*encoding*/, OFFalse /*required*/);
                     doc.getStringFromAttribute(childCursor, templateIdentifier, "tid");
                 } else {
-                    const DSRXMLCursor resourceCursor = doc.getNamedNode(childCursor.getChild(), "resource");
+                    const DSRXMLCursor resourceCursor = doc.getNamedChildNode(childCursor, "resource");
                     if (resourceCursor.valid())
                     {
                         doc.getStringFromAttribute(resourceCursor, mappingResourceUID, "uid", OFFalse /*encoding*/, OFFalse /*required*/);
                         doc.getStringFromNodeContent(resourceCursor, mappingResource);
                     }
-                    doc.getStringFromNodeContent(doc.getNamedNode(childCursor.getChild(), "id"), templateIdentifier);
+                    doc.getStringFromNodeContent(doc.getNamedChildNode(childCursor, "id"), templateIdentifier);
                 }
                 if (setTemplateIdentification(templateIdentifier, mappingResource, mappingResourceUID).bad())
                     DCMSR_WARN("Content item has invalid/incomplete template identification");
             }
         }
         /* read concept name (not required in some cases) */
-        ConceptName.readXML(doc, doc.getNamedNode(cursor.getChild(), "concept", OFFalse /*required*/), flags);
+        ConceptName.readXML(doc, doc.getNamedChildNode(cursor, "concept", OFFalse /*required*/), flags);
         /* read observation UID and date/time (optional) */
-        const DSRXMLCursor childCursor = doc.getNamedNode(cursor.getChild(), "observation", OFFalse /*required*/);
+        const DSRXMLCursor childCursor = doc.getNamedChildNode(cursor, "observation", OFFalse /*required*/);
         if (childCursor.valid())
         {
             doc.getStringFromAttribute(childCursor, ObservationUID, "uid", OFFalse /*encoding*/, OFFalse /*required*/);
-            DSRDateTimeTreeNode::getValueFromXMLNodeContent(doc, doc.getNamedNode(childCursor.getChild(), "datetime", OFFalse /*required*/), ObservationDateTime);
+            DSRDateTimeTreeNode::getValueFromXMLNodeContent(doc, doc.getNamedChildNode(childCursor, "datetime", OFFalse /*required*/), ObservationDateTime);
         }
         /* read node content (depends on value type) */
         result = readXMLContentItem(doc, cursor, flags);
@@ -282,7 +337,7 @@ OFCondition DSRDocumentTreeNode::writeXML(STD_NAMESPACE ostream &stream,
     /* write optional template identification */
     if ((flags & XF_writeTemplateIdentification) && !(flags & XF_templateElementEnclosesItems))
     {
-        if (!TemplateIdentifier.empty() && !MappingResource.empty())
+        if (hasTemplateIdentification())
         {
             if (flags & XF_templateIdentifierAsAttribute)
             {
@@ -336,14 +391,9 @@ OFCondition DSRDocumentTreeNode::writeXML(STD_NAMESPACE ostream &stream,
     DSRDocumentTreeNodeCursor cursor(getDown());
     if (cursor.isValid())
     {
-        const DSRDocumentTreeNode *node = NULL;
         /* for all child nodes */
         do {
-            node = cursor.getNode();
-            if (node != NULL)
-                result = node->writeXML(stream, flags);
-            else
-                result = SR_EC_InvalidDocumentTree;
+            result = cursor.getNode()->writeXML(stream, flags);
         } while (result.good() && cursor.gotoNext());
     }
     return result;
@@ -357,7 +407,7 @@ void DSRDocumentTreeNode::writeXMLItemStart(STD_NAMESPACE ostream &stream,
     /* write optional template identification */
     if ((flags & XF_writeTemplateIdentification) && (flags & XF_templateElementEnclosesItems))
     {
-        if (!TemplateIdentifier.empty() && !MappingResource.empty())
+        if (hasTemplateIdentification())
         {
             stream << "<template resource=\"" << MappingResource << "\"";
             if (!MappingResourceUID.empty())
@@ -393,7 +443,7 @@ void DSRDocumentTreeNode::writeXMLItemEnd(STD_NAMESPACE ostream &stream,
     /* close optional template identification */
     if ((flags & XF_writeTemplateIdentification) && (flags & XF_templateElementEnclosesItems))
     {
-        if (!TemplateIdentifier.empty() && !MappingResource.empty())
+        if (hasTemplateIdentification())
             stream << "</template>" << OFendl;
     }
 }
@@ -516,6 +566,18 @@ OFCondition DSRDocumentTreeNode::setObservationUID(const OFString &observationUI
 }
 
 
+OFBool DSRDocumentTreeNode::compareTemplateIdentification(const OFString &templateIdentifier,
+                                                          const OFString &mappingResource,
+                                                          const OFString &mappingResourceUID) const
+{
+    OFBool result = (TemplateIdentifier == templateIdentifier) && (MappingResource == mappingResource);
+    /* mapping resource UID is optional, so only check it if present */
+    if (result && !MappingResourceUID.empty() && !mappingResourceUID.empty())
+        result = (MappingResourceUID == mappingResourceUID);
+    return result;
+}
+
+
 OFCondition DSRDocumentTreeNode::getTemplateIdentification(OFString &templateIdentifier,
                                                            OFString &mappingResource) const
 {
@@ -568,7 +630,7 @@ OFCondition DSRDocumentTreeNode::setTemplateIdentification(const OFString &templ
     }
     if (result.good())
     {
-        if ((ValueType != VT_Container) && !templateIdentifier.empty())
+        if ((ValueType != VT_Container) && (ValueType != VT_includedTemplate) && !templateIdentifier.empty())
             DCMSR_WARN("Template identification should only be specified for CONTAINER content items");
         /* set current values, might be empty */
         TemplateIdentifier = templateIdentifier;
@@ -596,7 +658,7 @@ OFCondition DSRDocumentTreeNode::readContentItem(DcmItem & /*dataset*/,
 
 OFCondition DSRDocumentTreeNode::writeContentItem(DcmItem & /*dataset*/) const
 {
-    /* no content to insert */
+    /* no content to write */
     return EC_Normal;
 }
 
@@ -656,13 +718,16 @@ OFCondition DSRDocumentTreeNode::readDocumentRelationshipMacro(DcmItem &dataset,
     /* read ObservationUID (optional) */
     getAndCheckStringValueFromDataset(dataset, DCM_ObservationUID, ObservationUID, "1", "3");
     /* determine template identifier expected for this document */
-    const OFString expectedTemplateIdentifier = (constraintChecker != NULL) ? OFSTRING_GUARD(constraintChecker->getRootTemplateIdentifier()) : "";
+    OFString expectedTemplateIdentifier;
+    OFString expectedMappingResource;
+    if (constraintChecker != NULL)
+        constraintChecker->getRootTemplateIdentification(expectedTemplateIdentifier, expectedMappingResource);
     /* read ContentTemplateSequence (conditional) */
     DcmItem *ditem = NULL;
     if (dataset.findAndGetSequenceItem(DCM_ContentTemplateSequence, ditem, 0 /*itemNum*/).good())
     {
         if (ValueType != VT_Container)
-            DCMSR_WARN("Found ContentTemplateSequence for content item that is not a CONTAINER");
+            DCMSR_WARN("Found Content Template Sequence for content item \"" << posString << "\" which is not a CONTAINER");
         getAndCheckStringValueFromDataset(*ditem, DCM_MappingResource, MappingResource, "1", "1", "ContentTemplateSequence");
         getAndCheckStringValueFromDataset(*ditem, DCM_MappingResourceUID, MappingResourceUID, "1", "3", "ContentTemplateSequence");
         getAndCheckStringValueFromDataset(*ditem, DCM_TemplateIdentifier, TemplateIdentifier, "1", "1", "ContentTemplateSequence");
@@ -672,7 +737,7 @@ OFCondition DSRDocumentTreeNode::readDocumentRelationshipMacro(DcmItem &dataset,
             /* check whether the correct Mapping Resource UID is used (if present) */
             if (!MappingResourceUID.empty() && (MappingResourceUID != UID_DICOMContentMappingResource))
             {
-                DCMSR_WARN("Incorrect value for MappingResourceUID (" << MappingResourceUID << "), "
+                DCMSR_WARN("Incorrect value for Mapping Resource UID (" << MappingResourceUID << "), "
                     << UID_DICOMContentMappingResource << " expected");
             }
             /* check for a common error: Template Identifier includes "TID" prefix */
@@ -680,35 +745,35 @@ OFCondition DSRDocumentTreeNode::readDocumentRelationshipMacro(DcmItem &dataset,
             {
                 if ((TemplateIdentifier.find_first_not_of("0123456789") != OFString_npos) || (TemplateIdentifier.at(0) == '0'))
                 {
-                    DCMSR_DEBUG("Reading invalid TemplateIdentifier (" << TemplateIdentifier << ")");
-                    DCMSR_WARN("TemplateIdentifier shall be a string of digits without leading zeros");
+                    DCMSR_DEBUG("Reading invalid Template Identifier (" << TemplateIdentifier << ")");
+                    DCMSR_WARN("Template Identifier shall be a string of digits without leading zeros");
                 }
             }
         }
         /* check whether the expected template (if known) has been used */
         if (!expectedTemplateIdentifier.empty())
         {
-            /* check for DICOM Content Mapping Resource */
-            if (MappingResource == "DCMR")
+            /* compare with expected mapping resource */
+            if (MappingResource != expectedMappingResource)
             {
-                /* compare with expected TID */
-                if (TemplateIdentifier != expectedTemplateIdentifier)
-                {
-                    DCMSR_WARN("Incorrect value for TemplateIdentifier ("
-                        << ((TemplateIdentifier.empty()) ? "<empty>" : TemplateIdentifier) << "), "
-                        << expectedTemplateIdentifier << " expected");
-                }
-            } else if (!MappingResource.empty())
-                printUnknownValueWarningMessage("MappingResource", MappingResource.c_str());
+                DCMSR_WARN("Incorrect value for Mapping Resource ("
+                    << ((MappingResource.empty()) ? "<empty>" : MappingResource) << "), "
+                    << expectedMappingResource << " expected");
+            }
+            /* compare with expected template identifier */
+            if (TemplateIdentifier != expectedTemplateIdentifier)
+            {
+                DCMSR_WARN("Incorrect value for Template Identifier ("
+                    << ((TemplateIdentifier.empty()) ? "<empty>" : TemplateIdentifier) << "), "
+                    << expectedTemplateIdentifier << " expected");
+            }
         }
     }
     /* only check template identifier on dataset level (root node) */
     else if ((dataset.ident() == EVR_dataset) && !expectedTemplateIdentifier.empty())
     {
-        DCMSR_WARN("ContentTemplateSequence missing or empty, TemplateIdentifier "
-            << expectedTemplateIdentifier
-            /* DICOM Content Mapping Resource is currently hard-coded (see above) */
-            <<  " (DCMR) expected");
+        DCMSR_WARN("Content Template Sequence missing or empty, Template Identifier "
+            << expectedTemplateIdentifier << " (" << expectedMappingResource << ") expected");
     }
     /* read ContentSequence */
     if (result.good())
@@ -729,7 +794,7 @@ OFCondition DSRDocumentTreeNode::writeDocumentRelationshipMacro(DcmItem &dataset
         addElementToDataset(result, dataset, new DcmSequenceOfItems(DigitalSignatures), "1-n", "3", "SOPCommonModule");
         DCMSR_WARN("Writing possibly incorrect digital signature - same as read from dataset");
     }
-    /* add to mark stack */
+    /* add to marked items stack */
     if (MarkFlag && (markedItems != NULL))
         markedItems->push(&dataset);
     /* write ObservationDateTime (conditional) */
@@ -740,7 +805,7 @@ OFCondition DSRDocumentTreeNode::writeDocumentRelationshipMacro(DcmItem &dataset
     /* write ContentTemplateSequence (conditional) */
     if (result.good())
     {
-        if (!TemplateIdentifier.empty() && !MappingResource.empty())
+        if (hasTemplateIdentification())
         {
             DcmItem *ditem = NULL;
             /* create sequence with a single item */
@@ -748,7 +813,7 @@ OFCondition DSRDocumentTreeNode::writeDocumentRelationshipMacro(DcmItem &dataset
             if (result.good())
             {
                 if (ValueType != VT_Container)
-                    DCMSR_WARN("Writing ContentTemplateSequence for content item that is not a CONTAINER");
+                    DCMSR_WARN("Writing Content Template Sequence for content item that is not a CONTAINER");
                 /* write item data */
                 putStringValueToDataset(*ditem, DCM_MappingResource, MappingResource);
                 putStringValueToDataset(*ditem, DCM_MappingResourceUID, MappingResourceUID, OFFalse /*allowEmpty*/);
@@ -982,7 +1047,7 @@ OFCondition DSRDocumentTreeNode::readContentSequence(DcmItem &dataset,
             /* increment the counter (needed for generating the location string) */
             i++;
         }
-        /* skipping complete sub-tree if flag is set */
+        /* skipping complete subtree if flag is set */
         if (result.bad() && (flags & RF_skipInvalidContentItems))
         {
             printInvalidContentItemMessage("Skipping", node);
@@ -1010,39 +1075,35 @@ OFCondition DSRDocumentTreeNode::writeContentSequence(DcmItem &dataset,
             /* for all child nodes */
             do {
                 node = cursor.getNode();
-                if (node != NULL)
+                ditem = new DcmItem();
+                if (ditem != NULL)
                 {
-                    ditem = new DcmItem();
-                    if (ditem != NULL)
+                    /* write RelationshipType */
+                    result = putStringValueToDataset(*ditem, DCM_RelationshipType, relationshipTypeToDefinedTerm(node->getRelationshipType()));
+                    /* check for by-reference relationship */
+                    if (node->getValueType() == VT_byReference)
                     {
-                        /* write RelationshipType */
-                        result = putStringValueToDataset(*ditem, DCM_RelationshipType, relationshipTypeToDefinedTerm(node->getRelationshipType()));
-                        /* check for by-reference relationship */
-                        if (node->getValueType() == VT_byReference)
-                        {
-                            /* write ReferencedContentItemIdentifier */
-                            if (result.good())
-                                result = node->writeContentItem(*ditem);
-                        } else {    // by-value
-                            /* write RelationshipMacro */
-                            if (result.good())
-                                result = node->writeDocumentRelationshipMacro(*ditem, markedItems);
-                            /* write DocumentContentMacro */
-                            if (result.good())
-                                node->writeDocumentContentMacro(*ditem);
-                        }
-                        /* check for any errors */
-                        if (result.bad())
-                            printContentItemErrorMessage("Writing", result, node);
-                        /* insert item into sequence */
+                        /* write ReferencedContentItemIdentifier */
                         if (result.good())
-                            dseq->insert(ditem);
-                        else
-                            delete ditem;
-                    } else
-                        result = EC_MemoryExhausted;
+                            result = node->writeContentItem(*ditem);
+                    } else {    // by-value
+                        /* write RelationshipMacro */
+                        if (result.good())
+                            result = node->writeDocumentRelationshipMacro(*ditem, markedItems);
+                        /* write DocumentContentMacro */
+                        if (result.good())
+                            node->writeDocumentContentMacro(*ditem);
+                    }
+                    /* check for any errors */
+                    if (result.bad())
+                        printContentItemErrorMessage("Writing", result, node);
+                    /* insert item into sequence */
+                    if (result.good())
+                        dseq->insert(ditem);
+                    else
+                        delete ditem;
                 } else
-                    result = SR_EC_InvalidDocumentTree;
+                    result = EC_MemoryExhausted;
             } while (result.good() && cursor.gotoNext());
             if (result.good())
                 result = dataset.insert(dseq, OFTrue /*replaceOld*/);
@@ -1127,139 +1188,135 @@ OFCondition DSRDocumentTreeNode::renderHTMLChildNodes(STD_NAMESPACE ostream &doc
         /* for all child nodes */
         do {
             node = cursor.getNode();
-            if (node != NULL)
+            /* set/reset flag for footnote creation*/
+            newFlags &= ~HF_createFootnoteReferences;
+            if (!(flags & HF_renderItemsSeparately) && node->hasChildNodes() && (node->getValueType() != VT_Container))
+                newFlags |= HF_createFootnoteReferences;
+            /* render (optional) reference to annex */
+            OFString relationshipText;
+            if (!getRelationshipText(node->getRelationshipType(), relationshipText, flags).empty())
             {
-                /* set/reset flag for footnote creation*/
-                newFlags &= ~HF_createFootnoteReferences;
-                if (!(flags & HF_renderItemsSeparately) && node->hasChildNodes() && (node->getValueType() != VT_Container))
-                    newFlags |= HF_createFootnoteReferences;
-                /* render (optional) reference to annex */
-                OFString relationshipText;
-                if (!getRelationshipText(node->getRelationshipType(), relationshipText, flags).empty())
+                if (paragraphFlag)
                 {
-                    if (paragraphFlag)
+                    /* inside paragraph: line break */
+                    if (flags & HF_XHTML11Compatibility)
+                        docStream << "<br />" << OFendl;
+                    else
+                        docStream << "<br>" << OFendl;
+                } else {
+                    /* open paragraph */
+                    if (flags & HF_XHTML11Compatibility)
                     {
-                        /* inside paragraph: line break */
-                        if (flags & HF_XHTML11Compatibility)
-                            docStream << "<br />" << OFendl;
-                        else
-                            docStream << "<br>" << OFendl;
+                        docStream << "<div class=\"small\">" << OFendl;
+                        docStream << "<p>" << OFendl;
                     } else {
-                        /* open paragraph */
-                        if (flags & HF_XHTML11Compatibility)
-                        {
-                            docStream << "<div class=\"small\">" << OFendl;
-                            docStream << "<p>" << OFendl;
-                        } else {
-                            docStream << "<p>" << OFendl;
-                            docStream << "<small>" << OFendl;
-                        }
-                        paragraphFlag = OFTrue;
+                        docStream << "<p>" << OFendl;
+                        docStream << "<small>" << OFendl;
                     }
-                    if (newFlags & HF_XHTML11Compatibility)
-                        docStream << "<span class=\"relation\">" << relationshipText << "</span>: ";
-                    else if (flags & DSRTypes::HF_HTML32Compatibility)
-                        docStream << "<u>" << relationshipText << "</u>: ";
-                    else /* HTML 4.01 */
-                        docStream << "<span class=\"under\">" << relationshipText << "</span>: ";
-                    /* expand short nodes with no children inline (or depending on 'flags' all nodes) */
-                    if ((flags & HF_alwaysExpandChildrenInline) ||
-                        (!(flags & HF_neverExpandChildrenInline) && !node->hasChildNodes() && node->isShort(flags)))
+                    paragraphFlag = OFTrue;
+                }
+                if (newFlags & HF_XHTML11Compatibility)
+                    docStream << "<span class=\"relation\">" << relationshipText << "</span>: ";
+                else if (flags & DSRTypes::HF_HTML32Compatibility)
+                    docStream << "<u>" << relationshipText << "</u>: ";
+                else /* HTML 4.01 */
+                    docStream << "<span class=\"under\">" << relationshipText << "</span>: ";
+                /* expand short nodes with no children inline (or depending on 'flags' all nodes) */
+                if ((flags & HF_alwaysExpandChildrenInline) ||
+                    (!(flags & HF_neverExpandChildrenInline) && !node->hasChildNodes() && node->isShort(flags)))
+                {
+                    if (node->getValueType() != VT_byReference)
                     {
-                        if (node->getValueType() != VT_byReference)
-                        {
-                            /* render concept name/code or value type */
-                            if (node->getConceptName().getCodeMeaning().empty())
-                                docStream << valueTypeToReadableName(node->getValueType());
-                            else
-                                node->getConceptName().renderHTML(docStream, flags, (flags & HF_renderConceptNameCodes) && ConceptName.isValid() /*fullCode*/);
-                            docStream << " = ";
-                        }
-                        /* render HTML code (directly to the reference text) */
-                        result = node->renderHTML(docStream, annexStream, 0 /*nesting level*/, annexNumber, newFlags | HF_renderItemInline);
-                    } else {
-                        /* render concept name or value type */
+                        /* render concept name/code or value type */
                         if (node->getConceptName().getCodeMeaning().empty())
-                            docStream << valueTypeToReadableName(node->getValueType()) << " ";
+                            docStream << valueTypeToReadableName(node->getValueType());
                         else
-                            docStream << node->getConceptName().getCodeMeaning() << " ";
-                        /* render annex heading and reference */
-                        createHTMLAnnexEntry(docStream, annexStream, "" /*referenceText*/, annexNumber, newFlags);
+                            node->getConceptName().renderHTML(docStream, flags, (flags & HF_renderConceptNameCodes) && ConceptName.isValid() /*fullCode*/);
+                        docStream << " = ";
+                    }
+                    /* render HTML code (directly to the reference text) */
+                    result = node->renderHTML(docStream, annexStream, 0 /*nesting level*/, annexNumber, newFlags | HF_renderItemInline);
+                } else {
+                    /* render concept name or value type */
+                    if (node->getConceptName().getCodeMeaning().empty())
+                        docStream << valueTypeToReadableName(node->getValueType()) << " ";
+                    else
+                        docStream << node->getConceptName().getCodeMeaning() << " ";
+                    /* render annex heading and reference */
+                    createHTMLAnnexEntry(docStream, annexStream, "" /*referenceText*/, annexNumber, newFlags);
+                    if (flags & HF_XHTML11Compatibility)
+                        annexStream << "<div class=\"para\">" << OFendl;
+                    else
+                        annexStream << "<div>" << OFendl;
+                    /* create memory output stream for the temporal annex */
+                    OFOStringStream tempAnnexStream;
+                    /* render HTML code (directly to the annex) */
+                    result = node->renderHTML(annexStream, tempAnnexStream, 0 /*nesting level*/, annexNumber, newFlags | HF_currentlyInsideAnnex);
+                    annexStream << "</div>" << OFendl;
+                    /* use empty paragraph for bottom margin */
+                    if (!(flags & HF_XHTML11Compatibility))
+                        annexStream << "<p>" << OFendl;
+                    /* append temporary stream to main stream */
+                    if (result.good())
+                        result = appendStream(annexStream, tempAnnexStream);
+                }
+            } else {
+                /* close paragraph */
+                if (paragraphFlag)
+                {
+                    if (flags & HF_XHTML11Compatibility)
+                    {
+                        docStream << "</p>" << OFendl;
+                        docStream << "</div>" << OFendl;
+                    } else {
+                        docStream << "</small>" << OFendl;
+                        docStream << "</p>" << OFendl;
+                    }
+                    paragraphFlag = OFFalse;
+                }
+                /* begin new paragraph */
+                if (flags & HF_renderItemsSeparately)
+                {
+                    if (flags & HF_XHTML11Compatibility)
+                        docStream << "<div class=\"para\">" << OFendl;
+                    else
+                        docStream << "<div>" << OFendl;
+                }
+                /* write footnote text to temporary stream */
+                if (newFlags & HF_createFootnoteReferences)
+                {
+                    /* render HTML code (without child nodes) */
+                    result = node->renderHTMLContentItem(docStream, annexStream, 0 /*nestingLevel*/, annexNumber, newFlags);
+                    /* create footnote numbers (individually for each child?) */
+                    if (result.good())
+                    {
+                        /* tags are closed automatically in 'node->renderHTMLChildNodes()' */
                         if (flags & HF_XHTML11Compatibility)
-                            annexStream << "<div class=\"para\">" << OFendl;
-                        else
-                            annexStream << "<div>" << OFendl;
-                        /* create memory output stream for the temporal annex */
-                        OFOStringStream tempAnnexStream;
-                        /* render HTML code (directly to the annex) */
-                        result = node->renderHTML(annexStream, tempAnnexStream, 0 /*nesting level*/, annexNumber, newFlags | HF_currentlyInsideAnnex);
-                        annexStream << "</div>" << OFendl;
-                        /* use empty paragraph for bottom margin */
-                        if (!(flags & HF_XHTML11Compatibility))
-                            annexStream << "<p>" << OFendl;
-                        /* append temporary stream to main stream */
-                        if (result.good())
-                            result = appendStream(annexStream, tempAnnexStream);
+                        {
+                            tempDocStream << "<div class=\"small\">" << OFendl;
+                            tempDocStream << "<p>" << OFendl;
+                        } else {
+                            tempDocStream << "<p>" << OFendl;
+                            tempDocStream << "<small>" << OFendl;
+                        }
+                        /* render footnote text and reference */
+                        createHTMLFootnote(docStream, tempDocStream, footnoteNumber, node->getNodeID(), flags);
+                        /* render child nodes to temporary stream */
+                        result = node->renderHTMLChildNodes(tempDocStream, annexStream, 0 /*nestingLevel*/, annexNumber, newFlags);
                     }
                 } else {
-                    /* close paragraph */
-                    if (paragraphFlag)
-                    {
-                        if (flags & HF_XHTML11Compatibility)
-                        {
-                            docStream << "</p>" << OFendl;
-                            docStream << "</div>" << OFendl;
-                        } else {
-                            docStream << "</small>" << OFendl;
-                            docStream << "</p>" << OFendl;
-                        }
-                        paragraphFlag = OFFalse;
-                    }
-                    /* begin new paragraph */
-                    if (flags & HF_renderItemsSeparately)
-                    {
-                        if (flags & HF_XHTML11Compatibility)
-                            docStream << "<div class=\"para\">" << OFendl;
-                        else
-                            docStream << "<div>" << OFendl;
-                    }
-                    /* write footnote text to temporary stream */
-                    if (newFlags & HF_createFootnoteReferences)
-                    {
-                        /* render HTML code (without child nodes) */
-                        result = node->renderHTMLContentItem(docStream, annexStream, 0 /*nestingLevel*/, annexNumber, newFlags);
-                        /* create footnote numbers (individually for each child?) */
-                        if (result.good())
-                        {
-                            /* tags are closed automatically in 'node->renderHTMLChildNodes()' */
-                            if (flags & HF_XHTML11Compatibility)
-                            {
-                                tempDocStream << "<div class=\"small\">" << OFendl;
-                                tempDocStream << "<p>" << OFendl;
-                            } else {
-                                tempDocStream << "<p>" << OFendl;
-                                tempDocStream << "<small>" << OFendl;
-                            }
-                            /* render footnote text and reference */
-                            createHTMLFootnote(docStream, tempDocStream, footnoteNumber, node->getNodeID(), flags);
-                            /* render child nodes to temporary stream */
-                            result = node->renderHTMLChildNodes(tempDocStream, annexStream, 0 /*nestingLevel*/, annexNumber, newFlags);
-                        }
-                    } else {
-                        /* render HTML code (incl. child nodes)*/
-                        result = node->renderHTML(docStream, annexStream, nestingLevel + 1, annexNumber, newFlags);
-                    }
-                    /* end paragraph */
-                    if (flags & HF_renderItemsSeparately)
-                    {
-                        docStream << "</div>" << OFendl;
-                        /* use empty paragraph for bottom margin */
-                        if (!(flags & HF_XHTML11Compatibility))
-                            docStream << "<p>" << OFendl;
-                    }
+                    /* render HTML code (incl. child nodes)*/
+                    result = node->renderHTML(docStream, annexStream, nestingLevel + 1, annexNumber, newFlags);
                 }
-            } else
-                result = SR_EC_InvalidDocumentTree;
+                /* end paragraph */
+                if (flags & HF_renderItemsSeparately)
+                {
+                    docStream << "</div>" << OFendl;
+                    /* use empty paragraph for bottom margin */
+                    if (!(flags & HF_XHTML11Compatibility))
+                        docStream << "<p>" << OFendl;
+                }
+            }
         } while (result.good() && cursor.gotoNext());
         /* close last open paragraph (if any) */
         if (paragraphFlag)

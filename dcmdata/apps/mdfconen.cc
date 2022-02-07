@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2003-2014, OFFIS e.V.
+ *  Copyright (C) 2003-2020, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -15,7 +15,7 @@
  *
  *  Author:  Michael Onken
  *
- *  Purpose: Class for modifying DICOM files from comandline
+ *  Purpose: Class for modifying DICOM files from commandline
  *
  */
 
@@ -24,6 +24,7 @@
 #include "mdfconen.h"
 #include "mdfdsman.h"
 #include "dcmtk/ofstd/ofstd.h"
+#include "dcmtk/ofstd/ofconapp.h"
 #include "dcmtk/dcmdata/dctk.h"
 #include "dcmtk/dcmdata/dcistrmz.h"    /* for dcmZlibExpectRFC1950Encoding */
 
@@ -463,7 +464,7 @@ int MdfConsoleEngine::executeJob(const MdfJob &job,
     else if (job.option == "mf")
         result = ds_man->modifyOrInsertFromFile(job.path, job.value /*filename*/, OFTrue, update_metaheader_uids_option, ignore_missing_tags_option, no_reservation_checks);
     else if (job.option == "ma")
-        result = ds_man->modifyAllTags(job.path, job.value, update_metaheader_uids_option, count);
+        result = ds_man->modifyAllTags(job.path, job.value, update_metaheader_uids_option, count, ignore_missing_tags_option);
     else if (job.option == "e")
         result = ds_man->deleteTag(job.path, OFFalse, ignore_missing_tags_option);
     else if (job.option == "ea")
@@ -540,7 +541,7 @@ int MdfConsoleEngine::startProvidingService()
                 {
                     OFLOG_ERROR(dcmodifyLogger, "couldn't save file: " << result.text());
                     errors++;
-                    if (!no_backup_option && !was_created)
+                    if (!no_backup_option && !was_created && strcmp(filename, "-"))
                     {
                         result = restoreFile(filename);
                         if (result.bad())
@@ -551,8 +552,8 @@ int MdfConsoleEngine::startProvidingService()
                     }
                 }
             }
-            // errors occured and user doesn't want to ignore them:
-            else if (!no_backup_option && !was_created)
+            // errors occurred and user doesn't want to ignore them:
+            else if (!no_backup_option && !was_created && strcmp(filename, "-"))
             {
                 result = restoreFile(filename);
                 if (result.bad())
@@ -588,7 +589,7 @@ OFCondition MdfConsoleEngine::loadFile(const char *filename)
     // load file into dataset manager
     was_created = !OFStandard::fileExists(filename);
     result = ds_man->loadFile(filename, read_mode_option, input_xfer_option, create_if_necessary);
-    if (result.good() && !no_backup_option && !was_created)
+    if (result.good() && !no_backup_option && !was_created && strcmp(filename, "-"))
         result = backupFile(filename);
     return result;
 }

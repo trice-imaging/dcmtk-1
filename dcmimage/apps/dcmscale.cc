@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2014, OFFIS e.V.
+ *  Copyright (C) 2002-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,14 +21,6 @@
 
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
-
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
-
-#ifdef HAVE_GUSI_H
-#include <GUSI.h>
-#endif
 
 #include "dcmtk/dcmdata/dctk.h"          /* for various dcmdata headers */
 #include "dcmtk/dcmdata/cmdlnarg.h"      /* for prepareCmdLineArgs */
@@ -78,7 +70,7 @@ int main(int argc, char *argv[])
 
     OFBool opt_uidCreation = OFTrue;
     E_FileReadMode opt_readMode = ERM_autoDetect;
-    E_FileWriteMode opt_writeMode = EWM_fileformat;
+    E_FileWriteMode opt_writeMode = EWM_createNewMeta;
     E_TransferSyntax opt_ixfer = EXS_Unknown;
     E_TransferSyntax opt_oxfer = EXS_Unknown;
     E_GrpLenEncoding opt_oglenc = EGL_recalcGL;
@@ -144,7 +136,7 @@ int main(int argc, char *argv[])
       cmd.addOption("--conv-never",         "+cn",      "never convert color space");
 #endif
      cmd.addSubGroup("scaling:");
-      cmd.addOption("--recognize-aspect",    "+a",      "recognize pixel aspect ratio (default)");
+      cmd.addOption("--recognize-aspect",    "+a",      "recognize pixel aspect ratio when scaling (def)");
       cmd.addOption("--ignore-aspect",       "-a",      "ignore pixel aspect ratio when scaling");
       cmd.addOption("--interpolate",         "+i",   1, "[n]umber of algorithm: integer",
                                                         "use interpolation when scaling (1..4, def: 1)");
@@ -334,7 +326,7 @@ int main(int argc, char *argv[])
       /* output options */
 
       cmd.beginOptionBlock();
-      if (cmd.findOption("--write-file")) opt_writeMode = EWM_fileformat;
+      if (cmd.findOption("--write-file")) opt_writeMode = EWM_createNewMeta;
       if (cmd.findOption("--write-dataset")) opt_writeMode = EWM_dataset;
       cmd.endOptionBlock();
 
@@ -440,9 +432,7 @@ int main(int argc, char *argv[])
     OFLOG_INFO(dcmscaleLogger, "check if new output transfer syntax is possible");
 
     DcmXfer opt_oxferSyn(opt_oxfer);
-    dataset->chooseRepresentation(opt_oxfer, NULL);
-
-    if (dataset->canWriteXfer(opt_oxfer))
+    if (dataset->chooseRepresentation(opt_oxfer, NULL).good() && dataset->canWriteXfer(opt_oxfer))
     {
         OFLOG_INFO(dcmscaleLogger, "output transfer syntax " << opt_oxferSyn.getXferName()
             << " can be written");
@@ -573,7 +563,7 @@ int main(int argc, char *argv[])
     if (!derivationDescription.empty())
     {
         const char *oldDerivation = NULL;
-        if (dataset->findAndGetString(DCM_DerivationDescription, oldDerivation).good())
+        if (dataset->findAndGetString(DCM_DerivationDescription, oldDerivation).good() && oldDerivation)
         {
              // append old Derivation Description, if any
             derivationDescription += " [";
@@ -624,9 +614,6 @@ int main(int argc, char *argv[])
         // create new SOP instance UID
         char new_uid[100];
         dataset->putAndInsertString(DCM_SOPInstanceUID, dcmGenerateUniqueIdentifier(new_uid));
-        // force meta-header to refresh SOP Instance UID
-        if (opt_writeMode == EWM_fileformat)
-            opt_writeMode = EWM_updateMeta;
     }
 
     // ======================================================================

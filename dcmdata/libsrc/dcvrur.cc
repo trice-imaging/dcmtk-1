@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2014, OFFIS e.V.
+ *  Copyright (C) 2014-2018, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,6 +23,7 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #include "dcmtk/dcmdata/dcvrur.h"
+#include "dcmtk/dcmdata/dcmatch.h"
 
 
 // ********************************
@@ -51,6 +52,40 @@ DcmUniversalResourceIdentifierOrLocator &DcmUniversalResourceIdentifierOrLocator
 {
     DcmByteString::operator=(obj);
     return *this;
+}
+
+
+int DcmUniversalResourceIdentifierOrLocator::compare(const DcmElement& rhs) const
+{
+    int result = DcmElement::compare(rhs);
+    if (result != 0)
+    {
+        return result;
+    }
+
+    /* cast away constness (dcmdata is not const correct...) */
+    DcmUniversalResourceIdentifierOrLocator* myThis = NULL;
+    DcmUniversalResourceIdentifierOrLocator* myRhs = NULL;
+    myThis = OFconst_cast(DcmUniversalResourceIdentifierOrLocator*, this);
+    myRhs = OFstatic_cast(DcmUniversalResourceIdentifierOrLocator*, OFconst_cast(DcmElement*, &rhs));
+
+    /* compare length */
+    unsigned long thisLength = myThis->getLength();
+    unsigned long rhsLength = myRhs->getLength();
+    if (thisLength < rhsLength)
+    {
+        return -1;
+    }
+    else if (thisLength > rhsLength)
+    {
+        return 1;
+    }
+
+    /* check whether values are equal */
+    OFString thisValue, rhsValue;
+    myThis->getOFStringArray(thisValue);
+    myThis->getOFStringArray(rhsValue);
+    return thisValue.compare(rhsValue);
 }
 
 
@@ -122,4 +157,35 @@ OFCondition DcmUniversalResourceIdentifierOrLocator::getOFStringArray(OFString &
 OFCondition DcmUniversalResourceIdentifierOrLocator::checkStringValue(const OFString &value)
 {
     return DcmByteString::checkStringValue(value, "" /* vm */, "ur", 19, 0 /* maxLen: no check */);
+}
+
+
+OFBool DcmUniversalResourceIdentifierOrLocator::matches(const OFString& key,
+                                                        const OFString& candidate,
+                                                        const OFBool enableWildCardMatching) const
+{
+  if (enableWildCardMatching)
+    return DcmAttributeMatching::wildCardMatching(key.c_str(), key.length(), candidate.c_str(), candidate.length());
+  else
+    return DcmByteString::matches(key, candidate, OFFalse);
+}
+
+
+OFBool DcmUniversalResourceIdentifierOrLocator::isUniversalMatch(const OFBool normalize,
+                                                                 const OFBool enableWildCardMatching)
+{
+  if(!isEmpty(normalize))
+  {
+    if(enableWildCardMatching)
+    {
+      OFString value;
+      /* by definition, the VM of a non-empty value of this VR is 1 */
+      getOFStringArray(value, normalize);
+      if(value.find_first_not_of( '*' ) != OFString_npos)
+        return OFFalse;
+    }
+    else
+      return OFFalse;
+  }
+  return OFTrue;
 }

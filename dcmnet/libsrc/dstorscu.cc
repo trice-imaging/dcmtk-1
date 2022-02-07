@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2015, OFFIS e.V.
+ *  Copyright (C) 2011-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,6 +28,8 @@
 #include "dcmtk/dcmdata/dcdatutl.h"
 #include "dcmtk/dcmnet/dstorscu.h"
 #include "dcmtk/dcmnet/diutil.h"
+#include "dcmtk/ofstd/ofstdinc.h"
+#include <ctime>
 
 
 // these are private DIMSE status codes of the class "pending"
@@ -61,7 +63,7 @@ static const OFString &dicomToHostFilename(const OFString &dicomFilename,
 
 // implementation of the internal class/struct for a single transfer entry
 
-DcmStorageSCU::TransferEntry::TransferEntry(const OFString &filename,
+DcmStorageSCU::TransferEntry::TransferEntry(const OFFilename &filename,
                                             const E_FileReadMode readMode,
                                             const OFString &sopClassUID,
                                             const OFString &sopInstanceUID,
@@ -75,6 +77,7 @@ DcmStorageSCU::TransferEntry::TransferEntry(const OFString &filename,
     TransferSyntaxUID(transferSyntaxUID),
     NetworkTransferSyntax(EXS_Unknown),
     Uncompressed(OFFalse),
+    DatasetSize(0),
     AssociationNumber(0),
     PresentationContextID(0),
     RequestSent(OFFalse),
@@ -98,6 +101,7 @@ DcmStorageSCU::TransferEntry::TransferEntry(DcmDataset *dataset,
     TransferSyntaxUID(transferSyntaxUID),
     NetworkTransferSyntax(EXS_Unknown),
     Uncompressed(OFFalse),
+    DatasetSize(0),
     AssociationNumber(0),
     PresentationContextID(0),
     RequestSent(OFFalse),
@@ -358,13 +362,13 @@ OFCondition DcmStorageSCU::removeSOPInstance(const OFString &sopClassUID,
 }
 
 
-OFCondition DcmStorageSCU::addDicomFile(const OFString &filename,
+OFCondition DcmStorageSCU::addDicomFile(const OFFilename &filename,
                                         const E_FileReadMode readMode,
                                         const OFBool checkValues)
 {
     OFCondition status = EC_IllegalParameter;
     // check for non-empty filename
-    if (!filename.empty())
+    if (!filename.isEmpty())
     {
         DCMNET_DEBUG("adding DICOM file '" << filename << "'");
         const size_t numInstances = TransferList.size();
@@ -464,20 +468,20 @@ OFCondition DcmStorageSCU::addDataset(DcmDataset *dataset,
 }
 
 
-OFCondition DcmStorageSCU::addDicomFilesFromDICOMDIR(const OFString &filename,
+OFCondition DcmStorageSCU::addDicomFilesFromDICOMDIR(const OFFilename &filename,
                                                      const E_FileReadMode readMode,
                                                      const OFBool checkValues)
 {
     DCMNET_DEBUG("adding DICOM files referenced from '" << filename << "'");
     // read the DICOMDIR file (always require meta-header to be present)
     DcmFileFormat fileformat;
-    OFCondition status = fileformat.loadFile(filename.c_str(), EXS_Unknown, EGL_noChange, DCM_MaxReadLength, ERM_fileOnly);
+    OFCondition status = fileformat.loadFile(filename, EXS_Unknown, EGL_noChange, DCM_MaxReadLength, ERM_fileOnly);
     if (status.good())
     {
         DcmStack stack;
         // do not use the DcmDirectoryRecord class, but access the data elements directly
         DcmDataset *dataset = fileformat.getDataset();
-        OFString dirName;
+        OFFilename dirName;
         OFStandard::getDirNameFromPath(dirName, filename, OFFalse /* assumeDirName */);
         // iterate over all items (directory records) where ReferencedFileID is present
         while (dataset->search(DCM_ReferencedFileID, stack, ESM_afterStackTop, OFTrue).good())
@@ -485,7 +489,8 @@ OFCondition DcmStorageSCU::addDicomFilesFromDICOMDIR(const OFString &filename,
             // make sure that the dataset and element pointer are there
             if (stack.card() > 1)
             {
-                OFString pathName, fileID, sopClassUID, sopInstanceUID, transferSyntaxUID;
+                OFFilename pathName;
+                OFString fileID, sopClassUID, sopInstanceUID, transferSyntaxUID;
                 // first, get the name of the referenced DICOM file
                 DcmElement *element = OFstatic_cast(DcmElement *, stack.top());
                 if (element != NULL)
@@ -508,9 +513,9 @@ OFCondition DcmStorageSCU::addDicomFilesFromDICOMDIR(const OFString &filename,
                     if (status.good())
                     {
                         OFString tmpString;
+                        const OFFilename tmpFilename(dicomToHostFilename(fileID, tmpString), pathName.usesWideChars() /*convert*/);
                         // consider that the value of ReferencedFileID is relative to the DICOMDIR
-                        OFStandard::combineDirAndFilename(pathName, dirName, dicomToHostFilename(fileID, tmpString),
-                            OFTrue /* allowEmptyDirName */);
+                        OFStandard::combineDirAndFilename(pathName, dirName, tmpFilename, OFTrue /* allowEmptyDirName */);
                         // create a new entry ...
                         TransferEntry *entry = new TransferEntry(pathName, readMode, sopClassUID, sopInstanceUID, transferSyntaxUID);
                         if (entry != NULL)
@@ -528,7 +533,7 @@ OFCondition DcmStorageSCU::addDicomFilesFromDICOMDIR(const OFString &filename,
                         DCMNET_DEBUG("successfully added SOP instance " << sopInstanceUID << " to the transfer list");
                     } else {
                         DCMNET_ERROR("cannot add DICOM file from DICOMDIR to the transfer list: "
-                            << (pathName.empty() ? fileID : pathName) << ": " << status.text());
+                            << (pathName.isEmpty() ? fileID : pathName) << ": " << status.text());
                     }
                 } else {
                     DCMNET_ERROR("cannot add DICOM file from DICOMDIR with empty filename");
@@ -806,7 +811,7 @@ OFCondition DcmStorageSCU::sendSOPInstances()
                     break;
                 }
                 // output debug information on the SOP instance to be sent
-                if ((*CurrentTransferEntry)->Filename.empty())
+                if ((*CurrentTransferEntry)->Filename.isEmpty())
                 {
                     if ((*CurrentTransferEntry)->Dataset != NULL)
                     {
@@ -825,11 +830,17 @@ OFCondition DcmStorageSCU::sendSOPInstances()
                 } else {
                     DCMNET_DEBUG("sending SOP instance from file: " << (*CurrentTransferEntry)->Filename);
                     // load SOP instance from DICOM file
-                    status = fileformat.loadFile((*CurrentTransferEntry)->Filename.c_str(), EXS_Unknown, EGL_noChange,
+                    status = fileformat.loadFile((*CurrentTransferEntry)->Filename, EXS_Unknown, EGL_noChange,
                         DCM_MaxReadLength, (*CurrentTransferEntry)->FileReadMode);
-                    // do not store the dataset pointer in the transfer entry, because this pointer
-                    // will become invalid for the next iteration of this while-loop.
-                    dataset = fileformat.getDataset();
+                    if (status.good())
+                    {
+                        // do not store the dataset pointer in the transfer entry, because this pointer
+                        // will become invalid for the next iteration of this while-loop.
+                        dataset = fileformat.getDataset();
+                    } else {
+                        DCMNET_ERROR("cannot send SOP instance from file: " << (*CurrentTransferEntry)->Filename
+                            << ": " << status.text());
+                    }
                 }
                 // send SOP instance to the peer using a C-STORE request message
                 if (status.good())
@@ -856,6 +867,10 @@ OFCondition DcmStorageSCU::sendSOPInstances()
                             }
                         }
                     }
+                    // determine size of the dataset (in bytes) based on the original transfer syntax
+                    (*CurrentTransferEntry)->DatasetSize = dataset->calcElementLength(dataset->getOriginalXfer(), g_dimse_send_sequenceType_encoding);
+                    // notify user of this class that the current SOP instance is to be sent
+                    notifySOPInstanceToBeSent(**CurrentTransferEntry);
                     // call the inherited method from the base class doing the real work
                     status = sendSTORERequest((*CurrentTransferEntry)->PresentationContextID, "" /* filename */,
                         dataset, (*CurrentTransferEntry)->ResponseStatusCode,
@@ -870,7 +885,7 @@ OFCondition DcmStorageSCU::sendSOPInstances()
                     // ... remember that this SOP instance has already been sent
                     (*CurrentTransferEntry)->RequestSent = OFTrue;
                     // check whether we need to compact or delete the dataset
-                    if ((*CurrentTransferEntry)->Filename.empty() && ((*CurrentTransferEntry)->Dataset != NULL))
+                    if ((*CurrentTransferEntry)->Filename.isEmpty() && ((*CurrentTransferEntry)->Dataset != NULL))
                     {
                         if ((*CurrentTransferEntry)->DatasetHandlingMode == HM_compactAfterSend)
                         {
@@ -914,7 +929,13 @@ OFCondition DcmStorageSCU::sendSOPInstances()
 }
 
 
-void DcmStorageSCU::notifySOPInstanceSent(const TransferEntry &transferEntry)
+void DcmStorageSCU::notifySOPInstanceToBeSent(const TransferEntry & /*transferEntry*/)
+{
+    // do nothing in the default implementation
+}
+
+
+void DcmStorageSCU::notifySOPInstanceSent(const TransferEntry & /*transferEntry*/)
 {
     // do nothing in the default implementation
 }
@@ -942,6 +963,7 @@ void DcmStorageSCU::getStatusSummary(OFString &summary) const
     size_t numError = 0;
     size_t numWarning = 0;
     size_t numSuccess = 0;
+    size_t numUnknown = 0;
     size_t numPending = 0;
     size_t numInvalid = 0;
     OFListConstIterator(TransferEntry *) transferEntry = TransferList.begin();
@@ -955,7 +977,7 @@ void DcmStorageSCU::getStatusSummary(OFString &summary) const
             // check DIMSE status
             const Uint16 rspStatus = (*transferEntry)->ResponseStatusCode;
             if (((rspStatus & 0xff00) == STATUS_STORE_Refused_OutOfResources) ||
-                ((rspStatus & 0xff00) == STATUS_STORE_Refused_SOPClassNotSupported))
+                (rspStatus == STATUS_STORE_Refused_SOPClassNotSupported))
             {
                 ++numRefused;
             }
@@ -984,6 +1006,9 @@ void DcmStorageSCU::getStatusSummary(OFString &summary) const
             {
                 --numSent;
                 ++numInvalid;
+            } else {
+                /* any other (unknown/unsupported) DIMSE status code */
+                ++numUnknown;
             }
         }
         ++transferEntry;
@@ -998,6 +1023,8 @@ void DcmStorageSCU::getStatusSummary(OFString &summary) const
         stream << OFendl << "  * with status ERROR    : " << numError;
     if (numRefused > 0)
         stream << OFendl << "  * with status REFUSED  : " << numRefused;
+    if (numUnknown > 0)
+        stream << OFendl << "  * with unknown status  : " << numUnknown;
     if (numSent < numInstances)
         stream << OFendl << "- NOT sent to the peer   : " << (numInstances - numSent);
     if (numPending > 0)
@@ -1040,12 +1067,13 @@ OFCondition DcmStorageSCU::createReportFile(const OFString &filename) const
             {
                 DcmXfer orgXfer((*transferEntry)->TransferSyntaxUID.c_str());
                 stream << "Number        : " << (++counter) << OFendl;
-                if (!(*transferEntry)->Filename.empty())
+                if (!(*transferEntry)->Filename.isEmpty())
                     stream << "Filename      : " << (*transferEntry)->Filename << OFendl;
                 stream << "SOP Instance  : " << (*transferEntry)->SOPInstanceUID << OFendl;
                 stream << "SOP Class     : " << (*transferEntry)->SOPClassUID << " = "
                     << dcmFindNameOfUID((*transferEntry)->SOPClassUID.c_str(), "unknown") << OFendl;
                 stream << "Original Xfer : " << (*transferEntry)->TransferSyntaxUID << " = " << orgXfer.getXferName() << OFendl;
+                stream << "Dataset Size  : " << (*transferEntry)->DatasetSize << " bytes" << OFendl;
                 stream << "Association   : " << (*transferEntry)->AssociationNumber << OFendl;
                 stream << "Pres. Context : " << OFstatic_cast(unsigned int, (*transferEntry)->PresentationContextID) << OFendl;
                 stream << "Network Xfer  : ";
@@ -1109,7 +1137,7 @@ OFCondition DcmStorageSCU::checkSOPInstance(const OFString &sopClassUID,
         if (status.good())
         {
             // in addition, check whether it is a known storage SOP class
-            if (!dcmIsaStorageSOPClassUID(sopClassUID.c_str()))
+            if (!dcmIsaStorageSOPClassUID(sopClassUID.c_str(), ESSC_All))
             {
                 // check whether the DICOM standard prefix for storage UIDs is used
                 if (sopClassUID.compare(0, 23, "1.2.840.10008.5.1.4.1.1") == 0)

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2019, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,6 +26,9 @@
 #include "dcmtk/dcmsr/dsrtypes.h"
 #include "dcmtk/dcmsr/dsrdattn.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
+
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcvrda.h"
 
 
 DSRDateTreeNode::DSRDateTreeNode(const E_RelationshipType relationshipType)
@@ -54,6 +57,32 @@ DSRDateTreeNode::DSRDateTreeNode(const DSRDateTreeNode &node)
 
 DSRDateTreeNode::~DSRDateTreeNode()
 {
+}
+
+
+OFBool DSRDateTreeNode::operator==(const DSRDocumentTreeNode &node) const
+{
+    /* call comparison operator of base class (includes check of value type) */
+    OFBool result = DSRDocumentTreeNode::operator==(node);
+    if (result)
+    {
+        /* it's safe to cast the type since the value type has already been checked */
+        result = DSRStringValue::operator==(OFstatic_cast(const DSRDateTreeNode &, node).getValue());
+    }
+    return result;
+}
+
+
+OFBool DSRDateTreeNode::operator!=(const DSRDocumentTreeNode &node) const
+{
+    /* call comparison operator of base class (includes check of value type) */
+    OFBool result = DSRDocumentTreeNode::operator!=(node);
+    if (!result)
+    {
+        /* it's safe to cast the type since the value type has already been checked */
+        result = DSRStringValue::operator!=(OFstatic_cast(const DSRDateTreeNode &, node).getValue());
+    }
+    return result;
 }
 
 
@@ -134,7 +163,7 @@ OFCondition DSRDateTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
 {
     OFString tmpString;
     /* retrieve value from XML element "value" */
-    OFCondition result = setValue(getValueFromXMLNodeContent(doc, doc.getNamedNode(cursor.gotoChild(), "value"), tmpString));
+    OFCondition result = setValue(getValueFromXMLNodeContent(doc, doc.getNamedChildNode(cursor, "value"), tmpString));
     if (result == EC_IllegalParameter)
         result = SR_EC_InvalidValue;
     return result;

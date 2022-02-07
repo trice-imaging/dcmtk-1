@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2018, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,6 +27,7 @@
 #include "dcmtk/dcmsr/dsrcomtn.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
 
+#include "dcmtk/dcmdata/dcdeftag.h"
 #include "dcmtk/dcmdata/dcuid.h"
 
 
@@ -46,6 +47,32 @@ DSRCompositeTreeNode::DSRCompositeTreeNode(const DSRCompositeTreeNode &node)
 
 DSRCompositeTreeNode::~DSRCompositeTreeNode()
 {
+}
+
+
+OFBool DSRCompositeTreeNode::operator==(const DSRDocumentTreeNode &node) const
+{
+    /* call comparison operator of base class (includes check of value type) */
+    OFBool result = DSRDocumentTreeNode::operator==(node);
+    if (result)
+    {
+        /* it's safe to cast the type since the value type has already been checked */
+        result = DSRCompositeReferenceValue::operator==(OFstatic_cast(const DSRCompositeTreeNode &, node).getValue());
+    }
+    return result;
+}
+
+
+OFBool DSRCompositeTreeNode::operator!=(const DSRDocumentTreeNode &node) const
+{
+    /* call comparison operator of base class (includes check of value type) */
+    OFBool result = DSRDocumentTreeNode::operator!=(node);
+    if (!result)
+    {
+        /* it's safe to cast the type since the value type has already been checked */
+        result = DSRCompositeReferenceValue::operator!=(OFstatic_cast(const DSRCompositeTreeNode &, node).getValue());
+    }
+    return result;
 }
 
 
@@ -123,7 +150,7 @@ OFCondition DSRCompositeTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
                                                      const size_t flags)
 {
     /* retrieve value from XML element "value" */
-    return DSRCompositeReferenceValue::readXML(doc, doc.getNamedNode(cursor.gotoChild(), "value"), flags);
+    return DSRCompositeReferenceValue::readXML(doc, doc.getNamedChildNode(cursor, "value"), flags);
 }
 
 

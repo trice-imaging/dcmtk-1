@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1993-2011, OFFIS e.V.
+ *  Copyright (C) 1993-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,14 +23,11 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 #include "dcmtk/dcmqrdb/dcmqrcnf.h"
 
-/* includes */
-#define INCLUDE_CSTDIO
-#define INCLUDE_CCTYPE
-#define INCLUDE_CSTDARG
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
 #include "dcmtk/ofstd/ofcmdln.h"
 #include "dcmtk/ofstd/ofmap.h"
+#include "dcmtk/ofstd/ofchrenc.h"
+
+#include <climits>
 
 OFLogger DCM_dcmqrdbLogger = OFLog::getLogger("dcmtk.dcmqrdb");
 
@@ -60,6 +57,48 @@ static void freeConfigHostEntry(OFMap<const void *, OFBool> &pointersToFree, str
     }
     free(OFconst_cast(char *, entry->SymbolicName));
     free(entry->Peers);
+}
+
+DcmQueryRetrieveCharacterSetOptions::DcmQueryRetrieveCharacterSetOptions()
+: characterSet()
+, flags(0)
+, conversionFlags(0)
+{
+
+}
+
+OFBool DcmQueryRetrieveCharacterSetOptions::parseOptions(const char* mnemonic, char* valueptr)
+{
+    struct RAIIFree
+    {
+        RAIIFree(char* p) : ptr(p) {}
+        ~RAIIFree() {free(ptr);}
+        char* ptr;
+    };
+    if (strcmp(mnemonic,"SpecificCharacterSet") != 0)
+        return OFFalse;
+    characterSet.clear();
+    flags = Configured;
+    conversionFlags = 0;
+    for (char* c = DcmQueryRetrieveConfig::parsevalues(&valueptr); c;
+         c = DcmQueryRetrieveConfig::parsevalues(&valueptr)) {
+        // ensure free is called when this scope is left
+        RAIIFree cleanup(c);
+        if (!strcmp(c, "override")) {
+            flags |= Override;
+        } else if(!strcmp(c, "fallback")) {
+            flags |= Fallback;
+        } else if(!strcmp(c, "abort")) {
+            conversionFlags |= OFCharacterEncoding::AbortTranscodingOnIllegalSequence;
+        } else if(!strcmp(c, "discard")) {
+            conversionFlags |= OFCharacterEncoding::DiscardIllegalSequences;
+        } else if(!strcmp(c, "transliterate")) {
+            conversionFlags |= OFCharacterEncoding::TransliterateIllegalSequences;
+        } else {
+            characterSet = c;
+        }
+    }
+    return OFTrue;
 }
 
 DcmQueryRetrieveConfig::~DcmQueryRetrieveConfig()
@@ -285,15 +324,14 @@ int DcmQueryRetrieveConfig::readConfigLines(FILE *cnffp)
    int  lineno = 0,       /* line counter */
         error = 0;        /* error flag */
    char rcline[512],      /* line in configuration file */
-        mnemonic[64],     /* mnemonic in line */
-        value[256],       /* parameter value */
+        mnemonic[512],    /* mnemonic in line */
+        value[512],       /* parameter value */
         *valueptr;        /* pointer to value list */
    char *c;
 
-   while (!feof(cnffp)) {
-      fgets(rcline, sizeof(rcline), cnffp); /* read line in configuration file */
+   // read all lines from configuration file
+   while (fgets(rcline, sizeof(rcline), cnffp)) {
       lineno++;
-      if (feof(cnffp)) continue;
       if (rcline[0] == '#' || rcline[0] == 10 || rcline[0] == 13)
          continue;        /* comment or blank line */
 
@@ -346,6 +384,10 @@ int DcmQueryRetrieveConfig::readConfigLines(FILE *cnffp)
       {
         // ignore this entry which was needed for ctndisp
       }
+      else if (characterSetOptions_.parseOptions(mnemonic, valueptr))
+      {
+        // already handled by parseOptions(), nothing else to do
+      }
       else if (!strcmp("HostTable", mnemonic)) {
          sscanf(valueptr, "%s", value);
          if (!strcmp("BEGIN", value)) {
@@ -357,7 +399,7 @@ int DcmQueryRetrieveConfig::readConfigLines(FILE *cnffp)
             error = 1;
          }
          else {
-            panic("Unknown HostTable status \"%s\" in configuartion file, line %d", value, lineno);
+            panic("Unknown HostTable status \"%s\" in configuration file, line %d", value, lineno);
             error = 1;
          }
       }
@@ -372,7 +414,7 @@ int DcmQueryRetrieveConfig::readConfigLines(FILE *cnffp)
             error = 1;
          }
          else {
-            panic("Unknown VendorTable status \"%s\" in configuartion file, line %d", value, lineno);
+            panic("Unknown VendorTable status \"%s\" in configuration file, line %d", value, lineno);
             error = 1;
          }
       }
@@ -387,7 +429,7 @@ int DcmQueryRetrieveConfig::readConfigLines(FILE *cnffp)
             error = 1;
          }
          else {
-            panic("Unknown AETable status \"%s\" in configuartion file, line %d", value, lineno);
+            panic("Unknown AETable status \"%s\" in configuration file, line %d", value, lineno);
             error = 1;
          }
       }
@@ -407,15 +449,14 @@ int DcmQueryRetrieveConfig::readHostTable(FILE *cnffp, int *lineno)
         end = 0,          /* end flag */
         noOfPeers;        /* number of peers for entry */
    char rcline[512],      /* line in configuration file */
-        mnemonic[64],     /* mnemonic in line */
-        value[256],       /* parameter value */
+        mnemonic[512],    /* mnemonic in line */
+        value[512],       /* parameter value */
         *lineptr;         /* pointer to line */
    DcmQueryRetrieveConfigHostEntry *helpentry;
 
-   while (!feof(cnffp)) {
-      fgets(rcline, sizeof(rcline), cnffp); /* read line in configuration file */
+   // read certain lines from configuration file
+   while (fgets(rcline, sizeof(rcline), cnffp)) {
       (*lineno)++;
-      if (feof(cnffp)) continue;
       if (rcline[0] == '#' || rcline[0] == 10 || rcline[0] == 13)
          continue;        /* comment or blank line */
 
@@ -463,15 +504,14 @@ int DcmQueryRetrieveConfig::readVendorTable(FILE *cnffp, int *lineno)
         end = 0,          /* end flag */
         noOfPeers;        /* number of peers for entry */
    char rcline[512],      /* line in configuration file */
-        mnemonic[64],     /* mnemonic in line */
-        value[256],       /* parameter value */
+        mnemonic[512],     /* mnemonic in line */
+        value[512],       /* parameter value */
         *lineptr;         /* pointer to line */
    DcmQueryRetrieveConfigHostEntry *helpentry;
 
-   while (!feof(cnffp)) {
-      fgets(rcline, sizeof(rcline), cnffp); /* read line in configuration file */
+   // read certain lines from configuration file
+   while (fgets(rcline, sizeof(rcline), cnffp)) {
       (*lineno)++;
-      if (feof(cnffp)) continue;
       if (rcline[0] == '#' || rcline[0] == 10 || rcline[0] == 13)
          continue;        /* comment or blank line */
 
@@ -519,15 +559,14 @@ int DcmQueryRetrieveConfig::readAETable(FILE *cnffp, int *lineno)
         end = 0,            /* end flag */
         noOfAEEntries = 0;  /* number of AE entries */
    char rcline[512],        /* line in configuration file */
-        mnemonic[64],       /* mnemonic in line */
-        value[256],         /* parameter value */
+        mnemonic[512],      /* mnemonic in line */
+        value[512],         /* parameter value */
         *lineptr;           /* pointer to line */
    DcmQueryRetrieveConfigAEEntry *helpentry;
 
-   while (!feof(cnffp)) {
-      fgets(rcline, sizeof(rcline), cnffp); /* read line in configuration file */
+   // read certain lines from configuration file
+   while (fgets(rcline, sizeof(rcline), cnffp)) {
       (*lineno)++;
-      if (feof(cnffp)) continue;
       if (rcline[0] == '#' || rcline[0] == 10 || rcline[0] == 13)
          continue;        /* comment or blank line */
 
@@ -559,8 +598,13 @@ int DcmQueryRetrieveConfig::readAETable(FILE *cnffp, int *lineno)
       CNF_Config.AEEntries[noOfAEEntries - 1].Access = parsevalues(&lineptr);
       CNF_Config.AEEntries[noOfAEEntries - 1].StorageQuota = parseQuota(&lineptr);
       CNF_Config.AEEntries[noOfAEEntries - 1].Peers = parsePeers(&lineptr, &CNF_Config.AEEntries[noOfAEEntries - 1].noOfPeers);
-      if (!CNF_Config.AEEntries[noOfAEEntries - 1].noOfPeers)
-         error = 1;
+
+      // check the validity of the storage quota and peers values before continuing
+      if (CNF_Config.AEEntries[noOfAEEntries - 1].StorageQuota->maxStudies == 0 ||
+         CNF_Config.AEEntries[noOfAEEntries - 1].StorageQuota->maxBytesPerStudy == 0 || 
+         CNF_Config.AEEntries[noOfAEEntries - 1].noOfPeers == 0) {
+          error = 1;
+      }
    }
 
    if (!end) {
@@ -576,15 +620,21 @@ DcmQueryRetrieveConfigQuota *DcmQueryRetrieveConfig::parseQuota(char **valuehand
 {
    int  studies;
    char *helpvalue,
-        helpval[20];
+        helpval[512];
    DcmQueryRetrieveConfigQuota *helpquota;
 
    if ((helpquota = (DcmQueryRetrieveConfigQuota *)malloc(sizeof(DcmQueryRetrieveConfigQuota))) == NULL)
       panic("Memory allocation 4");
    helpvalue = parsevalues(valuehandle);
-   sscanf(helpvalue, "%d , %s", &studies, helpval);
-   helpquota->maxStudies = studies;
-   helpquota->maxBytesPerStudy = quota(helpval);
+   if (helpvalue)
+   {
+     sscanf(helpvalue, "%d , %s", &studies, helpval);
+     helpquota->maxStudies = studies;
+     helpquota->maxBytesPerStudy = quota(helpval);
+   } else {
+     helpquota->maxStudies = 0;
+     helpquota->maxBytesPerStudy = 0;
+   }
    free(helpvalue);
 
    return(helpquota);
@@ -597,7 +647,13 @@ DcmQueryRetrieveConfigPeer *DcmQueryRetrieveConfig::parsePeers(char **valuehandl
    char *valueptr = *valuehandle;
 
    helpvalue = parsevalues(valuehandle);
-   if (!strcmp("ANY", helpvalue)) {     /* keywork ANY used */
+
+   if (!helpvalue) {
+      *peers = 0; // indicates error to caller
+      return NULL;
+   }
+
+   if (!strcmp("ANY", helpvalue)) {     /* keyword ANY used */
       free(helpvalue);
       *peers = -1;
       return((DcmQueryRetrieveConfigPeer *) 0);
@@ -800,6 +856,11 @@ long DcmQueryRetrieveConfig::quota (const char *value)
    else return(-1L);
 
    number = atoi(value);
+
+   // check for overflow
+   if (number > 0 && factor > LONG_MAX / number)
+     return LONG_MAX;
+
    return(number * factor);
 }
 
@@ -1055,4 +1116,14 @@ const char *DcmQueryRetrieveConfig::getUserName() const
 const char *DcmQueryRetrieveConfig::getGroupName() const
 {
    return GroupName_.c_str();
+}
+
+const DcmQueryRetrieveCharacterSetOptions& DcmQueryRetrieveConfig::getCharacterSetOptions() const
+{
+   return characterSetOptions_;
+}
+
+DcmQueryRetrieveCharacterSetOptions& DcmQueryRetrieveConfig::getCharacterSetOptions()
+{
+   return characterSetOptions_;
 }

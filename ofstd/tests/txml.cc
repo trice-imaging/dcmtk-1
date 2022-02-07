@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2012, OFFIS e.V.
+ *  Copyright (C) 2011-2020, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -19,13 +19,11 @@
  *
  */
 
-
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #define OFTEST_OFSTD_ONLY
 #include "dcmtk/ofstd/oftest.h"
 #include "dcmtk/ofstd/ofxml.h"
-
 
 #define XML_TEST_DATA "<?xml version=\"1.0\"?>"                         \
     "<root>"                                                            \
@@ -39,6 +37,9 @@
       "</parent>"                                                       \
     "</root>"
 
+// we cannot run this test if the XML parser is configured for wide characters
+// because the OFTest classes and macros do not support wide strings.
+#ifndef _XMLWIDECHAR
 
 OFTEST(ofstd_xmlParser)
 {
@@ -79,4 +80,11 @@ OFTEST(ofstd_xmlParser)
 
     OFCHECK(!rootNode.getChildNode("parent").getChildNode("child", 1).isEmpty());
     OFCHECK(rootNode.getChildNode("parent").getChildNode("child" ,2).isEmpty());
+    OFCHECK(rootNode.getChildNode("element").isAttributeSet("attribute"));
 }
+
+#else
+
+int ofstd_txml_cc_dummy_to_keep_linker_from_moaning = 0;
+
+#endif

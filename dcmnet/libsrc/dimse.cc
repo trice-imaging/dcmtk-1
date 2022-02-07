@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2015, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were partly developed by
@@ -80,14 +80,6 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#define INCLUDE_CSTDARG
-#define INCLUDE_CERRNO
-#define INCLUDE_UNISTD
-#include "dcmtk/ofstd/ofstdinc.h"
-
 #ifdef HAVE_UNIX_H
 #if defined(macintosh) && defined (HAVE_WINSOCK_H)
 /* unix.h defines timeval incompatible with winsock.h */
@@ -115,7 +107,7 @@
 #include "dcmtk/dcmdata/dcvrobow.h"    /* for class DcmOtherByteOtherWord */
 #include "dcmtk/dcmdata/dcvrsh.h"      /* for class DcmShortString */
 #include "dcmtk/dcmdata/dcvrae.h"      /* for class DcmApplicationEntity */
-#include "dcmtk/dcmdata/dcdicent.h"    /* for DcmDictEntry, needed for MSVC5 */
+#include "dcmtk/dcmdata/dcdicent.h"    /* for class DcmDictEntry, needed for MSVC5 */
 #include "dcmtk/dcmdata/dcwcache.h"    /* for class DcmWriteCache */
 #include "dcmtk/dcmdata/dcvrui.h"      /* for class DcmUniqueIdentifier */
 
@@ -354,6 +346,8 @@ getTransferSyntax(
         case EXS_JPEGLSLossy:
         case EXS_JPEG2000LosslessOnly:
         case EXS_JPEG2000:
+        case EXS_JPEG2000MulticomponentLosslessOnly:
+        case EXS_JPEG2000Multicomponent:
         case EXS_MPEG2MainProfileAtMainLevel:
         case EXS_MPEG2MainProfileAtHighLevel:
         case EXS_MPEG4HighProfileLevel4_1:
@@ -361,8 +355,8 @@ getTransferSyntax(
         case EXS_MPEG4HighProfileLevel4_2_For2DVideo:
         case EXS_MPEG4HighProfileLevel4_2_For3DVideo:
         case EXS_MPEG4StereoHighProfileLevel4_2:
-        case EXS_JPEG2000MulticomponentLosslessOnly:
-        case EXS_JPEG2000Multicomponent:
+        case EXS_HEVCMainProfileLevel5_1:
+        case EXS_HEVCMain10ProfileLevel5_1:
 #ifdef WITH_ZLIB
         case EXS_DeflatedLittleEndianExplicit:
 #endif
@@ -687,8 +681,11 @@ sendDcmDataset(
     Uint32 bytesTransmitted = 0;
     DUL_PDVLIST pdvList;
     DUL_PDV pdv;
+
+#if 0
     /* the following variable is currently unused, leave it for future use */
     unsigned long pdvCount = 0;
+#endif
     DcmWriteCache wcache;
 
     /* initialize some local variables (we want to use the association's send buffer */
@@ -806,7 +803,9 @@ sendDcmDataset(
 
             /* count the bytes and the amount of PDVs which were transmitted */
             bytesTransmitted += OFstatic_cast(Uint32, rtnLength);
+#if 0
             pdvCount += pdvList.count;
+#endif
 
             /* execute callback function to indicate progress */
             if (callback) {
@@ -917,9 +916,8 @@ DIMSE_sendMessage(
       {
         if (! dcmff.loadFile(dataFileName, EXS_Unknown).good())
         {
-          char buf[256];
           DCMNET_WARN(DIMSE_warn_str(assoc) << "sendMessage: cannot open DICOM file ("
-            << dataFileName << "): " << OFStandard::strerror(errno, buf, sizeof(buf)));
+            << dataFileName << "): " << OFStandard::getLastSystemErrorCode().message());
           cond = DIMSE_SENDFAILED;
         } else {
           dataObject = dcmff.getDataset();
@@ -1010,25 +1008,6 @@ DIMSE_sendMessageUsingFileData(
         DIMSE_ProgressCallback callback,
         void *callbackContext,
         DcmDataset **commandSet)
-    /*
-     * This function sends a DIMSE command and possibly also instance data from a file via network to another
-     * DICOM application.
-     *
-     * Parameters:
-     *   assoc           - [in] The association (network connection to another DICOM application).
-     *   presId          - [in] The ID of the presentation context which shall be used
-     *   msg             - [in] Structure that represents a certain DIMSE command which shall be sent.
-     *   statusDetail    - [in] Detailed information with regard to the status information which is captured
-     *                          in the status element (0000,0900). Note that the value for element (0000,0900)
-     *                          is contained in this variable.
-     *   dataFileName    - [in] The name of the file that contains the instance data which shall be sent to
-     *                          the other DICOM application, NULL; if there is none.
-     *   callback        - [in] Pointer to a function which shall be called to indicate progress.
-     *   callbackContext - []
-     *   commandSet      - [out] [optional parameter, default = NULL] If this parameter is not NULL
-     *                           it will return a copy of the DIMSE command which is sent to the other
-     *                           DICOM application.
-     */
 {
     /* simply call DIMSE_sendMessage to accomplish this task */
     return DIMSE_sendMessage(assoc, presID, msg, statusDetail, NULL, dataFileName, callback, callbackContext, commandSet);
@@ -1044,25 +1023,6 @@ DIMSE_sendMessageUsingMemoryData(
         DIMSE_ProgressCallback callback,
         void *callbackContext,
         DcmDataset **commandSet)
-    /*
-     * This function sends a DIMSE command and possibly also instance data from a data object via network
-     * to another DICOM application.
-     *
-     * Parameters:
-     *   assoc           - [in] The association (network connection to another DICOM application).
-     *   presId          - [in] The ID of the presentation context which shall be used
-     *   msg             - [in] Structure that represents a certain DIMSE command which shall be sent.
-     *   statusDetail    - [in] Detailed information with regard to the status information which is captured
-     *                          in the status element (0000,0900). Note that the value for element (0000,0900)
-     *                          is contained in this variable.
-     *   dataObject      - [in] The instance data which shall be sent to the other DICOM application,
-     *                          NULL, if there is none
-     *   callback        - [in] Pointer to a function which shall be called to indicate progress.
-     *   callbackContext - []
-     *   commandSet      - [out] [optional parameter, default = NULL] If this parameter is not NULL
-     *                           it will return a copy of the DIMSE command which is sent to the other
-     *                           DICOM application.
-     */
 {
     /* simply call DIMSE_sendMessage to accomplish this task */
     return DIMSE_sendMessage(assoc, presID, msg, statusDetail, dataObject, NULL, callback, callbackContext, commandSet);
@@ -1109,27 +1069,6 @@ DIMSE_receiveCommand(
         T_DIMSE_Message *msg,
         DcmDataset **statusDetail,
         DcmDataset **commandSet)
-    /*
-     * This function receives a DIMSE command via network from another DICOM application.
-     *
-     * Parameters:
-     *   assoc        - [in] The association (network connection to another DICOM application).
-     *   blocking     - [in] The blocking mode for reading data (either DIMSE_BLOCKING or DIMSE_NONBLOCKING)
-     *   timeout      - [in] Timeout interval for receiving data. If the blocking mode is DIMSE_NONBLOCKING
-     *                       and we are trying to read data from the incoming socket stream and no data has
-     *                       been received after timeout seconds, an error will be reported.
-     *   presId       - [out] Contains in the end the ID of the presentation context which was specified in the DIMSE command.
-     *   msg          - [out] Contains in the end information which represents a certain DIMSE command which was received.
-     *   statusDetail - [out] If a non-NULL value is passed this variable will in the end contain detailed
-     *                        information with regard to the status information which is captured in the status
-     *                        element (0000,0900). Note that the value for element (0000,0900) is not contained
-     *                        in this return value but in msg. For details on the structure of this object, see
-     *                        DICOM standard (year 2000) part 7, annex C) (or the corresponding section in a later
-     *                        version of the standard.)
-     *   commandSet   - [out] [optional parameter, default = NULL] If this parameter is not NULL
-     *                        it will return a copy of the DIMSE command which was received from the other
-     *                        DICOM application.
-     */
 {
     OFCondition cond = EC_Normal;
     unsigned long bytesRead;
@@ -1395,6 +1334,11 @@ OFCondition DIMSE_createFilestream(
       metainfo->insert(elem, OFTrue);
       const char *version = OFFIS_DTK_IMPLEMENTATION_VERSION_NAME2;
       ((DcmShortString*)elem)->putString(version);
+
+      if (strlen(OFFIS_DTK_IMPLEMENTATION_VERSION_NAME2) > 16)
+      {
+        DCMNET_WARN("DICOM implementation version name too long: " << OFFIS_DTK_IMPLEMENTATION_VERSION_NAME2);
+      }
     } else cond = EC_MemoryExhausted;
     if (NULL != (elem = new DcmApplicationEntity(sourceApplicationEntityTitle)))
     {
@@ -1563,28 +1507,13 @@ DIMSE_receiveDataSetInMemory(
         DcmDataset **dataObject,
         DIMSE_ProgressCallback callback,
         void *callbackData)
-    /*
-     * This function receives one data set (of instance data) via network from another DICOM application.
-     *
-     * Parameters:
-     *   assoc           - [in] The association (network connection to another DICOM application).
-     *   blocking        - [in] The blocking mode for receiving data (either DIMSE_BLOCKING or DIMSE_NONBLOCKING)
-     *   timeout         - [in] Timeout interval for receiving data (if the blocking mode is DIMSE_NONBLOCKING).
-     *   presID          - [out] Contains in the end the ID of the presentation context which was used in the PDVs
-     *                          that were received on the network. If the PDVs show different presentation context
-     *                          IDs, this function will return an error.
-     *   dataObject      - [out] Contains in the end the information which was received over the network.
-     *                          Note that this function assumes that either imageFileName or imageDataSet does not equal NULL.
-     *   callback        - [in] Pointer to a function which shall be called to indicate progress.
-     *   callbackData    - [in] Pointer to data which shall be passed to the progress indicating function
-     */
 {
     OFCondition cond = EC_Normal;
     OFCondition econd = EC_Normal;
     DcmDataset *dset = NULL;
     DUL_PDV pdv;
     T_ASC_PresentationContextID pid = 0;
-    E_TransferSyntax xferSyntax;
+    E_TransferSyntax xferSyntax = EXS_Unknown;
     OFBool last = OFFalse;
     DIC_UL pdvCount = 0;
     DIC_UL bytesRead = 0;

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation are maintained by
@@ -25,8 +25,6 @@
 #define DSRTNANT_H
 
 #include "dcmtk/config/osconfig.h"   /* make sure OS specific configuration is included first */
-
-#include "dcmtk/ofstd/ofstring.h"
 
 #include "dcmtk/dcmsr/dsdefine.h"
 #include "dcmtk/dcmsr/dsrtypes.h"
@@ -65,7 +63,7 @@ class DSRTreeNodeAnnotation
     /** comparison operator.
      *  Two annotations are equal, if the internally stored character strings (text)
      *  have the same value.
-     ** @param  annotation  annotation which should be compared to the current one
+     ** @param  annotation  annotation that should be compared to the current one
      ** @return OFTrue if both annotations are equal, OFFalse otherwise
      */
     OFBool operator==(const DSRTreeNodeAnnotation &annotation) const
@@ -76,7 +74,7 @@ class DSRTreeNodeAnnotation
     /** comparison operator.
      *  Two annotations are not equal, if the internally stored character strings
      *  (text) have different values.
-     ** @param  annotation  annotation which should be compared to the current one
+     ** @param  annotation  annotation that should be compared to the current one
      ** @return OFTrue if both annotations are not equal, OFFalse otherwise
      */
     OFBool operator!=(const DSRTreeNodeAnnotation &annotation) const

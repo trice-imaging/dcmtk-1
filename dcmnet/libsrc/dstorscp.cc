@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2013-2014, OFFIS e.V.
+ *  Copyright (C) 2013-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,6 +24,8 @@
 
 #include "dcmtk/dcmnet/dstorscp.h"
 #include "dcmtk/dcmnet/diutil.h"
+#include "dcmtk/ofstd/ofstdinc.h"
+#include <ctime>
 
 
 // constant definitions
@@ -285,6 +287,9 @@ Uint16 DcmStorageSCP::checkAndProcessSTORERequest(const T_DIMSE_C_StoreRQ &reqMe
                 } else {
                     DCMNET_ERROR("cannot store received object: " << filename << ": " << status.text());
                     statusCode = STATUS_STORE_Refused_OutOfResources;
+
+                    // delete incomplete file
+                    OFStandard::deleteFile(filename);
                 }
             } else {
                 DCMNET_ERROR("cannot create directory for received object: " << directoryName << ": " << status.text());

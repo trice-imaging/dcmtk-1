@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011, OFFIS e.V.
+ *  Copyright (C) 2011-2020, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -31,11 +31,21 @@
 OFTEST(dcmdata_readingDataDictionary)
 {
     // Does loading the global data dictionary work?
-    OFCHECK(dcmDataDict.isDictionaryLoaded());
+    if (!dcmDataDict.isDictionaryLoaded())
+        OFCHECK_FAIL("no data dictionary loaded, check environment variable: " DCM_DICT_ENVIRONMENT_VARIABLE);
 }
 
 OFTEST(dcmdata_usingDataDictionary)
 {
+    // All tests run with an DCMDICTPATH external dictionary defined. This test
+    // expects an empty dictionary though, so we disable the DCMDICTPATH
+    // dictionary in this test by unsetting the environment variable.
+#ifdef _WIN32
+    _putenv_s("DCMDICTPATH", "");
+#else
+    setenv("DCMDICTPATH","", 1 /* overwrite */);
+#endif
+
     // This dictionary will only contain the skeleton entries
     DcmDataDictionary localDict(OFFalse, OFFalse);
     DcmDictEntry *entry1;

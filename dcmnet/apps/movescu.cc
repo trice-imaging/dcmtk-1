@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2014, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,17 +20,6 @@
  */
 
 #include "dcmtk/config/osconfig.h" /* make sure OS specific configuration is included first */
-
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#define INCLUDE_CSTDARG
-#define INCLUDE_CERRNO
-#include "dcmtk/ofstd/ofstdinc.h"
-
-#ifdef HAVE_GUSI_H
-#include <GUSI.h>
-#endif
 
 #include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/ofstd/ofconapp.h"
@@ -61,6 +50,19 @@ static char rcsid[] = "$dcmtk: " OFFIS_CONSOLE_APPLICATION " v"
 /* default application titles */
 #define APPLICATIONTITLE        "MOVESCU"
 #define PEERAPPLICATIONTITLE    "ANY-SCP"
+
+/* exit codes for this command line tool */
+/* (common codes are defined in "ofexit.h" included from "ofconapp.h") */
+
+// network errors
+#define EXITCODE_CANNOT_INITIALIZE_NETWORK      60
+#define EXITCODE_CANNOT_NEGOTIATE_ASSOCIATION   61
+#define EXITCODE_CANNOT_CREATE_ASSOC_PARAMETERS 65
+#define EXITCODE_NO_PRESENTATION_CONTEXT        66
+#define EXITCODE_CANNOT_CLOSE_ASSOCIATION       67
+#define EXITCODE_CMOVE_WARNING                  68
+#define EXITCODE_CMOVE_ERROR                    69
+
 
 typedef enum {
      QMPatientRoot = 0,
@@ -107,6 +109,7 @@ int               opt_dimse_timeout = 0;
 int               opt_acse_timeout = 30;
 OFBool            opt_ignorePendingDatasets = OFTrue;
 OFString          opt_outputDirectory = ".";
+int               cmove_status_code = EXITCODE_NO_ERROR;
 
 #ifdef WITH_ZLIB
 OFCmdUnsignedInt  opt_compressionLevel = 0;
@@ -152,7 +155,7 @@ addOverrideKey(OFConsoleApplication& app, const char *s)
       DcmTagKey key(0xffff,0xffff);
       const DcmDataDictionary& globalDataDict = dcmDataDict.rdlock();
       const DcmDictEntry *dicent = globalDataDict.findEntry(dicName.c_str());
-      dcmDataDict.unlock();
+      dcmDataDict.rdunlock();
       if (dicent!=NULL) {
         // found dictionary name, copy group and element number
         key = dicent->getKey();
@@ -171,12 +174,12 @@ addOverrideKey(OFConsoleApplication& app, const char *s)
       if (eqPos != OFString_npos)
         valStr = toParse.substr(eqPos+1,toParse.length());
     }
-    DcmTag tag(g,e);
+    DcmTag tag(OFstatic_cast(Uint16, g), OFstatic_cast(Uint16, e));
     if (tag.error() != EC_Normal) {
         sprintf(msg2, "unknown tag: (%04x,%04x)", g, e);
         app.printError(msg2);
     }
-    DcmElement *elem = newDicomElement(tag);
+    DcmElement *elem = DcmItem::newDicomElement(tag);
     if (elem == NULL) {
         sprintf(msg2, "cannot create element for tag: (%04x,%04x)", g, e);
         app.printError(msg2);
@@ -212,28 +215,16 @@ addPresentationContext(T_ASC_Parameters *params,
 int
 main(int argc, char *argv[])
 {
-    T_ASC_Parameters *params = NULL;
-    const char *opt_peer;
-    OFCmdUnsignedInt opt_port = 104;
-    DIC_NODENAME localHost;
-    DIC_NODENAME peerHost;
-    T_ASC_Association *assoc = NULL;
-    const char *opt_peerTitle = PEERAPPLICATIONTITLE;
-    const char *opt_ourTitle = APPLICATIONTITLE;
-    OFList<OFString> fileNameList;
+  T_ASC_Parameters *params = NULL;
+  const char *opt_peer = NULL;
+  OFCmdUnsignedInt opt_port = 104;
+  DIC_NODENAME peerHost;
+  T_ASC_Association *assoc = NULL;
+  const char *opt_peerTitle = PEERAPPLICATIONTITLE;
+  const char *opt_ourTitle = APPLICATIONTITLE;
+  OFList<OFString> fileNameList;
 
-#ifdef HAVE_GUSI_H
-    /* needed for Macintosh */
-    GUSISetup(GUSIwithSIOUXSockets);
-    GUSISetup(GUSIwithInternetSockets);
-#endif
-
-#ifdef HAVE_WINSOCK_H
-    WSAData winSockData;
-    /* we need at least version 1.1 */
-    WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
-    WSAStartup(winSockVersionNeeded, &winSockData);
-#endif
+  OFStandard::initializeNetwork();
 
   char tempstr[20];
   OFString temp_str;
@@ -287,6 +278,11 @@ main(int argc, char *argv[])
       cmd.addOption("--prefer-mpeg2-high",   "+xh",     "prefer MPEG2 Main Profile @ High Level TS");
       cmd.addOption("--prefer-mpeg4",        "+xn",     "prefer MPEG4 AVC/H.264 HP / Level 4.1 TS");
       cmd.addOption("--prefer-mpeg4-bd",     "+xl",     "prefer MPEG4 AVC/H.264 BD-compatible TS");
+      cmd.addOption("--prefer-mpeg4-2-2d",   "+x2",     "prefer MPEG4 AVC/H.264 HP / Level 4.2 TS (2D)");
+      cmd.addOption("--prefer-mpeg4-2-3d",   "+x3",     "prefer MPEG4 AVC/H.264 HP / Level 4.2 TS (3D)");
+      cmd.addOption("--prefer-mpeg4-2-st",   "+xo",     "prefer MPEG4 AVC/H.264 Stereo HP / Level 4.2 TS");
+      cmd.addOption("--prefer-hevc",         "+x4",     "prefer HEVC/H.265 Main Profile / Level 5.1 TS");
+      cmd.addOption("--prefer-hevc10",       "+x5",     "prefer HEVC/H.265 Main 10 Profile / Level 5.1 TS");
       cmd.addOption("--prefer-rle",          "+xr",     "prefer RLE lossless TS");
 #ifdef WITH_ZLIB
       cmd.addOption("--prefer-deflated",     "+xd",     "prefer deflated explicit VR little endian TS");
@@ -397,7 +393,7 @@ main(int argc, char *argv[])
 #ifdef WITH_TCPWRAPPER
           COUT << "- LIBWRAP" << OFendl;
 #endif
-          return 0;
+          return EXITCODE_NO_ERROR;
         }
       }
 
@@ -445,6 +441,11 @@ main(int argc, char *argv[])
       if (cmd.findOption("--prefer-mpeg2-high")) opt_in_networkTransferSyntax = EXS_MPEG2MainProfileAtHighLevel;
       if (cmd.findOption("--prefer-mpeg4")) opt_in_networkTransferSyntax = EXS_MPEG4HighProfileLevel4_1;
       if (cmd.findOption("--prefer-mpeg4-bd")) opt_in_networkTransferSyntax = EXS_MPEG4BDcompatibleHighProfileLevel4_1;
+      if (cmd.findOption("--prefer-mpeg4-2-2d")) opt_in_networkTransferSyntax = EXS_MPEG4HighProfileLevel4_2_For2DVideo;
+      if (cmd.findOption("--prefer-mpeg4-2-3d")) opt_in_networkTransferSyntax = EXS_MPEG4HighProfileLevel4_2_For3DVideo;
+      if (cmd.findOption("--prefer-mpeg4-2-st")) opt_in_networkTransferSyntax = EXS_MPEG4StereoHighProfileLevel4_2;
+      if (cmd.findOption("--prefer-hevc")) opt_in_networkTransferSyntax = EXS_HEVCMainProfileLevel5_1;
+      if (cmd.findOption("--prefer-hevc10")) opt_in_networkTransferSyntax = EXS_HEVCMain10ProfileLevel5_1;
       if (cmd.findOption("--prefer-rle")) opt_in_networkTransferSyntax = EXS_RLELossless;
 #ifdef WITH_ZLIB
       if (cmd.findOption("--prefer-deflated")) opt_in_networkTransferSyntax = EXS_DeflatedLittleEndianExplicit;
@@ -499,7 +500,7 @@ main(int argc, char *argv[])
 
       cmd.beginOptionBlock();
       if (cmd.findOption("--port"))    app.checkValue(cmd.getValueAndCheckMinMax(opt_retrievePort, 1, 65535));
-      if (cmd.findOption("--no-port")) { /* do nothing */ }
+      if (cmd.findOption("--no-port")) opt_retrievePort = 0;
       cmd.endOptionBlock();
 
       cmd.beginOptionBlock();
@@ -515,7 +516,11 @@ main(int argc, char *argv[])
       if (cmd.findOption("--cancel"))  app.checkValue(cmd.getValueAndCheckMin(opt_cancelAfterNResponses, 0));
       if (cmd.findOption("--uid-padding")) opt_correctUIDPadding = OFTrue;
 
-      if (cmd.findOption("--output-directory")) app.checkValue(cmd.getValue(opt_outputDirectory));
+      if (cmd.findOption("--output-directory"))
+      {
+        app.checkDependence("--output-directory", "--port", opt_retrievePort > 0);
+        app.checkValue(cmd.getValue(opt_outputDirectory));
+      }
 
       cmd.beginOptionBlock();
       if (cmd.findOption("--normal")) opt_bitPreserving = OFFalse;
@@ -544,6 +549,11 @@ main(int argc, char *argv[])
         app.checkConflict("--write-xfer-little", "--prefer-mpeg2-high", opt_in_networkTransferSyntax == EXS_MPEG2MainProfileAtHighLevel);
         app.checkConflict("--write-xfer-little", "--prefer-mpeg4", opt_in_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_1);
         app.checkConflict("--write-xfer-little", "--prefer-mpeg4-bd", opt_in_networkTransferSyntax == EXS_MPEG4BDcompatibleHighProfileLevel4_1);
+        app.checkConflict("--write-xfer-little", "--prefer-mpeg4-2-2d", opt_in_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For2DVideo);
+        app.checkConflict("--write-xfer-little", "--prefer-mpeg4-2-3d", opt_in_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For3DVideo);
+        app.checkConflict("--write-xfer-little", "--prefer-mpeg4-2-st", opt_in_networkTransferSyntax == EXS_MPEG4StereoHighProfileLevel4_2);
+        app.checkConflict("--write-xfer-little", "--prefer-hevc", opt_in_networkTransferSyntax == EXS_HEVCMainProfileLevel5_1);
+        app.checkConflict("--write-xfer-little", "--prefer-hevc10", opt_in_networkTransferSyntax == EXS_HEVCMain10ProfileLevel5_1);
         app.checkConflict("--write-xfer-little", "--prefer-rle", opt_in_networkTransferSyntax == EXS_RLELossless);
         // we don't have to check a conflict for --prefer-deflated because we can always convert that to uncompressed.
         opt_writeTransferSyntax = EXS_LittleEndianExplicit;
@@ -563,6 +573,11 @@ main(int argc, char *argv[])
         app.checkConflict("--write-xfer-big", "--prefer-mpeg2-high", opt_in_networkTransferSyntax == EXS_MPEG2MainProfileAtHighLevel);
         app.checkConflict("--write-xfer-big", "--prefer-mpeg4", opt_in_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_1);
         app.checkConflict("--write-xfer-big", "--prefer-mpeg4-bd", opt_in_networkTransferSyntax == EXS_MPEG4BDcompatibleHighProfileLevel4_1);
+        app.checkConflict("--write-xfer-big", "--prefer-mpeg4-2-2d", opt_in_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For2DVideo);
+        app.checkConflict("--write-xfer-big", "--prefer-mpeg4-2-3d", opt_in_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For3DVideo);
+        app.checkConflict("--write-xfer-big", "--prefer-mpeg4-2-st", opt_in_networkTransferSyntax == EXS_MPEG4StereoHighProfileLevel4_2);
+        app.checkConflict("--write-xfer-big", "--prefer-hevc", opt_in_networkTransferSyntax == EXS_HEVCMainProfileLevel5_1);
+        app.checkConflict("--write-xfer-big", "--prefer-hevc10", opt_in_networkTransferSyntax == EXS_HEVCMain10ProfileLevel5_1);
         app.checkConflict("--write-xfer-big", "--prefer-rle", opt_in_networkTransferSyntax == EXS_RLELossless);
         // we don't have to check a conflict for --prefer-deflated because we can always convert that to uncompressed.
         opt_writeTransferSyntax = EXS_BigEndianExplicit;
@@ -582,6 +597,11 @@ main(int argc, char *argv[])
         app.checkConflict("--write-xfer-implicit", "--prefer-mpeg2-high", opt_in_networkTransferSyntax == EXS_MPEG2MainProfileAtHighLevel);
         app.checkConflict("--write-xfer-implicit", "--prefer-mpeg4", opt_in_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_1);
         app.checkConflict("--write-xfer-implicit", "--prefer-mpeg4-bd", opt_in_networkTransferSyntax == EXS_MPEG4BDcompatibleHighProfileLevel4_1);
+        app.checkConflict("--write-xfer-implicit", "--prefer-mpeg4-2-2d", opt_in_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For2DVideo);
+        app.checkConflict("--write-xfer-implicit", "--prefer-mpeg4-2-3d", opt_in_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For3DVideo);
+        app.checkConflict("--write-xfer-implicit", "--prefer-mpeg4-2-st", opt_in_networkTransferSyntax == EXS_MPEG4StereoHighProfileLevel4_2);
+        app.checkConflict("--write-xfer-implicit", "--prefer-hevc", opt_in_networkTransferSyntax == EXS_HEVCMainProfileLevel5_1);
+        app.checkConflict("--write-xfer-implicit", "--prefer-hevc10", opt_in_networkTransferSyntax == EXS_HEVCMain10ProfileLevel5_1);
         app.checkConflict("--write-xfer-implicit", "--prefer-rle", opt_in_networkTransferSyntax == EXS_RLELossless);
         // we don't have to check a conflict for --prefer-deflated because we can always convert that to uncompressed.
         opt_writeTransferSyntax = EXS_LittleEndianImplicit;
@@ -602,6 +622,11 @@ main(int argc, char *argv[])
         app.checkConflict("--write-xfer-deflated", "--prefer-mpeg2-high", opt_in_networkTransferSyntax == EXS_MPEG2MainProfileAtHighLevel);
         app.checkConflict("--write-xfer-deflated", "--prefer-mpeg4", opt_in_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_1);
         app.checkConflict("--write-xfer-deflated", "--prefer-mpeg4-bd", opt_in_networkTransferSyntax == EXS_MPEG4BDcompatibleHighProfileLevel4_1);
+        app.checkConflict("--write-xfer-deflated", "--prefer-mpeg4-2-2d", opt_in_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For2DVideo);
+        app.checkConflict("--write-xfer-deflated", "--prefer-mpeg4-2-3d", opt_in_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For3DVideo);
+        app.checkConflict("--write-xfer-deflated", "--prefer-mpeg4-2-st", opt_in_networkTransferSyntax == EXS_MPEG4StereoHighProfileLevel4_2);
+        app.checkConflict("--write-xfer-deflated", "--prefer-hevc", opt_in_networkTransferSyntax == EXS_HEVCMainProfileLevel5_1);
+        app.checkConflict("--write-xfer-deflated", "--prefer-hevc10", opt_in_networkTransferSyntax == EXS_HEVCMain10ProfileLevel5_1);
         app.checkConflict("--write-xfer-deflated", "--prefer-rle", opt_in_networkTransferSyntax == EXS_RLELossless);
         opt_writeTransferSyntax = EXS_DeflatedLittleEndianExplicit;
       }
@@ -715,12 +740,12 @@ main(int argc, char *argv[])
         if (!OFStandard::dirExists(opt_outputDirectory))
         {
           OFLOG_FATAL(movescuLogger, "specified output directory does not exist");
-          return 1;
+          return EXITCODE_INVALID_OUTPUT_DIRECTORY;
         }
         else if (!OFStandard::isWriteable(opt_outputDirectory))
         {
           OFLOG_FATAL(movescuLogger, "specified output directory is not writeable");
-          return 1;
+          return EXITCODE_CANNOT_WRITE_OUTPUT_FILE;
         }
     }
 
@@ -731,7 +756,7 @@ main(int argc, char *argv[])
         if (geteuid() != 0)
         {
           OFLOG_FATAL(movescuLogger, "cannot listen on port " << opt_retrievePort << ", insufficient privileges");
-          return 1;
+          return EXITCODE_INSUFFICIENT_PRIVILEGES;
         }
     }
 #endif
@@ -743,27 +768,26 @@ main(int argc, char *argv[])
     if (cond.bad())
     {
         OFLOG_FATAL(movescuLogger, "cannot create network: " << DimseCondition::dump(temp_str, cond));
-        return 1;
+        return EXITCODE_CANNOT_INITIALIZE_NETWORK;
     }
 
     /* drop root privileges now and revert to the calling user id (if we are running as setuid root) */
     if (OFStandard::dropPrivileges().bad())
     {
         OFLOG_FATAL(movescuLogger, "setuid() failed, maximum number of processes/threads for uid already running.");
-        return 1;
+        return EXITCODE_SETUID_FAILED;
     }
 
     /* set up main association */
     cond = ASC_createAssociationParameters(&params, opt_maxPDU);
     if (cond.bad()) {
         OFLOG_FATAL(movescuLogger, DimseCondition::dump(temp_str, cond));
-        exit(1);
+        exit(EXITCODE_CANNOT_CREATE_ASSOC_PARAMETERS);
     }
     ASC_setAPTitles(params, opt_ourTitle, opt_peerTitle, NULL);
 
-    gethostname(localHost, sizeof(localHost) - 1);
     sprintf(peerHost, "%s:%d", opt_peer, OFstatic_cast(int, opt_port));
-    ASC_setPresentationAddresses(params, localHost, peerHost);
+    ASC_setPresentationAddresses(params, OFStandard::getHostName().c_str(), peerHost);
 
     /*
      * We also add a presentation context for the corresponding
@@ -776,7 +800,7 @@ main(int argc, char *argv[])
         querySyntax[opt_queryModel].moveSyntax);
     if (cond.bad()) {
         OFLOG_FATAL(movescuLogger, DimseCondition::dump(temp_str, cond));
-        exit(1);
+        exit(EXITCODE_CANNOT_CREATE_ASSOC_PARAMETERS);
     }
 
     OFLOG_DEBUG(movescuLogger, "Request Parameters:" << OFendl << ASC_dumpParameters(temp_str, params, ASC_ASSOC_RQ));
@@ -791,11 +815,11 @@ main(int argc, char *argv[])
             ASC_getRejectParameters(params, &rej);
             OFLOG_FATAL(movescuLogger, "Association Rejected:");
             OFLOG_FATAL(movescuLogger, ASC_printRejectParameters(temp_str, &rej));
-            exit(1);
+            exit(EXITCODE_CANNOT_NEGOTIATE_ASSOCIATION);
         } else {
             OFLOG_FATAL(movescuLogger, "Association Request Failed:");
             OFLOG_FATAL(movescuLogger, DimseCondition::dump(temp_str, cond));
-            exit(1);
+            exit(EXITCODE_CANNOT_NEGOTIATE_ASSOCIATION);
         }
     }
     /* what has been accepted/refused ? */
@@ -803,7 +827,7 @@ main(int argc, char *argv[])
 
     if (ASC_countAcceptedPresentationContexts(params) == 0) {
         OFLOG_FATAL(movescuLogger, "No Acceptable Presentation Contexts");
-        exit(1);
+        exit(EXITCODE_NO_PRESENTATION_CONTEXT);
     }
 
     OFLOG_INFO(movescuLogger, "Association Accepted (Max Send PDV: " << assoc->sendPDVLength << ")");
@@ -832,7 +856,7 @@ main(int argc, char *argv[])
             cond = ASC_abortAssociation(assoc);
             if (cond.bad()) {
                 OFLOG_FATAL(movescuLogger, "Association Abort Failed: " << DimseCondition::dump(temp_str, cond));
-                exit(1);
+                exit(EXITCODE_CANNOT_CLOSE_ASSOCIATION);
             }
         } else {
             /* release association */
@@ -842,7 +866,7 @@ main(int argc, char *argv[])
             {
                 OFLOG_FATAL(movescuLogger, "Association Release Failed:");
                 OFLOG_FATAL(movescuLogger, DimseCondition::dump(temp_str, cond));
-                exit(1);
+                exit(EXITCODE_CANNOT_CLOSE_ASSOCIATION);
             }
         }
     }
@@ -853,7 +877,7 @@ main(int argc, char *argv[])
         cond = ASC_abortAssociation(assoc);
         if (cond.bad()) {
             OFLOG_FATAL(movescuLogger, "Association Abort Failed: " << DimseCondition::dump(temp_str, cond));
-            exit(1);
+            exit(EXITCODE_CANNOT_CLOSE_ASSOCIATION);
         }
     }
     else if (cond == DUL_PEERABORTEDASSOCIATION)
@@ -867,26 +891,24 @@ main(int argc, char *argv[])
         cond = ASC_abortAssociation(assoc);
         if (cond.bad()) {
             OFLOG_FATAL(movescuLogger, "Association Abort Failed: " << DimseCondition::dump(temp_str, cond));
-            exit(1);
+            exit(EXITCODE_CANNOT_CLOSE_ASSOCIATION);
         }
     }
 
     cond = ASC_destroyAssociation(&assoc);
     if (cond.bad()) {
         OFLOG_FATAL(movescuLogger, DimseCondition::dump(temp_str, cond));
-        exit(1);
+        exit(EXITCODE_CANNOT_CLOSE_ASSOCIATION);
     }
     cond = ASC_dropNetwork(&net);
     if (cond.bad()) {
         OFLOG_FATAL(movescuLogger, DimseCondition::dump(temp_str, cond));
-        exit(1);
+        exit(EXITCODE_CANNOT_CLOSE_ASSOCIATION);
     }
 
-#ifdef HAVE_WINSOCK_H
-    WSACleanup();
-#endif
+    OFStandard::shutdownNetwork();
 
-    return 0;
+    return cmove_status_code;
 }
 
 
@@ -971,7 +993,9 @@ acceptSubAssoc(T_ASC_Network *aNet, T_ASC_Association **assoc)
     const char *knownAbstractSyntaxes[] = {
         UID_VerificationSOPClass
     };
-    const char *transferSyntaxes[] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+    const char* transferSyntaxes[] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,  // 10
+                                       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,  // 20
+                                       NULL };                                                      // +1
     int numTransferSyntaxes;
     OFString temp_str;
 
@@ -1090,6 +1114,46 @@ acceptSubAssoc(T_ASC_Network *aNet, T_ASC_Association **assoc)
           transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
           numTransferSyntaxes = 4;
           break;
+        case EXS_MPEG4HighProfileLevel4_2_For2DVideo:
+          /* we prefer MPEG4 HP/L4.2 for 2D Videos */
+          transferSyntaxes[0] = UID_MPEG4HighProfileLevel4_2_For2DVideoTransferSyntax;
+          transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
+          transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
+          transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
+          numTransferSyntaxes = 4;
+          break;
+        case EXS_MPEG4HighProfileLevel4_2_For3DVideo:
+          /* we prefer MPEG4 HP/L4.2 for 3D Vidoes */
+          transferSyntaxes[0] = UID_MPEG4HighProfileLevel4_2_For3DVideoTransferSyntax;
+          transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
+          transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
+          transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
+          numTransferSyntaxes = 4;
+          break;
+        case EXS_MPEG4StereoHighProfileLevel4_2:
+          /* we prefer MPEG4 Stereo HP/L4.2 */
+          transferSyntaxes[0] = UID_MPEG4StereoHighProfileLevel4_2TransferSyntax;
+          transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
+          transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
+          transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
+          numTransferSyntaxes = 4;
+          break;
+        case EXS_HEVCMainProfileLevel5_1:
+          /* we prefer HEVC/H.265 Main Profile/L5.1 */
+          transferSyntaxes[0] = UID_HEVCMainProfileLevel5_1TransferSyntax;
+          transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
+          transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
+          transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
+          numTransferSyntaxes = 4;
+          break;
+        case EXS_HEVCMain10ProfileLevel5_1:
+          /* we prefer HEVC/H.265 Main 10 Profile/L5.1 */
+          transferSyntaxes[0] = UID_HEVCMain10ProfileLevel5_1TransferSyntax;
+          transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
+          transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
+          transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
+          numTransferSyntaxes = 4;
+          break;
         case EXS_RLELossless:
           /* we prefer RLE Lossless */
           transferSyntaxes[0] = UID_RLELosslessTransferSyntax;
@@ -1126,17 +1190,22 @@ acceptSubAssoc(T_ASC_Network *aNet, T_ASC_Association **assoc)
             transferSyntaxes[9] = UID_MPEG2MainProfileAtHighLevelTransferSyntax;
             transferSyntaxes[10] = UID_MPEG4HighProfileLevel4_1TransferSyntax;
             transferSyntaxes[11] = UID_MPEG4BDcompatibleHighProfileLevel4_1TransferSyntax;
-            transferSyntaxes[12] = UID_DeflatedExplicitVRLittleEndianTransferSyntax;
+            transferSyntaxes[12] = UID_MPEG4HighProfileLevel4_2_For2DVideoTransferSyntax;
+            transferSyntaxes[13] = UID_MPEG4HighProfileLevel4_2_For3DVideoTransferSyntax;
+            transferSyntaxes[14] = UID_MPEG4StereoHighProfileLevel4_2TransferSyntax;
+            transferSyntaxes[15] = UID_HEVCMainProfileLevel5_1TransferSyntax;
+            transferSyntaxes[16] = UID_HEVCMain10ProfileLevel5_1TransferSyntax;
+            transferSyntaxes[17] = UID_DeflatedExplicitVRLittleEndianTransferSyntax;
             if (gLocalByteOrder == EBO_LittleEndian)
             {
-              transferSyntaxes[13] = UID_LittleEndianExplicitTransferSyntax;
-              transferSyntaxes[14] = UID_BigEndianExplicitTransferSyntax;
+              transferSyntaxes[18] = UID_LittleEndianExplicitTransferSyntax;
+              transferSyntaxes[19] = UID_BigEndianExplicitTransferSyntax;
             } else {
-              transferSyntaxes[13] = UID_BigEndianExplicitTransferSyntax;
-              transferSyntaxes[14] = UID_LittleEndianExplicitTransferSyntax;
+              transferSyntaxes[18] = UID_BigEndianExplicitTransferSyntax;
+              transferSyntaxes[19] = UID_LittleEndianExplicitTransferSyntax;
             }
-            transferSyntaxes[15] = UID_LittleEndianImplicitTransferSyntax;
-            numTransferSyntaxes = 16;
+            transferSyntaxes[20] = UID_LittleEndianImplicitTransferSyntax;
+            numTransferSyntaxes = 21;
           } else {
             /* We prefer explicit transfer syntaxes.
              * If we are running on a Little Endian machine we prefer
@@ -1168,7 +1237,7 @@ acceptSubAssoc(T_ASC_Network *aNet, T_ASC_Association **assoc)
             /* the array of Storage SOP Class UIDs comes from dcuid.h */
             cond = ASC_acceptContextsWithPreferredTransferSyntaxes(
                 (*assoc)->params,
-                dcmAllStorageSOPClassUIDs, numberOfAllDcmStorageSOPClassUIDs,
+                dcmAllStorageSOPClassUIDs, numberOfDcmAllStorageSOPClassUIDs,
                 transferSyntaxes, numTransferSyntaxes);
         }
     }
@@ -1289,17 +1358,24 @@ storeSCPCallback(
          /* create full path name for the output file */
          OFString ofname;
          OFStandard::combineDirAndFilename(ofname, opt_outputDirectory, cbdata->imageFileName, OFTrue /* allowEmptyDirName */);
+         if (OFStandard::fileExists(ofname))
+         {
+           OFLOG_WARN(movescuLogger, "DICOM file already exists, overwriting: " << ofname);
+         }
 
          E_TransferSyntax xfer = opt_writeTransferSyntax;
          if (xfer == EXS_Unknown) xfer = (*imageDataSet)->getOriginalXfer();
 
          OFCondition cond = cbdata->dcmff->saveFile(ofname.c_str(), xfer, opt_sequenceType, opt_groupLength,
            opt_paddingType, OFstatic_cast(Uint32, opt_filepad), OFstatic_cast(Uint32, opt_itempad),
-           (opt_useMetaheader) ? EWM_fileformat : EWM_dataset);
+           (opt_useMetaheader) ? EWM_createNewMeta : EWM_dataset);
          if (cond.bad())
          {
            OFLOG_ERROR(movescuLogger, "cannot write DICOM file: " << ofname);
            rsp->DimseStatus = STATUS_STORE_Refused_OutOfResources;
+
+           // delete incomplete file
+           OFStandard::deleteFile(ofname);
          }
 
         /* should really check the image to make sure it is consistent,
@@ -1309,7 +1385,7 @@ storeSCPCallback(
         if ((rsp->DimseStatus == STATUS_Success) && !opt_ignore)
         {
           /* which SOP class and SOP instance ? */
-          if (!DU_findSOPClassAndInstanceInDataSet(*imageDataSet, sopClass, sopInstance, opt_correctUIDPadding))
+          if (!DU_findSOPClassAndInstanceInDataSet(*imageDataSet, sopClass, sizeof(sopClass), sopInstance, sizeof(sopInstance), opt_correctUIDPadding))
           {
              OFLOG_FATAL(movescuLogger, "bad DICOM file: " << imageFileName);
              rsp->DimseStatus = STATUS_STORE_Error_CannotUnderstand;
@@ -1343,7 +1419,7 @@ static OFCondition storeSCP(
 #ifdef _WIN32
         tmpnam(imageFileName);
 #else
-        strcpy(imageFileName, NULL_DEVICE_NAME);
+        OFStandard::strlcpy(imageFileName, NULL_DEVICE_NAME, 2048);
 #endif
     } else {
         sprintf(imageFileName, "%s.%s",
@@ -1391,11 +1467,11 @@ static OFCondition storeSCP(
       /* remove file */
       if (!opt_ignore)
       {
-        if (strcmp(imageFileName, NULL_DEVICE_NAME) != 0) unlink(imageFileName);
+        if (strcmp(imageFileName, NULL_DEVICE_NAME) != 0) OFStandard::deleteFile(imageFileName);
       }
 #ifdef _WIN32
     } else if (opt_ignore) {
-        if (strcmp(imageFileName, NULL_DEVICE_NAME) != 0) unlink(imageFileName); // delete the temporary file
+        if (strcmp(imageFileName, NULL_DEVICE_NAME) != 0) OFStandard::deleteFile(imageFileName); // delete the temporary file
 #endif
     }
 
@@ -1568,14 +1644,14 @@ moveSCU(T_ASC_Association *assoc, const char *fname)
     callbackData.presId = presId;
 
     req.MessageID = msgId;
-    strcpy(req.AffectedSOPClassUID, sopClass);
+    OFStandard::strlcpy(req.AffectedSOPClassUID, sopClass, sizeof(req.AffectedSOPClassUID));
     req.Priority = DIMSE_PRIORITY_MEDIUM;
     req.DataSetType = DIMSE_DATASET_PRESENT;
     if (opt_moveDestination == NULL) {
         /* set the destination to be me */
-        ASC_getAPTitles(assoc->params, req.MoveDestination, NULL, NULL);
+        ASC_getAPTitles(assoc->params, req.MoveDestination, sizeof(req.MoveDestination), NULL, 0, NULL, 0);
     } else {
-        strcpy(req.MoveDestination, opt_moveDestination);
+        OFStandard::strlcpy(req.MoveDestination, opt_moveDestination, sizeof(req.MoveDestination));
     }
 
     if (movescuLogger.isEnabledFor(OFLogger::DEBUG_LOG_LEVEL))
@@ -1592,6 +1668,26 @@ moveSCU(T_ASC_Association *assoc, const char *fname)
         NULL, &rsp, &statusDetail, &rspIds, opt_ignorePendingDatasets);
 
     if (cond == EC_Normal) {
+
+        // check if the C-MOVE-RSP message indicated an error
+        if ((rsp.DimseStatus == STATUS_Success) ||
+            (rsp.DimseStatus == STATUS_MOVE_Cancel_SubOperationsTerminatedDueToCancelIndication))
+        {
+          // status is "success" or "cancel", nothing to do.
+        }
+        else if (rsp.DimseStatus == STATUS_MOVE_Warning_SubOperationsCompleteOneOrMoreFailures)
+        {
+          // status is "warn". Make sure the application ends with a non-zero return code.
+          if (EXITCODE_NO_ERROR == cmove_status_code) cmove_status_code = EXITCODE_CMOVE_WARNING;
+          OFLOG_WARN(movescuLogger, "Move response with warning status ("  << DU_cmoveStatusString(rsp.DimseStatus) << ")");
+        }
+        else
+        {
+          // status is "failed" or "refused"
+          cmove_status_code = EXITCODE_CMOVE_ERROR;
+          OFLOG_WARN(movescuLogger, "Move response with error status ("  << DU_cmoveStatusString(rsp.DimseStatus) << ")");
+        }
+
         if (movescuLogger.isEnabledFor(OFLogger::DEBUG_LOG_LEVEL)) {
             OFLOG_INFO(movescuLogger, "Received Final Move Response");
             OFLOG_DEBUG(movescuLogger, DIMSE_dumpMessage(temp_str, rsp, DIMSE_INCOMING));

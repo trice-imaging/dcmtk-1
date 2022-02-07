@@ -1,12 +1,12 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2021, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class CID11_RouteOfAdministration
  *
- *  Generated automatically from DICOM PS 3.16-2015c
- *  File created on 2015-08-23 15:24:57 by J. Riesmeier
+ *  Generated automatically from DICOM PS 3.16-2021d
+ *  File created on 2021-09-13 09:26:28 by J. Riesmeier
  *
  */
 
@@ -18,7 +18,7 @@
 
 // general information on CID 11 (Route of Administration)
 #define CONTEXT_GROUP_NUMBER  "11"
-#define CONTEXT_GROUP_VERSION "20100608"
+#define CONTEXT_GROUP_VERSION "20200117"
 #define CONTEXT_GROUP_UID     "1.2.840.10008.6.1.9"
 #define CONTEXT_GROUP_TYPE    OFTrue  /* extensible */
 
@@ -149,27 +149,32 @@ CID11_RouteOfAdministration::CodeList &CID11_RouteOfAdministration::getCodes()
         /* create a new code list (should never fail) */
         Codes = new CodeList();
         /* and initialize it by adding the coded entries */
-        Codes->insert(OFMake_pair(IntravenousRoute, DSRBasicCodedEntry("G-D101", "SRT", "Intravenous route")));
-        Codes->insert(OFMake_pair(IntraArterialRoute, DSRBasicCodedEntry("G-D102", "SRT", "Intra-arterial route")));
-        Codes->insert(OFMake_pair(IntramuscularRoute, DSRBasicCodedEntry("G-D103", "SRT", "Intramuscular route")));
-        Codes->insert(OFMake_pair(SubcutaneousRoute, DSRBasicCodedEntry("G-D104", "SRT", "Subcutaneous route")));
-        Codes->insert(OFMake_pair(IntracutaneousRoute, DSRBasicCodedEntry("G-D105", "SRT", "Intracutaneous route")));
-        Codes->insert(OFMake_pair(IntraperitonealRoute, DSRBasicCodedEntry("G-D106", "SRT", "Intraperitoneal route")));
-        Codes->insert(OFMake_pair(IntramedullaryRoute, DSRBasicCodedEntry("G-D107", "SRT", "Intramedullary route")));
-        Codes->insert(OFMake_pair(IntrathecalRoute, DSRBasicCodedEntry("G-D108", "SRT", "Intrathecal route")));
-        Codes->insert(OFMake_pair(IntraArticularRoute, DSRBasicCodedEntry("G-D109", "SRT", "Intra-articular route")));
-        Codes->insert(OFMake_pair(IntraepithelialRoute, DSRBasicCodedEntry("G-D111", "SRT", "Intraepithelial route")));
-        Codes->insert(OFMake_pair(TopicalRoute, DSRBasicCodedEntry("G-D112", "SRT", "Topical route")));
-        Codes->insert(OFMake_pair(OralRoute, DSRBasicCodedEntry("G-D140", "SRT", "Oral route")));
-        Codes->insert(OFMake_pair(TransluminalRoute, DSRBasicCodedEntry("G-D142", "SRT", "Transluminal route")));
-        Codes->insert(OFMake_pair(IntraluminalRoute, DSRBasicCodedEntry("G-D144", "SRT", "Intraluminal route")));
-        Codes->insert(OFMake_pair(ExtraluminalRoute, DSRBasicCodedEntry("G-D146", "SRT", "Extraluminal route")));
-        Codes->insert(OFMake_pair(ByInhalation, DSRBasicCodedEntry("G-D150", "SRT", "By inhalation")));
-        Codes->insert(OFMake_pair(PerRectum, DSRBasicCodedEntry("G-D160", "SRT", "Per rectum")));
-        Codes->insert(OFMake_pair(VaginalRoute, DSRBasicCodedEntry("G-D164", "SRT", "Vaginal route")));
-        Codes->insert(OFMake_pair(IntracoronaryRoute, DSRBasicCodedEntry("G-D17C", "SRT", "Intracoronary route")));
-        Codes->insert(OFMake_pair(IntracardiacRoute, DSRBasicCodedEntry("G-D173", "SRT", "Intracardiac route")));
-        Codes->insert(OFMake_pair(IntraventricularRouteCardiac, DSRBasicCodedEntry("R-F2C86", "SRT", "Intraventricular route - cardiac")));
+        Codes->insert(OFMake_pair(IntravenousRoute, DSRBasicCodedEntry("47625008", "SCT", "Intravenous route")));
+        Codes->insert(OFMake_pair(IntraArterialRoute, DSRBasicCodedEntry("58100008", "SCT", "Intra-arterial route")));
+        Codes->insert(OFMake_pair(IntramuscularRoute, DSRBasicCodedEntry("78421000", "SCT", "Intramuscular route")));
+        Codes->insert(OFMake_pair(SubcutaneousRoute, DSRBasicCodedEntry("34206005", "SCT", "Subcutaneous route")));
+        Codes->insert(OFMake_pair(IntracutaneousRoute, DSRBasicCodedEntry("372464004", "SCT", "Intracutaneous route")));
+        Codes->insert(OFMake_pair(IntraperitonealRoute, DSRBasicCodedEntry("38239002", "SCT", "Intraperitoneal route")));
+        Codes->insert(OFMake_pair(IntramedullaryRoute, DSRBasicCodedEntry("60213007", "SCT", "Intramedullary route")));
+        Codes->insert(OFMake_pair(IntrathecalRoute, DSRBasicCodedEntry("72607000", "SCT", "Intrathecal route")));
+        Codes->insert(OFMake_pair(IntraArticularRoute, DSRBasicCodedEntry("12130007", "SCT", "Intra-articular route")));
+        Codes->insert(OFMake_pair(IntraepithelialRoute, DSRBasicCodedEntry("C38244", "NCIt", "Intraepithelial route")));
+        Codes->insert(OFMake_pair(TopicalRoute, DSRBasicCodedEntry("6064005", "SCT", "Topical route")));
+        Codes->insert(OFMake_pair(OralRoute, DSRBasicCodedEntry("26643006", "SCT", "Oral route")));
+        Codes->insert(OFMake_pair(TransluminalRoute, DSRBasicCodedEntry("C38306", "NCIt", "Transluminal route")));
+        Codes->insert(OFMake_pair(IntraluminalRoute, DSRBasicCodedEntry("37737002", "SCT", "Intraluminal route")));
+        Codes->insert(OFMake_pair(ExtraluminalRoute, DSRBasicCodedEntry("C38213", "NCIt", "Extraluminal route")));
+        Codes->insert(OFMake_pair(ByInhalation, DSRBasicCodedEntry("446406008", "SCT", "By inhalation")));
+        Codes->insert(OFMake_pair(PerRectum, DSRBasicCodedEntry("37161004", "SCT", "Per rectum")));
+        Codes->insert(OFMake_pair(VaginalRoute, DSRBasicCodedEntry("16857009", "SCT", "Vaginal route")));
+        Codes->insert(OFMake_pair(IntracoronaryRoute, DSRBasicCodedEntry("372463005", "SCT", "Intracoronary route")));
+        Codes->insert(OFMake_pair(IntracardiacRoute, DSRBasicCodedEntry("372460008", "SCT", "Intracardiac route")));
+        Codes->insert(OFMake_pair(IntraventricularRouteCardiac, DSRBasicCodedEntry("420287000", "SCT", "Intraventricular route - cardiac")));
+        Codes->insert(OFMake_pair(RetroOrbitalRoute, DSRBasicCodedEntry("127070", "DCM", "Retro-orbital route")));
+        Codes->insert(OFMake_pair(NasalRoute, DSRBasicCodedEntry("46713006", "SCT", "Nasal route")));
+        Codes->insert(OFMake_pair(IntradermalRoute, DSRBasicCodedEntry("372464004", "SCT", "Intradermal route")));
+        Codes->insert(OFMake_pair(IntratumorRoute, DSRBasicCodedEntry("447122006", "SCT", "Intratumor route")));
+        Codes->insert(OFMake_pair(IntracorpusCavernosumRoute, DSRBasicCodedEntry("445769006", "SCT", "Intracorpus cavernosum route")));
     }
     /* should never be NULL */
     return *Codes;

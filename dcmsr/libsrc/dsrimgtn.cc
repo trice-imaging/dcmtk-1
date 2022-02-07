@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2019, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,6 +27,8 @@
 #include "dcmtk/dcmsr/dsrimgtn.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
 
+#include "dcmtk/dcmdata/dcdeftag.h"
+
 
 DSRImageTreeNode::DSRImageTreeNode(const E_RelationshipType relationshipType)
   : DSRDocumentTreeNode(relationshipType, VT_Image),
@@ -44,6 +46,32 @@ DSRImageTreeNode::DSRImageTreeNode(const DSRImageTreeNode &node)
 
 DSRImageTreeNode::~DSRImageTreeNode()
 {
+}
+
+
+OFBool DSRImageTreeNode::operator==(const DSRDocumentTreeNode &node) const
+{
+    /* call comparison operator of base class (includes check of value type) */
+    OFBool result = DSRDocumentTreeNode::operator==(node);
+    if (result)
+    {
+        /* it's safe to cast the type since the value type has already been checked */
+        result = DSRImageReferenceValue::operator==(OFstatic_cast(const DSRImageTreeNode &, node).getValue());
+    }
+    return result;
+}
+
+
+OFBool DSRImageTreeNode::operator!=(const DSRDocumentTreeNode &node) const
+{
+    /* call comparison operator of base class (includes check of value type) */
+    OFBool result = DSRDocumentTreeNode::operator!=(node);
+    if (!result)
+    {
+        /* it's safe to cast the type since the value type has already been checked */
+        result = DSRImageReferenceValue::operator!=(OFstatic_cast(const DSRImageTreeNode &, node).getValue());
+    }
+    return result;
 }
 
 
@@ -127,7 +155,7 @@ OFCondition DSRImageTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
                                                  const size_t flags)
 {
     /* retrieve value from XML element "value" */
-    return DSRImageReferenceValue::readXML(doc, doc.getNamedNode(cursor.gotoChild(), "value"), flags);
+    return DSRImageReferenceValue::readXML(doc, doc.getNamedChildNode(cursor, "value"), flags);
 }
 
 

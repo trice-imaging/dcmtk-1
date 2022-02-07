@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2015, OFFIS e.V.
+ *  Copyright (C) 2002-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -133,6 +133,12 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
         AP_GeneralPurposeBDMPEG4HPatLV41,
         /// General Purpose BD Interchange with MPEG-4 AVC/H.264 BD-Compatible HiP\@Level4.1 (STD-GEN-BD-MPEG4-HPLV41BD)
         AP_GeneralPurposeBDMPEG4HPatLV41BD,
+        /// General Purpose BD Interchange with MPEG-4 AVC/H.264 HiP\@Level4.2 for 2D video (STD-GEN-BD-MPEG4-HPLV42-2D)
+        AP_GeneralPurposeBDMPEG4HPatLV42_2D,
+        /// General Purpose BD Interchange with MPEG-4 AVC/H.264 HiP\@Level4.2 for 3D video (STD-GEN-BD-MPEG4-HPLV42-3D)
+        AP_GeneralPurposeBDMPEG4HPatLV42_3D,
+        /// General Purpose BD Interchange with MPEG-4 AVC/H.264 Stereo HiP\@Level4.2 (STD-GEN-BD-MPEG4-SHPLV42)
+        AP_GeneralPurposeBDMPEG4StereoHPatLV42,
         /// General Purpose USB and Flash Memory Interchange with JPEG (STD-GEN-USB/MMC/CF/SD-JPEG)
         AP_USBandFlashJPEG,
         /// General Purpose USB and Flash Memory Interchange with JPEG 2000 (STD-GEN-USB/MMC/CF/SD-J2K)
@@ -1074,6 +1080,54 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
                                                const OFString &referencedFileID,
                                                const OFFilename &sourceFilename);
 
+    /** create or update tract record and copy required values from dataset
+     *  @param record record to be updated, use NULL to create a new one
+     *  @param fileformat DICOM dataset of the current file
+     *  @param referencedFileID value of the Referenced File ID attribute
+     *  @param sourceFilename name of the source DICOM file
+     *  @return pointer to new or updated record, NULL if an error occurred
+     */
+    DcmDirectoryRecord *buildTractRecord(DcmDirectoryRecord *record,
+                                         DcmFileFormat *fileformat,
+                                         const OFString &referencedFileID,
+                                         const OFFilename &sourceFilename);
+
+    /** create or update assessment record and copy required values from dataset
+     *  @param record record to be updated, use NULL to create a new one
+     *  @param fileformat DICOM dataset of the current file
+     *  @param referencedFileID value of the Referenced File ID attribute
+     *  @param sourceFilename name of the source DICOM file
+     *  @return pointer to new or updated record, NULL if an error occurred
+     */
+    DcmDirectoryRecord *buildAssessmentRecord(DcmDirectoryRecord *record,
+                                              DcmFileFormat *fileformat,
+                                              const OFString &referencedFileID,
+                                              const OFFilename &sourceFilename);
+
+    /** create or update radiotherapy record and copy required values from dataset
+     *  @param record record to be updated, use NULL to create a new one
+     *  @param fileformat DICOM dataset of the current file
+     *  @param referencedFileID value of the Referenced File ID attribute
+     *  @param sourceFilename name of the source DICOM file
+     *  @return pointer to new or updated record, NULL if an error occurred
+     */
+    DcmDirectoryRecord *buildRadiotherapyRecord(DcmDirectoryRecord *record,
+                                                DcmFileFormat *fileformat,
+                                                const OFString &referencedFileID,
+                                                const OFFilename &sourceFilename);
+
+    /** create or update annotation record and copy required values from dataset
+     *  @param record record to be updated, use NULL to create a new one
+     *  @param fileformat DICOM dataset of the current file
+     *  @param referencedFileID value of the Referenced File ID attribute
+     *  @param sourceFilename name of the source DICOM file
+     *  @return pointer to new or updated record, NULL if an error occurred
+     */
+    DcmDirectoryRecord *buildAnnotationRecord(DcmDirectoryRecord *record,
+                                              DcmFileFormat *fileformat,
+                                              const OFString &referencedFileID,
+                                              const OFFilename &sourceFilename);
+
     /** create or update image record and copy required values from dataset
      *  @param record record to be updated, use NULL to create a new one
      *  @param fileformat DICOM dataset of the current file
@@ -1152,6 +1206,7 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
      *  @param dataset DICOM dataset containing data of the new record
      *  @param referencedFileID value of the Referenced File ID attribute
      *  @param sourceFilename name of the source DICOM file
+     *  @return OFTrue if the data is consistent, OFFalse otherwise
      */
     OFBool checkReferencedSOPInstance(DcmDirectoryRecord *record,
                                       DcmItem *dataset,

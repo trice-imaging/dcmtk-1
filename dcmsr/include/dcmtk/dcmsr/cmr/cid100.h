@@ -1,12 +1,12 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2021, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class CID100_QuantitativeDiagnosticImagingProcedures
  *
- *  Generated automatically from DICOM PS 3.16-2015c
- *  File created on 2015-08-26 19:54:59 by J. Riesmeier
+ *  Generated automatically from DICOM PS 3.16-2021d
+ *  File created on 2021-09-13 09:26:30 by J. Riesmeier
  *
  */
 
@@ -19,6 +19,8 @@
 #include "dcmtk/dcmsr/dsrctxgr.h"
 #include "dcmtk/dcmsr/cmr/define.h"
 
+#include "dcmtk/ofstd/ofmap.h"
+
 
 /*---------------------*
  *  class declaration  *
@@ -26,7 +28,7 @@
 
 /** Implementation of DCMR Context Group:
  *  CID 100 - Quantitative Diagnostic Imaging Procedures.
- *  (type: extensible, version: 20141110)
+ *  (type: extensible, version: 20210905)
  */
 class DCMTK_CMR_EXPORT CID100_QuantitativeDiagnosticImagingProcedures
   : public DSRContextGroup
@@ -38,30 +40,40 @@ class DCMTK_CMR_EXPORT CID100_QuantitativeDiagnosticImagingProcedures
      */
     enum EnumType
     {
-        /// (P5-09051,SRT,"Magnetic resonance imaging guidance")
+        /// (363679005,SCT,"Imaging procedure")
+        ImagingProcedure,
+        /// (258177008,SCT,"Magnetic resonance imaging guidance")
         MagneticResonanceImagingGuidance,
         /// (126020,DCM,"Multiparametric MRI")
         MultiparametricMRI,
-        /// (126021,DCM,"Multiparametric MRI of prostate")
+        /// (719178004,SCT,"Multiparametric MRI of prostate")
         MultiparametricMRIOfProstate,
         /// (126022,DCM,"Multiparametric MRI of whole body")
         MultiparametricMRIOfWholeBody,
-        /// (P5-0907F,SRT,"Dynamic magnetic resonance imaging of knee")
+        /// (433139009,SCT,"Dynamic magnetic resonance imaging of knee")
         DynamicMagneticResonanceImagingOfKnee,
-        /// (P5-70694,SRT,"Dynamic magnetic resonance imaging of pelvis")
+        /// (446315002,SCT,"Dynamic magnetic resonance imaging of pelvis")
         DynamicMagneticResonanceImagingOfPelvis,
+        /// (25045-6,LN,"CT unspecified body region")
+        CTUnspecifiedBodyRegion,
+        /// (25056-3,LN,"MRI unspecified body region")
+        MRIUnspecifiedBodyRegion,
+        /// (49118-3,LN,"NM unspecified body region")
+        NMUnspecifiedBodyRegion,
+        /// (44136-0,LN,"PET unspecified body region")
+        PETUnspecifiedBodyRegion,
         /// (44139-4,LN,"PET whole body")
         PETWholeBody,
-        /// (P5-080FF,SRT,"PET/CT FDG imaging of whole body")
+        /// (443271005,SCT,"PET/CT FDG imaging of whole body")
         PETCT_FDGImagingOfWholeBody,
-        /// (P5-08118,SRT,"PET/CT MET imaging of whole body")
+        /// (764704008,SCT,"PET/CT MET imaging of whole body")
         PETCT_METImagingOfWholeBody,
-        /// (RPID96,RADLEX,"CT HEAD PERFUSION WITH IV CONTRAST")
-        CT_HEAD_PERFUSION_WITH_IV_CONTRAST,
-        /// (RPID5258,RADLEX,"NM HEAD PERFUSION BRAIN SPECT")
-        NM_HEAD_PERFUSION_BRAIN_SPECT,
-        /// (RPID5427,RADLEX,"NM HEAD PERFUSION BRAIN PET-CT AV-45")
-        NM_HEAD_PERFUSION_BRAIN_PET_CT_AV_45
+        /// (39142-5,LN,"CT perfusion head with contrast IV")
+        CTPerfusionHeadWithContrastIV,
+        /// (39632-5,LN,"SPECT brain")
+        SPECTBrain,
+        /// (RPID5427,RADLEX,"NM head perfusion brain PET-CT AV-45")
+        NMHeadPerfusionBrainPET_CT_AV45
     };
 
     /** (default) constructor
@@ -165,5 +177,14 @@ class DCMTK_CMR_EXPORT CID100_QuantitativeDiagnosticImagingProcedures
     /// pointer to internal code list (use a static variable for singleton pattern)
     static CodeList *Codes;
 };
+
+
+/*-------------------*
+ *  type definition  *
+ *-------------------*/
+
+// define short name for the context group class
+typedef CID100_QuantitativeDiagnosticImagingProcedures CMR_CID100;
+
 
 #endif

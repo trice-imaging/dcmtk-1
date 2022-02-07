@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2013, OFFIS e.V.
+ *  Copyright (C) 1996-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,21 +21,11 @@
 
 #include "dcmtk/config/osconfig.h" /* make sure OS specific configuration is included first */
 
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#define INCLUDE_CCTYPE
-#include "dcmtk/ofstd/ofstdinc.h"
-
 BEGIN_EXTERN_C
 #ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
 #endif
 END_EXTERN_C
-
-#ifdef HAVE_GUSI_H
-#include <GUSI.h>
-#endif
 
 #include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/ofstd/ofconapp.h"
@@ -44,6 +34,7 @@ END_EXTERN_C
 #include "dcmtk/dcmnet/dicom.h"      /* for DICOM_APPLICATION_REQUESTOR */
 #include "dcmtk/dcmnet/dimse.h"
 #include "dcmtk/dcmnet/diutil.h"
+#include "dcmtk/dcmnet/dcmtrans.h"   /* for dcmSocketSend/ReceiveTimeout */
 #include "dcmtk/dcmnet/dcasccfg.h"   /* for class DcmAssociationConfiguration */
 #include "dcmtk/dcmnet/dcasccff.h"   /* for class DcmAssociationConfigurationFile */
 #include "dcmtk/dcmdata/dcdatset.h"
@@ -55,6 +46,10 @@ END_EXTERN_C
 #include "dcmtk/dcmdata/cmdlnarg.h"
 #include "dcmtk/dcmdata/dcuid.h"     /* for dcmtk version name */
 #include "dcmtk/dcmdata/dcostrmz.h"  /* for dcmZlibCompressionLevel */
+#include "dcmtk/dcmtls/tlsopt.h"     /* for DcmTLSOptions */
+#include "dcmtk/ofstd/ofstdinc.h"
+#include <ctime>
+
 
 #ifdef ON_THE_FLY_COMPRESSION
 #include "dcmtk/dcmjpeg/djdecode.h"  /* for JPEG decoders */
@@ -64,11 +59,6 @@ END_EXTERN_C
 #include "dcmtk/dcmdata/dcrledrg.h"  /* for RLE decoder */
 #include "dcmtk/dcmdata/dcrleerg.h"  /* for RLE encoder */
 #include "dcmtk/dcmjpeg/dipijpeg.h"  /* for dcmimage JPEG plugin */
-#endif
-
-#ifdef WITH_OPENSSL
-#include "dcmtk/dcmtls/tlstrans.h"
-#include "dcmtk/dcmtls/tlslayer.h"
 #endif
 
 #ifdef WITH_ZLIB
@@ -99,6 +89,7 @@ static E_FileReadMode opt_readMode = ERM_autoDetect;
 
 static OFBool opt_scanDir = OFFalse;
 static OFBool opt_recurse = OFFalse;
+static OFBool opt_renameFile = OFFalse;
 static const char *opt_scanPattern = "";
 
 static OFBool opt_haltOnUnsuccessfulStore = OFTrue;
@@ -118,32 +109,15 @@ static OFString patientNamePrefix("OFFIS^TEST_PN_");   // PatientName is PN (max
 static OFString patientIDPrefix("PID_"); // PatientID is LO (maximum 64 chars)
 static OFString studyIDPrefix("SID_");   // StudyID is SH (maximum 16 chars)
 static OFString accessionNumberPrefix;   // AccessionNumber is SH (maximum 16 chars)
-static OFBool opt_secureConnection = OFFalse; /* default: no secure connection */
 static const char *opt_configFile = NULL;
 static const char *opt_profileName = NULL;
 T_DIMSE_BlockingMode opt_blockMode = DIMSE_BLOCKING;
 int opt_dimse_timeout = 0;
 int opt_acse_timeout = 30;
+OFCmdSignedInt opt_socket_timeout = 60;
 
 #ifdef WITH_ZLIB
 static OFCmdUnsignedInt opt_compressionLevel = 0;
-#endif
-
-#ifdef WITH_OPENSSL
-static int         opt_keyFileFormat = SSL_FILETYPE_PEM;
-static OFBool      opt_doAuthenticate = OFFalse;
-static const char *opt_privateKeyFile = NULL;
-static const char *opt_certificateFile = NULL;
-static const char *opt_passwd = NULL;
-#if OPENSSL_VERSION_NUMBER >= 0x0090700fL
-static OFString    opt_ciphersuites(TLS1_TXT_RSA_WITH_AES_128_SHA ":" SSL3_TXT_RSA_DES_192_CBC3_SHA);
-#else
-static OFString    opt_ciphersuites(SSL3_TXT_RSA_DES_192_CBC3_SHA);
-#endif
-static const char *opt_readSeedFile = NULL;
-static const char *opt_writeSeedFile = NULL;
-static DcmCertificateVerification opt_certVerification = DCV_requireCertificate;
-static const char *opt_dhparam = NULL;
 #endif
 
 // User Identity Negotiation
@@ -160,7 +134,12 @@ static OFCondition
 cstore(T_ASC_Association *assoc, const OFString &fname);
 
 static OFBool
-findSOPClassAndInstanceInFile(const char *fname, char *sopClass, char *sopInstance);
+findSOPClassAndInstanceInFile(
+  const char *fname,
+  char *sopClass,
+  size_t sopClassSize,
+  char *sopInstance,
+  size_t sopInstanceSize);
 
 static OFCondition
 configureUserIdentityRequest(T_ASC_Parameters *params);
@@ -193,21 +172,14 @@ int main(int argc, char *argv[])
 
   T_ASC_Network *net;
   T_ASC_Parameters *params;
-  DIC_NODENAME localHost;
   DIC_NODENAME peerHost;
   T_ASC_Association *assoc;
   DcmAssociationConfiguration asccfg;  // handler for association configuration profiles
+  DcmTLSOptions tlsOptions(NET_REQUESTOR);
 
-#ifdef HAVE_GUSI_H
-  GUSISetup(GUSIwithSIOUXSockets);
-  GUSISetup(GUSIwithInternetSockets);
-#endif
-
-#ifdef HAVE_WINSOCK_H
-  WSAData winSockData;
-  /* we need at least version 1.1 */
-  WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
-  WSAStartup(winSockVersionNeeded, &winSockData);
+  OFStandard::initializeNetwork();
+#ifdef WITH_OPENSSL
+  DcmTLSTransportLayer::initializeOpenSSL();
 #endif
 
   OFString temp_str;
@@ -239,6 +211,8 @@ int main(int argc, char *argv[])
 #endif
       cmd.addOption("--no-recurse",           "-r",      "do not recurse within directories (default)");
       cmd.addOption("--recurse",              "+r",      "recurse within specified directories");
+      cmd.addOption("--no-rename",            "-rn",     "do not rename processed files (default)");
+      cmd.addOption("--rename",               "+rn",     "append .done/.bad to processed files");
   cmd.addGroup("network options:");
     cmd.addSubGroup("application entity titles:");
       cmd.addOption("--aetitle",              "-aet", 1, "[a]etitle: string", "set my calling AE title (default: " APPLICATIONTITLE ")");
@@ -258,10 +232,15 @@ int main(int argc, char *argv[])
       cmd.addOption("--propose-j2k-lossy",    "-xw",     "propose JPEG 2000 lossy TS\nand all uncompressed transfer syntaxes");
       cmd.addOption("--propose-jls-lossless", "-xt",     "propose JPEG-LS lossless TS\nand all uncompressed transfer syntaxes");
       cmd.addOption("--propose-jls-lossy",    "-xu",     "propose JPEG-LS lossy TS\nand all uncompressed transfer syntaxes");
-      cmd.addOption("--propose-mpeg2",        "-xm",     "propose MPEG2 Main Profile @ Main Level TS only");
-      cmd.addOption("--propose-mpeg2-high",   "-xh",     "propose MPEG2 Main Profile @ High Level TS only");
-      cmd.addOption("--propose-mpeg4",        "-xn",     "propose MPEG4 AVC/H.264 HP / Level 4.1 TS only");
-      cmd.addOption("--propose-mpeg4-bd",     "-xl",     "propose MPEG4 AVC/H.264 BD-compatible TS only");
+      cmd.addOption("--propose-mpeg2",        "-xm",     "propose MPEG2 Main Profile @ Main Level TS");
+      cmd.addOption("--propose-mpeg2-high",   "-xh",     "propose MPEG2 Main Profile @ High Level TS");
+      cmd.addOption("--propose-mpeg4",        "-xn",     "propose MPEG4 AVC/H.264 HP / Level 4.1 TS");
+      cmd.addOption("--propose-mpeg4-bd",     "-xl",     "propose MPEG4 AVC/H.264 BD-compatible TS");
+      cmd.addOption("--propose-mpeg4-2-2d",   "-x2",     "propose MPEG4 AVC/H.264 HP / Level 4.2 TS (2D)");
+      cmd.addOption("--propose-mpeg4-2-3d",   "-x3",     "propose MPEG4 AVC/H.264 HP / Level 4.2 TS (3D)");
+      cmd.addOption("--propose-mpeg4-2-st",   "-xo",     "propose MPEG4 AVC/H.264 Stereo / Level 4.2 TS");
+      cmd.addOption("--propose-hevc",         "-x4",     "propose HEVC/H.265 Main Profile / Level 5.1 TS");
+      cmd.addOption("--propose-hevc10",       "-x5",     "propose HEVC/H.265 Main 10 Profile / Level 5.1 TS");
       cmd.addOption("--propose-rle",          "-xr",     "propose RLE lossless TS\nand all uncompressed transfer syntaxes");
 #ifdef WITH_ZLIB
       cmd.addOption("--propose-deflated",     "-xd",     "propose deflated expl. VR little endian TS\nand all uncompressed transfer syntaxes");
@@ -286,65 +265,35 @@ int main(int argc, char *argv[])
                                                          "read kerberos ticket from file f");
       cmd.addOption("--saml",                         1, "[f]ilename: string",
                                                          "read SAML request from file f");
+      cmd.addOption("--jwt",                          1, "[f]ilename: string",
+                                                         "read JWT data from file f");
       cmd.addOption("--pos-response",         "-rsp",    "expect positive response");
     cmd.addSubGroup("other network options:");
       cmd.addOption("--timeout",              "-to",  1, "[s]econds: integer (default: unlimited)", "timeout for connection requests");
-      CONVERT_TO_STRING("[s]econds: integer (default: " << opt_acse_timeout << ")", optString1);
-      cmd.addOption("--acse-timeout",         "-ta",  1, optString1.c_str(), "timeout for ACSE messages");
+      CONVERT_TO_STRING("[s]econds: integer (default: " << opt_socket_timeout << ")", optString1);
+      cmd.addOption("--socket-timeout",       "-ts",  1, optString1.c_str(), "timeout for network socket (0 for none)");
+      CONVERT_TO_STRING("[s]econds: integer (default: " << opt_acse_timeout << ")", optString2);
+      cmd.addOption("--acse-timeout",         "-ta",  1, optString2.c_str(), "timeout for ACSE messages");
       cmd.addOption("--dimse-timeout",        "-td",  1, "[s]econds: integer (default: unlimited)", "timeout for DIMSE messages");
-      CONVERT_TO_STRING("[n]umber of bytes: integer (" << ASC_MINIMUMPDUSIZE << ".." << ASC_MAXIMUMPDUSIZE << ")", optString2);
-      CONVERT_TO_STRING("set max receive pdu to n bytes (default: " << opt_maxReceivePDULength << ")", optString3);
-      cmd.addOption("--max-pdu",              "-pdu", 1, optString2.c_str(), optString3.c_str());
-      cmd.addOption("--max-send-pdu",                 1, optString2.c_str(), "restrict max send pdu to n bytes");
+      CONVERT_TO_STRING("[n]umber of bytes: integer (" << ASC_MINIMUMPDUSIZE << ".." << ASC_MAXIMUMPDUSIZE << ")", optString3);
+      CONVERT_TO_STRING("set max receive pdu to n bytes (default: " << opt_maxReceivePDULength << ")", optString4);
+      cmd.addOption("--max-pdu",              "-pdu", 1, optString3.c_str(), optString4.c_str());
+      cmd.addOption("--max-send-pdu",                 1, optString3.c_str(), "restrict max send pdu to n bytes");
       cmd.addOption("--repeat",                       1, "[n]umber: integer", "repeat n times");
       cmd.addOption("--abort",                           "abort association instead of releasing it");
       cmd.addOption("--no-halt",              "-nh",     "do not halt if unsuccessful store encountered\n(default: do halt)");
       cmd.addOption("--uid-padding",          "-up",     "silently correct space-padded UIDs");
 
       cmd.addOption("--invent-instance",      "+II",     "invent a new SOP instance UID for every image\nsent");
-      CONVERT_TO_STRING("invent a new series UID after n images" << OFendl << "have been sent (default: " << opt_inventSeriesCount << ")", optString4);
-      cmd.addOption("--invent-series",        "+IR",  1, "[n]umber: integer (implies --invent-instance)", optString4.c_str());
-      CONVERT_TO_STRING("invent a new study UID after n series" << OFendl << "have been sent (default: " << opt_inventStudyCount << ")", optString5);
-      cmd.addOption("--invent-study",         "+IS",  1, "[n]umber: integer (implies --invent-instance)", optString5.c_str());
-      CONVERT_TO_STRING("invent a new patient ID and name after n studies" << OFendl << "have been sent (default: " << opt_inventPatientCount << ")", optString6);
-      cmd.addOption("--invent-patient",       "+IP",  1, "[n]umber: integer (implies --invent-instance)", optString6.c_str());
+      CONVERT_TO_STRING("invent a new series UID after n images" << OFendl << "have been sent (default: " << opt_inventSeriesCount << ")", optString5);
+      cmd.addOption("--invent-series",        "+IR",  1, "[n]umber: integer (implies --invent-instance)", optString5.c_str());
+      CONVERT_TO_STRING("invent a new study UID after n series" << OFendl << "have been sent (default: " << opt_inventStudyCount << ")", optString6);
+      cmd.addOption("--invent-study",         "+IS",  1, "[n]umber: integer (implies --invent-instance)", optString6.c_str());
+      CONVERT_TO_STRING("invent a new patient ID and name after n studies" << OFendl << "have been sent (default: " << opt_inventPatientCount << ")", optString7);
+      cmd.addOption("--invent-patient",       "+IP",  1, "[n]umber: integer (implies --invent-instance)", optString7.c_str());
 
-#ifdef WITH_OPENSSL
-  cmd.addGroup("transport layer security (TLS) options:");
-    cmd.addSubGroup("transport protocol stack:");
-      cmd.addOption("--disable-tls",          "-tls",    "use normal TCP/IP connection (default)");
-      cmd.addOption("--enable-tls",           "+tls", 2, "[p]rivate key file, [c]ertificate file: string",
-                                                         "use authenticated secure TLS connection");
-      cmd.addOption("--anonymous-tls",        "+tla",    "use secure TLS connection without certificate");
-    cmd.addSubGroup("private key password (only with --enable-tls):");
-      cmd.addOption("--std-passwd",           "+ps",     "prompt user to type password on stdin (default)");
-      cmd.addOption("--use-passwd",           "+pw",  1, "[p]assword: string ",
-                                                         "use specified password");
-      cmd.addOption("--null-passwd",          "-pw",     "use empty string as password");
-    cmd.addSubGroup("key and certificate file format:");
-      cmd.addOption("--pem-keys",             "-pem",    "read keys and certificates as PEM file (default)");
-      cmd.addOption("--der-keys",             "-der",    "read keys and certificates as DER file");
-    cmd.addSubGroup("certification authority:");
-      cmd.addOption("--add-cert-file",        "+cf",  1, "[c]ertificate filename: string",
-                                                         "add certificate file to list of certificates", OFCommandLine::AF_NoWarning);
-      cmd.addOption("--add-cert-dir",         "+cd",  1, "[c]ertificate directory: string",
-                                                         "add certificates in d to list of certificates", OFCommandLine::AF_NoWarning);
-    cmd.addSubGroup("ciphersuite:");
-      cmd.addOption("--cipher",               "+cs",  1, "[c]iphersuite name: string",
-                                                         "add ciphersuite to list of negotiated suites");
-      cmd.addOption("--dhparam",              "+dp",  1, "[f]ilename: string",
-                                                         "read DH parameters for DH/DSS ciphersuites");
-    cmd.addSubGroup("pseudo random generator:");
-      cmd.addOption("--seed",                 "+rs",  1, "[f]ilename: string",
-                                                         "seed random generator with contents of f");
-      cmd.addOption("--write-seed",           "+ws",     "write back modified seed (only with --seed)");
-      cmd.addOption("--write-seed-file",      "+wf",  1, "[f]ilename: string (only with --seed)",
-                                                         "write modified seed to file f");
-    cmd.addSubGroup("peer authentication:");
-      cmd.addOption("--require-peer-cert",    "-rc",     "verify peer certificate, fail if absent (default)");
-      cmd.addOption("--verify-peer-cert",     "-vc",     "verify peer certificate if present");
-      cmd.addOption("--ignore-peer-cert",     "-ic",     "don't verify peer certificate");
-#endif
+    // add TLS specific command line options if (and only if) we are compiling with OpenSSL
+    tlsOptions.addTLSCommandlineOptions(cmd);
 
     /* evaluate command line */
     prepareCmdLineArgs(argc, argv, OFFIS_CONSOLE_APPLICATION);
@@ -369,10 +318,16 @@ int main(int argc, char *argv[])
           COUT << "- " << DiJPEGPlugin::getLibraryVersionString() << OFendl;
           COUT << "- " << DJLSDecoderRegistration::getLibraryVersionString() << OFendl;
 #endif
-#ifdef WITH_OPENSSL
-          COUT << "- " << OPENSSL_VERSION_TEXT << OFendl;
-#endif
+          // print OpenSSL version if (and only if) we are compiling with OpenSSL
+          tlsOptions.printLibraryVersion();
           return 0;
+        }
+
+        // check if the command line contains the --list-ciphers option
+        if (tlsOptions.listOfCiphersRequested(cmd))
+        {
+            tlsOptions.printSupportedCiphersuites(app, COUT);
+            return 0;
         }
       }
 
@@ -411,6 +366,11 @@ int main(int argc, char *argv[])
       }
       cmd.endOptionBlock();
 
+      cmd.beginOptionBlock();
+      if (cmd.findOption("--no-rename")) opt_renameFile = OFFalse;
+      if (cmd.findOption("--rename")) opt_renameFile = OFTrue;
+      cmd.endOptionBlock();
+
       if (cmd.findOption("--aetitle")) app.checkValue(cmd.getValue(opt_ourTitle));
       if (cmd.findOption("--call")) app.checkValue(cmd.getValue(opt_peerTitle));
 
@@ -430,6 +390,11 @@ int main(int argc, char *argv[])
       if (cmd.findOption("--propose-mpeg2-high")) opt_networkTransferSyntax = EXS_MPEG2MainProfileAtHighLevel;
       if (cmd.findOption("--propose-mpeg4")) opt_networkTransferSyntax = EXS_MPEG4HighProfileLevel4_1;
       if (cmd.findOption("--propose-mpeg4-bd")) opt_networkTransferSyntax = EXS_MPEG4BDcompatibleHighProfileLevel4_1;
+      if (cmd.findOption("--propose-mpeg4-2-2d")) opt_networkTransferSyntax = EXS_MPEG4HighProfileLevel4_2_For2DVideo;
+      if (cmd.findOption("--propose-mpeg4-2-3d")) opt_networkTransferSyntax = EXS_MPEG4HighProfileLevel4_2_For3DVideo;
+      if (cmd.findOption("--propose-mpeg4-2-st")) opt_networkTransferSyntax = EXS_MPEG4StereoHighProfileLevel4_2;
+      if (cmd.findOption("--propose-hevc")) opt_networkTransferSyntax = EXS_HEVCMainProfileLevel5_1;
+      if (cmd.findOption("--propose-hevc10")) opt_networkTransferSyntax = EXS_HEVCMain10ProfileLevel5_1;
       if (cmd.findOption("--propose-rle")) opt_networkTransferSyntax = EXS_RLELossless;
 #ifdef WITH_ZLIB
       if (cmd.findOption("--propose-deflated")) opt_networkTransferSyntax = EXS_DeflatedLittleEndianExplicit;
@@ -456,6 +421,11 @@ int main(int argc, char *argv[])
         app.checkConflict("--config-file", "--propose-mpeg2-high", opt_networkTransferSyntax == EXS_MPEG2MainProfileAtHighLevel);
         app.checkConflict("--config-file", "--propose-mpeg4", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_1);
         app.checkConflict("--config-file", "--propose-mpeg4-bd", opt_networkTransferSyntax == EXS_MPEG4BDcompatibleHighProfileLevel4_1);
+        app.checkConflict("--config-file", "--propose-mpeg4-2-2d", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For2DVideo);
+        app.checkConflict("--config-file", "--propose-mpeg4-2-3d", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For3DVideo);
+        app.checkConflict("--config-file", "--propose-mpeg4-2-st", opt_networkTransferSyntax == EXS_MPEG4StereoHighProfileLevel4_2);
+        app.checkConflict("--config-file", "--propose-hevc", opt_networkTransferSyntax == EXS_HEVCMainProfileLevel5_1);
+        app.checkConflict("--config-file", "--propose-hevc10", opt_networkTransferSyntax == EXS_HEVCMain10ProfileLevel5_1);
         app.checkConflict("--config-file", "--propose-rle", opt_networkTransferSyntax == EXS_RLELossless);
 #ifdef WITH_ZLIB
         app.checkConflict("--config-file", "--propose-deflated", opt_networkTransferSyntax == EXS_DeflatedLittleEndianExplicit);
@@ -496,6 +466,12 @@ int main(int argc, char *argv[])
         app.checkValue(cmd.getValueAndCheckMin(opt_timeout, 1));
         dcmConnectionTimeout.set(OFstatic_cast(Sint32, opt_timeout));
       }
+
+      if (cmd.findOption("--socket-timeout"))
+        app.checkValue(cmd.getValueAndCheckMin(opt_socket_timeout, -1));
+      // always set the timeout values since the global default might be different
+      dcmSocketSendTimeout.set(OFstatic_cast(Sint32, opt_socket_timeout));
+      dcmSocketReceiveTimeout.set(OFstatic_cast(Sint32, opt_socket_timeout));
 
       if (cmd.findOption("--acse-timeout"))
       {
@@ -543,98 +519,8 @@ int main(int argc, char *argv[])
         app.checkValue(cmd.getValueAndCheckMin(opt_inventPatientCount, 1));
       }
 
-#ifdef WITH_OPENSSL
-
-      cmd.beginOptionBlock();
-      if (cmd.findOption("--disable-tls")) opt_secureConnection = OFFalse;
-      if (cmd.findOption("--enable-tls"))
-      {
-        opt_secureConnection = OFTrue;
-        opt_doAuthenticate = OFTrue;
-        app.checkValue(cmd.getValue(opt_privateKeyFile));
-        app.checkValue(cmd.getValue(opt_certificateFile));
-      }
-      if (cmd.findOption("--anonymous-tls"))
-      {
-        opt_secureConnection = OFTrue;
-      }
-      cmd.endOptionBlock();
-
-      cmd.beginOptionBlock();
-      if (cmd.findOption("--std-passwd"))
-      {
-        app.checkDependence("--std-passwd", "--enable-tls", opt_doAuthenticate);
-        opt_passwd = NULL;
-      }
-      if (cmd.findOption("--use-passwd"))
-      {
-        app.checkDependence("--use-passwd", "--enable-tls", opt_doAuthenticate);
-        app.checkValue(cmd.getValue(opt_passwd));
-      }
-      if (cmd.findOption("--null-passwd"))
-      {
-        app.checkDependence("--null-passwd", "--enable-tls", opt_doAuthenticate);
-        opt_passwd = "";
-      }
-      cmd.endOptionBlock();
-
-      cmd.beginOptionBlock();
-      if (cmd.findOption("--pem-keys")) opt_keyFileFormat = SSL_FILETYPE_PEM;
-      if (cmd.findOption("--der-keys")) opt_keyFileFormat = SSL_FILETYPE_ASN1;
-      cmd.endOptionBlock();
-
-      if (cmd.findOption("--dhparam"))
-      {
-        app.checkValue(cmd.getValue(opt_dhparam));
-      }
-
-      if (cmd.findOption("--seed"))
-      {
-        app.checkValue(cmd.getValue(opt_readSeedFile));
-      }
-
-      cmd.beginOptionBlock();
-      if (cmd.findOption("--write-seed"))
-      {
-        app.checkDependence("--write-seed", "--seed", opt_readSeedFile != NULL);
-        opt_writeSeedFile = opt_readSeedFile;
-      }
-      if (cmd.findOption("--write-seed-file"))
-      {
-        app.checkDependence("--write-seed-file", "--seed", opt_readSeedFile != NULL);
-        app.checkValue(cmd.getValue(opt_writeSeedFile));
-      }
-      cmd.endOptionBlock();
-
-      cmd.beginOptionBlock();
-      if (cmd.findOption("--require-peer-cert")) opt_certVerification = DCV_requireCertificate;
-      if (cmd.findOption("--verify-peer-cert"))  opt_certVerification = DCV_checkCertificate;
-      if (cmd.findOption("--ignore-peer-cert"))  opt_certVerification = DCV_ignoreCertificate;
-      cmd.endOptionBlock();
-
-      const char *current = NULL;
-      const char *currentOpenSSL;
-      if (cmd.findOption("--cipher", 0, OFCommandLine::FOM_First))
-      {
-        opt_ciphersuites.clear();
-        do
-        {
-          app.checkValue(cmd.getValue(current));
-          if (NULL == (currentOpenSSL = DcmTLSTransportLayer::findOpenSSLCipherSuiteName(current)))
-          {
-            OFLOG_ERROR(storescuLogger, "ciphersuite '" << current << "' is unknown. Known ciphersuites are:");
-            unsigned long numSuites = DcmTLSTransportLayer::getNumberOfCipherSuites();
-            for (unsigned long cs = 0; cs < numSuites; cs++)
-              OFLOG_ERROR(storescuLogger, "    " << DcmTLSTransportLayer::getTLSCipherSuiteName(cs));
-            return 1;
-          } else {
-            if (!opt_ciphersuites.empty()) opt_ciphersuites += ":";
-            opt_ciphersuites += currentOpenSSL;
-          }
-        } while (cmd.findOption("--cipher", 0, OFCommandLine::FOM_Next));
-      }
-
-#endif
+      // evaluate (most of) the TLS command line options (if we are compiling with OpenSSL)
+      tlsOptions.parseArguments(app, cmd);
 
       // User Identity Negotiation
       cmd.beginOptionBlock();
@@ -652,6 +538,11 @@ int main(int argc, char *argv[])
       {
         app.checkValue(cmd.getValue(opt_identFile));
         opt_identMode = ASC_USER_IDENTITY_SAML;
+      }
+      if (cmd.findOption("--jwt"))
+      {
+        app.checkValue(cmd.getValue(opt_identFile));
+        opt_identMode = ASC_USER_IDENTITY_JWT;
       }
       cmd.endOptionBlock();
       cmd.beginOptionBlock();
@@ -731,7 +622,7 @@ int main(int argc, char *argv[])
       {
         if (opt_proposeOnlyRequiredPresentationContexts)
         {
-          if (!findSOPClassAndInstanceInFile(currentFilename, sopClassUID, sopInstanceUID))
+          if (!findSOPClassAndInstanceInFile(currentFilename, sopClassUID, sizeof(sopClassUID), sopInstanceUID, sizeof(sopInstanceUID)))
           {
             ignoreName = OFTrue;
             errormsg = "missing SOP class (or instance) in file: ";
@@ -744,7 +635,7 @@ int main(int argc, char *argv[])
             else
               OFLOG_WARN(storescuLogger, errormsg << ", ignoring file");
           }
-          else if (!dcmIsaStorageSOPClassUID(sopClassUID))
+          else if (!dcmIsaStorageSOPClassUID(sopClassUID, ESSC_All))
           {
             ignoreName = OFTrue;
             errormsg = "unknown storage SOP class in file: ";
@@ -809,107 +700,28 @@ int main(int argc, char *argv[])
       return 1;
     }
 
-#ifdef WITH_OPENSSL
-
-    DcmTLSTransportLayer *tLayer = NULL;
-    if (opt_secureConnection)
-    {
-      tLayer = new DcmTLSTransportLayer(DICOM_APPLICATION_REQUESTOR, opt_readSeedFile);
-      if (tLayer == NULL)
-      {
-        OFLOG_FATAL(storescuLogger, "unable to create TLS transport layer");
-        exit(1);
-      }
-
-      if (cmd.findOption("--add-cert-file", 0, OFCommandLine::FOM_First))
-      {
-        const char *current = NULL;
-        do
-        {
-          app.checkValue(cmd.getValue(current));
-          if (TCS_ok != tLayer->addTrustedCertificateFile(current, opt_keyFileFormat))
-            OFLOG_WARN(storescuLogger, "unable to load certificate file '" << current << "', ignoring");
-        } while (cmd.findOption("--add-cert-file", 0, OFCommandLine::FOM_Next));
-      }
-
-      if (cmd.findOption("--add-cert-dir", 0, OFCommandLine::FOM_First))
-      {
-        const char *current = NULL;
-        do
-        {
-          app.checkValue(cmd.getValue(current));
-          if (TCS_ok != tLayer->addTrustedCertificateDir(current, opt_keyFileFormat))
-            OFLOG_WARN(storescuLogger, "unable to load certificates from directory '" << current << "', ignoring");
-        } while (cmd.findOption("--add-cert-dir", 0, OFCommandLine::FOM_Next));
-      }
-
-      if (opt_dhparam && !(tLayer->setTempDHParameters(opt_dhparam)))
-        OFLOG_WARN(storescuLogger, "unable to load temporary DH parameter file '" << opt_dhparam << "', ignoring");
-
-      if (opt_doAuthenticate)
-      {
-        if (opt_passwd) tLayer->setPrivateKeyPasswd(opt_passwd);
-
-        if (TCS_ok != tLayer->setPrivateKeyFile(opt_privateKeyFile, opt_keyFileFormat))
-        {
-          OFLOG_ERROR(storescuLogger, "unable to load private TLS key from '" << opt_privateKeyFile << "'");
-          return 1;
-        }
-        if (TCS_ok != tLayer->setCertificateFile(opt_certificateFile, opt_keyFileFormat))
-        {
-          OFLOG_ERROR(storescuLogger, "unable to load certificate from '" << opt_certificateFile << "'");
-          return 1;
-        }
-        if (! tLayer->checkPrivateKeyMatchesCertificate())
-        {
-          OFLOG_ERROR(storescuLogger, "private key '" << opt_privateKeyFile << "' and certificate '" << opt_certificateFile << "' do not match");
-          return 1;
-        }
-      }
-
-      if (TCS_ok != tLayer->setCipherSuites(opt_ciphersuites.c_str()))
-      {
-        OFLOG_ERROR(storescuLogger, "unable to set selected cipher suites");
-        return 1;
-      }
-
-      tLayer->setCertificateVerification(opt_certVerification);
-
-
-      cond = ASC_setTransportLayer(net, tLayer, 0);
-      if (cond.bad())
-      {
-        OFLOG_FATAL(storescuLogger, DimseCondition::dump(temp_str, cond));
-        return 1;
-      }
-    }
-
-#endif
-
-    /* initialize asscociation parameters, i.e. create an instance of T_ASC_Parameters*. */
+    /* initialize association parameters, i.e. create an instance of T_ASC_Parameters*. */
     cond = ASC_createAssociationParameters(&params, opt_maxReceivePDULength);
     if (cond.bad()) {
       OFLOG_FATAL(storescuLogger, DimseCondition::dump(temp_str, cond));
       return 1;
     }
+
+    /* create a secure transport layer if requested and OpenSSL is available */
+    cond = tlsOptions.createTransportLayer(net, params, app, cmd);
+    if (cond.bad()) {
+        OFLOG_FATAL(storescuLogger, DimseCondition::dump(temp_str, cond));
+        return 1;
+    }
+
     /* sets this application's title and the called application's title in the params */
     /* structure. The default values to be set here are "STORESCU" and "ANY-SCP". */
     ASC_setAPTitles(params, opt_ourTitle, opt_peerTitle, NULL);
 
-    /* Set the transport layer type (type of network connection) in the params */
-    /* strucutre. The default is an insecure connection; where OpenSSL is  */
-    /* available the user is able to request an encrypted,secure connection. */
-    cond = ASC_setTransportLayerType(params, opt_secureConnection);
-    if (cond.bad()) {
-      OFLOG_FATAL(storescuLogger, DimseCondition::dump(temp_str, cond));
-      return 1;
-    }
-
     /* Figure out the presentation addresses and copy the */
     /* corresponding values into the association parameters.*/
-    gethostname(localHost, sizeof(localHost) - 1);
     sprintf(peerHost, "%s:%d", opt_peer, OFstatic_cast(int, opt_port));
-    ASC_setPresentationAddresses(params, localHost, peerHost);
+    ASC_setPresentationAddresses(params, OFStandard::getHostName().c_str(), peerHost);
 
     /* Configure User Identity Negotiation*/
     if (opt_identMode != ASC_USER_IDENTITY_NONE)
@@ -1048,8 +860,8 @@ int main(int argc, char *argv[])
       cond = ASC_abortAssociation(assoc);
       if (cond.bad()) {
         OFLOG_ERROR(storescuLogger, "Association Abort Failed: " << DimseCondition::dump(temp_str, cond));
-        return 1;
       }
+      return 1;
     }
 
     /* destroy the association, i.e. free memory of T_ASC_Association* structure. This */
@@ -1067,28 +879,19 @@ int main(int argc, char *argv[])
       return 1;
     }
 
-#ifdef HAVE_WINSOCK_H
-    WSACleanup();
-#endif
+    OFStandard::shutdownNetwork();
 
-#ifdef WITH_OPENSSL
-    if (tLayer && opt_writeSeedFile)
-    {
-      if (tLayer->canWriteRandomSeed())
-      {
-        if (!tLayer->writeRandomSeed(opt_writeSeedFile))
-          OFLOG_WARN(storescuLogger, "cannot write random seed file '" << opt_writeSeedFile << "', ignoring");
-      } else
-        OFLOG_WARN(storescuLogger, "cannot write random seed, ignoring");
+    cond = tlsOptions.writeRandomSeed();
+    if (cond.bad()) {
+        // failure to write back the random seed is a warning, not an error
+        OFLOG_WARN(storescuLogger, DimseCondition::dump(temp_str, cond));
     }
-    delete tLayer;
-#endif
 
     int exitCode = 0;
     if (opt_haltOnUnsuccessfulStore && unsuccessfulStoreEncountered) {
       if (lastStatusCode == STATUS_Success) {
         // there must have been some kind of general network error
-        exitCode = 0xff;
+        exitCode = 10;
       } else {
         exitCode = (lastStatusCode >> 8); // only the least significant byte is relevant as exit code
       }
@@ -1138,7 +941,7 @@ addPresentationContext(T_ASC_Parameters *params,
   T_ASC_SC_ROLE proposedRole = ASC_SC_ROLE_DEFAULT)
 {
   const char *c_p = transferSyntax.c_str();
-  OFCondition cond = ASC_addPresentationContext(params, presentationContextId,
+  OFCondition cond = ASC_addPresentationContext(params, OFstatic_cast(T_ASC_PresentationContextID, presentationContextId),
     abstractSyntax.c_str(), &c_p, 1, proposedRole);
   return cond;
 }
@@ -1160,7 +963,7 @@ addPresentationContext(T_ASC_Parameters *params,
     ++s_cur;
   }
 
-  OFCondition cond = ASC_addPresentationContext(params, presentationContextId,
+  OFCondition cond = ASC_addPresentationContext(params, OFstatic_cast(T_ASC_PresentationContextID, presentationContextId),
     abstractSyntax.c_str(), transferSyntaxes, transferSyntaxCount, proposedRole);
 
   delete[] transferSyntaxes;
@@ -1175,7 +978,7 @@ addStoragePresentationContexts(T_ASC_Parameters *params,
    * Each SOP Class will be proposed in two presentation contexts (unless
    * the opt_combineProposedTransferSyntaxes global variable is true).
    * The command line specified a preferred transfer syntax to use.
-   * This prefered transfer syntax will be proposed in one
+   * This preferred transfer syntax will be proposed in one
    * presentation context and a set of alternative (fallback) transfer
    * syntaxes will be proposed in a different presentation context.
    *
@@ -1210,13 +1013,18 @@ addStoragePresentationContexts(T_ASC_Parameters *params,
   OFList<OFString> fallbackSyntaxes;
   // - If little endian implicit is preferred, we don't need any fallback syntaxes
   //   because it is the default transfer syntax and all applications must support it.
-  // - If MPEG2 or MPEG4 is preferred, we don't want to propose any fallback solution
+  // - If MPEG2, MPEG4 or HEVC is preferred, we don't want to propose any fallback solution
   //   because this is not required and we cannot decompress the movie anyway.
   if ((opt_networkTransferSyntax != EXS_LittleEndianImplicit) &&
       (opt_networkTransferSyntax != EXS_MPEG2MainProfileAtMainLevel) &&
       (opt_networkTransferSyntax != EXS_MPEG2MainProfileAtHighLevel) &&
       (opt_networkTransferSyntax != EXS_MPEG4HighProfileLevel4_1) &&
-      (opt_networkTransferSyntax != EXS_MPEG4BDcompatibleHighProfileLevel4_1))
+      (opt_networkTransferSyntax != EXS_MPEG4BDcompatibleHighProfileLevel4_1) &&
+      (opt_networkTransferSyntax != EXS_MPEG4HighProfileLevel4_2_For2DVideo) &&
+      (opt_networkTransferSyntax != EXS_MPEG4HighProfileLevel4_2_For3DVideo) &&
+      (opt_networkTransferSyntax != EXS_MPEG4StereoHighProfileLevel4_2) &&
+      (opt_networkTransferSyntax != EXS_HEVCMainProfileLevel5_1) &&
+      (opt_networkTransferSyntax != EXS_HEVCMain10ProfileLevel5_1))
   {
     fallbackSyntaxes.push_back(UID_LittleEndianExplicitTransferSyntax);
     fallbackSyntaxes.push_back(UID_BigEndianExplicitTransferSyntax);
@@ -1450,6 +1258,18 @@ progressCallback(void * /*callbackData*/,
   }
 }
 
+static void
+renameFile(const char *fname, const char *fext)
+{
+  if (!opt_renameFile) return;
+  OFString fnewname(fname);
+  fnewname += fext;
+  if (OFStandard::renameFile(fname, fnewname))
+    OFLOG_DEBUG(storescuLogger, "renamed file '" << fname << "' to '" << fnewname << "'");
+  else
+    OFLOG_WARN(storescuLogger, "cannot rename file '" << fname << "' to '" << fnewname << "'");
+}
+
 static OFCondition
 storeSCU(T_ASC_Association *assoc, const char *fname)
   /*
@@ -1482,9 +1302,11 @@ storeSCU(T_ASC_Association *assoc, const char *fname)
   DcmFileFormat dcmff;
   OFCondition cond = dcmff.loadFile(fname, EXS_Unknown, EGL_noChange, DCM_MaxReadLength, opt_readMode);
 
-  /* figure out if an error occured while the file was read*/
-  if (cond.bad()) {
+  /* figure out if an error occurred while the file was read */
+  if (cond.bad())
+  {
     OFLOG_ERROR(storescuLogger, "Bad DICOM file: " << fname << ": " << cond.text());
+    renameFile(fname, ".bad");
     return cond;
   }
 
@@ -1495,9 +1317,11 @@ storeSCU(T_ASC_Association *assoc, const char *fname)
 
   /* figure out which SOP class and SOP instance is encapsulated in the file */
   if (!DU_findSOPClassAndInstanceInDataSet(dcmff.getDataset(),
-    sopClass, sopInstance, opt_correctUIDPadding)) {
-      OFLOG_ERROR(storescuLogger, "No SOP Class or Instance UID in file: " << fname);
-      return DIMSE_BADDATA;
+    sopClass, sizeof(sopClass), sopInstance, sizeof(sopInstance), opt_correctUIDPadding))
+  {
+    OFLOG_ERROR(storescuLogger, "No SOP Class or Instance UID in file: " << fname);
+    renameFile(fname, ".bad");
+    return DIMSE_BADDATA;
   }
 
   /* figure out which of the accepted presentation contexts should be used */
@@ -1517,11 +1341,13 @@ storeSCU(T_ASC_Association *assoc, const char *fname)
     presID = ASC_findAcceptedPresentationContextID(assoc, sopClass, filexfer.getXferID());
   else
     presID = ASC_findAcceptedPresentationContextID(assoc, sopClass);
-  if (presID == 0) {
+  if (presID == 0)
+  {
     const char *modalityName = dcmSOPClassUIDToModality(sopClass);
     if (!modalityName) modalityName = dcmFindNameOfUID(sopClass);
     if (!modalityName) modalityName = "unknown SOP class";
     OFLOG_ERROR(storescuLogger, "No presentation context for: (" << modalityName << ") " << sopClass);
+    renameFile(fname, ".bad");
     return DIMSE_NOVALIDPRESENTATIONCONTEXTID;
   }
 
@@ -1530,23 +1356,30 @@ storeSCU(T_ASC_Association *assoc, const char *fname)
   DcmXfer netTransfer(pc.acceptedTransferSyntax);
 
   /* if required, dump general information concerning transfer syntaxes */
-  if (storescuLogger.isEnabledFor(OFLogger::INFO_LOG_LEVEL)) {
+  if (storescuLogger.isEnabledFor(OFLogger::INFO_LOG_LEVEL))
+  {
     DcmXfer fileTransfer(dcmff.getDataset()->getOriginalXfer());
     OFLOG_INFO(storescuLogger, "Converting transfer syntax: " << fileTransfer.getXferName()
       << " -> " << netTransfer.getXferName());
   }
 
 #ifdef ON_THE_FLY_COMPRESSION
-  dcmff.getDataset()->chooseRepresentation(netTransfer.getXfer(), NULL);
+  cond = dcmff.getDataset()->chooseRepresentation(netTransfer.getXfer(), NULL);
+  if (cond.bad())
+  {
+    OFLOG_ERROR(storescuLogger, "No conversion to transfer syntax " << netTransfer.getXferName() << " possible!");
+    renameFile(fname, ".bad");
+    return cond;
+  }
 #endif
 
   /* prepare the transmission of data */
-  bzero(OFreinterpret_cast(char *, &req), sizeof(req));
+  memset(OFreinterpret_cast(char *, &req), 0, sizeof(req));
   req.MessageID = msgId;
-  strcpy(req.AffectedSOPClassUID, sopClass);
-  strcpy(req.AffectedSOPInstanceUID, sopInstance);
+  OFStandard::strlcpy(req.AffectedSOPClassUID, sopClass, sizeof(req.AffectedSOPClassUID));
+  OFStandard::strlcpy(req.AffectedSOPInstanceUID, sopInstance, sizeof(req.AffectedSOPInstanceUID));
   req.DataSetType = DIMSE_DATASET_PRESENT;
-  req.Priority = DIMSE_PRIORITY_LOW;
+  req.Priority = DIMSE_PRIORITY_MEDIUM;
 
   /* if required, dump some more general information */
   OFLOG_INFO(storescuLogger, "Sending Store Request (MsgID " << msgId << ", "
@@ -1556,14 +1389,20 @@ storeSCU(T_ASC_Association *assoc, const char *fname)
   cond = DIMSE_storeUser(assoc, presID, &req,
     NULL, dcmff.getDataset(), progressCallback, NULL,
     opt_blockMode, opt_dimse_timeout,
-    &rsp, &statusDetail, NULL, OFStandard::getFileSize(fname));
+    &rsp, &statusDetail, NULL, OFstatic_cast(long, OFStandard::getFileSize(fname)));
 
   /*
    * If store command completed normally, with a status
    * of success or some warning then the image was accepted.
    */
-  if (cond == EC_Normal && (rsp.DimseStatus == STATUS_Success || DICOM_WARNING_STATUS(rsp.DimseStatus))) {
+  if (cond == EC_Normal && (rsp.DimseStatus == STATUS_Success || DICOM_WARNING_STATUS(rsp.DimseStatus)))
+  {
     unsuccessfulStoreEncountered = OFFalse;
+    renameFile(fname, ".done");
+  }
+  else
+  {
+    renameFile(fname, ".bad");
   }
 
   /* remember the response's status for later transmissions of data */
@@ -1613,7 +1452,7 @@ cstore(T_ASC_Association *assoc, const OFString &fname)
   /* opt_repeatCount specifies how many times a certain file shall be processed */
   int n = OFstatic_cast(int, opt_repeatCount);
 
-  /* as long as no error occured and the counter does not equal 0 */
+  /* as long as no error occurred and the counter does not equal 0 */
   while ((cond.good()) && n-- && !(opt_haltOnUnsuccessfulStore && unsuccessfulStoreEncountered))
   {
     /* process file (read file, send C-STORE-RQ, receive C-STORE-RSP) */
@@ -1635,17 +1474,19 @@ static OFBool
 findSOPClassAndInstanceInFile(
   const char *fname,
   char *sopClass,
-  char *sopInstance)
+  size_t sopClassSize,
+  char *sopInstance,
+  size_t sopInstanceSize)
 {
     DcmFileFormat ff;
     if (!ff.loadFile(fname, EXS_Unknown, EGL_noChange, DCM_MaxReadLength, opt_readMode).good())
         return OFFalse;
 
     /* look in the meta-header first */
-    OFBool found = DU_findSOPClassAndInstanceInDataSet(ff.getMetaInfo(), sopClass, sopInstance, opt_correctUIDPadding);
+    OFBool found = DU_findSOPClassAndInstanceInDataSet(ff.getMetaInfo(), sopClass, sopClassSize, sopInstance, sopInstanceSize, opt_correctUIDPadding);
 
     if (!found)
-      found = DU_findSOPClassAndInstanceInDataSet(ff.getDataset(), sopClass, sopInstance, opt_correctUIDPadding);
+      found = DU_findSOPClassAndInstanceInDataSet(ff.getDataset(), sopClass, sopClassSize, sopInstance, sopInstanceSize, opt_correctUIDPadding);
 
     return found;
 }
@@ -1669,13 +1510,14 @@ configureUserIdentityRequest(T_ASC_Parameters *params)
     }
     case ASC_USER_IDENTITY_KERBEROS:
     case ASC_USER_IDENTITY_SAML:
+    case ASC_USER_IDENTITY_JWT:
     {
       OFFile identFile;
       if (!identFile.fopen(opt_identFile.c_str(), "rb"))
       {
         OFString openerror;
         identFile.getLastErrorString(openerror);
-        OFLOG_ERROR(storescuLogger, "Unable to open Kerberos or SAML file: " << openerror);
+        OFLOG_ERROR(storescuLogger, "Unable to open Kerberos, SAML or JWT file: " << openerror);
         return EC_IllegalCall;
       }
       // determine file size
@@ -1686,7 +1528,7 @@ configureUserIdentityRequest(T_ASC_Parameters *params)
       identFile.rewind();
       if (filesize > 65535)
       {
-        OFLOG_INFO(storescuLogger, "Kerberos or SAML file is larger than 65535 bytes, bytes after that position are ignored");
+        OFLOG_INFO(storescuLogger, "Kerberos, SAML or JWT file is larger than 65535 bytes, bytes after that position are ignored");
         filesize = 65535;
       }
 
@@ -1695,14 +1537,18 @@ configureUserIdentityRequest(T_ASC_Parameters *params)
       identFile.fclose();
       if (bytesRead == 0)
       {
-        OFLOG_ERROR(storescuLogger, "Unable to read Kerberos or SAML info from file: File empty?");
+        OFLOG_ERROR(storescuLogger, "Unable to read Kerberos, SAML or JWT info from file: File empty?");
         delete[] buf;
         return EC_IllegalCall;
       }
+      // Casting to Uint16 should be safe since it is checked above that file
+      // size does not exceed 65535 bytes.
       if (opt_identMode == ASC_USER_IDENTITY_KERBEROS)
-        cond = ASC_setIdentRQKerberos(params, buf, bytesRead, opt_identResponse);
-      else
-        cond = ASC_setIdentRQSaml(params, buf, bytesRead, opt_identResponse);
+        cond = ASC_setIdentRQKerberos(params, buf, OFstatic_cast(Uint16,bytesRead), opt_identResponse);
+      else if (opt_identMode == ASC_USER_IDENTITY_SAML)
+        cond = ASC_setIdentRQSaml(params, buf, OFstatic_cast(Uint16,bytesRead), opt_identResponse);
+      else // JWT
+        cond = ASC_setIdentRQJwt(params, buf, OFstatic_cast(Uint16,bytesRead), opt_identResponse);
       delete[] buf;
       break;
     }

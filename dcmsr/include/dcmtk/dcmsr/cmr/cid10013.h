@@ -1,12 +1,12 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2021, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class CID10013_CTAcquisitionType
  *
- *  Generated automatically from DICOM PS 3.16-2015c
- *  File created on 2015-08-23 14:59:27 by J. Riesmeier
+ *  Generated automatically from DICOM PS 3.16-2021d
+ *  File created on 2021-09-13 09:26:40 by J. Riesmeier
  *
  */
 
@@ -19,6 +19,8 @@
 #include "dcmtk/dcmsr/dsrctxgr.h"
 #include "dcmtk/dcmsr/cmr/define.h"
 
+#include "dcmtk/ofstd/ofmap.h"
+
 
 /*---------------------*
  *  class declaration  *
@@ -26,7 +28,7 @@
 
 /** Implementation of DCMR Context Group:
  *  CID 10013 - CT Acquisition Type.
- *  (type: extensible, version: 20071031)
+ *  (type: extensible, version: 20160314)
  */
 class DCMTK_CMR_EXPORT CID10013_CTAcquisitionType
   : public DSRContextGroup
@@ -40,14 +42,16 @@ class DCMTK_CMR_EXPORT CID10013_CTAcquisitionType
     {
         /// (113804,DCM,"Sequenced Acquisition")
         SequencedAcquisition,
-        /// (P5-08001,SRT,"Spiral Acquisition")
+        /// (116152004,SCT,"Spiral Acquisition")
         SpiralAcquisition,
         /// (113805,DCM,"Constant Angle Acquisition")
         ConstantAngleAcquisition,
         /// (113806,DCM,"Stationary Acquisition")
         StationaryAcquisition,
         /// (113807,DCM,"Free Acquisition")
-        FreeAcquisition
+        FreeAcquisition,
+        /// (702569007,SCT,"Cone Beam Acquisition")
+        ConeBeamAcquisition
     };
 
     /** (default) constructor
@@ -151,5 +155,14 @@ class DCMTK_CMR_EXPORT CID10013_CTAcquisitionType
     /// pointer to internal code list (use a static variable for singleton pattern)
     static CodeList *Codes;
 };
+
+
+/*-------------------*
+ *  type definition  *
+ *-------------------*/
+
+// define short name for the context group class
+typedef CID10013_CTAcquisitionType CMR_CID10013;
+
 
 #endif

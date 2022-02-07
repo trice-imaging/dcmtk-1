@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2010, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,12 +23,14 @@
 #include "dcmtk/config/osconfig.h"
 #include "dcmtk/dcmdata/dcvrulup.h"
 
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
-
-
 // ********************************
+
+
+DcmUnsignedLongOffset::DcmUnsignedLongOffset(const DcmTag &tag)
+  : DcmUnsignedLong(tag, 0),
+    nextRecord(NULL)
+{
+}
 
 
 DcmUnsignedLongOffset::DcmUnsignedLongOffset(const DcmTag &tag,

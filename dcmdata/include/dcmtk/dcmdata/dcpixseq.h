@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2015, OFFIS e.V.
+ *  Copyright (C) 1994-2019, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -48,16 +48,21 @@ class DcmPixelItem;
  *  the pixel data tag (7FE0,0010) and OB value representation with undefined length,
  *  and the "items" contained within the sequence are in fact pixel items (class DcmPixelItem)
  *  that contain no list of DICOM elements but raw compressed pixel data.
+ *  The first item in this pixel sequence must always be the offset table.
  */
 class DCMTK_DCMDATA_EXPORT DcmPixelSequence : public DcmSequenceOfItems
 {
 public:
 
-    /** constructor
+    // Make friend with DcmPixelData which requires access to protected
+    // constructor allowing construction using an explicit value length.
+    friend class DcmPixelData;
+
+    /** constructor.
+     *  Create new element from given tag.
      *  @param tag attribute tag
-     *  @param len length of the attribute value
      */
-    DcmPixelSequence(const DcmTag &tag, const Uint32 len = 0);
+    DcmPixelSequence(const DcmTag &tag);
 
     /** copy constructor
      *  @param old element to be copied
@@ -69,6 +74,7 @@ public:
 
     /** copy assignment operator
      *  @param obj element to be copied
+     *  @return reference to this object
      */
     DcmPixelSequence &operator=(const DcmPixelSequence &obj);
 
@@ -112,15 +118,7 @@ public:
                        const char *pixelFileName = NULL,
                        size_t *pixelCounter = NULL);
 
-    /** calculate the length of this DICOM element when encoded with the
-     *  given transfer syntax and the given encoding type for sequences.
-     *  For elements, the length includes the length of the tag, length field,
-     *  VR field and the value itself, for items and sequences it returns
-     *  the length of the complete item or sequence including delimitation tags
-     *  if applicable. Never returns undefined length.
-     *  @param xfer transfer syntax for length calculation
-     *  @param enctype sequence encoding type for length calculation
-     *  @return length of DICOM element
+    /** @copydoc DcmObject::calcElementLength()
      */
     virtual Uint32 calcElementLength(const E_TransferSyntax xfer,
                                      const E_EncodingType enctype);
@@ -153,7 +151,7 @@ public:
     virtual OFCondition remove(DcmPixelItem * &item,
                                const unsigned long num);
 
-    /** remove pixel item from list. Tthe pixel item is not deleted;
+    /** remove pixel item from list. The pixel item is not deleted;
      *  the caller is responsible for further management of the DcmPixelItem object.
      *  @param item pointer to element to be removed from list
      *  @return EC_Normal if successful, an error code otherwise
@@ -189,7 +187,7 @@ public:
      *  @param maxReadLength Maximum read length for reading an attribute value.
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual OFCondition read(DcmInputStream & inStream,
+    virtual OFCondition read(DcmInputStream &inStream,
                              const E_TransferSyntax ixfer,
                              const E_GrpLenEncoding glenc = EGL_noChange,
                              const Uint32 maxReadLength = DCM_MaxReadLength);
@@ -230,7 +228,8 @@ public:
      *  @param offsetList list containing offset table entries.
      *    Upon success, an entry is appended to the list. The offset values are always even,
      *    so it is expected that odd length pixel items are padded later during writing.
-     *  @param compressedData pointer to compressed image data, must not be NULL
+     *    The offsets are not stored internally.
+     *  @param compressedData pointer to compressed image data (copied), must not be NULL
      *  @param compressedLen number of bytes of compressed image data
      *  @param fragmentSize maximum fragment size (in kbytes) for compression, 0 for unlimited.
      *  @return EC_Normal if successful, an error code otherwise
@@ -241,6 +240,19 @@ public:
                                              Uint32 fragmentSize);
 
 protected:
+
+    /** constructor. Create new element from given tag and length.
+     *  Only reachable from friend classes since construction with
+     *  length different from 0 leads to a state with length being set but
+     *  the element's value still being uninitialized. This can lead to crashes
+     *  when the value is read or written. Thus the method calling this
+     *  constructor with length > 0 must ensure that the element's value is
+     *  explicitly initialized, too.
+     *  @param tag attribute tag
+     *  @param len length of the attribute value
+     */
+    DcmPixelSequence(const DcmTag &tag,
+                     const Uint32 len);
 
     /** helper function for read(). Create sub-object (pixel item) of the
      *  appropriate type depending on the tag.

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2001-2014, OFFIS e.V.
+ *  Copyright (C) 2001-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,14 +21,6 @@
 
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
-
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
-
-#ifdef HAVE_GUSI_H
-#include <GUSI.h>
-#endif
 
 #include "dcmtk/dcmdata/dctk.h"          /* for various dcmdata headers */
 #include "dcmtk/dcmdata/cmdlnarg.h"      /* for prepareCmdLineArgs */
@@ -76,7 +68,7 @@ int main(int argc, char *argv[])
     OFCommandLine cmd;
 
     E_FileReadMode opt_readMode = ERM_autoDetect;
-    E_FileWriteMode opt_writeMode = EWM_fileformat;
+    E_FileWriteMode opt_writeMode = EWM_createNewMeta;
     E_TransferSyntax opt_ixfer = EXS_Unknown;
     E_TransferSyntax opt_oxfer = EXS_Unknown;
     E_GrpLenEncoding opt_oglenc = EGL_recalcGL;
@@ -90,7 +82,7 @@ int main(int argc, char *argv[])
     OFCmdUnsignedInt    opt_frame = 1;                    /* default: first frame */
     OFCmdUnsignedInt    opt_frameCount = 0;               /* default: all frames */
 
-    OFBool              opt_palette_ow = OFFalse;
+    OFBool              opt_palette_ow = OFTrue;
     OFBool              opt_entries_word = OFFalse;
     OFBool              opt_palette_fs = OFFalse;
     OFCmdUnsignedInt    opt_palette_col = 256;
@@ -166,8 +158,11 @@ int main(int argc, char *argv[])
       cmd.addOption("--mc-color-avgpixel",   "+Cp",    "average pixels in box");
       cmd.addOption("--mc-color-center",     "+Cc",    "select center of box");
 
+     cmd.addSubGroup("color palette value representation:");
+      cmd.addOption("--write-ow",            "+pw",    "write Palette LUT as OW (default)");
+      cmd.addOption("--write-us",            "+pu",    "write Palette LUT as US (retired)");
+
      cmd.addSubGroup("color palette creation:");
-      cmd.addOption("--write-ow",            "+pw",    "write Palette LUT as OW instead of US");
       cmd.addOption("--lut-entries-word",    "+pe",    "write Palette LUT with 16-bit entries");
       cmd.addOption("--floyd-steinberg",     "+pf",    "use Floyd-Steinberg error diffusion");
       cmd.addOption("--colors",              "+pc", 1, "number of colors: 2..65536 (default 256)",
@@ -298,7 +293,11 @@ int main(int argc, char *argv[])
       cmd.endOptionBlock();
 #endif
 
+      cmd.beginOptionBlock();
       if (cmd.findOption("--write-ow")) opt_palette_ow = OFTrue;
+      if (cmd.findOption("--write-us")) opt_palette_ow = OFFalse;
+      cmd.endOptionBlock();
+
       if (cmd.findOption("--lut-entries-word")) opt_entries_word = OFTrue;
       if (cmd.findOption("--floyd-steinberg")) opt_palette_fs = OFTrue;
       if (cmd.findOption("--colors")) cmd.getValueAndCheckMinMax(opt_palette_col, 2, 65536);
@@ -325,7 +324,7 @@ int main(int argc, char *argv[])
       cmd.endOptionBlock();
 
       cmd.beginOptionBlock();
-      if (cmd.findOption("--write-file")) opt_writeMode = EWM_fileformat;
+      if (cmd.findOption("--write-file")) opt_writeMode = EWM_createNewMeta;
       if (cmd.findOption("--write-dataset")) opt_writeMode = EWM_dataset;
       cmd.endOptionBlock();
 
@@ -420,9 +419,7 @@ int main(int argc, char *argv[])
     OFLOG_INFO(dcmquantLogger, "check if new output transfer syntax is possible");
 
     DcmXfer opt_oxferSyn(opt_oxfer);
-    dataset->chooseRepresentation(opt_oxfer, NULL);
-
-    if (dataset->canWriteXfer(opt_oxfer))
+    if (dataset->chooseRepresentation(opt_oxfer, NULL).good() && dataset->canWriteXfer(opt_oxfer))
     {
         OFLOG_INFO(dcmquantLogger, "output transfer syntax " << opt_oxferSyn.getXferName()
             << " can be written");
@@ -485,7 +482,7 @@ int main(int argc, char *argv[])
     OFLOG_INFO(dcmquantLogger, "write converted DICOM file");
 
     // update file meta information with new SOP Instance UID
-    if ((opt_uidcreation || opt_secondarycapture) && (opt_writeMode == EWM_fileformat))
+    if ((opt_uidcreation || opt_secondarycapture) && (opt_writeMode == EWM_createNewMeta))
         opt_writeMode = EWM_updateMeta;
 
     error = fileformat.saveFile(opt_ofname, opt_oxfer, opt_oenctype, opt_oglenc, opt_opadenc,

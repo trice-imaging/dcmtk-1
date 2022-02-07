@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2012, OFFIS e.V.
+ *  Copyright (C) 1994-2020, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,7 +25,6 @@
 
 #include "dcmtk/config/osconfig.h"
 #include "dcmtk/dcmdata/dcistrma.h"
-
 
 /** producer class that reads data from a plain file.
  */
@@ -137,8 +136,31 @@ public:
     return new DcmInputFileStreamFactory(*this);
   }
 
-private:
+  /** returns an enum describing the class to which this instance belongs
+   *  @return class to which this instance belongs
+   */
+  virtual DcmInputStreamFactoryType ident() const
+  {
+    return DFT_DcmInputFileStreamFactory;
+  }
 
+  /** returns name of the file
+   *  @return name of file
+   */
+  virtual OFFilename const & getFilename() const
+  {
+      return filename_;
+  }
+
+  /** returns offset of the data in the file
+   *  @return offset of the data in the file
+   */
+  virtual offile_off_t getOffset() const
+  {
+      return offset_;
+  }
+
+private:
 
   /// private unimplemented copy assignment operator
   DcmInputFileStreamFactory& operator=(const DcmInputFileStreamFactory&);
@@ -252,6 +274,8 @@ private:
 
 #ifdef WITH_THREADS
   /// mutex for MT-safe reference counting
+  /// @remark this member is only available if DCMTK is compiled with thread
+  /// support enabled.
   OFMutex mutex_;
 #endif
 
@@ -286,6 +310,14 @@ public:
    */
   virtual DcmInputStreamFactory *clone() const;
 
+  /** returns an enum describing the class to which this instance belongs
+   *  @return class to which this instance belongs
+   */
+  virtual DcmInputStreamFactoryType ident() const
+  {
+    return DFT_DcmInputTempFileStreamFactory;
+  }
+
 private:
 
   /// private unimplemented copy assignment operator
@@ -294,6 +326,5 @@ private:
   /// handler for temporary file
   DcmTempFileHandler *fileHandler_;
 };
-
 
 #endif

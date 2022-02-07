@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2013-2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2021, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation are maintained by
@@ -25,17 +25,16 @@
 
 #include "dcmtk/dcmsr/dsrimgse.h"
 
-#define INCLUDE_CSTDIO
-#include "dcmtk/ofstd/ofstdinc.h"
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcvrus.h"
 
-#ifdef HAVE_EXPLICIT_TEMPLATE_SPECIALIZATION
-#define EXPLICIT_SPECIALIZATION template<>
-#else
-#define EXPLICIT_SPECIALIZATION
-#endif
-
-/* declared in class DSRListOfItems<T> */
-EXPLICIT_SPECIALIZATION const Uint16 DSRListOfItems<Uint16>::EmptyItem = 0;
+template<>
+const Uint16& DSRgetEmptyItem<Uint16>()
+{
+    // no need to be thread-safe, since it is only an int
+    static const Uint16 t = 0;
+    return t;
+}
 
 
 DSRImageSegmentList::DSRImageSegmentList()
@@ -63,8 +62,8 @@ DSRImageSegmentList &DSRImageSegmentList::operator=(const DSRImageSegmentList &l
 
 
 OFCondition DSRImageSegmentList::print(STD_NAMESPACE ostream &stream,
-                                     const size_t flags,
-                                     const char separator) const
+                                       const size_t flags,
+                                       const char separator) const
 {
     const OFListConstIterator(Uint16) endPos = ItemList.end();
     OFListConstIterator(Uint16) iterator = ItemList.begin();

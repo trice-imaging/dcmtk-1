@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTBeamDoseVerificationControlPointSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -21,9 +21,9 @@
 
 DRTBeamDoseVerificationControlPointSequence::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
-    AverageBeamDosePointDepth(DCM_AverageBeamDosePointDepth),
-    AverageBeamDosePointEquivalentDepth(DCM_AverageBeamDosePointEquivalentDepth),
-    AverageBeamDosePointSSD(DCM_AverageBeamDosePointSSD),
+    BeamDosePointDepth(DCM_BeamDosePointDepth),
+    BeamDosePointEquivalentDepth(DCM_BeamDosePointEquivalentDepth),
+    BeamDosePointSSD(DCM_BeamDosePointSSD),
     CumulativeMetersetWeight(DCM_CumulativeMetersetWeight),
     ReferencedControlPointIndex(DCM_ReferencedControlPointIndex)
 {
@@ -32,9 +32,9 @@ DRTBeamDoseVerificationControlPointSequence::Item::Item(const OFBool emptyDefaul
 
 DRTBeamDoseVerificationControlPointSequence::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
-    AverageBeamDosePointDepth(copy.AverageBeamDosePointDepth),
-    AverageBeamDosePointEquivalentDepth(copy.AverageBeamDosePointEquivalentDepth),
-    AverageBeamDosePointSSD(copy.AverageBeamDosePointSSD),
+    BeamDosePointDepth(copy.BeamDosePointDepth),
+    BeamDosePointEquivalentDepth(copy.BeamDosePointEquivalentDepth),
+    BeamDosePointSSD(copy.BeamDosePointSSD),
     CumulativeMetersetWeight(copy.CumulativeMetersetWeight),
     ReferencedControlPointIndex(copy.ReferencedControlPointIndex)
 {
@@ -51,9 +51,9 @@ DRTBeamDoseVerificationControlPointSequence::Item &DRTBeamDoseVerificationContro
     if (this != &copy)
     {
         EmptyDefaultItem = copy.EmptyDefaultItem;
-        AverageBeamDosePointDepth = copy.AverageBeamDosePointDepth;
-        AverageBeamDosePointEquivalentDepth = copy.AverageBeamDosePointEquivalentDepth;
-        AverageBeamDosePointSSD = copy.AverageBeamDosePointSSD;
+        BeamDosePointDepth = copy.BeamDosePointDepth;
+        BeamDosePointEquivalentDepth = copy.BeamDosePointEquivalentDepth;
+        BeamDosePointSSD = copy.BeamDosePointSSD;
         CumulativeMetersetWeight = copy.CumulativeMetersetWeight;
         ReferencedControlPointIndex = copy.ReferencedControlPointIndex;
     }
@@ -68,9 +68,9 @@ void DRTBeamDoseVerificationControlPointSequence::Item::clear()
         /* clear all DICOM attributes */
         CumulativeMetersetWeight.clear();
         ReferencedControlPointIndex.clear();
-        AverageBeamDosePointDepth.clear();
-        AverageBeamDosePointEquivalentDepth.clear();
-        AverageBeamDosePointSSD.clear();
+        BeamDosePointDepth.clear();
+        BeamDosePointEquivalentDepth.clear();
+        BeamDosePointSSD.clear();
     }
 }
 
@@ -79,9 +79,9 @@ OFBool DRTBeamDoseVerificationControlPointSequence::Item::isEmpty()
 {
     return CumulativeMetersetWeight.isEmpty() &&
            ReferencedControlPointIndex.isEmpty() &&
-           AverageBeamDosePointDepth.isEmpty() &&
-           AverageBeamDosePointEquivalentDepth.isEmpty() &&
-           AverageBeamDosePointSSD.isEmpty();
+           BeamDosePointDepth.isEmpty() &&
+           BeamDosePointEquivalentDepth.isEmpty() &&
+           BeamDosePointSSD.isEmpty();
 }
 
 
@@ -100,9 +100,9 @@ OFCondition DRTBeamDoseVerificationControlPointSequence::Item::read(DcmItem &ite
         clear();
         getAndCheckElementFromDataset(item, CumulativeMetersetWeight, "1", "1", "BeamDoseVerificationControlPointSequence");
         getAndCheckElementFromDataset(item, ReferencedControlPointIndex, "1", "1C", "BeamDoseVerificationControlPointSequence");
-        getAndCheckElementFromDataset(item, AverageBeamDosePointDepth, "1", "2C", "BeamDoseVerificationControlPointSequence");
-        getAndCheckElementFromDataset(item, AverageBeamDosePointEquivalentDepth, "1", "2C", "BeamDoseVerificationControlPointSequence");
-        getAndCheckElementFromDataset(item, AverageBeamDosePointSSD, "1", "2C", "BeamDoseVerificationControlPointSequence");
+        getAndCheckElementFromDataset(item, BeamDosePointDepth, "1", "1C", "BeamDoseVerificationControlPointSequence");
+        getAndCheckElementFromDataset(item, BeamDosePointEquivalentDepth, "1", "1C", "BeamDoseVerificationControlPointSequence");
+        getAndCheckElementFromDataset(item, BeamDosePointSSD, "1", "1C", "BeamDoseVerificationControlPointSequence");
         result = EC_Normal;
     }
     return result;
@@ -117,38 +117,38 @@ OFCondition DRTBeamDoseVerificationControlPointSequence::Item::write(DcmItem &it
         result = EC_Normal;
         addElementToDataset(result, item, new DcmDecimalString(CumulativeMetersetWeight), "1", "1", "BeamDoseVerificationControlPointSequence");
         addElementToDataset(result, item, new DcmIntegerString(ReferencedControlPointIndex), "1", "1C", "BeamDoseVerificationControlPointSequence");
-        addElementToDataset(result, item, new DcmFloatingPointSingle(AverageBeamDosePointDepth), "1", "2C", "BeamDoseVerificationControlPointSequence");
-        addElementToDataset(result, item, new DcmFloatingPointSingle(AverageBeamDosePointEquivalentDepth), "1", "2C", "BeamDoseVerificationControlPointSequence");
-        addElementToDataset(result, item, new DcmFloatingPointSingle(AverageBeamDosePointSSD), "1", "2C", "BeamDoseVerificationControlPointSequence");
+        addElementToDataset(result, item, new DcmFloatingPointSingle(BeamDosePointDepth), "1", "1C", "BeamDoseVerificationControlPointSequence");
+        addElementToDataset(result, item, new DcmFloatingPointSingle(BeamDosePointEquivalentDepth), "1", "1C", "BeamDoseVerificationControlPointSequence");
+        addElementToDataset(result, item, new DcmFloatingPointSingle(BeamDosePointSSD), "1", "1C", "BeamDoseVerificationControlPointSequence");
     }
     return result;
 }
 
 
-OFCondition DRTBeamDoseVerificationControlPointSequence::Item::getAverageBeamDosePointDepth(Float32 &value, const unsigned long pos) const
+OFCondition DRTBeamDoseVerificationControlPointSequence::Item::getBeamDosePointDepth(Float32 &value, const unsigned long pos) const
 {
     if (EmptyDefaultItem)
         return EC_IllegalCall;
     else
-        return OFconst_cast(DcmFloatingPointSingle &, AverageBeamDosePointDepth).getFloat32(value, pos);
+        return OFconst_cast(DcmFloatingPointSingle &, BeamDosePointDepth).getFloat32(value, pos);
 }
 
 
-OFCondition DRTBeamDoseVerificationControlPointSequence::Item::getAverageBeamDosePointEquivalentDepth(Float32 &value, const unsigned long pos) const
+OFCondition DRTBeamDoseVerificationControlPointSequence::Item::getBeamDosePointEquivalentDepth(Float32 &value, const unsigned long pos) const
 {
     if (EmptyDefaultItem)
         return EC_IllegalCall;
     else
-        return OFconst_cast(DcmFloatingPointSingle &, AverageBeamDosePointEquivalentDepth).getFloat32(value, pos);
+        return OFconst_cast(DcmFloatingPointSingle &, BeamDosePointEquivalentDepth).getFloat32(value, pos);
 }
 
 
-OFCondition DRTBeamDoseVerificationControlPointSequence::Item::getAverageBeamDosePointSSD(Float32 &value, const unsigned long pos) const
+OFCondition DRTBeamDoseVerificationControlPointSequence::Item::getBeamDosePointSSD(Float32 &value, const unsigned long pos) const
 {
     if (EmptyDefaultItem)
         return EC_IllegalCall;
     else
-        return OFconst_cast(DcmFloatingPointSingle &, AverageBeamDosePointSSD).getFloat32(value, pos);
+        return OFconst_cast(DcmFloatingPointSingle &, BeamDosePointSSD).getFloat32(value, pos);
 }
 
 
@@ -188,30 +188,30 @@ OFCondition DRTBeamDoseVerificationControlPointSequence::Item::getReferencedCont
 }
 
 
-OFCondition DRTBeamDoseVerificationControlPointSequence::Item::setAverageBeamDosePointDepth(const Float32 value, const unsigned long pos)
+OFCondition DRTBeamDoseVerificationControlPointSequence::Item::setBeamDosePointDepth(const Float32 value, const unsigned long pos)
 {
     if (EmptyDefaultItem)
         return EC_IllegalCall;
     else
-        return AverageBeamDosePointDepth.putFloat32(value, pos);
+        return BeamDosePointDepth.putFloat32(value, pos);
 }
 
 
-OFCondition DRTBeamDoseVerificationControlPointSequence::Item::setAverageBeamDosePointEquivalentDepth(const Float32 value, const unsigned long pos)
+OFCondition DRTBeamDoseVerificationControlPointSequence::Item::setBeamDosePointEquivalentDepth(const Float32 value, const unsigned long pos)
 {
     if (EmptyDefaultItem)
         return EC_IllegalCall;
     else
-        return AverageBeamDosePointEquivalentDepth.putFloat32(value, pos);
+        return BeamDosePointEquivalentDepth.putFloat32(value, pos);
 }
 
 
-OFCondition DRTBeamDoseVerificationControlPointSequence::Item::setAverageBeamDosePointSSD(const Float32 value, const unsigned long pos)
+OFCondition DRTBeamDoseVerificationControlPointSequence::Item::setBeamDosePointSSD(const Float32 value, const unsigned long pos)
 {
     if (EmptyDefaultItem)
         return EC_IllegalCall;
     else
-        return AverageBeamDosePointSSD.putFloat32(value, pos);
+        return BeamDosePointSSD.putFloat32(value, pos);
 }
 
 
@@ -344,7 +344,7 @@ OFBool DRTBeamDoseVerificationControlPointSequence::isValid() const
 }
 
 
-unsigned long DRTBeamDoseVerificationControlPointSequence::getNumberOfItems() const
+size_t DRTBeamDoseVerificationControlPointSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -374,12 +374,12 @@ OFCondition DRTBeamDoseVerificationControlPointSequence::gotoNextItem()
 }
 
 
-OFCondition DRTBeamDoseVerificationControlPointSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTBeamDoseVerificationControlPointSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -394,12 +394,12 @@ OFCondition DRTBeamDoseVerificationControlPointSequence::gotoItem(const unsigned
 }
 
 
-OFCondition DRTBeamDoseVerificationControlPointSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTBeamDoseVerificationControlPointSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -414,7 +414,7 @@ OFCondition DRTBeamDoseVerificationControlPointSequence::gotoItem(const unsigned
 }
 
 
-OFCondition DRTBeamDoseVerificationControlPointSequence::gotoItem(const unsigned long num)
+OFCondition DRTBeamDoseVerificationControlPointSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -450,7 +450,7 @@ const DRTBeamDoseVerificationControlPointSequence::Item &DRTBeamDoseVerification
 }
 
 
-OFCondition DRTBeamDoseVerificationControlPointSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTBeamDoseVerificationControlPointSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -460,7 +460,7 @@ OFCondition DRTBeamDoseVerificationControlPointSequence::getItem(const unsigned 
 }
 
 
-DRTBeamDoseVerificationControlPointSequence::Item &DRTBeamDoseVerificationControlPointSequence::getItem(const unsigned long num)
+DRTBeamDoseVerificationControlPointSequence::Item &DRTBeamDoseVerificationControlPointSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -470,7 +470,7 @@ DRTBeamDoseVerificationControlPointSequence::Item &DRTBeamDoseVerificationContro
 }
 
 
-const DRTBeamDoseVerificationControlPointSequence::Item &DRTBeamDoseVerificationControlPointSequence::getItem(const unsigned long num) const
+const DRTBeamDoseVerificationControlPointSequence::Item &DRTBeamDoseVerificationControlPointSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -480,13 +480,13 @@ const DRTBeamDoseVerificationControlPointSequence::Item &DRTBeamDoseVerification
 }
 
 
-DRTBeamDoseVerificationControlPointSequence::Item &DRTBeamDoseVerificationControlPointSequence::operator[](const unsigned long num)
+DRTBeamDoseVerificationControlPointSequence::Item &DRTBeamDoseVerificationControlPointSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTBeamDoseVerificationControlPointSequence::Item &DRTBeamDoseVerificationControlPointSequence::operator[](const unsigned long num) const
+const DRTBeamDoseVerificationControlPointSequence::Item &DRTBeamDoseVerificationControlPointSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -509,7 +509,7 @@ OFCondition DRTBeamDoseVerificationControlPointSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTBeamDoseVerificationControlPointSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTBeamDoseVerificationControlPointSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -532,7 +532,7 @@ OFCondition DRTBeamDoseVerificationControlPointSequence::insertItem(const unsign
 }
 
 
-OFCondition DRTBeamDoseVerificationControlPointSequence::removeItem(const unsigned long pos)
+OFCondition DRTBeamDoseVerificationControlPointSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

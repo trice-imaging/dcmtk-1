@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2017, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,7 +28,6 @@
 
 #include "dcmtk/dcmsr/dsrtree.h"
 #include "dcmtk/dcmsr/dsrcodvl.h"
-#include "dcmtk/dcmdata/dcitem.h"
 
 
 /*-----------------------*
@@ -36,13 +35,6 @@
  *-----------------------*/
 
 class DSRIODConstraintChecker;
-
-
-/*-------------------*
- *  type definition  *
- *-------------------*/
-
-typedef DSRTreeNodeCursor<DSRDocumentTreeNode> DSRDocumentTreeNodeCursor;
 
 
 /*---------------------*
@@ -57,6 +49,9 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTreeNode
     // allow direct access to protected methods
     friend class DSRTree<DSRDocumentTreeNode>;
     friend class DSRTreeNodeCursor<DSRDocumentTreeNode>;
+    // also for the derived cursor classes
+    friend class DSRDocumentTreeNodeCursor;
+    friend class DSRIncludedTemplateNodeCursor;
 
     // allow access to getConceptNamePtr()
     friend class DSRContentItem;
@@ -91,6 +86,24 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTreeNode
     /** destructor
      */
     virtual ~DSRDocumentTreeNode();
+
+    /** comparison operator "equal".
+     *  Two tree nodes are regarded as equal if the relationship type, the value type and the
+     *  concept name are equal.  Other information is not used unless implemented in a derived
+     *  class.
+     ** @param  node  tree node that should be compared to the current one
+     ** @return OFTrue if both tree nodes are equal, OFFalse otherwise
+     */
+    virtual OFBool operator==(const DSRDocumentTreeNode &node) const;
+
+    /** comparison operator "not equal".
+     *  Two tree nodes are regarded as not equal if either the relationship type or the value
+     *  type or the concept name are not equal.  Other information is not used unless implemented
+     *  in a derived class.
+     ** @param  node  tree node that should be compared to the current one
+     ** @return OFTrue if both tree nodes are not equal, OFFalse otherwise
+     */
+    virtual OFBool operator!=(const DSRDocumentTreeNode &node) const;
 
     /** clone this tree node (abstract).
      *  Internally, the copy constructor is used, so the corresponding comments apply.
@@ -138,6 +151,18 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTreeNode
      */
     virtual OFCondition print(STD_NAMESPACE ostream &stream,
                               const size_t flags) const;
+
+    /** print extended information on the content item.
+     *  The following details are printed (if present and output is enabled): observation
+     *  date/time (in curly brackets), annotation text (in quotation marks) and template
+     *  identification (after a hash mark).  This method is intended to be called after
+     *  the general print() method, e.g. like it is done by DSRDocumentSubTree::print().
+     ** @param  stream  output stream to which the extended information should be printed
+     *  @param  flags   flag used to customize the output (see DSRTypes::PF_xxx)
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition printExtended(STD_NAMESPACE ostream &stream,
+                                      const size_t flags) const;
 
     /** read content item from dataset.
      *  A number of readXXX() methods are called (see "protected" part) in order to retrieve all
@@ -399,6 +424,17 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTreeNode
     virtual OFCondition setObservationUID(const OFString &observationUID,
                                           const OFBool check = OFTrue);
 
+    /** compare template identification with given values
+     ** @param  templateIdentifier  template identifier to compare with
+     *  @param  mappingResource     mapping resource that defines the template
+     *  @param  mappingResourceUID  uniquely identifies the mapping resource (optional).
+     *                              Not used for comparison if the value is empty.
+     ** @result OFTrue if template identification is identical, OFFalse otherwise
+     */
+    virtual OFBool compareTemplateIdentification(const OFString &templateIdentifier,
+                                                 const OFString &mappingResource,
+                                                 const OFString &mappingResourceUID = "") const;
+
     /** get template identifier and mapping resource.
      *  This value pair identifies the template that was used to create this content item
      *  (and its children).  According to the DICOM standard, it is "required if a template
@@ -598,7 +634,7 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTreeNode
     /** read document relationship macro
      ** @param  dataset            DICOM dataset from which the data should be read
      *  @param  constraintChecker  checks relationship content constraints of the associated IOD
-     *  @param  posString          location of the current content item (e.g. "1.2.3")
+     *  @param  posString          location of the current content item (e.g.\ "1.2.3")
      *  @param  flags              flag used to customize the reading process (see DSRTypes::RF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
@@ -618,7 +654,7 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTreeNode
 
     /** read document content macro
      ** @param  dataset    DICOM dataset from which the data should be read
-     *  @param  posString  location of the current content item (e.g. "1.2.3")
+     *  @param  posString  location of the current content item (e.g.\ "1.2.3")
      *  @param  flags      flag used to customize the reading process (see DSRTypes::RF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
@@ -635,7 +671,7 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTreeNode
     /** read content sequence
      ** @param  dataset            DICOM dataset from which the data should be read
      *  @param  constraintChecker  checks relationship content constraints of the associated IOD
-     *  @param  posString          location of the current content item (e.g. "1.2.3")
+     *  @param  posString          location of the current content item (e.g.\ "1.2.3")
      *  @param  flags              flag used to customize the reading process (see DSRTypes::RF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
@@ -706,10 +742,10 @@ class DCMTK_DCMSR_EXPORT DSRDocumentTreeNode
 
   private:
 
-    /// flag indicating whether the content item is marked (e.g. used for digital signatures).
+    /// flag indicating whether the content item is marked (e.g.\ used for digital signatures).
     /// The default value is OFFalse.
     OFBool             MarkFlag;
-    /// flag indicating whether the content item is referenced (by-reference relationship)
+    /// flag indicating whether the content item is referenced (by-reference relationship).
     /// The default value is OFFalse.
     OFBool             ReferenceTarget;
 

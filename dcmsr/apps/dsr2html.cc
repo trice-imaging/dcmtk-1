@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2014, OFFIS e.V.
+ *  Copyright (C) 2000-2016, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,16 +23,17 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#include "dcmtk/dcmsr/dsrdoc.h"
-#include "dcmtk/dcmdata/cmdlnarg.h"
+#include "dcmtk/dcmsr/dsrdoc.h"       /* for main interface class DSRDocument */
+
+#include "dcmtk/dcmdata/dctk.h"       /* for typical set of "dcmdata" headers */
+
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofconapp.h"
-#include "dcmtk/dcmdata/dcuid.h"      /* for dcmtk version name */
 
 #ifdef WITH_ZLIB
 #include <zlib.h>                     /* for zlibVersion() */
 #endif
-#ifdef WITH_LIBICONV
+#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
 #include "dcmtk/ofstd/ofchrenc.h"     /* for OFCharacterEncoding */
 #endif
 
@@ -81,7 +82,7 @@ static OFCondition renderFile(STD_NAMESPACE ostream &out,
     } else
         result = EC_MemoryExhausted;
 
-#ifdef WITH_LIBICONV
+#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
     /* convert all DICOM strings to UTF-8 (if requested) */
     if (result.good() && convertToUTF8)
     {
@@ -102,6 +103,9 @@ static OFCondition renderFile(STD_NAMESPACE ostream &out,
             OFLOG_FATAL(dsr2htmlLogger, result.text() << ": converting file to UTF-8: " << ifname);
         }
     }
+#else
+    // avoid compiler warning on unused variable
+    (void)convertToUTF8;
 #endif
     if (result.good())
     {
@@ -127,32 +131,18 @@ static OFCondition renderFile(STD_NAMESPACE ostream &out,
                         OFLOG_DEBUG(dsr2htmlLogger, "use option --charset-assume to manually specify an appropriate character set");
                         result = EC_IllegalCall;
                     } else {
-                        OFString charsetStr(defaultCharset);
                         // use the default character set specified by the user
-                        if (charsetStr == "ISO_IR 192")
-                            dsrdoc->setSpecificCharacterSetType(DSRTypes::CS_UTF8);
-                        else if (charsetStr == "ISO_IR 100")
-                            dsrdoc->setSpecificCharacterSetType(DSRTypes::CS_Latin1);
-                        else if (charsetStr == "ISO_IR 101")
-                            dsrdoc->setSpecificCharacterSetType(DSRTypes::CS_Latin2);
-                        else if (charsetStr == "ISO_IR 109")
-                            dsrdoc->setSpecificCharacterSetType(DSRTypes::CS_Latin3);
-                        else if (charsetStr == "ISO_IR 110")
-                            dsrdoc->setSpecificCharacterSetType(DSRTypes::CS_Latin4);
-                        else if (charsetStr == "ISO_IR 148")
-                            dsrdoc->setSpecificCharacterSetType(DSRTypes::CS_Latin5);
-                        else if (charsetStr == "ISO_IR 144")
-                            dsrdoc->setSpecificCharacterSetType(DSRTypes::CS_Cyrillic);
-                        else if (charsetStr == "ISO_IR 127")
-                            dsrdoc->setSpecificCharacterSetType(DSRTypes::CS_Arabic);
-                        else if (charsetStr == "ISO_IR 126")
-                            dsrdoc->setSpecificCharacterSetType(DSRTypes::CS_Greek);
-                        else if (charsetStr == "ISO_IR 138")
-                            dsrdoc->setSpecificCharacterSetType(DSRTypes::CS_Hebrew);
-                        else {
+                        result = dsrdoc->setSpecificCharacterSet(defaultCharset);
+                        if (dsrdoc->getSpecificCharacterSetType() == DSRTypes::CS_unknown)
+                        {
                             OFLOG_FATAL(dsr2htmlLogger, OFFIS_CONSOLE_APPLICATION << ": Character set '"
                                 << defaultCharset << "' specified with option --charset-assume not supported");
                             result = EC_IllegalCall;
+                        }
+                        else if (result.bad())
+                        {
+                            OFLOG_FATAL(dsr2htmlLogger, OFFIS_CONSOLE_APPLICATION << ": Cannot use character set '"
+                                << defaultCharset << "' specified with option --charset-assume: " << result.text());
                         }
                     }
                 }
@@ -225,8 +215,8 @@ int main(int argc, char *argv[])
         cmd.addOption("--charset-require",      "+Cr",    "require declaration of ext. charset (default)");
         cmd.addOption("--charset-assume",       "+Ca", 1, "[c]harset: string",
                                                           "assume charset c if no extended charset declared");
-        cmd.addOption("--charset-check-all",              "check all data elements with string values\n(default: only PN, LO, LT, SH, ST and UT)");
-#ifdef WITH_LIBICONV
+        cmd.addOption("--charset-check-all",              "check all data elements with string values\n(default: only PN, LO, LT, SH, ST, UC and UT)");
+#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
         cmd.addOption("--convert-to-utf8",      "+U8",    "convert all element values that are affected\nby Specific Character Set (0008,0005) to UTF-8");
 #endif
     cmd.addGroup("output options:");
@@ -270,7 +260,7 @@ int main(int argc, char *argv[])
             {
                 app.printHeader(OFTrue /*print host identifier*/);
                 COUT << OFendl << "External libraries used:";
-#if !defined(WITH_ZLIB) && !defined(WITH_LIBICONV)
+#if !defined(WITH_ZLIB) && !defined(DCMTK_ENABLE_CHARSET_CONVERSION)
                 COUT << " none" << OFendl;
 #else
                 COUT << OFendl;
@@ -278,7 +268,7 @@ int main(int argc, char *argv[])
 #ifdef WITH_ZLIB
                 COUT << "- ZLIB, Version " << zlibVersion() << OFendl;
 #endif
-#ifdef WITH_LIBICONV
+#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
                 COUT << "- " << OFCharacterEncoding::getLibraryVersionString() << OFendl;
 #endif
                 return 0;
@@ -348,7 +338,7 @@ int main(int argc, char *argv[])
         cmd.endOptionBlock();
         if (cmd.findOption("--charset-check-all"))
             opt_checkAllStrings = OFTrue;
-#ifdef WITH_LIBICONV
+#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
         if (cmd.findOption("--convert-to-utf8"))
             opt_convertToUTF8 = OFTrue;
 #endif

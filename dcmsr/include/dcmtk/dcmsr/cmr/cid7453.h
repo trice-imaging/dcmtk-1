@@ -1,12 +1,12 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2021, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class CID7453_PerformingRoles
  *
- *  Generated automatically from DICOM PS 3.16-2015c
- *  File created on 2015-08-23 14:59:26 by J. Riesmeier
+ *  Generated automatically from DICOM PS 3.16-2021d
+ *  File created on 2021-09-13 09:26:38 by J. Riesmeier
  *
  */
 
@@ -19,6 +19,8 @@
 #include "dcmtk/dcmsr/dsrctxgr.h"
 #include "dcmtk/dcmsr/cmr/define.h"
 
+#include "dcmtk/ofstd/ofmap.h"
+
 
 /*---------------------*
  *  class declaration  *
@@ -26,7 +28,7 @@
 
 /** Implementation of DCMR Context Group:
  *  CID 7453 - Performing Roles.
- *  (type: extensible, version: 20141110)
+ *  (type: extensible, version: 20180326)
  */
 class DCMTK_CMR_EXPORT CID7453_PerformingRoles
   : public DSRContextGroup
@@ -50,14 +52,28 @@ class DCMTK_CMR_EXPORT CID7453_PerformingRoles
         Verifying,
         /// (121099,DCM,"Assisting")
         Assisting,
-        /// (J-0714B,SRT,"Circulating Nurse")
+        /// (413854007,SCT,"Circulating Nurse")
         CirculatingNurse,
         /// (121101,DCM,"Standby")
         Standby,
         /// (113850,DCM,"Irradiation Authorizing")
         IrradiationAuthorizing,
         /// (113851,DCM,"Irradiation Administering")
-        IrradiationAdministering
+        IrradiationAdministering,
+        /// (C28747,NCIt,"Reader")
+        Reader,
+        /// (129001,DCM,"Eligibility Reader")
+        EligibilityReader,
+        /// (C96561,NCIt,"Adjudicator")
+        Adjudicator,
+        /// (C54634,NCIt,"Reviewer")
+        Reviewer,
+        /// (129002,DCM,"Designator")
+        Designator,
+        /// (129003,DCM,"Image Quality Controller")
+        ImageQualityController,
+        /// (129004,DCM,"Results Quality Controller")
+        ResultsQualityController
     };
 
     /** (default) constructor
@@ -161,5 +177,14 @@ class DCMTK_CMR_EXPORT CID7453_PerformingRoles
     /// pointer to internal code list (use a static variable for singleton pattern)
     static CodeList *Codes;
 };
+
+
+/*-------------------*
+ *  type definition  *
+ *-------------------*/
+
+// define short name for the context group class
+typedef CID7453_PerformingRoles CMR_CID7453;
+
 
 #endif

@@ -44,6 +44,10 @@
 #include <errno.h>
 #endif
 
+#ifdef MAX
+#undef MAX
+#endif
+
 #define MAX(a, b) ((a) < (b) ? (b) : (a))
 
 namespace dcmtk
@@ -73,7 +77,7 @@ static
 long
 file_rename (tstring const & src, tstring const & target)
 {
-#if defined (UNICODE) && defined (_WIN32)
+#if defined (DCMTK_OFLOG_UNICODE) && defined (_WIN32)
     if (_wrename (src.c_str (), target.c_str ()) == 0)
         return 0;
     else
@@ -94,7 +98,7 @@ static
 long
 file_remove (tstring const & src)
 {
-#if defined (UNICODE) && defined (_WIN32)
+#if defined (DCMTK_OFLOG_UNICODE) && defined (_WIN32)
     if (_wremove (src.c_str ()) == 0)
         return 0;
     else

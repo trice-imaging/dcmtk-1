@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,11 +21,12 @@
 
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+#include "dcmtk/ofstd/ofconsol.h"     /* for COUT */
 
-#include "dcmtk/ofstd/ofstream.h"
-#include "dcmtk/dcmsr/dsrdoc.h"
-#include "dcmtk/dcmdata/dcuid.h"
-#include "dcmtk/dcmdata/dcfilefo.h"
+#include "dcmtk/dcmsr/dsrdoc.h"       /* for main interface class DSRDocument */
+#include "dcmtk/dcmsr/codes/ucum.h"
+
+#include "dcmtk/dcmdata/dctk.h"       /* for typical set of "dcmdata" headers */
 
 
 // forward declarations
@@ -184,7 +185,8 @@ int main(int argc, char *argv[])
                             OFString filename = "report";
                             filename += array[i];
                             filename += ".dcm";
-                            fileformat->saveFile(filename.c_str(), EXS_LittleEndianExplicit);
+                            if (fileformat->saveFile(filename, EXS_LittleEndianExplicit).bad())
+                                CERR << "ERROR: could not save dataset to file '" << filename << "'" << OFendl;
                         } else
                             CERR << "ERROR: could not write SR document into dataset" << OFendl;
                     }
@@ -515,7 +517,7 @@ static void generate_02(DSRDocument *doc, OFString &studyUID_01)
 
     doc->getTree().addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Num);
     doc->getTree().getCurrentContentItem().setConceptName(DSRCodedEntryValue("M-02550", "SNM3", "Diameter"));
-    doc->getTree().getCurrentContentItem().setNumericValue(DSRNumericMeasurementValue("1.5", DSRCodedEntryValue("cm", "UCUM", "1.4", "centimeter")));
+    doc->getTree().getCurrentContentItem().setNumericValue(DSRNumericMeasurementValue("1.5", CODE_UCUM_Centimeter));
 
     doc->getTree().addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Text);
     doc->getTree().getCurrentContentItem().setConceptName(DSRCodedEntryValue("CODE_01", OFFIS_CODING_SCHEME_DESIGNATOR, "Description"));
@@ -531,11 +533,10 @@ static void generate_02(DSRDocument *doc, OFString &studyUID_01)
     doc->getTree().getCurrentContentItem().setConceptName(DSRCodedEntryValue("CODE_03", OFFIS_CODING_SCHEME_DESIGNATOR, "Treatment"));
     doc->getTree().getCurrentContentItem().setStringValue("The plan of treatment is as follows: 4500 rad, 15 treatment sessions, using 100 kV radiation.\nThe reason for treatment, expected acute reaction, and remote possibility of complication was discussed with this patient at some length, and he accepted therapy as outlined.");
 
-    // add additional information on UCUM coding scheme (UID from CP 372)
-    doc->getCodingSchemeIdentification().addItem("UCUM");
-    doc->getCodingSchemeIdentification().setCodingSchemeUID("2.16.840.1.113883.6.8");
-    doc->getCodingSchemeIdentification().setCodingSchemeName("Unified Code for Units of Measure");
-    doc->getCodingSchemeIdentification().setCodingSchemeVersion("1.4");
+    // add additional information on UCUM coding scheme
+    doc->getCodingSchemeIdentification().addItem(CODE_UCUM_CodingSchemeDesignator);
+    doc->getCodingSchemeIdentification().setCodingSchemeUID(CODE_UCUM_CodingSchemeUID);
+    doc->getCodingSchemeIdentification().setCodingSchemeName(CODE_UCUM_CodingSchemeDescription);
     doc->getCodingSchemeIdentification().setCodingSchemeResponsibleOrganization("Regenstrief Institute for Health Care, Indianapolis");
 }
 

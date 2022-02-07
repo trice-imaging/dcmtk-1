@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2014, OFFIS e.V.
+ *  Copyright (C) 2011-2018, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -187,6 +187,9 @@ class DCMTK_DCMNET_EXPORT DcmStorageSCU
      *  of the DICOM standard.  For example, if a lossless compressed SOP instance is to be
      *  sent, there should be at least one presentation context for this SOP class that also
      *  proposes the default transfer syntax (Implicit VR Little Endian).
+     *  @note Please note that support for CP-1704 has not been implemented yet, i.e. it is
+     *    not checked whether the decompressed data cannot be encoded in the default transfer
+     *    syntax because it would be too large, which would also waive this requirement.
      *  @param  allowMode  mode indicating whether illegal proposals are allowed or not
      *                     (default: OFTrue, i.e.\ allowed)
      */
@@ -265,7 +268,7 @@ class DCMTK_DCMNET_EXPORT DcmStorageSCU
      *                       conformance.  If OFFalse, only empty values are rejected.
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition addDicomFile(const OFString &filename,
+    OFCondition addDicomFile(const OFFilename &filename,
                              const E_FileReadMode readMode = ERM_fileOnly,
                              const OFBool checkValues = OFTrue);
 
@@ -300,9 +303,9 @@ class DCMTK_DCMNET_EXPORT DcmStorageSCU
      *  contexts, which can be negotiated during a single association, is reached, this method
      *  returns and any subsequent call adds the next bunch of presentation contexts needed.
      *  @return status, EC_Normal if successful, an error code otherwise.  If no presentation
-     *     contexts have been added, NET_EC_NoPresentationContextsDefined is returned.  This
-     *     code can, therefore, be used to check that all SOP instances from the transfer list
-     *     have been negotiated and sent in previous calls.
+     *    contexts have been added, NET_EC_NoPresentationContextsDefined is returned.  This
+     *    code can, therefore, be used to check that all SOP instances from the transfer list
+     *    have been negotiated and sent in previous calls.
      */
     OFCondition addPresentationContexts();
 
@@ -371,7 +374,7 @@ class DCMTK_DCMNET_EXPORT DcmStorageSCU
          *  @param  transferSyntaxUID  Transfer Syntax UID of the SOP instance to be
          *                             transferred
          */
-        TransferEntry(const OFString &filename,
+        TransferEntry(const OFFilename &filename,
                       const E_FileReadMode readMode,
                       const OFString &sopClassUID,
                       const OFString &sopInstanceUID,
@@ -398,7 +401,7 @@ class DCMTK_DCMNET_EXPORT DcmStorageSCU
         ~TransferEntry();
 
         /// filename of the SOP instance to be transferred (if no 'Dataset' given)
-        const OFString Filename;
+        const OFFilename Filename;
         /// read mode that should be used to read the given SOP instance from file
         const E_FileReadMode FileReadMode;
         /// dataset of the SOP instance to be transferred (if no 'Filename' given)
@@ -413,9 +416,13 @@ class DCMTK_DCMNET_EXPORT DcmStorageSCU
         const OFString TransferSyntaxUID;
         /// transfer syntax that was used to send this SOP instance
         E_TransferSyntax NetworkTransferSyntax;
-        /// flag indicating whether the SOP instance is uncompressed, i.e.\ uses any of the
-        /// three uncompressed transfer syntaxes
+        /// flag indicating whether the SOP instance is uncompressed, i.e.\ uses any of
+        /// the three uncompressed transfer syntaxes
         OFBool Uncompressed;
+        /// size of the dataset of the SOP instance (in bytes, 0 = not yet determined).
+        /// NB: The number of bytes that are actually transferred might deviate because
+        /// of minor changes to the DICOM dataset when appended to the C-STORE request.
+        unsigned long DatasetSize;
         /// association number that was used to send this SOP instance (0 = not sent)
         unsigned long AssociationNumber;
         /// presentation context ID to be used for sending this SOP instance
@@ -450,11 +457,9 @@ class DCMTK_DCMNET_EXPORT DcmStorageSCU
      *                       only empty values are rejected.
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition addDicomFilesFromDICOMDIR(const OFString &filename,
+    OFCondition addDicomFilesFromDICOMDIR(const OFFilename &filename,
                                           const E_FileReadMode readMode,
                                           const OFBool checkValues);
-
-    // --- static methods ---
 
     /** check given SOP Class UID, SOP Instance UID and Transfer Syntax UID for validity and
      *  conformance to the DICOM standard.  For all UID values, the compliance with the
@@ -464,6 +469,8 @@ class DCMTK_DCMNET_EXPORT DcmStorageSCU
      *  For the Transfer Syntax UID, it is checked whether it is known and generally
      *  supported.  Further checks will be performed when the list of presentation contexts is
      *  created for the association negotiation.
+     *  This method is called for each SOP instance that is added to the transfer list by one
+     *  of the following methods: addDicomFile(), addDataset(), addDicomFilesFromDICOMDIR()
      *  @param  sopClassUID        value of the SOP Class UID to be checked
      *  @param  sopInstanceUID     value of the SOP Instance UID to be checked
      *  @param  transferSyntaxUID  value of the Transfer Syntax UID to be checked
@@ -472,20 +479,26 @@ class DCMTK_DCMNET_EXPORT DcmStorageSCU
      *                             are rejected.
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    static OFCondition checkSOPInstance(const OFString &sopClassUID,
-                                        const OFString &sopInstanceUID,
-                                        const OFString &transferSyntaxUID,
-                                        const OFBool checkValues);
+    virtual OFCondition checkSOPInstance(const OFString &sopClassUID,
+                                         const OFString &sopInstanceUID,
+                                         const OFString &transferSyntaxUID,
+                                         const OFBool checkValues);
 
-    /** This method is called each time a SOP instance is sent to a peer.  Since it is called
-     *  after the SOP instance has been processed, the transfer entry passed to this method
-     *  contains current information, e.g. the DIMSE status of the C-STORE response.  This
-     *  also allows for counting the number of successful and failed transfers.
+    /** this method is called each time before a SOP instance is sent to a peer.  Therefore,
+     *  the transfer entry passed to this method does not yet contain all information.
+     *  @param  transferEntry  reference to current transfer entry that will be processed
+     */
+    virtual void notifySOPInstanceToBeSent(const TransferEntry &transferEntry);
+
+    /** this method is called each time after a SOP instance has been sent to a peer.
+     *  Therefore, the transfer entry passed to this method contains current and usually
+     *  also complete information, e.g. the DIMSE status of the C-STORE response.  This
+     *  allows for counting the number of successful and failed transfers.
      *  @param  transferEntry  reference to current transfer entry that has been processed
      */
     virtual void notifySOPInstanceSent(const TransferEntry &transferEntry);
 
-    /** This method is called each time after a SOP instance is sent to a peer.  If the
+    /** this method is called each time after a SOP instance is sent to a peer.  If the
      *  return value is OFTrue, the SCU will stop the sending process after the current SOP
      *  instance.  This could for example make sense when transferring SOP instances due to
      *  a C-MOVE request, which is externally canceled by a C-CANCEL message.  The default

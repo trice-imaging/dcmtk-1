@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTControlPointSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -27,6 +27,7 @@ DRTControlPointSequence::Item::Item(const OFBool emptyDefaultItem)
     ControlPointIndex(DCM_ControlPointIndex),
     CumulativeMetersetWeight(DCM_CumulativeMetersetWeight),
     DoseRateSet(DCM_DoseRateSet),
+    ExternalContourEntryPoint(DCM_ExternalContourEntryPoint),
     GantryAngle(DCM_GantryAngle),
     GantryPitchAngle(DCM_GantryPitchAngle),
     GantryPitchRotationDirection(DCM_GantryPitchRotationDirection),
@@ -37,6 +38,7 @@ DRTControlPointSequence::Item::Item(const OFBool emptyDefaultItem)
     PatientSupportRotationDirection(DCM_PatientSupportRotationDirection),
     ReferencedDoseReferenceSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     ReferencedDoseSequence(emptyDefaultItem /*emptyDefaultSequence*/),
+    SourceToExternalContourDistance(DCM_SourceToExternalContourDistance),
     SourceToSurfaceDistance(DCM_SourceToSurfaceDistance),
     SurfaceEntryPoint(DCM_SurfaceEntryPoint),
     TableTopEccentricAngle(DCM_TableTopEccentricAngle),
@@ -62,6 +64,7 @@ DRTControlPointSequence::Item::Item(const Item &copy)
     ControlPointIndex(copy.ControlPointIndex),
     CumulativeMetersetWeight(copy.CumulativeMetersetWeight),
     DoseRateSet(copy.DoseRateSet),
+    ExternalContourEntryPoint(copy.ExternalContourEntryPoint),
     GantryAngle(copy.GantryAngle),
     GantryPitchAngle(copy.GantryPitchAngle),
     GantryPitchRotationDirection(copy.GantryPitchRotationDirection),
@@ -72,6 +75,7 @@ DRTControlPointSequence::Item::Item(const Item &copy)
     PatientSupportRotationDirection(copy.PatientSupportRotationDirection),
     ReferencedDoseReferenceSequence(copy.ReferencedDoseReferenceSequence),
     ReferencedDoseSequence(copy.ReferencedDoseSequence),
+    SourceToExternalContourDistance(copy.SourceToExternalContourDistance),
     SourceToSurfaceDistance(copy.SourceToSurfaceDistance),
     SurfaceEntryPoint(copy.SurfaceEntryPoint),
     TableTopEccentricAngle(copy.TableTopEccentricAngle),
@@ -105,6 +109,7 @@ DRTControlPointSequence::Item &DRTControlPointSequence::Item::operator=(const It
         ControlPointIndex = copy.ControlPointIndex;
         CumulativeMetersetWeight = copy.CumulativeMetersetWeight;
         DoseRateSet = copy.DoseRateSet;
+        ExternalContourEntryPoint = copy.ExternalContourEntryPoint;
         GantryAngle = copy.GantryAngle;
         GantryPitchAngle = copy.GantryPitchAngle;
         GantryPitchRotationDirection = copy.GantryPitchRotationDirection;
@@ -115,6 +120,7 @@ DRTControlPointSequence::Item &DRTControlPointSequence::Item::operator=(const It
         PatientSupportRotationDirection = copy.PatientSupportRotationDirection;
         ReferencedDoseReferenceSequence = copy.ReferencedDoseReferenceSequence;
         ReferencedDoseSequence = copy.ReferencedDoseSequence;
+        SourceToExternalContourDistance = copy.SourceToExternalContourDistance;
         SourceToSurfaceDistance = copy.SourceToSurfaceDistance;
         SurfaceEntryPoint = copy.SurfaceEntryPoint;
         TableTopEccentricAngle = copy.TableTopEccentricAngle;
@@ -166,7 +172,9 @@ void DRTControlPointSequence::Item::clear()
         TableTopLateralPosition.clear();
         IsocenterPosition.clear();
         SurfaceEntryPoint.clear();
+        ExternalContourEntryPoint.clear();
         SourceToSurfaceDistance.clear();
+        SourceToExternalContourDistance.clear();
     }
 }
 
@@ -201,7 +209,9 @@ OFBool DRTControlPointSequence::Item::isEmpty()
            TableTopLateralPosition.isEmpty() &&
            IsocenterPosition.isEmpty() &&
            SurfaceEntryPoint.isEmpty() &&
-           SourceToSurfaceDistance.isEmpty();
+           ExternalContourEntryPoint.isEmpty() &&
+           SourceToSurfaceDistance.isEmpty() &&
+           SourceToExternalContourDistance.isEmpty();
 }
 
 
@@ -246,7 +256,9 @@ OFCondition DRTControlPointSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, TableTopLateralPosition, "1", "2C", "ControlPointSequence");
         getAndCheckElementFromDataset(item, IsocenterPosition, "3", "2C", "ControlPointSequence");
         getAndCheckElementFromDataset(item, SurfaceEntryPoint, "3", "3", "ControlPointSequence");
+        getAndCheckElementFromDataset(item, ExternalContourEntryPoint, "3", "3", "ControlPointSequence");
         getAndCheckElementFromDataset(item, SourceToSurfaceDistance, "1", "3", "ControlPointSequence");
+        getAndCheckElementFromDataset(item, SourceToExternalContourDistance, "1", "3", "ControlPointSequence");
         result = EC_Normal;
     }
     return result;
@@ -287,7 +299,9 @@ OFCondition DRTControlPointSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmDecimalString(TableTopLateralPosition), "1", "2C", "ControlPointSequence");
         addElementToDataset(result, item, new DcmDecimalString(IsocenterPosition), "3", "2C", "ControlPointSequence");
         addElementToDataset(result, item, new DcmDecimalString(SurfaceEntryPoint), "3", "3", "ControlPointSequence");
+        addElementToDataset(result, item, new DcmFloatingPointSingle(ExternalContourEntryPoint), "3", "3", "ControlPointSequence");
         addElementToDataset(result, item, new DcmDecimalString(SourceToSurfaceDistance), "1", "3", "ControlPointSequence");
+        addElementToDataset(result, item, new DcmFloatingPointSingle(SourceToExternalContourDistance), "1", "3", "ControlPointSequence");
     }
     return result;
 }
@@ -371,6 +385,15 @@ OFCondition DRTControlPointSequence::Item::getDoseRateSet(Float64 &value, const 
         return EC_IllegalCall;
     else
         return OFconst_cast(DcmDecimalString &, DoseRateSet).getFloat64(value, pos);
+}
+
+
+OFCondition DRTControlPointSequence::Item::getExternalContourEntryPoint(Float32 &value, const unsigned long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return OFconst_cast(DcmFloatingPointSingle &, ExternalContourEntryPoint).getFloat32(value, pos);
 }
 
 
@@ -488,6 +511,15 @@ OFCondition DRTControlPointSequence::Item::getPatientSupportRotationDirection(OF
         return EC_IllegalCall;
     else
         return getStringValueFromElement(PatientSupportRotationDirection, value, pos);
+}
+
+
+OFCondition DRTControlPointSequence::Item::getSourceToExternalContourDistance(Float32 &value, const unsigned long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return OFconst_cast(DcmFloatingPointSingle &, SourceToExternalContourDistance).getFloat32(value, pos);
 }
 
 
@@ -736,6 +768,15 @@ OFCondition DRTControlPointSequence::Item::setDoseRateSet(const OFString &value,
 }
 
 
+OFCondition DRTControlPointSequence::Item::setExternalContourEntryPoint(const Float32 value, const unsigned long pos)
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return ExternalContourEntryPoint.putFloat32(value, pos);
+}
+
+
 OFCondition DRTControlPointSequence::Item::setGantryAngle(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -833,6 +874,15 @@ OFCondition DRTControlPointSequence::Item::setPatientSupportRotationDirection(co
             result = PatientSupportRotationDirection.putOFStringArray(value);
     }
     return result;
+}
+
+
+OFCondition DRTControlPointSequence::Item::setSourceToExternalContourDistance(const Float32 value, const unsigned long pos)
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return SourceToExternalContourDistance.putFloat32(value, pos);
 }
 
 
@@ -1087,7 +1137,7 @@ OFBool DRTControlPointSequence::isValid() const
 }
 
 
-unsigned long DRTControlPointSequence::getNumberOfItems() const
+size_t DRTControlPointSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -1117,12 +1167,12 @@ OFCondition DRTControlPointSequence::gotoNextItem()
 }
 
 
-OFCondition DRTControlPointSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTControlPointSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -1137,12 +1187,12 @@ OFCondition DRTControlPointSequence::gotoItem(const unsigned long num, OFListIte
 }
 
 
-OFCondition DRTControlPointSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTControlPointSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -1157,7 +1207,7 @@ OFCondition DRTControlPointSequence::gotoItem(const unsigned long num, OFListCon
 }
 
 
-OFCondition DRTControlPointSequence::gotoItem(const unsigned long num)
+OFCondition DRTControlPointSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -1193,7 +1243,7 @@ const DRTControlPointSequence::Item &DRTControlPointSequence::getCurrentItem() c
 }
 
 
-OFCondition DRTControlPointSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTControlPointSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -1203,7 +1253,7 @@ OFCondition DRTControlPointSequence::getItem(const unsigned long num, Item *&ite
 }
 
 
-DRTControlPointSequence::Item &DRTControlPointSequence::getItem(const unsigned long num)
+DRTControlPointSequence::Item &DRTControlPointSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -1213,7 +1263,7 @@ DRTControlPointSequence::Item &DRTControlPointSequence::getItem(const unsigned l
 }
 
 
-const DRTControlPointSequence::Item &DRTControlPointSequence::getItem(const unsigned long num) const
+const DRTControlPointSequence::Item &DRTControlPointSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -1223,13 +1273,13 @@ const DRTControlPointSequence::Item &DRTControlPointSequence::getItem(const unsi
 }
 
 
-DRTControlPointSequence::Item &DRTControlPointSequence::operator[](const unsigned long num)
+DRTControlPointSequence::Item &DRTControlPointSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTControlPointSequence::Item &DRTControlPointSequence::operator[](const unsigned long num) const
+const DRTControlPointSequence::Item &DRTControlPointSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -1252,7 +1302,7 @@ OFCondition DRTControlPointSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTControlPointSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTControlPointSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -1275,7 +1325,7 @@ OFCondition DRTControlPointSequence::insertItem(const unsigned long pos, Item *&
 }
 
 
-OFCondition DRTControlPointSequence::removeItem(const unsigned long pos)
+OFCondition DRTControlPointSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

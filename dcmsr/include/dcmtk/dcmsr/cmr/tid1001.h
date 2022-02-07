@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2016, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class TID1001_ObservationContext
@@ -83,6 +83,7 @@ class DCMTK_CMR_EXPORT TID1001_ObservationContext
      *                            whilst the observations were being made (optional)
      *  @param  procedureRoles    the roles played by a device in a procedure (optional,
      *                            multiple values allowed)
+     *  @param  stationAEtitle    application entity title of the device (optional)
      *  @param  check             if enabled, check values for validity before setting them
      ** @return status, EC_Normal if successful, an error code otherwise
      */
@@ -93,6 +94,7 @@ class DCMTK_CMR_EXPORT TID1001_ObservationContext
                                   const OFString &serialNumber = "",
                                   const OFString &physicalLocation = "",
                                   const DeviceParticipatingRolesList &procedureRoles = DeviceParticipatingRolesList(),
+                                  const OFString &stationAEtitle = "",
                                   const OFBool check = OFTrue);
 
     /** add content items for TID 1005 (Procedure Context)
@@ -105,6 +107,14 @@ class DCMTK_CMR_EXPORT TID1001_ObservationContext
      */
     OFCondition addSubjectContext();
 };
+
+
+/*-------------------*
+ *  type definition  *
+ *-------------------*/
+
+// define short name for the SR template class
+typedef TID1001_ObservationContext CMR_TID1001;
 
 
 #endif

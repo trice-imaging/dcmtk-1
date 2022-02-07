@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2012, OFFIS e.V.
+ *  Copyright (C) 1994-2017, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,8 +28,8 @@ OFCondition swapIfNecessary(const E_ByteOrder newByteOrder,
                             const size_t valWidth)
     /*
      * This function swaps byteLength bytes in value if newByteOrder and oldByteOrder
-     * differ from each other. In case bytes have to be swapped, these bytes are seperated
-     * in valWidth elements which will be swapped seperately.
+     * differ from each other. In case bytes have to be swapped, these bytes are separated
+     * in valWidth elements which will be swapped separately.
      *
      * Parameters:
      *   newByteOrder - [in] The new byte ordering (little or big endian).
@@ -70,8 +70,8 @@ OFCondition swapIfNecessary(const E_ByteOrder newByteOrder,
 void swapBytes(void * value, const Uint32 byteLength,
                const size_t valWidth)
     /*
-     * This function swaps byteLength bytes in value. These bytes are seperated
-     * in valWidth elements which will be swapped seperately.
+     * This function swaps byteLength bytes in value. These bytes are separated
+     * in valWidth elements which will be swapped separately.
      *
      * Parameters:
      *   value        - [in] Array that contains the actual bytes which might have to be swapped.
@@ -79,17 +79,17 @@ void swapBytes(void * value, const Uint32 byteLength,
      *   valWidth     - [in] Specifies how many bytes shall be treated together as one element.
      */
 {
-    /* use register (if available) to increase speed */
-    register Uint8 save;
+    Uint8 save;
 
     /* in case valWidth equals 2, swap correspondingly */
     if (valWidth == 2)
     {
-        register Uint8 *first = &OFstatic_cast(Uint8*, value)[0];
-        register Uint8 *second = &OFstatic_cast(Uint8*, value)[1];
-        register Uint32 times = byteLength / 2;
-        while(times--)
+        Uint8 *first = &OFstatic_cast(Uint8*, value)[0];
+        Uint8 *second = &OFstatic_cast(Uint8*, value)[1];
+        Uint32 times = byteLength / 2;
+        while(times)
         {
+            --times;
             save = *first;
             *first = *second;
             *second = save;
@@ -100,22 +100,24 @@ void swapBytes(void * value, const Uint32 byteLength,
     /* if valWidth is greater than 2, swap correspondingly */
     else if (valWidth > 2)
     {
-        register size_t i;
+        size_t i;
         const size_t halfWidth = valWidth / 2;
         const size_t offset = valWidth - 1;
-        register Uint8 *start;
-        register Uint8 *end;
+        Uint8 *start;
+        Uint8 *end;
 
         Uint32 times = OFstatic_cast(Uint32, byteLength / valWidth);
         Uint8  *base = OFstatic_cast(Uint8 *, value);
 
-        while (times--)
+        while (times)
         {
+            --times;
             i = halfWidth;
             start = base;
             end = base+offset;
-            while (i--)
+            while (i)
             {
+                --i;
                 save = *start;
                 *start++ = *end;
                 *end-- = save;

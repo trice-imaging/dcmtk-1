@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2013, OFFIS e.V.
+ *  Copyright (C) 1998-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,10 +25,6 @@
 #include "dcmtk/dcmdata/dcitem.h"
 #include "dcmtk/dcmpstat/dvpsri.h"
 #include "dcmtk/dcmpstat/dvpsdef.h"   /* for constants and macros */
-
-#define INCLUDE_CSTDIO
-#include "dcmtk/ofstd/ofstdinc.h"
-
 
 /* --------------- class DVPSReferencedImage --------------- */
 
@@ -62,9 +58,9 @@ OFCondition DVPSReferencedImage::read(DcmItem &dset)
 
   flushCache();
   
-  READ_FROM_DATASET(DcmUniqueIdentifier, referencedSOPClassUID)
-  READ_FROM_DATASET(DcmUniqueIdentifier, referencedSOPInstanceUID)
-  READ_FROM_DATASET(DcmIntegerString, referencedFrameNumber)
+  READ_FROM_DATASET(DcmUniqueIdentifier, EVR_UI, referencedSOPClassUID)
+  READ_FROM_DATASET(DcmUniqueIdentifier, EVR_UI, referencedSOPInstanceUID)
+  READ_FROM_DATASET(DcmIntegerString, EVR_IS, referencedFrameNumber)
   
   /* Now perform basic sanity checks */
 

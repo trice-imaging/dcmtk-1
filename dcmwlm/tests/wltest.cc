@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2011, OFFIS e.V.
+ *  Copyright (C) 1996-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,12 +21,6 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTRING
-#define INCLUDE_CSTDARG
-#define INCLUDE_CERRNO
-#define INCLUDE_UNISTD
-#include "dcmtk/ofstd/ofstdinc.h"
 
 #include "dcmtk/dcmnet/dicom.h"
 #include "dcmtk/dcmnet/dul.h"
@@ -109,7 +103,7 @@ addOverrideKey(DcmDataset& overrideKeys, char* s)
         errmsg("unknown tag: (%04x,%04x)", g, e);
         usage();
     }
-    DcmElement *elem = newDicomElement(tag);
+    DcmElement *elem = DcmItem::newDicomElement(tag);
     if (elem == NULL) {
         errmsg("cannot create element for tag: (%04x,%04x)", g, e);
         usage();
@@ -138,12 +132,6 @@ int main(int argc, char* argv[])
 {
     int i = 0;
     int j = 0;
-
-#ifdef HAVE_GUSI_H
-    /* needed for Macintosh */
-    GUSISetup(GUSIwithSIOUXSockets);
-    GUSISetup(GUSIwithInternetSockets);
-#endif
 
 #ifdef WITH_TCPWRAPPER
     // this code makes sure that the linker cannot optimize away
@@ -208,8 +196,8 @@ int main(int argc, char* argv[])
 
     for (j=i; j<argc; j++) {
         if (!OFStandard::pathExists(argv[j])) {
-            char buf[256];
-            errmsg("cannot access %s: %s", argv[j], OFStandard::strerror(errno, buf, sizeof(buf)));
+            OFString buffer = OFStandard::getLastSystemErrorCode().message();
+            errmsg("cannot access %s: %s", argv[j], buffer.c_str());
             usage();
         }
     }

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2010, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,10 +22,8 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#define INCLUDE_CCTYPE
-#include "dcmtk/ofstd/ofstdinc.h"
-
 #include "dcmtk/dcmdata/dcvrcs.h"
+#include "dcmtk/dcmdata/dcmatch.h"
 
 
 #define MAX_CS_LENGTH 16
@@ -141,4 +139,37 @@ OFCondition DcmCodeString::checkStringValue(const OFString &value,
                                             const OFString &vm)
 {
     return DcmByteString::checkStringValue(value, vm, "cs", 10, MAX_CS_LENGTH);
+}
+
+
+OFBool DcmCodeString::matches(const OFString& key,
+                              const OFString& candidate,
+                              const OFBool enableWildCardMatching) const
+{
+  if (enableWildCardMatching)
+    return DcmAttributeMatching::wildCardMatching(key.c_str(), key.length(), candidate.c_str(), candidate.length());
+  else
+    return DcmByteString::matches(key, candidate, OFFalse);
+}
+
+
+OFBool DcmCodeString::isUniversalMatch(const OFBool normalize,
+                                       const OFBool enableWildCardMatching)
+{
+  if(!isEmpty(normalize))
+  {
+    if(enableWildCardMatching)
+    {
+      OFString value;
+      for(unsigned long valNo = 0; valNo < getVM(); ++valNo)
+      {
+        getOFString(value, valNo, normalize);
+        if(value.find_first_not_of( '*' ) != OFString_npos)
+          return OFFalse;
+      }
+    }
+    else
+      return OFFalse;
+  }
+  return OFTrue;
 }

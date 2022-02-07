@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2012, OFFIS e.V.
+ *  Copyright (C) 2002-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,10 +23,16 @@
 #include "dcmtk/config/osconfig.h"
 #include "dcmtk/dcmdata/dcostrmf.h"
 #include "dcmtk/dcmdata/dcerror.h"
+#include "dcmtk/ofstd/ofconsol.h"
 
-#define INCLUDE_CSTDIO
-#define INCLUDE_CERRNO
-#include "dcmtk/ofstd/ofstdinc.h"
+BEGIN_EXTERN_C
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
+END_EXTERN_C
 
 
 DcmFileConsumer::DcmFileConsumer(const OFFilename &filename)
@@ -36,10 +42,8 @@ DcmFileConsumer::DcmFileConsumer(const OFFilename &filename)
 {
   if (!file_.fopen(filename, "wb"))
   {
-    char buf[256];
-    const char *text = OFStandard::strerror(errno, buf, sizeof(buf));
-    if (text == NULL) text = "(unknown error code)";
-    status_ = makeOFCondition(OFM_dcmdata, 19, OF_error, text);
+    OFString buffer = OFStandard::getLastSystemErrorCode().message();
+    status_ = makeOFCondition(OFM_dcmdata, 19, OF_error, buffer.c_str());
   }
 }
 
@@ -145,3 +149,4 @@ DcmOutputFileStream::~DcmOutputFileStream()
   }
 #endif
 }
+

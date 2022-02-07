@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1993-2011, OFFIS e.V.
+ *  Copyright (C) 1993-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,15 +24,12 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTDIO
-#define INCLUDE_UNISTD
-#include "dcmtk/ofstd/ofstdinc.h"
 #include "dcmtk/ofstd/ofcond.h"
 #include "dcmtk/dcmqrdb/qrdefine.h"
 
 class DcmDataset;
 class DcmQueryRetrieveDatabaseStatus;
+struct DcmQueryRetrieveCharacterSetOptions;
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
@@ -62,12 +59,14 @@ public:
    *  @param newImageFileName file name is returned in this parameter.
    *    Memory must be provided by the caller and should be at least MAXPATHLEN+1
    *    characters. The file name generated should be an absolute file name.
+   *  @param newImageFileNameLen length of buffer pointed to by newImageFileName
    *  @return EC_Normal upon normal completion, or some other OFCondition code upon failure.
    */
   virtual OFCondition makeNewStoreFileName(
       const char *SOPClassUID,
       const char *SOPInstanceUID,
-      char *newImageFileName) = 0;
+      char       *newImageFileName,
+      size_t      newImageFileNameLen) = 0;
 
   /** register the given DICOM object, which has been received through a C-STORE
    *  operation and stored in a file, in the database.
@@ -114,11 +113,13 @@ public:
    *    PENDING if more FIND responses will be generated or SUCCESS if no more
    *    FIND responses will be generated (SUCCESS indicates the completion of
    *    a operation), or another status code upon failure.
+   *  @param characterSetOptions the character set options for response conversion etc.
    *  @return EC_Normal upon normal completion, or some other OFCondition code upon failure.
    */
   virtual OFCondition nextFindResponse(
       DcmDataset **findResponseIdentifiers,
-      DcmQueryRetrieveDatabaseStatus *status) = 0;
+      DcmQueryRetrieveDatabaseStatus *status,
+      const DcmQueryRetrieveCharacterSetOptions& characterSetOptions) = 0;
 
   /** cancel the ongoing FIND request, stop and reset every running operation
    *  associated with this request, delete existing temporary files.
@@ -151,10 +152,13 @@ public:
    *  imageFileName containing the requested data).
    *  @param SOPClassUID pointer to string of at least 65 characters into
    *    which the SOP class UID for the next DICOM object to be transferred is copied.
+   *  @param SOPClassUIDSize size of SOPClassUID element
    *  @param SOPInstanceUID pointer to string of at least 65 characters into
    *    which the SOP instance UID for the next DICOM object to be transferred is copied.
+   *  @param SOPInstanceUIDSize size of SOPInstanceUID element
    *  @param imageFileName pointer to string of at least MAXPATHLEN+1 characters into
    *    which the file path for the next DICOM object to be transferred is copied.
+   *  @param imageFileNameSize size of imageFileName element
    *  @param numberOfRemainingSubOperations On return, this parameter will contain
    *     the number of suboperations still remaining for the request
    *     (this number is needed by move responses with PENDING status).
@@ -167,8 +171,11 @@ public:
    */
   virtual OFCondition nextMoveResponse(
       char *SOPClassUID,
+      size_t SOPClassUIDSize,
       char *SOPInstanceUID,
+      size_t SOPInstanceUIDSize,
       char *imageFileName,
+      size_t imageFileNameSize,
       unsigned short *numberOfRemainingSubOperations,
       DcmQueryRetrieveDatabaseStatus *status) = 0;
 

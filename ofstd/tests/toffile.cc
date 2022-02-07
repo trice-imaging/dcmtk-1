@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2012, OFFIS e.V.
+ *  Copyright (C) 2002-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,14 +25,13 @@
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofconsol.h"
 #include "dcmtk/ofstd/ofstd.h"
+#include "dcmtk/ofstd/ofrand.h"
+#include "dcmtk/ofstd/ofdiag.h"      /* for DCMTK_DIAGNOSTIC macros */
+
+#include DCMTK_DIAGNOSTIC_IGNORE_CONST_EXPRESSION_WARNING
 
 #define OFTEST_OFSTD_ONLY
 #include "dcmtk/ofstd/oftest.h"
-
-#define INCLUDE_CTIME
-#define INCLUDE_CSTDLIB
-#define INCLUDE_IOSTREAM
-#include "dcmtk/ofstd/ofstdinc.h"
 
 // size of block (Uint32 values, not bytes): 1 MByte
 #define BLOCKSIZE 0x40000
@@ -76,9 +75,11 @@ static OFBool fillFile(OFFile& file)
   return OFTrue;
 }
 
-static Uint32 myRand(Uint32 max)
+static Uint32 myRand(OFRandom& rnd, Uint32 max)
 {
-   return OFstatic_cast(Uint32, (OFstatic_cast(double, max) * rand() / RAND_MAX)); // 0.. max * RAND_MAX
+   Uint32 result = OFstatic_cast(Uint32, (OFstatic_cast(double, max) * rnd.getRND32() / OFstatic_cast(Uint32, -1))); 
+   if (result > max) result = max;
+   return result;
 }
 
 static OFBool seekFile(OFFile &file)
@@ -90,6 +91,7 @@ static OFBool seekFile(OFFile &file)
   Uint32 v;
   Uint32 block;
   Uint32 offset;
+  OFRandom rnd;
 
   COUT << "Seeking to start of blocks using SEEK_SET\n"
        << "[0%------------25%-------------50%--------------75%----------100%]\n[" << STD_NAMESPACE flush;
@@ -138,8 +140,8 @@ static OFBool seekFile(OFFile &file)
   // fseek to random blocks using SEEK_SET
   for (i = 0; i < 1024; ++i)
   {
-    block = myRand(FILESIZE - 1);
-    offset = myRand(BLOCKSIZE - 1);
+    block = myRand(rnd, FILESIZE - 1);
+    offset = myRand(rnd, BLOCKSIZE - 1);
     pos = block * BLOCKSIZE * sizeof(Uint32) + offset * sizeof(Uint32);
     result = file.fseek(pos, SEEK_SET);
     if (result)
@@ -216,8 +218,8 @@ static OFBool seekFile(OFFile &file)
   // fseek to random blocks using SEEK_END
   for (i = 0; i < 1024; ++i)
   {
-    block = myRand(FILESIZE - 2); // this avoids that pos can ever be 0, which would cause us to read after the end of file.
-    offset = myRand(BLOCKSIZE - 1);
+    block = myRand(rnd, FILESIZE - 2); // this avoids that pos can ever be 0, which would cause us to read after the end of file.
+    offset = myRand(rnd, BLOCKSIZE - 1);
     pos = OFstatic_cast(offile_off_t, -1) * (FILESIZE - block - 1) * BLOCKSIZE * sizeof(Uint32) + offset * sizeof(Uint32);
     result = file.fseek(pos, SEEK_END);
     if (result)
@@ -228,7 +230,8 @@ static OFBool seekFile(OFFile &file)
     if (1 == file.fread(&v, sizeof(Uint32), 1))
     {
       // successfully read value. Now check if the value is correct.
-      expected = (OFstatic_cast(offile_off_t, FILESIZE) * BLOCKSIZE * sizeof(Uint32) + pos) / sizeof(Uint32);
+      expected = OFstatic_cast(offile_off_t, FILESIZE);
+      expected = (expected * BLOCKSIZE * sizeof(Uint32) + pos) / sizeof(Uint32);
       if (v != OFstatic_cast(Uint32, expected))
       {
         COUT << "\nError: unexpected data read after fseek(SEEK_END) to block " << block
@@ -297,8 +300,8 @@ static OFBool seekFile(OFFile &file)
   lastpos = 0;
   for (i = 0; i < 1024; ++i)
   {
-    block = myRand(FILESIZE - 1);
-    offset = myRand(BLOCKSIZE - 1);
+    block = myRand(rnd, FILESIZE - 1);
+    offset = myRand(rnd, BLOCKSIZE - 1);
     pos = block * BLOCKSIZE * sizeof(Uint32) + offset * sizeof(Uint32);
     result = file.fseek((pos-lastpos), SEEK_CUR);
     if (result)
@@ -334,16 +337,13 @@ OFTEST_FLAGS(ofstd_OFFile, EF_Slow)
 {
   COUT << "Test program for LFS support in DCMTK class OFFile\n" << OFendl;
 
-  // initialize random generator
-  srand(OFstatic_cast(unsigned int, time(NULL)));
-
   // check if typedefs are large enough
   COUT << "Checking typedefs.\n"
        << "- size of offile_off_t: " << sizeof(offile_off_t);
   if (sizeof(offile_off_t) > 4) COUT << " - OK\n"; else COUT << " - too small, no LFS support\n";
   COUT << "- size of offile_fpos_t: " << sizeof(offile_fpos_t);
   if (sizeof(offile_fpos_t) > 4) COUT << " - OK\n"; else COUT << " - too small, no LFS support\n";
-  if ((sizeof(offile_off_t) <= 4 || sizeof(offile_fpos_t) <= 4))
+  if ((sizeof(offile_off_t) <= 4) || (sizeof(offile_fpos_t) <= 4))
   {
     OFCHECK_FAIL("No LFS support available. LFS test failed.");
     return;

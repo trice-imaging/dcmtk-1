@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2019, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,6 +27,8 @@
 #include "dcmtk/dcmsr/dsrwavtn.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
 
+#include "dcmtk/dcmdata/dcdeftag.h"
+
 
 DSRWaveformTreeNode::DSRWaveformTreeNode(const E_RelationshipType relationshipType)
   : DSRDocumentTreeNode(relationshipType, VT_Waveform),
@@ -44,6 +46,32 @@ DSRWaveformTreeNode::DSRWaveformTreeNode(const DSRWaveformTreeNode &node)
 
 DSRWaveformTreeNode::~DSRWaveformTreeNode()
 {
+}
+
+
+OFBool DSRWaveformTreeNode::operator==(const DSRDocumentTreeNode &node) const
+{
+    /* call comparison operator of base class (includes check of value type) */
+    OFBool result = DSRDocumentTreeNode::operator==(node);
+    if (result)
+    {
+        /* it's safe to cast the type since the value type has already been checked */
+        result = DSRWaveformReferenceValue::operator==(OFstatic_cast(const DSRWaveformTreeNode &, node).getValue());
+    }
+    return result;
+}
+
+
+OFBool DSRWaveformTreeNode::operator!=(const DSRDocumentTreeNode &node) const
+{
+    /* call comparison operator of base class (includes check of value type) */
+    OFBool result = DSRDocumentTreeNode::operator!=(node);
+    if (!result)
+    {
+        /* it's safe to cast the type since the value type has already been checked */
+        result = DSRWaveformReferenceValue::operator!=(OFstatic_cast(const DSRWaveformTreeNode &, node).getValue());
+    }
+    return result;
 }
 
 
@@ -127,7 +155,7 @@ OFCondition DSRWaveformTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
                                                     const size_t flags)
 {
     /* retrieve value from XML element "value" */
-    return DSRWaveformReferenceValue::readXML(doc, doc.getNamedNode(cursor.gotoChild(), "value"), flags);
+    return DSRWaveformReferenceValue::readXML(doc, doc.getNamedChildNode(cursor, "value"), flags);
 }
 
 

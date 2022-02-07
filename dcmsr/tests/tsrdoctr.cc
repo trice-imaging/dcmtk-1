@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2014-2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2014-2019, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation are maintained by
@@ -25,17 +25,22 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #include "dcmtk/ofstd/oftest.h"
+
 #include "dcmtk/dcmsr/dsrdoc.h"
+#include "dcmtk/dcmsr/dsrdncsr.h"
+#include "dcmtk/dcmsr/dsrtpltn.h"
+#include "dcmtk/dcmsr/dsrreftn.h"
+#include "dcmtk/dcmsr/dsrimgtn.h"
 #include "dcmtk/dcmsr/dsrnumtn.h"
 #include "dcmtk/dcmsr/dsrtextn.h"
 
 
-OFTEST(dcmsr_addContentItem)
+OFTEST(dcmsr_addContentItem_1)
 {
     /* first, create an SR document to get an empty SR tree */
     DSRDocument doc(DSRTypes::DT_ComprehensiveSR);
     DSRDocumentTree &tree = doc.getTree();
-    /* then try to add some content items */
+    /* then, try to add some content items */
     OFCHECK(tree.addContentItem(DSRTypes::RT_isRoot, DSRTypes::VT_Container));
     /* add content item with given pointer */
     DSRNumTreeNode *numNode = new DSRNumTreeNode(DSRTypes::RT_contains);
@@ -61,6 +66,30 @@ OFTEST(dcmsr_addContentItem)
 }
 
 
+OFTEST(dcmsr_addContentItem_2)
+{
+    /* first, create an empty document subtree */
+    DSRDocumentSubTree tree;
+    /* then, try to add some invalid content items */
+    OFCHECK(tree.addContentItem(DSRTypes::createDocumentTreeNode(DSRTypes::RT_hasProperties, DSRTypes::VT_byReference), DSRTypes::AM_afterCurrent, OFTrue /*deleteIfFail*/).bad());
+    OFCHECK(tree.addContentItem(new DSRIncludedTemplateTreeNode(DSRSharedSubTemplate(NULL), DSRTypes::RT_contains), DSRTypes::AM_afterCurrent, OFTrue /*deleteIfFail*/).bad());
+}
+
+
+OFTEST(dcmsr_addContentItem_3)
+{
+    /* first, create an empty document subtree */
+    DSRDocumentSubTree tree;
+    /* then, try to add some content items */
+    OFCHECK(tree.addContentItem(DSRTypes::RT_isRoot, DSRTypes::VT_Container));
+    const size_t refTarget = tree.addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Text, DSRTypes::AM_belowCurrent);
+    OFCHECK(refTarget > 0);
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasProperties, DSRTypes::VT_Code, DSRTypes::AM_belowCurrent) > 0);
+    /* creating a loop (reference to ancestor) should fail */
+    OFCHECK(tree.addByReferenceRelationship(DSRTypes::RT_inferredFrom, refTarget) == 0);
+}
+
+
 OFTEST(dcmsr_copyContentItem)
 {
     /* first, create a new SR document */
@@ -76,6 +105,10 @@ OFTEST(dcmsr_copyContentItem)
     DSRContentItem item(tree.getCurrentContentItem());
     OFCHECK_EQUAL(item.getValueType(), DSRTypes::VT_Num);
     OFCHECK_EQUAL(item.getRelationshipType(), DSRTypes::RT_contains);
+    /* also check the comparison operator */
+    OFCHECK(item == tree.getCurrentContentItem());
+    OFCHECK(item.setNumericValue(DSRNumericMeasurementValue("1.5", DSRCodedEntryValue("cm", "UCUM", "centimeter"))).good());
+    OFCHECK(item != tree.getCurrentContentItem());
     /* clone the previous content item */
     OFCHECK(tree.gotoPrevious() > 0);
     DSRDocumentTreeNode *treeNode = tree.cloneCurrentTreeNode();
@@ -96,6 +129,183 @@ OFTEST(dcmsr_copyContentItem)
 }
 
 
+OFTEST(dcmsr_getCurrentNode)
+{
+    /* first, create a new SR document */
+    DSRDocument doc(DSRTypes::DT_ComprehensiveSR);
+    DSRDocumentTree &tree = doc.getTree();
+    /* then add some content items */
+    OFCHECK(tree.addContentItem(DSRTypes::RT_isRoot, DSRTypes::VT_Container, DSRCodedEntryValue("121111", "DCM", "Summary")).good());
+    OFCHECK(tree.addChildContentItem(DSRTypes::RT_contains, DSRTypes::VT_Num, DSRCodedEntryValue("121206", "DCM", "Distance")).good());
+    /* and check the current node */
+    const DSRDocumentTreeNode *treeNode = tree.getCurrentNode();
+    if (treeNode != NULL)
+    {
+        OFCHECK_EQUAL(treeNode->getRelationshipType(), DSRTypes::RT_contains);
+        OFCHECK_EQUAL(treeNode->getValueType(), DSRTypes::VT_Num);
+        OFCHECK_EQUAL(treeNode->getConceptName().getCodeMeaning(), "Distance");
+    } else
+        OFCHECK_FAIL("could not get read-only access to current node");
+}
+
+
+OFTEST(dcmsr_compareNodes)
+{
+    /* first, create an image tree node */
+    DSRImageTreeNode node(DSRTypes::RT_contains);
+    /* then, set its contents */
+    OFCHECK(node.setValue(DSRImageReferenceValue(UID_CTImageStorage, "1.2.3.4")).good());
+    node.getFrameList().addItem(1);
+    /* create a clone of this node */
+    DSRImageTreeNode *newNode = node.clone();
+    if (newNode != NULL)
+    {
+        /* and compare these nodes */
+        OFCHECK(node == *newNode);
+        /* then add more information */
+        node.getFrameList().addItem(2);
+        /* and compare the nodes again */
+        OFCHECK(node != *newNode);
+        /* make them "equal" again */
+        newNode->getFrameList().addItem(2);
+        OFCHECK(node == *newNode);
+    }
+    /* create an "incompatible" node */
+    DSRNumTreeNode numNode(DSRTypes::RT_contains);
+    /* and compare it to the initial node */
+    OFCHECK(numNode != node);
+    delete newNode;
+    /* try the same with an "included template" tree node */
+    DSRIncludedTemplateTreeNode templNode1(DSRSharedSubTemplate(NULL), DSRTypes::RT_contains);
+    DSRIncludedTemplateTreeNode templNode2(templNode1);
+    OFCHECK(templNode1 == templNode2);
+    /* and a "by-reference" tree node */
+    DSRByReferenceTreeNode byRefNode1(DSRTypes::RT_inferredFrom);
+    DSRByReferenceTreeNode byRefNode2(DSRTypes::RT_inferredFrom);
+    OFCHECK(!byRefNode1.isValid());
+    OFCHECK(!byRefNode2.isValid());
+    /* make the references valid */
+    OFCHECK(byRefNode1.updateReference(1, DSRTypes::VT_Num));
+    OFCHECK(byRefNode2.updateReference(2, DSRTypes::VT_Num));
+    OFCHECK(byRefNode1.isValid());
+    OFCHECK(byRefNode2.isValid());
+    OFCHECK(byRefNode1 != byRefNode2);
+    OFCHECK(byRefNode2.updateReference(1, DSRTypes::VT_Num));
+    OFCHECK(byRefNode1 == byRefNode2);
+}
+
+
+OFTEST(dcmsr_gotoNodeByValue)
+{
+    /* first, create a new SR document */
+    DSRDocument doc(DSRTypes::DT_ComprehensiveSR);
+    DSRDocumentTree &tree = doc.getTree();
+    /* then add some content items */
+    OFCHECK(tree.addContentItem(DSRTypes::RT_isRoot, DSRTypes::VT_Container));
+    OFCHECK(tree.addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Text, DSRTypes::AM_belowCurrent));
+    OFCHECK(tree.addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Num, DSRTypes::AM_afterCurrent));
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("N-1", "99_PRV", "NUM #1")).good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasProperties, DSRTypes::VT_Code, DSRTypes::AM_belowCurrent));
+    const size_t nodeID1 = tree.getNodeID();
+    const DSRDocumentTreeNode *node1 = tree.getCurrentNode();
+    OFCHECK(tree.getCurrentContentItem().setObservationDateTime("201708080800").good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasConceptMod, DSRTypes::VT_Code, DSRTypes::AM_afterCurrent));
+    const size_t nodeID2 = tree.getNodeID();
+    const DSRDocumentTreeNode *node2 = tree.getCurrentNode();
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("121206", "DCM", "Distance")).good());
+    OFCHECK(tree.getCurrentContentItem().setObservationDateTime("201708081200").good());
+    OFCHECK(tree.goUp() > 0);
+    OFCHECK(tree.addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Num, DSRTypes::AM_afterCurrent));
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("N-2", "99_PRV", "NUM #2")).good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasProperties, DSRTypes::VT_Code, DSRTypes::AM_belowCurrent));
+    const size_t nodeID3 = tree.getNodeID();
+    const DSRDocumentTreeNode *node3 = tree.getCurrentNode();
+    OFCHECK(tree.getCurrentContentItem().setObservationDateTime("201708280800").good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasConceptMod, DSRTypes::VT_Code, DSRTypes::AM_afterCurrent));
+    const size_t nodeID4 = tree.getNodeID();
+    const DSRDocumentTreeNode *node4 = tree.getCurrentNode();
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("121207", "DCM", "Height")).good());
+    OFCHECK(tree.getCurrentContentItem().setObservationDateTime("201708280800").good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasConceptMod, DSRTypes::VT_Code, DSRTypes::AM_belowCurrent));
+    const size_t nodeID5 = tree.getNodeID();
+    const DSRDocumentTreeNode *node5 = tree.getCurrentNode();
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("111221", "DCM", "Unknown failure")).good());
+    /* and check the "search by value" function */
+    OFCHECK_EQUAL(tree.gotoNode(*node1), nodeID1);
+    OFCHECK_EQUAL(tree.gotoNode(*node4), nodeID4);
+    OFCHECK_EQUAL(tree.gotoNode(*node2), nodeID2);
+    OFCHECK_EQUAL(tree.gotoNode(*node3, OFFalse /*startFromRoot*/), nodeID3);
+    OFCHECK_EQUAL(tree.gotoNode(*node5), nodeID5);
+}
+
+
+OFTEST(dcmsr_gotoMatchingNode)
+{
+    /* first, create a new SR document */
+    DSRDocument doc(DSRTypes::DT_ComprehensiveSR);
+    DSRDocumentTree &tree = doc.getTree();
+    /* then add some content items */
+    OFCHECK(tree.addContentItem(DSRTypes::RT_isRoot, DSRTypes::VT_Container));
+    OFCHECK(tree.addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Text, DSRTypes::AM_belowCurrent));
+    OFCHECK(tree.addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Num, DSRTypes::AM_afterCurrent));
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("N-1", "99_PRV", "NUM #1")).good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasProperties, DSRTypes::VT_Code, DSRTypes::AM_belowCurrent));
+    const size_t nodeID1 = tree.getNodeID();
+    OFCHECK(tree.getCurrentContentItem().setObservationDateTime("201708080800").good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasConceptMod, DSRTypes::VT_Code, DSRTypes::AM_afterCurrent));
+    const size_t nodeID2 = tree.getNodeID();
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("121206", "DCM", "Distance")).good());
+    OFCHECK(tree.getCurrentContentItem().setObservationDateTime("201708081200").good());
+    OFCHECK(tree.goUp() > 0);
+    OFCHECK(tree.addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Num, DSRTypes::AM_afterCurrent));
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("N-2", "99_PRV", "NUM #2")).good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasProperties, DSRTypes::VT_Code, DSRTypes::AM_belowCurrent));
+    const size_t nodeID3 = tree.getNodeID();
+    OFCHECK(tree.getCurrentContentItem().setObservationDateTime("201708280800").good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasConceptMod, DSRTypes::VT_Code, DSRTypes::AM_afterCurrent));
+    const size_t nodeID4 = tree.getNodeID();
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("121207", "DCM", "Height")).good());
+    OFCHECK(tree.getCurrentContentItem().setObservationDateTime("201708280800").good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasConceptMod, DSRTypes::VT_Code, DSRTypes::AM_belowCurrent));
+    const size_t nodeID5 = tree.getNodeID();
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("111221", "DCM", "Unknown failure")).good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasProperties, DSRTypes::VT_Composite, DSRTypes::AM_afterCurrent));
+    const size_t nodeID6 = tree.getNodeID();
+    /* and check the "search by filter" function */
+    OFCHECK_EQUAL(tree.gotoMatchingNode(DSRDocumentTreeNodeConceptNameFilter(DSRCodedEntryValue("121206", "DCM", "Distance"))), nodeID2);
+    OFCHECK_EQUAL(tree.gotoNextMatchingNode(DSRDocumentTreeNodeValueTypeFilter(DSRTypes::VT_Code)), nodeID3);
+    OFCHECK_EQUAL(tree.gotoNextMatchingNode(DSRDocumentTreeNodeHasChildrenFilter(OFFalse /*hasChildren*/)), nodeID5);
+    DSRDocumentTreeNodeAndFilter filter1;
+    OFCHECK(filter1.addFilter(new DSRDocumentTreeNodeValueTypeFilter(DSRTypes::VT_Code)).good());
+    OFCHECK(filter1.addFilter(new DSRDocumentTreeNodeRelationshipTypeFilter(DSRTypes::RT_hasConceptMod)).good());
+    OFCHECK_EQUAL(tree.gotoMatchingNode(filter1, OFTrue /*startFromRoot*/), nodeID2);
+    OFCHECK_EQUAL(tree.gotoNextMatchingNode(filter1), nodeID4);
+    DSRDocumentTreeNodeOrFilter filter2;
+    OFCHECK(filter2.addFilter(new DSRDocumentTreeNodeValueTypeFilter(DSRTypes::VT_Code)).good());
+    OFCHECK(filter2.addFilter(new DSRDocumentTreeNodeRelationshipTypeFilter(DSRTypes::RT_hasConceptMod)).good());
+    OFCHECK_EQUAL(tree.gotoMatchingNode(filter2, OFTrue /*startFromRoot*/), nodeID1);
+    OFCHECK_EQUAL(tree.gotoNextMatchingNode(filter2), nodeID2);
+    OFCHECK_EQUAL(tree.gotoNextMatchingNode(filter2), nodeID3);
+    OFCHECK_EQUAL(tree.gotoNextMatchingNode(filter2), nodeID4);
+    OFCHECK_EQUAL(tree.gotoMatchingNode(DSRDocumentTreeNodeObservationDateTimeFilter("201708081000", "201708081400")), nodeID2);
+    OFCHECK_EQUAL(tree.gotoMatchingNode(DSRDocumentTreeNodeObservationDateTimeFilter("20170828", "" /*toDateTime*/)), nodeID3);
+    OFCHECK_EQUAL(tree.gotoNextMatchingNode(DSRDocumentTreeNodeObservationDateTimeFilter("" /*fromDateTime*/, "201708280800")), nodeID4);
+    OFCHECK_EQUAL(tree.gotoNextMatchingNode(DSRDocumentTreeNodeHasConceptNameFilter(OFFalse /*hasConceptName*/)), nodeID6);
+    OFCHECK_EQUAL(tree.gotoMatchingNode(DSRDocumentTreeNodeObservationDateTimeFilter("20170828080001", "" /*toDateTime*/)), 0 /* not found */);
+    /* change observation date/time for all content items */
+    OFCHECK(tree.setObservationDateTime("201803151800").good());
+    /* ... and check again */
+    const DSRDocumentTreeNodeObservationDateTimeFilter filter3("20180101", "20181231");
+    OFCHECK_EQUAL(tree.gotoNode(nodeID1), nodeID1);
+    OFCHECK_EQUAL(tree.gotoNextMatchingNode(filter3), nodeID2);
+    OFCHECK(tree.iterate() /* skip one node */);
+    OFCHECK_EQUAL(tree.gotoNextMatchingNode(filter3), nodeID3);
+    OFCHECK_EQUAL(tree.gotoNextMatchingNode(filter3), nodeID4);
+    OFCHECK_EQUAL(tree.gotoNextMatchingNode(filter3), nodeID5);
+    OFCHECK_EQUAL(tree.gotoNextMatchingNode(filter3), nodeID6);
+}
+
+
 OFTEST(dcmsr_gotoNamedNode)
 {
     /* first, create a new SR document */
@@ -109,6 +319,85 @@ OFTEST(dcmsr_gotoNamedNode)
     /* and check the "search by name" function */
     OFCHECK_EQUAL(tree.gotoNamedNode(DSRCodedEntryValue("121206", "DCM", "Distance")), nodeID);
     OFCHECK_EQUAL(tree.gotoNamedNode(DSRCodedEntryValue("1234", "99_PRV", "NOS")), nodeID + 1);
+}
+
+
+OFTEST(dcmsr_gotoNamedChildNode)
+{
+    /* first, create a new SR document */
+    DSRDocument doc(DSRTypes::DT_ComprehensiveSR);
+    DSRDocumentTree &tree = doc.getTree();
+    /* then add some content items */
+    OFCHECK(tree.addContentItem(DSRTypes::RT_isRoot, DSRTypes::VT_Container));
+    OFCHECK(tree.addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Text, DSRTypes::AM_belowCurrent));
+    OFCHECK(tree.addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Num, DSRTypes::AM_afterCurrent));
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("N-1", "99_PRV", "NUM #1")).good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasProperties, DSRTypes::VT_Code, DSRTypes::AM_belowCurrent));
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasConceptMod, DSRTypes::VT_Code, DSRTypes::AM_afterCurrent));
+    const size_t nodeID1 = tree.getNodeID();
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("121206", "DCM", "Distance")).good());
+    OFCHECK(tree.goUp() > 0);
+    OFCHECK(tree.addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Num, DSRTypes::AM_afterCurrent));
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("N-2", "99_PRV", "NUM #2")).good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasProperties, DSRTypes::VT_Code, DSRTypes::AM_belowCurrent));
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasConceptMod, DSRTypes::VT_Code, DSRTypes::AM_afterCurrent));
+    const size_t nodeID2 = tree.getNodeID();
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("121207", "DCM", "Height")).good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasConceptMod, DSRTypes::VT_Code, DSRTypes::AM_belowCurrent));
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("111221", "DCM", "Unknown failure")).good());
+    /* and check the "search by name" function */
+    OFCHECK(tree.gotoNamedNode(DSRCodedEntryValue("N-1", "99_PRV", "NUM #1")) > 0);
+    OFCHECK_EQUAL(tree.gotoNamedChildNode(DSRCodedEntryValue("121206", "DCM", "Distance")), nodeID1);
+    OFCHECK(tree.gotoNamedNode(DSRCodedEntryValue("N-1", "99_PRV", "NUM #1")) > 0);
+    OFCHECK(tree.gotoNamedChildNode(DSRCodedEntryValue("121207", "DCM", "Height")) == 0);
+    OFCHECK(tree.gotoNamedNode(DSRCodedEntryValue("N-1", "99_PRV", "NUM #1")) > 0);
+    OFCHECK(tree.gotoNamedChildNode(DSRCodedEntryValue("111221", "DCM", "Unknown failure")) == 0);
+    OFCHECK(tree.gotoNamedNode(DSRCodedEntryValue("N-2", "99_PRV", "NUM #2")) > 0);
+    OFCHECK(tree.gotoNamedChildNode(DSRCodedEntryValue("121206", "DCM", "Distance")) == 0);
+    OFCHECK(tree.gotoNamedNode(DSRCodedEntryValue("N-2", "99_PRV", "NUM #2")) > 0);
+    OFCHECK_EQUAL(tree.gotoNamedChildNode(DSRCodedEntryValue("121207", "DCM", "Height")), nodeID2);
+    OFCHECK(tree.gotoNamedNode(DSRCodedEntryValue("N-2", "99_PRV", "NUM #2")) > 0);
+    OFCHECK(tree.gotoNamedChildNode(DSRCodedEntryValue("111221", "DCM", "Unknown failure")) == 0);
+}
+
+
+OFTEST(dcmsr_gotoNamedNodeInSubTree)
+{
+    /* first, create a new SR document */
+    DSRDocument doc(DSRTypes::DT_ComprehensiveSR);
+    DSRDocumentTree &tree = doc.getTree();
+    /* then add some content items */
+    OFCHECK(tree.addContentItem(DSRTypes::RT_isRoot, DSRTypes::VT_Container));
+    OFCHECK(tree.addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Text, DSRTypes::AM_belowCurrent));
+    OFCHECK(tree.addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Num, DSRTypes::AM_afterCurrent));
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("N-1", "99_PRV", "NUM #1")).good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasProperties, DSRTypes::VT_Code, DSRTypes::AM_belowCurrent));
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasConceptMod, DSRTypes::VT_Code, DSRTypes::AM_afterCurrent));
+    const size_t nodeID1 = tree.getNodeID();
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("121206", "DCM", "Distance")).good());
+    OFCHECK(tree.goUp() > 0);
+    OFCHECK(tree.addContentItem(DSRTypes::RT_contains, DSRTypes::VT_Num, DSRTypes::AM_afterCurrent));
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("N-2", "99_PRV", "NUM #2")).good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasProperties, DSRTypes::VT_Code, DSRTypes::AM_belowCurrent));
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasConceptMod, DSRTypes::VT_Code, DSRTypes::AM_afterCurrent));
+    const size_t nodeID2 = tree.getNodeID();
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("121207", "DCM", "Height")).good());
+    OFCHECK(tree.addContentItem(DSRTypes::RT_hasConceptMod, DSRTypes::VT_Code, DSRTypes::AM_belowCurrent));
+    const size_t nodeID3 = tree.getNodeID();
+    OFCHECK(tree.getCurrentContentItem().setConceptName(DSRCodedEntryValue("111221", "DCM", "Unknown failure")).good());
+    /* and check the "search by name" function */
+    OFCHECK(tree.gotoNamedNode(DSRCodedEntryValue("N-1", "99_PRV", "NUM #1")) > 0);
+    OFCHECK_EQUAL(tree.gotoNamedNodeInSubTree(DSRCodedEntryValue("121206", "DCM", "Distance")), nodeID1);
+    OFCHECK(tree.gotoNamedNode(DSRCodedEntryValue("N-1", "99_PRV", "NUM #1")) > 0);
+    OFCHECK(tree.gotoNamedNodeInSubTree(DSRCodedEntryValue("121207", "DCM", "Height")) == 0);
+    OFCHECK(tree.gotoNamedNode(DSRCodedEntryValue("N-1", "99_PRV", "NUM #1")) > 0);
+    OFCHECK(tree.gotoNamedChildNode(DSRCodedEntryValue("111221", "DCM", "Unknown failure")) == 0);
+    OFCHECK(tree.gotoNamedNode(DSRCodedEntryValue("N-2", "99_PRV", "NUM #2")) > 0);
+    OFCHECK(tree.gotoNamedNodeInSubTree(DSRCodedEntryValue("121206", "DCM", "Distance")) == 0);
+    OFCHECK(tree.gotoNamedNode(DSRCodedEntryValue("N-2", "99_PRV", "NUM #2")) > 0);
+    OFCHECK_EQUAL(tree.gotoNamedNodeInSubTree(DSRCodedEntryValue("121207", "DCM", "Height")), nodeID2);
+    OFCHECK(tree.gotoNamedNode(DSRCodedEntryValue("N-2", "99_PRV", "NUM #2")) > 0);
+    OFCHECK_EQUAL(tree.gotoNamedNodeInSubTree(DSRCodedEntryValue("111221", "DCM", "Unknown failure")), nodeID3);
 }
 
 

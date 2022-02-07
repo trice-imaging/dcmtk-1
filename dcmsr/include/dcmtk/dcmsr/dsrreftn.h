@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2018, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -47,7 +47,9 @@ class DCMTK_DCMSR_EXPORT DSRByReferenceTreeNode
      */
     DSRByReferenceTreeNode(const E_RelationshipType relationshipType);
 
-    /** constructor
+    /** constructor.
+     *  The passed values are stored but the reference stays invalid until updated by
+     *  updateReference().
      ** @param  relationshipType  type of relationship to the parent/source tree node.
      *                            Should not be DSRTypes::RT_invalid or DSRTypes::RT_isRoot.
      *  @param  referencedNodeID  ID of the node to be referenced (target content item)
@@ -75,6 +77,25 @@ class DCMTK_DCMSR_EXPORT DSRByReferenceTreeNode
      */
     virtual ~DSRByReferenceTreeNode();
 
+    /** comparison operator "equal".
+     *  Two tree nodes are equal if the comparison operator of the base class DSRDocumentTreeNode
+     *  regards them as "equal" (same types and concept names) and the stored values are equal.
+     *  In this case, the IDs of the referenced nodes are used (if the references are valid).
+     ** @param  node  tree node that should be compared to the current one
+     ** @return OFTrue if both tree nodes are equal, OFFalse otherwise
+     */
+    virtual OFBool operator==(const DSRDocumentTreeNode &node) const;
+
+    /** comparison operator "not equal".
+     *  Two tree nodes are not equal if either the comparison operator of the base class
+     *  DSRDocumentTreeNode regards them as "not equal" (different types or concept names) or
+     *  the stored values are not equal.  In this case, the IDs of the referenced nodes are
+     *  used (if the references are valid).
+     ** @param  node  tree node that should be compared to the current one
+     ** @return OFTrue if both tree nodes are not equal, OFFalse otherwise
+     */
+    virtual OFBool operator!=(const DSRDocumentTreeNode &node) const;
+
     /** clone this tree node.
      *  Internally, the copy constructor is used, so the corresponding comments apply.
      ** @return copy of this tree node
@@ -93,14 +114,15 @@ class DCMTK_DCMSR_EXPORT DSRByReferenceTreeNode
      */
     virtual OFBool isValid() const;
 
-    /** check whether the value of the content item, i.e.\ the reference (which has been checked
-     *  from outside of this class), is valid
+    /** check whether the value of the content item, i.e.\ the reference (which has been
+     *  checked from outside of this class), is valid
      ** @return OFTrue if the value is valid, OFFalse otherwise
      */
     virtual OFBool hasValidValue() const;
 
     /** print content item.
-     *  A typical output looks like this: inferred from 1.2.3
+     *  A typical output looks like this: inferred from 1.2.3.  If the position string
+     *  of the referenced target content item is empty, a "?" (question mark) is printed.
      ** @param  stream  output stream to which the content item should be printed
      *  @param  flags   flag used to customize the output (see DSRTypes::PF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise

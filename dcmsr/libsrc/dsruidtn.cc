@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2019, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,6 +26,9 @@
 #include "dcmtk/dcmsr/dsrtypes.h"
 #include "dcmtk/dcmsr/dsruidtn.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
+
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcvrui.h"
 
 
 DSRUIDRefTreeNode::DSRUIDRefTreeNode(const E_RelationshipType relationshipType)
@@ -53,6 +56,32 @@ DSRUIDRefTreeNode::DSRUIDRefTreeNode(const DSRUIDRefTreeNode &node)
 
 DSRUIDRefTreeNode::~DSRUIDRefTreeNode()
 {
+}
+
+
+OFBool DSRUIDRefTreeNode::operator==(const DSRDocumentTreeNode &node) const
+{
+    /* call comparison operator of base class (includes check of value type) */
+    OFBool result = DSRDocumentTreeNode::operator==(node);
+    if (result)
+    {
+        /* it's safe to cast the type since the value type has already been checked */
+        result = DSRStringValue::operator==(OFstatic_cast(const DSRUIDRefTreeNode &, node).getValue());
+    }
+    return result;
+}
+
+
+OFBool DSRUIDRefTreeNode::operator!=(const DSRDocumentTreeNode &node) const
+{
+    /* call comparison operator of base class (includes check of value type) */
+    OFBool result = DSRDocumentTreeNode::operator!=(node);
+    if (!result)
+    {
+        /* it's safe to cast the type since the value type has already been checked */
+        result = DSRStringValue::operator!=(OFstatic_cast(const DSRUIDRefTreeNode &, node).getValue());
+    }
+    return result;
 }
 
 
@@ -129,7 +158,7 @@ OFCondition DSRUIDRefTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
                                                   const size_t flags)
 {
     /* retrieve value from XML element "value" */
-    return DSRStringValue::readXML(doc, doc.getNamedNode(cursor.gotoChild(), "value"), flags, OFFalse /*encoding*/);
+    return DSRStringValue::readXML(doc, doc.getNamedChildNode(cursor, "value"), flags, OFFalse /*encoding*/);
 }
 
 

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2014, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,16 +20,18 @@
  */
 
 
-#include "dcmtk/config/osconfig.h"
+#include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/dcmdata/dcvrul.h"
 
-#define INCLUDE_CSTDIO
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
-
-
 // ********************************
+
+
+DcmUnsignedLong::DcmUnsignedLong(const DcmTag &tag)
+  : DcmElement(tag, 0)
+{
+}
 
 
 DcmUnsignedLong::DcmUnsignedLong(const DcmTag &tag,
@@ -71,9 +73,20 @@ int DcmUnsignedLong::compare(const DcmElement& rhs) const
     myThis = OFconst_cast(DcmUnsignedLong*, this);
     myRhs =  OFstatic_cast(DcmUnsignedLong*, OFconst_cast(DcmElement*, &rhs));
 
+    /* compare number of values */
+    unsigned long thisNumValues = myThis->getNumberOfValues();
+    unsigned long rhsNumValues = myRhs->getNumberOfValues();
+    if (thisNumValues < rhsNumValues)
+    {
+        return -1;
+    }
+    else if (thisNumValues > rhsNumValues)
+    {
+        return 1;
+    }
+
     /* iterate over all components and test equality */
-    unsigned long thisVM = myThis->getVM();
-    for (unsigned long count = 0; count < thisVM; count++)
+    for (unsigned long count = 0; count < thisNumValues; count++)
     {
         Uint32 val = 0;
         if (myThis->getUint32(val, count).good())
@@ -90,22 +103,7 @@ int DcmUnsignedLong::compare(const DcmElement& rhs) const
                     return -1;
                 }
             }
-            else
-            {
-                break; // values equal until this point (rhs shorter)
-            }
         }
-    }
-
-    /* we get here if all values are equal. Now look at the number of components. */
-    unsigned long rhsVM = myRhs->getVM();
-    if (thisVM < rhsVM)
-    {
-        return -1;
-    }
-    else if (thisVM > rhsVM)
-    {
-        return 1;
     }
 
     /* all values as well as VM equal: objects are equal */
@@ -143,6 +141,12 @@ OFCondition DcmUnsignedLong::checkValue(const OFString &vm,
 
 unsigned long DcmUnsignedLong::getVM()
 {
+    return getNumberOfValues();
+}
+
+
+unsigned long DcmUnsignedLong::getNumberOfValues()
+{
     return OFstatic_cast(unsigned long, getLengthField() / sizeof(Uint32));
 }
 
@@ -150,7 +154,7 @@ unsigned long DcmUnsignedLong::getVM()
 // ********************************
 
 
-void DcmUnsignedLong::print(STD_NAMESPACE ostream&out,
+void DcmUnsignedLong::print(STD_NAMESPACE ostream &out,
                             const size_t flags,
                             const int level,
                             const char * /*pixelFileName*/,
@@ -163,46 +167,58 @@ void DcmUnsignedLong::print(STD_NAMESPACE ostream&out,
         errorFlag = getUint32Array(uintVals);
         if (uintVals != NULL)
         {
-            const unsigned long count = getVM();
-            const unsigned long maxLength = (flags & DCMTypes::PF_shortenLongTagValues) ?
-                DCM_OptPrintLineLength : OFstatic_cast(unsigned long, -1) /*unlimited*/;
-            unsigned long printedLength = 0;
-            unsigned long newLength = 0;
-            char buffer[32];
-            /* print line start with tag and VR */
-            printInfoLineStart(out, flags, level);
-            /* print multiple values */
-            for (unsigned int i = 0; i < count; i++, uintVals++)
+            /* do not use getVM() because derived classes might always return 1 */
+            const unsigned long count = getNumberOfValues();
+            /* double-check length field for valid value */
+            if (count > 0)
             {
-                /* check whether first value is printed (omit delimiter) */
-                if (i == 0)
-#if SIZEOF_LONG == 8
-                    sprintf(buffer, "%u", *uintVals);
-                else
-                    sprintf(buffer, "\\%u", *uintVals);
-#else
-                    sprintf(buffer, "%lu", *uintVals);
-                else
-                    sprintf(buffer, "\\%lu", *uintVals);
-#endif
-                /* check whether current value sticks to the length limit */
-                newLength = printedLength + OFstatic_cast(unsigned long, strlen(buffer));
-                if ((newLength <= maxLength) && ((i + 1 == count) || (newLength + 3 <= maxLength)))
+                const unsigned long maxLength = (flags & DCMTypes::PF_shortenLongTagValues) ?
+                    DCM_OptPrintLineLength : OFstatic_cast(unsigned long, -1) /*unlimited*/;
+                unsigned long printedLength = 0;
+                unsigned long newLength = 0;
+                char buffer[32];
+                /* print line start with tag and VR */
+                printInfoLineStart(out, flags, level);
+                /* print multiple values */
+                for (unsigned int i = 0; i < count; i++, uintVals++)
                 {
-                    out << buffer;
-                    printedLength = newLength;
-                } else {
-                    /* check whether output has been truncated */
-                    if (i + 1 < count)
+                    /* check whether first value is printed (omit delimiter) */
+                    if (i == 0)
+#ifdef PRIu32
+                        sprintf(buffer, "%" PRIu32, *uintVals);
+                    else
+                        sprintf(buffer, "\\%" PRIu32, *uintVals);
+#elif SIZEOF_LONG == 8
+                        sprintf(buffer, "%u", *uintVals);
+                    else
+                        sprintf(buffer, "\\%u", *uintVals);
+#else
+                        sprintf(buffer, "%lu", *uintVals);
+                    else
+                        sprintf(buffer, "\\%lu", *uintVals);
+#endif
+                    /* check whether current value sticks to the length limit */
+                    newLength = printedLength + OFstatic_cast(unsigned long, strlen(buffer));
+                    if ((newLength <= maxLength) && ((i + 1 == count) || (newLength + 3 <= maxLength)))
                     {
-                        out << "...";
-                        printedLength += 3;
+                        out << buffer;
+                        printedLength = newLength;
+                    } else {
+                        /* check whether output has been truncated */
+                        if (i + 1 < count)
+                        {
+                            out << "...";
+                            printedLength += 3;
+                        }
+                        break;
                     }
-                    break;
                 }
+                /* print line end with length, VM and tag name */
+                printInfoLineEnd(out, flags, printedLength);
+            } else {
+                /* count can be zero if we have an invalid element with less than four bytes length */
+                printInfoLine(out, flags, level, "(invalid value)");
             }
-            /* print line end with length, VM and tag name */
-            printInfoLineEnd(out, flags, printedLength);
         } else
             printInfoLine(out, flags, level, "(no value available)");
     } else
@@ -224,7 +240,8 @@ OFCondition DcmUnsignedLong::getUint32(Uint32 &uintVal,
     {
         if (uintValues == NULL)
             errorFlag = EC_IllegalCall;
-        else if (pos >= getVM())
+        /* do not use getVM() because derived classes might always return 1 */
+        else if (pos >= getNumberOfValues())
             errorFlag = EC_IllegalParameter;
         else
             uintVal = uintValues[pos];
@@ -323,7 +340,9 @@ OFCondition DcmUnsignedLong::putString(const char *stringVal,
             /* get specified value from multi-valued string */
             pos = DcmElement::getValueFromString(stringVal, pos, stringLen, value);
             if (value.empty() ||
-#if SIZEOF_LONG == 8
+#ifdef SCNu32
+                (sscanf(value.c_str(), "%" SCNu32, &field[i]) != 1)
+#elif SIZEOF_LONG == 8
                 (sscanf(value.c_str(), "%u", &field[i]) != 1)
 #else
                 (sscanf(value.c_str(), "%lu", &field[i]) != 1)
@@ -361,4 +380,24 @@ OFCondition DcmUnsignedLong::verify(const OFBool autocorrect)
     } else
         errorFlag = EC_Normal;
     return errorFlag;
+}
+
+
+OFBool DcmUnsignedLong::matches(const DcmElement& candidate,
+                                const OFBool enableWildCardMatching) const
+{
+  OFstatic_cast(void,enableWildCardMatching);
+  if (ident() == candidate.ident())
+  {
+    // some const casts to call the getter functions, I do not modify the values, I promise!
+    DcmUnsignedLong& key = OFconst_cast(DcmUnsignedLong&,*this);
+    DcmElement& can = OFconst_cast(DcmElement&,candidate);
+    Uint32 a, b;
+    for( unsigned long ui = 0; ui < key.getVM(); ++ui )
+      for( unsigned long uj = 0; uj < can.getVM(); ++uj )
+        if( key.getUint32( a, ui ).good() && can.getUint32( b, uj ).good() && a == b )
+          return OFTrue;
+    return key.getVM() == 0;
+  }
+  return OFFalse;
 }

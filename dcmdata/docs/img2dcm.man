@@ -6,13 +6,13 @@
 \page img2dcm img2dcm: Convert standard image formats into DICOM format
 \endif
 
-\section synopsis SYNOPSIS
+\section img2dcm_synopsis SYNOPSIS
 
 \verbatim
-img2dcm [options] imgfile-in dcmfile-out
+img2dcm [options] imgfile-in... dcmfile-out
 \endverbatim
 
-\section description DESCRIPTION
+\section img2dcm_description DESCRIPTION
 
 The \b img2dcm tool serves as a conversion tool from a standard image format
 like JPEG or BMP to DICOM. Different output SOP Classes can be selected. The
@@ -22,15 +22,15 @@ for the resulting DICOM object. \b img2dcm can also be configured to invent
 missing DICOM type 1 and type 2 attributes to work even without any template
 dataset.
 
-\section parameters PARAMETERS
+\section img2dcm_parameters PARAMETERS
 \verbatim
-imgfile-in   image file to be imported
+imgfile-in   image input filename
 
-dcmfile-out  DICOM output file
+dcmfile-out  DICOM output filename
 \endverbatim
 
-\section options OPTIONS
-\subsection general_options general options
+\section img2dcm_options OPTIONS
+\subsection img2dcm_general_options general options
 \verbatim
   -h    --help
           print this help text and exit
@@ -58,7 +58,7 @@ dcmfile-out  DICOM output file
           use config file f for the logger
 \endverbatim
 
-\subsection input_options input options
+\subsection img2dcm_input_options input options
 \verbatim
 general:
 
@@ -67,6 +67,9 @@ general:
 
   -df   --dataset-from  [f]ilename: string
           use dataset from DICOM file f
+
+  -dx   --dataset-from-xml  [f]ilename: string
+          use dataset from XML file f
 
   -stf  --study-from  [f]ilename: string
           read patient/study from DICOM file f
@@ -90,9 +93,20 @@ JPEG format:
 
   -ka   --keep-appn
           keep APPn sections (except JFIF)
+
+  -rc   --remove-com
+          remove COM segment
+
+XML validation:
+
+  +Vd   --validate-document
+          validate XML document against DTD
+
+  +Vn   --check-namespace
+          check XML namespace in document root
 \endverbatim
 
-\subsection processing_options processing options
+\subsection img2dcm_processing_options processing options
 \verbatim
 attribute checking:
 
@@ -118,13 +132,15 @@ attribute checking:
           do not invent missing type 1 attributes
           (only with --do-checks)
 
-character set:
+character set conversion of study/series file:
 
-  +l1   --latin1
-          set latin-1 as standard character set (default)
+  -Ct   --transliterate
+          try to approximate characters that cannot be
+          represented through similar looking characters
 
-  -l1   --no-latin1
-          keep 7-bit ASCII as standard character set
+  -Cd   --discard-illegal
+          discard characters that cannot be represented
+          in destination character set
 
 other processing options:
 
@@ -132,7 +148,7 @@ other processing options:
           add further attribute
 \endverbatim
 
-\subsection output_options output options
+\subsection img2dcm_output_options output options
 \verbatim
 target SOP class:
 
@@ -144,6 +160,9 @@ target SOP class:
 
   -vlp  --vl-photo
           write Visible Light Photographic SOP class (default)
+
+  -oph  --oph-photo
+          write Ophthalmic Photography SOP class
 
 output file format:
 
@@ -182,9 +201,9 @@ data set trailing padding (not with --write-dataset):
           and items on multiple of i bytes
 \endverbatim
 
-\section notes NOTES
+\section img2dcm_notes NOTES
 
-\subsection attribute_sources Attribute Sources
+\subsection img2dcm_attribute_sources Attribute Sources
 
 For converting a general image format into DICOM format, the \b img2dcm
 application may be fed with some additional input for filling mandatory (and
@@ -203,6 +222,10 @@ order:
     attributes to the new object (referenced images etc.). Therefore, it is
     recommended to use the templates in the data directory for (old) SC and
     VLP objects. See also section "Input Templates".
+
+\li Using the \e --dataset-from-xml option \b img2dcm is also forced to
+    import attributes from an existing file. In this case, however, the
+    file must contain XML data in the format as produced by \b dcm2xml.
 
 \li The \e --study-from and \e --series-from options (mutually exclusive) can
     be used to import patient, study and series information from an existing
@@ -241,13 +264,16 @@ order:
     enabled, no automatic attribute insertion will take place.
 
 \li The \e --key option can be used to add further attributes to the DICOM
-    output file. This option is applied at the very end, just before saving the
-    DICOM file. It is also possible to specify sequences, items and nested
+    output file. It is also possible to specify sequences, items and nested
     attributes using the \e --key option. In these cases, a special "path"
     notation has to be used. Details on this path notation can be found in the
-    documentation of \b dcmodify.
+    documentation of \b dcmodify. The \e --key option can be present more than
+    once. The value part (after the '=') may be absent causing the attribute to
+    be set with zero length. Please be advised that the \e --key option is
+    applied at the very end, just before saving the DICOM file, so there is no
+    value checking whatsoever.
 
-\subsection uids UIDs
+\subsection img2dcm_uids UIDs
 
 New Study and Series Instance UIDs are generated <b>if necessary</b> after
 applying the \e --study-from and \e --series options. If Study Instance UID or
@@ -260,7 +286,7 @@ be the desirable behavior for most use cases. However, if a certain SOP
 Instance UID should be inserted into the new object, the \e --key option should
 be used.
 
-\subsection input_templates Input Templates
+\subsection img2dcm_input_templates Input Templates
 
 For supporting the conversion into DICOM, \b img2dcm comes with some
 pre-defined templates which can be used for the \e --dataset-from option (see
@@ -272,18 +298,38 @@ DICOM. Example:
   dump2dcm SC.dump SC.dcm
 \endverbatim
 
+For Ophthalmic Photography, XML templates are provided
+(see sample file \e OP_template_utf_8.xml and \e OP_template_latin_1.xml).
+
 It is possible to use any DICOM file as a template. Please note that the
 complete DICOM dataset is imported; hence, it should be assured that only
 attributes are present which should be part of the constructed DICOM object.
 The SOP Class UID and the Pixel Data attributes (including attributes like
 Rows, Columns etc.) are not copied but replaced by \b img2dcm during conversion.
 
-\subsection input_plugins Input Plugins
+\subsection img2dcm_character_sets Character Sets
+
+When an input template is loaded using \e --dataset-from or \e --dataset-from-xml,
+the specific character set of that template is used for the generated DICOM file.
+If the \e --study-from or \e --series-from options are used additionally,
+img2dcm will try to convert the character set of these attributes to that
+of the template, and will report an error if that is not possible.
+If the \e --study-from or \e --series-from options are used without a template,
+the specific character set of this source is used for the generated DICOM file.
+Any keys specified on the command line with the \e --key option are treated
+as raw bytes and override any attributes that may already be present due
+to a template or study/series file. Therefore, care should be taken to not
+specify a specific character set on the command line if one might be loaded
+from another file. It is also the user's responsibility to ensure that
+attribute values specified on the command line use the correct encoding,
+as no conversion will take place before the values are stored in the DICOM file.
+
+\subsection img2dcm_input_plugins Input Plugins
 
 The \b img2dcm application currently supports the JPEG and the BMP image format
 as input.
 
-\subsubsection jpeg_input_plugin JPEG Input Plugin
+\subsubsection img2dcm_jpeg_input_plugin JPEG Input Plugin
 
 For JPEG, the original JPEG from the source file is not decoded but extracted
 and slightly transformed (e. g. JFIF header is cut off) to allow fast
@@ -333,20 +379,22 @@ does the trick. It should also be slightly faster than cutting off APPn
 information, because it is not necessary to scan the whole JPEG stream for
 such data. JFIF information is \b always removed by \b img2dcm.
 
-\subsubsection bmp_input_plugin BMP Input Plugin
+\subsubsection img2dcm_bmp_input_plugin BMP Input Plugin
 
-\b img2dcm supports BMP as input format. However, so far only the most commmon
-BMP images are supported.  In particular, BMP images which use bitfields or
-run length encoding will be rejected. Such images are uncommon. All input images
-will be converted into a DICOM image with RGB color model and a bit depth of 24.
+\b img2dcm supports BMP as input format. However, so far only the most common
+BMP images are supported.  In particular, BMP images which use bit fields or
+run length encoding will be rejected. Such images are uncommon. Input images
+will either be converted into a DICOM image with RGB color model and a bit
+depth of 24, or into an image with MONOCHROME2 color model an 8 bits per pixel.
 There are no specific options for fine-tuning BMP format conversion.
 
-\subsection output_plugins Output Plugins
+\subsection img2dcm_output_plugins Output Plugins
 
 The desired output SOP Class can be selected on the command line. Currently,
-an export plugin for the Secondary Capture Image SOP class (default, option
-\e -sc), the new Secondary Capture Image SOP classes (option \e -nsc) and
-Visible Light Photographic Image SOP class (option \e -vl) are available.
+export plugins for the Secondary Capture Image SOP class (default, option
+\e -sc), the Multiframe Secondary Capture Image SOP classes (option \e -nsc),
+Visible Light Photographic Image SOP class (option \e -vl),
+and the Ophthalmic Photography Image SOP Classes (option \e -oph) are available.
 Please note that the first one is deprecated according to the DICOM standard
 but is selected as a default because it is widely supported. Future versions
 of \b img2dcm might provide further output plugins for other SOP Classes.
@@ -357,7 +405,7 @@ classes are differentiated from each other by color depth (1/8/16) and the
 fact whether the image is black/white or color. That is why \b img2dcm decides
 during conversion, which output SOP class is suitable for a given source image.
 
-\section examples EXAMPLES
+\section img2dcm_examples EXAMPLES
 
 Here are some examples that show how the \b img2dcm application can be used.
 
@@ -386,7 +434,7 @@ left empty.
 <li>
 img2dcm image.jpg out.dcm --series-from template.dcm -k
 "PatientName=Bond^James"
-<br>Same as 1), but imports patient/study/series infomation from DICOM file
+<br>Same as 1), but imports patient/study/series information from DICOM file
 "template.dcm". Please note that attribute PatientName will contain
 "Bond^James" at the end, any value from "template.dcm" will be overwritten.
 That is, because the -k option is applied at the very end of the conversion
@@ -421,7 +469,7 @@ object's resulting JPEG stream. Further, \e --insist-on-jfif will force
 
 </ol>
 
-\section logging LOGGING
+\section img2dcm_logging LOGGING
 
 The level of logging output of the various command line tools and underlying
 libraries can be specified by the user.  By default, only errors and warnings
@@ -440,7 +488,7 @@ messages to a particular output stream and for filtering certain messages
 based on the module or application where they are generated.  An example
 configuration file is provided in <em>\<etcdir\>/logger.cfg</em>.
 
-\section command_line COMMAND LINE
+\section img2dcm_command_line COMMAND LINE
 
 All command line tools use the following notation for parameters: square
 brackets enclose optional values (0-1), three trailing dots indicate that
@@ -462,7 +510,7 @@ allows one to summarize common combinations of options/parameters and avoids
 longish and confusing command lines (an example is provided in file
 <em>\<datadir\>/dumppat.txt</em>).
 
-\section environment ENVIRONMENT
+\section img2dcm_environment ENVIRONMENT
 
 The \b img2dcm utility will attempt to load DICOM data dictionaries specified
 in the \e DCMDICTPATH environment variable.  By default, i.e. if the
@@ -478,19 +526,21 @@ a semicolon (";") is used as a separator.  The data dictionary code will
 attempt to load each file specified in the \e DCMDICTPATH environment variable.
 It is an error if no data dictionary can be loaded.
 
-\section files FILES
+\section img2dcm_files FILES
 
 <em>\<datadir\>/SC.dump</em> - Sample dump file for Secondary Capture images
 \n<em>\<datadir\>/VLP.dump</em> - Sample dump file for Visible Light Photographic
 images
+\n<em>\<datadir\>/OP_template.xml</em> - Sample dump file for Ophthalmic Photography
+images
 
-\section see_also SEE ALSO
+\section img2dcm_see_also SEE ALSO
 
 <b>dcm2pnm</b>(1), <b>dcmj2pnm</b>(1), <b>dump2dcm</b>(1), <b>dcmconv</b>(1),
-<b>dcmodify</b>(1)
+<b>dcmodify</b>(1), <b>dcm2xml</b>(1)
 
-\section copyright COPYRIGHT
+\section img2dcm_copyright COPYRIGHT
 
-Copyright (C) 2007-2014 by OFFIS e.V., Escherweg 2, 26121 Oldenburg, Germany.
+Copyright (C) 2007-2021 by OFFIS e.V., Escherweg 2, 26121 Oldenburg, Germany.
 
 */

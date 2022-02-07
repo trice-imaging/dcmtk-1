@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1993-2012, OFFIS e.V.
+ *  Copyright (C) 1993-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,6 +20,7 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
 #include "dcmtk/dcmqrdb/dcmqrtis.h"
 
 #include "dcmtk/dcmnet/diutil.h"
@@ -28,6 +29,9 @@
 #include "dcmtk/dcmqrdb/dcmqrdbs.h"
 #include "dcmtk/dcmdata/dcfilefo.h"
 #include "dcmtk/dcmqrdb/dcmqropt.h"
+#include "dcmtk/ofstd/ofstdinc.h"
+#include <ctime>
+
 
 BEGIN_EXTERN_C
 #ifdef HAVE_SYS_STAT_H
@@ -50,15 +54,15 @@ static void
 TI_getInfoFromDataset(DcmDataset *dset, DIC_PN patientName, DIC_CS studyId,
     DIC_IS seriesNumber, DIC_CS modality, DIC_IS imageNumber)
 {
-    DU_getStringDOElement(dset, DCM_PatientName, patientName);
+    DU_getStringDOElement(dset, DCM_PatientName, patientName, sizeof(DIC_PN));
     DU_stripLeadingAndTrailingSpaces(patientName);
-    DU_getStringDOElement(dset, DCM_StudyID, studyId);
+    DU_getStringDOElement(dset, DCM_StudyID, studyId, sizeof(DIC_CS));
     DU_stripLeadingAndTrailingSpaces(studyId);
-    DU_getStringDOElement(dset, DCM_SeriesNumber, seriesNumber);
+    DU_getStringDOElement(dset, DCM_SeriesNumber, seriesNumber, sizeof(DIC_IS));
     DU_stripLeadingAndTrailingSpaces(seriesNumber);
-    DU_getStringDOElement(dset, DCM_Modality, modality);
+    DU_getStringDOElement(dset, DCM_Modality, modality, sizeof(DIC_CS));
     DU_stripLeadingAndTrailingSpaces(modality);
-    DU_getStringDOElement(dset, DCM_InstanceNumber, imageNumber);
+    DU_getStringDOElement(dset, DCM_InstanceNumber, imageNumber, sizeof(DIC_IS));
     DU_stripLeadingAndTrailingSpaces(imageNumber);
 }
 
@@ -287,12 +291,12 @@ TI_addSeriesEntry(TI_StudyEntry *study, DcmDataset *reply)
     series = (TI_SeriesEntry*) malloc(sizeof(TI_SeriesEntry));
     if (series == NULL) return OFFalse;
 
-    bzero((char*)series, sizeof(TI_SeriesEntry)); /* make sure its clean */
+    memset((char*)series, 0, sizeof(TI_SeriesEntry)); /* make sure its clean */
 
     /* extract info from reply */
-    ok = DU_getStringDOElement(reply, DCM_SeriesInstanceUID, series->seriesInstanceUID);
-    if (ok) ok = DU_getStringDOElement(reply, DCM_SeriesNumber, series->seriesNumber);
-    if (ok) ok = DU_getStringDOElement(reply, DCM_Modality, series->modality);
+    ok = DU_getStringDOElement(reply, DCM_SeriesInstanceUID, series->seriesInstanceUID, sizeof(series->seriesInstanceUID));
+    if (ok) ok = DU_getStringDOElement(reply, DCM_SeriesNumber, series->seriesNumber, sizeof(series->seriesNumber));
+    if (ok) ok = DU_getStringDOElement(reply, DCM_Modality, series->modality, sizeof(series->modality));
 
     if (!ok) {
         DCMQRDB_ERROR("TI_addSeriesEntry: missing data in DB reply");
@@ -363,13 +367,12 @@ TI_addImageEntry(TI_SeriesEntry *series, DcmDataset *reply)
     image = (TI_ImageEntry*) malloc(sizeof(TI_ImageEntry));
     if (image == NULL) return OFFalse;
 
-    bzero((char*)image, sizeof(TI_ImageEntry)); /* make sure its clean */
-    bzero((char*)studyID, sizeof(DIC_CS));
+    memset((char*)image, 0, sizeof(TI_ImageEntry)); /* make sure its clean */
+    memset((char*)studyID, 0, sizeof(DIC_CS));
 
     /* extract info from reply */
-    ok = DU_getStringDOElement(reply, DCM_SOPInstanceUID,
-        image->sopInstanceUID);
-    if (ok) ok = DU_getStringDOElement(reply, DCM_InstanceNumber, image->imageNumber);
+    ok = DU_getStringDOElement(reply, DCM_SOPInstanceUID, image->sopInstanceUID, sizeof(image->sopInstanceUID));
+    if (ok) ok = DU_getStringDOElement(reply, DCM_InstanceNumber, image->imageNumber, sizeof(image->imageNumber));
 
     if (!ok) {
         DCMQRDB_ERROR("TI_addImageEntry: missing data in DB reply");
@@ -442,13 +445,13 @@ TI_addStudyEntry(TI_DBEntry *db, DcmDataset *reply)
     se = (TI_StudyEntry*) malloc(sizeof(TI_StudyEntry));
     if (se == NULL) return OFFalse;
 
-    bzero((char*)se, sizeof(TI_StudyEntry));  /* make sure its clean */
+    memset((char*)se, 0, sizeof(TI_StudyEntry));  /* make sure its clean */
 
     /* extract info from reply */
-    ok = DU_getStringDOElement(reply, DCM_StudyInstanceUID, se->studyInstanceUID);
-    if (ok) ok = DU_getStringDOElement(reply, DCM_StudyID, se->studyID);
-    if (ok) ok = DU_getStringDOElement(reply, DCM_PatientName, se->patientName);
-    if (ok) ok = DU_getStringDOElement(reply, DCM_PatientID, se->patientID);
+    ok = DU_getStringDOElement(reply, DCM_StudyInstanceUID, se->studyInstanceUID, sizeof(se->studyInstanceUID));
+    if (ok) ok = DU_getStringDOElement(reply, DCM_StudyID, se->studyID, sizeof(se->studyID));
+    if (ok) ok = DU_getStringDOElement(reply, DCM_PatientName, se->patientName, sizeof(se->patientName));
+    if (ok) ok = DU_getStringDOElement(reply, DCM_PatientID, se->patientID, sizeof(se->patientID));
 
     if (!ok) {
         DCMQRDB_ERROR("TI_addStudyEntry: missing data in DB reply");
@@ -486,7 +489,7 @@ DcmQueryRetrieveTelnetInitiator::DcmQueryRetrieveTelnetInitiator(
 , blockMode_(DIMSE_BLOCKING)
 , dimse_timeout_(0)
 {
-  bzero((char*)peerNames, sizeof(peerNames));
+  memset((char*)peerNames, 0, sizeof(peerNames));
 }
 
 OFBool DcmQueryRetrieveTelnetInitiator::TI_detachAssociation(OFBool abortFlag)
@@ -500,9 +503,9 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_detachAssociation(OFBool abortFlag)
       return OFTrue;  /* nothing to do */
     }
 
-    ASC_getPresentationAddresses(assoc->params, NULL,
-        presentationAddress);
-    ASC_getAPTitles(assoc->params, NULL, peerTitle, NULL);
+    ASC_getPresentationAddresses(assoc->params, NULL, 0,
+        presentationAddress, sizeof(presentationAddress));
+    ASC_getAPTitles(assoc->params, NULL, 0, peerTitle, sizeof(peerTitle), NULL, 0);
 
     if (abortFlag) {
         /* abort association */
@@ -586,14 +589,14 @@ OFCondition DcmQueryRetrieveTelnetInitiator::addPresentationContexts(T_ASC_Param
     /* first add presentation contexts for find and verification */
     for (i=0; i<(int)DIM_OF(abstractSyntaxes) && cond.good(); i++)
     {
-        cond = ASC_addPresentationContext( params, pid, abstractSyntaxes[i], transferSyntaxes, numTransferSyntaxes);
+        cond = ASC_addPresentationContext( params, OFstatic_cast(T_ASC_PresentationContextID, pid), abstractSyntaxes[i], transferSyntaxes, numTransferSyntaxes);
         pid += 2; /* only odd presentation context id's */
     }
 
     /* and then for all storage SOP classes */
     for (i=0; i<numberOfDcmLongSCUStorageSOPClassUIDs && cond.good(); i++)
     {
-      cond = ASC_addPresentationContext( params, pid, dcmLongSCUStorageSOPClassUIDs[i], transferSyntaxes, numTransferSyntaxes);
+      cond = ASC_addPresentationContext( params, OFstatic_cast(T_ASC_PresentationContextID, pid), dcmLongSCUStorageSOPClassUIDs[i], transferSyntaxes, numTransferSyntaxes);
       pid += 2;/* only odd presentation context id's */
     }
 
@@ -608,7 +611,6 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_attachAssociation()
     const char *peer;
     DIC_NODENAME presentationAddress;
     T_ASC_Parameters *params;
-    DIC_NODENAME localHost;
     DIC_AE currentAETitle;
     OFString temp_str;
 
@@ -617,9 +619,9 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_attachAssociation()
     }
 
     if (dbEntries[currentdb]->isRemoteDB) {
-        strcpy(currentAETitle, myAETitle);
+        OFStandard::strlcpy(currentAETitle, myAETitle, sizeof(currentAETitle));
     } else {
-        strcpy(currentAETitle, dbEntries[currentdb]->title);
+        OFStandard::strlcpy(currentAETitle, dbEntries[currentdb]->title, sizeof(currentAETitle));
     }
 
     cond = ASC_createAssociationParameters(&params, maxReceivePDULength);
@@ -629,14 +631,13 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_attachAssociation()
     }
     ASC_setAPTitles(params, currentAETitle, currentPeerTitle, NULL);
 
-    gethostname(localHost, sizeof(localHost) - 1);
     if (!config.peerForAETitle(currentPeerTitle, &peer, &port)) {
         DCMQRDB_ERROR("Help, AE title (" << currentPeerTitle << ") no longer in config");
         ASC_destroyAssociationParameters(&params);
         return OFFalse;
     }
     sprintf(presentationAddress, "%s:%d", peer, port);
-    ASC_setPresentationAddresses(params, localHost, presentationAddress);
+    ASC_setPresentationAddresses(params, OFStandard::getHostName().c_str(), presentationAddress);
 
     cond = addPresentationContexts(params);
     if (cond.bad()) {
@@ -701,7 +702,7 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_changeAssociation()
 
     if (assoc != NULL) {
         /* do we really need to change the association */
-        ASC_getAPTitles(assoc->params, NULL, actualPeerAETitle, NULL);
+        ASC_getAPTitles(assoc->params, NULL, 0, actualPeerAETitle, sizeof(actualPeerAETitle), NULL, 0);
         if (strcmp(actualPeerAETitle, currentPeerTitle) == 0) {
             /* no need to change */
             return OFTrue;
@@ -813,10 +814,10 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_storeImage(char *sopClass, char *sopI
         seriesNumber, modality, imageNumber);
     printf("  Image UID: %s\n", sopInstance);
     fflush(stdout);
-    bzero((char*)&req, sizeof(req));
+    memset((char*)&req, 0, sizeof(req));
     req.MessageID = msgId;
-    strcpy(req.AffectedSOPClassUID, sopClass);
-    strcpy(req.AffectedSOPInstanceUID, sopInstance);
+    OFStandard::strlcpy(req.AffectedSOPClassUID, sopClass, sizeof(req.AffectedSOPClassUID));
+    OFStandard::strlcpy(req.AffectedSOPInstanceUID, sopInstance, sizeof(req.AffectedSOPInstanceUID));
     req.DataSetType = DIMSE_DATASET_PRESENT;
     req.Priority = DIMSE_PRIORITY_MEDIUM;
 
@@ -867,6 +868,7 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_remoteFindQuery(TI_DBEntry *db, DcmDa
     T_DIMSE_C_FindRQ  req;
     T_DIMSE_C_FindRSP rsp;
     DcmDataset    *stDetail = NULL;
+    int responseCount = 0;
 
     currentPeerTitle = db->title;
 
@@ -890,12 +892,12 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_remoteFindQuery(TI_DBEntry *db, DcmDa
     DCMQRDB_INFO("Sending Find SCU RQ: MsgID " << msgId << ":" << OFendl << DcmObject::PrintHelper(*query));
 
     req.MessageID = msgId;
-    strcpy(req.AffectedSOPClassUID,
-     UID_FINDStudyRootQueryRetrieveInformationModel);
-    req.Priority = DIMSE_PRIORITY_LOW;
+    OFStandard::strlcpy(req.AffectedSOPClassUID,
+        UID_FINDStudyRootQueryRetrieveInformationModel, sizeof(req.AffectedSOPClassUID));
+    req.Priority = DIMSE_PRIORITY_MEDIUM;
 
-    cond = DIMSE_findUser(assoc, presId, &req, query,
-      findCallback, &cbd, blockMode_, dimse_timeout_, &rsp, &stDetail);
+    cond = DIMSE_findUser(assoc, presId, &req, query, responseCount,
+        findCallback, &cbd, blockMode_, dimse_timeout_, &rsp, &stDetail);
 
     if (cond.good()) {
         OFString temp_str;
@@ -959,9 +961,9 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_title(int arg, const char * /*cmdbuf*
         printf("TI_title: arg=%d\n", arg);
     }
 
-    bzero(peerTitle, sizeof(peerTitle));
+    memset(peerTitle, 0, sizeof(peerTitle));
     if (assoc) {
-        ASC_getAPTitles(assoc->params, NULL, peerTitle, NULL);
+        ASC_getAPTitles(assoc->params, NULL, 0, peerTitle, sizeof(peerTitle), NULL, 0);
     }
 
     db = dbEntries[currentdb];
@@ -1113,7 +1115,6 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_quit(int arg, const char * /*cmdbuf*/
     TI_detachAssociation(OFFalse);
     printf("Good Bye, Auf Wiedersehen, Au Revoir\n");
     exit(0);
-    return OFTrue;
 }
 
 OFBool DcmQueryRetrieveTelnetInitiator::TI_actualizeStudies()
@@ -1457,8 +1458,8 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_sendStudy(int arg, const char * /*cmd
     }
 
     while (ok && dbStatus.status() == STATUS_Pending) {
-        dbcond = db->dbHandle->nextMoveResponse(sopClass, sopInstance,
-            imgFile, &nRemaining, &dbStatus);
+        dbcond = db->dbHandle->nextMoveResponse(sopClass, sizeof(sopClass), sopInstance, sizeof(sopInstance),
+            imgFile, sizeof(imgFile), &nRemaining, &dbStatus);
         if (dbcond.bad()) {
             DCMQRDB_ERROR("TI_sendStudy: database error");
             return OFFalse;
@@ -1540,8 +1541,8 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_sendSeries(int arg, const char * /*cm
     }
 
     while (ok && dbStatus.status() == STATUS_Pending) {
-        dbcond = db->dbHandle->nextMoveResponse(sopClass, sopInstance,
-            imgFile, &nRemaining, &dbStatus);
+        dbcond = db->dbHandle->nextMoveResponse(sopClass, sizeof(sopClass), sopInstance, sizeof(sopInstance),
+            imgFile, sizeof(imgFile), &nRemaining, &dbStatus);
         if (dbcond.bad()) {
             DCMQRDB_ERROR("TI_sendSeries: database error");
             return OFFalse;
@@ -1632,8 +1633,8 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_sendImage(int arg, const char * /*cmd
      * the database).
      */
     while (ok && dbStatus.status() == STATUS_Pending) {
-        dbcond = db->dbHandle->nextMoveResponse(sopClass, sopInstance,
-            imgFile, &nRemaining, &dbStatus);
+        dbcond = db->dbHandle->nextMoveResponse(sopClass, sizeof(sopClass), sopInstance, sizeof(sopInstance),
+            imgFile, sizeof(imgFile), &nRemaining, &dbStatus);
         if (dbcond.bad()) {
             DCMQRDB_ERROR("TI_sendImage: database error");
             return OFFalse;
@@ -1654,7 +1655,7 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_sendImage(int arg, const char * /*cmd
 OFBool DcmQueryRetrieveTelnetInitiator::TI_send(int /*arg*/, const char *cmdbuf)
 {
     OFBool ok = OFTrue;
-    char cmdarg[128];
+    char cmdarg[1024];
     int iarg;
     int narg;
 
@@ -1663,7 +1664,7 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_send(int /*arg*/, const char *cmdbuf)
         return OFTrue;
     }
 
-    bzero(cmdarg, sizeof(cmdarg));
+    memset(cmdarg, 0, sizeof(cmdarg));
 
     narg = sscanf(cmdbuf, "send %s %d", cmdarg, &iarg);
     if (narg == 1)
@@ -1683,6 +1684,7 @@ void DcmQueryRetrieveTelnetInitiator::TI_userInput()
 {
     char cmdBuf[1024];  /* can't have lines longer than this */
     int arg;
+    memset(cmdBuf, 0, 1024);
 
     /* make the first database current */
     currentdb = 0;
@@ -1814,7 +1816,7 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_buildStudies(TI_DBEntry *db)
     dbStatus.deleteStatusDetail();
 
     while (dbStatus.status() == STATUS_Pending) {
-        dbcond = db->dbHandle->nextFindResponse(&reply, &dbStatus);
+        dbcond = db->dbHandle->nextFindResponse(&reply, &dbStatus, config.getCharacterSetOptions());
         if (dbcond.bad()) {
             DCMQRDB_ERROR("TI_buildStudies: database error");
             return OFFalse;
@@ -1893,7 +1895,7 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_buildSeries(TI_DBEntry *db, TI_StudyE
     dbStatus.deleteStatusDetail();
 
     while (dbStatus.status() == STATUS_Pending) {
-        dbcond = db->dbHandle->nextFindResponse(&reply, &dbStatus);
+        dbcond = db->dbHandle->nextFindResponse(&reply, &dbStatus, config.getCharacterSetOptions());
         if (dbcond.bad()) {
             DCMQRDB_ERROR("TI_buildSeries: database error");
             return OFFalse;
@@ -1982,7 +1984,7 @@ OFBool DcmQueryRetrieveTelnetInitiator::TI_buildImages(TI_DBEntry *db, TI_StudyE
     }
 
     while (dbStatus.status() == STATUS_Pending) {
-        dbcond = db->dbHandle->nextFindResponse(&reply, &dbStatus);
+        dbcond = db->dbHandle->nextFindResponse(&reply, &dbStatus, config.getCharacterSetOptions());
         if (dbcond.bad()) {
             DCMQRDB_ERROR("TI_buildImages: database error");
             return OFFalse;
@@ -2118,7 +2120,7 @@ void DcmQueryRetrieveTelnetInitiator::createConfigEntries(
     else
     {
       dbEntry = (TI_DBEntry*) malloc( sizeof(TI_DBEntry) );
-      bzero( (char*)dbEntry, sizeof(*dbEntry) );
+      memset( (char*)dbEntry, 0, sizeof(*dbEntry) );
       dbEntry->title = ctnTitles[i];
 
       for( j=0 ; j<peerNamesCount ; j++ )
@@ -2152,7 +2154,7 @@ void DcmQueryRetrieveTelnetInitiator::createConfigEntries(
     {
       // add DB
       dbEntry = (TI_DBEntry*) malloc( sizeof( TI_DBEntry ) );
-      bzero( (char*)dbEntry, sizeof(*dbEntry) );
+      memset( (char*)dbEntry, 0, sizeof(*dbEntry) );
       dbEntry->title = remoteDBTitles[i];
       dbEntry->isRemoteDB = OFTrue;
 

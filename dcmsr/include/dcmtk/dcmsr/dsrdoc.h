@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -31,6 +31,16 @@
 #include "dcmtk/dcmsr/dsrsoprf.h"
 #include "dcmtk/dcmsr/dsrrefin.h"
 #include "dcmtk/dcmsr/dsrcsidl.h"
+
+#include "dcmtk/dcmdata/dcvrcs.h"
+#include "dcmtk/dcmdata/dcvrda.h"
+#include "dcmtk/dcmdata/dcvrds.h"
+#include "dcmtk/dcmdata/dcvris.h"
+#include "dcmtk/dcmdata/dcvrlo.h"
+#include "dcmtk/dcmdata/dcvrpn.h"
+#include "dcmtk/dcmdata/dcvrsh.h"
+#include "dcmtk/dcmdata/dcvrtm.h"
+#include "dcmtk/dcmdata/dcvrui.h"
 
 #include "dcmtk/ofstd/ofstream.h"
 
@@ -103,13 +113,13 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      *  If logging is enabled, the reason for any error might be obtained from the log output.
      *  Also warning and debug messages are reported if the respective logger is enabled.
      ** @param  dataset  reference to DICOM dataset from which the document should be read
-     *  @param  flags    optional flag used to customize the reading process (see DSRTypes::RF_xxx).
-     *                   E.g. RF_readDigitalSignatures indicates whether to read the digital
-     *                   signatures from the dataset or not.  If set, the MACParametersSequence
-     *                   and the DigitalSignaturesSequence are read for the general document
-     *                   header (equivalent to top-level content item) and each content item
-     *                   of the document tree.
-     *                   If not removed manually (with DSRDocumentTree::removeSignatures())
+     *  @param  flags    optional flag used to customize the reading process (see
+     *                   DSRTypes::RF_xxx).  E.g. DSRTypes::RF_readDigitalSignatures indicates
+     *                   whether to read the digital signatures from the dataset or not.  If set,
+     *                   the MACParametersSequence and the DigitalSignaturesSequence are read for
+     *                   the general document header (equivalent to top-level content item) and
+     *                   each content item of the document tree.
+     *                   If not removed manually (with DSRDocumentTree::removeSignatures()),
      *                   the signatures are written back to the dataset when the write() method
      *                   is called.
      *                   Please note that the two signature sequences for any other sequence
@@ -130,10 +140,10 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     virtual OFCondition readPatientData(DcmItem &dataset,
                                         const size_t flags = 0);
 
-    /** read study data from DICOM dataset. Also reads patient data.
-     *  The list of data elements that are read can be found under "Patient Module" and
-     *  "General Study Module" in the member variable section of this class.  Other data
-     *  is not changed, so be careful when using this method.
+    /** read study data from DICOM dataset.  Also reads patient data.
+     *  The list of data elements that are read can be found under "Patient Module", "General
+     *  Study Module" and "Patient Study Module" in the member variable section of this class.
+     *  Other data is not changed, so be careful when using this method.
      *  @param  dataset  reference to DICOM dataset from which the data should be read
      *  @param  flags    optional flag used to customize the reading process (see DSRTypes::RF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
@@ -161,7 +171,7 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     /** read SR document from XML file.
      *  The format (Schema) of the XML document is expected to conform to the output format
      *  of the writeXML() method.  In addition, the document can be validated against an XML
-     *  Schema by setting the flag XF_validateSchema.
+     *  Schema by setting the flag DSRTypes::XF_validateSchema.
      *  Digital signatures in the XML document are not yet supported.
      *  Please note that the current document is also deleted if the parsing process fails.
      ** @param  filename  name of the file from which the XML document is read ("-" for stdin)
@@ -196,7 +206,7 @@ class DCMTK_DCMSR_EXPORT DSRDocument
   // --- get/set misc attributes ---
 
     /** get the current SR document type
-     ** @return document type (might be DT_invalid if read from dataset)
+     ** @return document type (might be DSRTypes::DT_invalid if read from dataset)
      */
     virtual E_DocumentType getDocumentType() const;
 
@@ -212,7 +222,8 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      *  Replace the currently stored document tree with the given one.  Please note that the
      *  given 'tree' is checked before setting it, i.e. only a valid document tree is accepted.
      *  However, a new SOP instance is never created.  If needed, this has to be done with
-     *  createNewSOPInstance() in addition to or with createNewDocument() before this method.
+     *  createNewSOPInstance() in addition to or with createNewDocument() before this method
+     *  is called.
      ** @param  tree  document tree to be set (content will be copied)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
@@ -220,42 +231,50 @@ class DCMTK_DCMSR_EXPORT DSRDocument
 
     /** set document tree from root template.
      *  Replace the currently stored document tree with the one from the given root template.
-     *  This is just a convenience function, so the additional comments on the above setTree()
-     *  method also apply.
+     *  By default, this method expands the tree, i.e. instances of DSRIncludedTemplateTreeNode
+     *  that were added to the tree with DSRDocumentSubTree::includeTemplate() are replaced by
+     *  their content, i.e. by the internally managed subtree.
+     *  Please note that the additional comments on the above setTree() method also apply.
      ** @param  rootTemplate  template specifying the document tree to be set (content will be
      *                        copied).  This parameter cannot be "const" because of
      *                        DSRRootTemplate::getTree(), which is called internally and which
      *                        modifies the tree.
+     *  @param  expandTree    optional flag that allows for disabling the expanding of the
+     *                        document tree before setting it.  Please note that various
+     *                        output methods like write() or renderHTML() do not yet work on
+     *                        such trees.
      ** @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual OFCondition setTreeFromRootTemplate(DSRRootTemplate &rootTemplate);
+    virtual OFCondition setTreeFromRootTemplate(DSRRootTemplate &rootTemplate,
+                                                const OFBool expandTree = OFTrue);
 
     /** get specific character set type.
-     *  If the type is unknown the original DICOM defined term can be retrieved
-     *  with the method getSpecificCharacterSet().  Please note that only the
-     *  first of possibly multiple values is used to determine the type from the
-     *  given DICOM code string (multiple character sets are not yet supported).
-     ** @return character set (might be CS_invalid/unknown if not supported)
+     *  If the type is unknown, the original DICOM defined term can be retrieved
+     *  with the method getSpecificCharacterSet().
+     ** @return character set type (might be DSRTypes::CS_invalid or DSRTypes::CS_unknown)
      */
     virtual E_CharacterSet getSpecificCharacterSetType() const;
 
     /** set specific character set type.
-     *  The DICOM defined term (see SpecificCharacterSet) is set accordingly.
+     *  The DICOM defined term (see member variable SpecificCharacterSet) is set accordingly.
+     ** @param  characterSet  specific character set to be set (use DSRTypes::CS_invalid to reset
+     *                        to the default value, which is "unspecified")
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition setSpecificCharacterSetType(const E_CharacterSet characterSet);
 
     /** get document preliminary flag.
-     *  @note Not applicable to Key Object Selection Documents.
-     ** @return preliminary flag (might be PF_invalid if not specified)
+     *  @note Not applicable to document types that use the Key Object Document Module.
+     ** @return preliminary flag (might be DSRTypes::PF_invalid if not specified)
      */
     virtual E_PreliminaryFlag getPreliminaryFlag() const;
 
     /** set document preliminary flag.
      *  According to the DICOM standard, the concept of "completeness" is independent of the
      *  concept of "preliminary" or "final".  Therefore, this flag can be specified separately.
-     *  @note Not applicable to Key Object Selection Documents.
-     ** @param  flag  preliminary flag to be set (use PF_invalid to omit this optional value)
+     *  @note Not applicable to document types that use the Key Object Document Module.
+     ** @param  flag  preliminary flag to be set (use DSRTypes::PF_invalid to omit this optional
+     *                value)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition setPreliminaryFlag(const E_PreliminaryFlag flag);
@@ -263,30 +282,36 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     /** get document completion flag.
      *  According to the DICOM standard, this flag describes the estimated degree of completeness
      *  of an SR Document.  See DICOM standard for details.
-     *  @note Not applicable to Key Object Selection Documents.
-     ** @return completion flag (might be CF_invalid if read from dataset)
+     *  @note Not applicable to document types that use the Key Object Document Module.
+     ** @return completion flag (might be DSRTypes::CF_invalid if read from dataset)
      */
     virtual E_CompletionFlag getCompletionFlag() const;
 
     /** get document verification flag.
-     *  @note Not applicable to Key Object Selection Documents.
-     ** @return verification flag (might be VF_invalid if read from dataset)
+     *  @note Not applicable to document types that use the Key Object Document Module.
+     ** @return verification flag (might be DSRTypes::VF_invalid if read from dataset)
      */
     virtual E_VerificationFlag getVerificationFlag() const;
+
+    /** check whether there are one or more verifying observers.
+     *  @note Not applicable to document types that use the Key Object Document Module.
+     ** @return OFTrue if there is at least one verifying observer, OFFalse otherwise
+     */
+    virtual OFBool hasVerifyingObservers() const;
 
     /** get number of verifying observers.
      *  A document can be verified more than once.  The verification flag should be VERIFIED
      *  if any verifying observer is specified.  The details on the observer can be retrieved
      *  using the getVerifyingObserver() methods.
-     *  @note Not applicable to Key Object Selection Documents.
+     *  @note Not applicable to document types that use the Key Object Document Module.
      ** @return number of verifying observers (if any), 0 otherwise
      */
-    virtual size_t getNumberOfVerifyingObservers();
+    virtual size_t getNumberOfVerifyingObservers() const;
 
     /** get information about a verifying observer.
      *  All reference variables are cleared before the information is retrieved, i.e. if an error
      *  occurs (return value != EC_Normal) non-empty variables do contain valid (empty) data.
-     *  @note Not applicable to Key Object Selection Documents.
+     *  @note Not applicable to document types that use the Key Object Document Module.
      ** @param  idx           index of the verifying observer to be retrieved (starting with 1).
      *                        Use getNumberOfVerifyingObservers() to get the maximum value.
      *  @param  dateTime      reference to variable where the date and time when this document
@@ -305,7 +330,7 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     /** get information about a verifying observer.
      *  All reference variables are cleared before the information is retrieved, i.e. if an error
      *  occurs (return value != EC_Normal) non-empty variables do contain valid (empty) data.
-     *  @note Not applicable to Key Object Selection Documents.
+     *  @note Not applicable to document types that use the Key Object Document Module.
      ** @param  idx           index of the verifying observer to be retrieved (starting with 1).
      *                        Use getNumberOfVerifyingObservers() to get the maximum value.
      *  @param  dateTime      reference to variable where the date and time when this document
@@ -333,7 +358,7 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      *  included in this document with or without modification." and "[...] the use of the
      *  Predecessor Document Sequence allows tracing back to the input SR Document, which in this
      *  case is the previous version."
-     *  @note Not applicable to Key Object Selection Documents.
+     *  @note Not applicable to document types that use the Key Object Document Module.
      ** @return reference to list object
      */
     virtual DSRSOPInstanceReferenceList &getPredecessorDocuments();
@@ -374,7 +399,7 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      *  reference all other evidence considered pertinent for this SR Document that is not listed
      *  in the Current Requested Procedure Evidence Sequence.  This requires that the same SOP
      *  Instance shall not be referenced in both of these Sequences."
-     *  @note Not applicable to Key Object Selection Documents.
+     *  @note Not applicable to document types that use the Key Object Document Module.
      ** @return reference to list object
      */
     virtual DSRSOPInstanceReferenceList &getPertinentOtherEvidence();
@@ -383,9 +408,11 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      *  The DICOM standard states: "Such referenced Instances may include equivalent documents or
      *  renderings of this document. [...] Required if the identity of a CDA Document equivalent
      *  to the current SOP Instance is known at the time of creation of this SOP instance. May be
-     *  present otherwise."  Note: An equivalent rendering of the document might be provided as an
-     *  "Encapsulated PDF" DICOM object.
-     *  @note Not applicable to Key Object Selection Documents.
+     *  present otherwise."  The Purpose of Reference Code should be taken from Defined Context
+     *  Group 7006 (SR Document Purposes of Reference).
+     *  Note: An equivalent rendering of the document might be provided as an "Encapsulated PDF"
+     *  DICOM object.
+     *  @note Not applicable to document types that use the Key Object Document Module.
      ** @return reference to list object
      */
     virtual DSRReferencedInstanceList &getReferencedInstances();
@@ -409,7 +436,7 @@ class DCMTK_DCMSR_EXPORT DSRDocument
                                                 const signed long pos = 0) const;
 
     /** get completion flag description.
-     *  @note Not applicable to Key Object Selection Documents.
+     *  @note Not applicable to document types that use the Key Object Document Module.
      ** @param  value  reference to variable in which the value should be stored
      *  @param  pos    index of the value to get (0..vm-1), -1 for all components
      ** @return status, EC_Normal if successful, an error code otherwise
@@ -465,6 +492,14 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     virtual OFCondition getInstanceCreatorUID(OFString &value,
                                               const signed long pos = 0) const;
 
+    /** get timezone offset from UTC
+     ** @param  value  reference to variable in which the value should be stored
+     *  @param  pos    index of the value to get (0..vm-1), -1 for all components
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition getTimezoneOffsetFromUTC(OFString &value,
+                                                 const signed long pos = 0) const;
+
     /** get patient's name
      ** @param  value  reference to variable in which the value should be stored
      *  @param  pos    index of the value to get (0..vm-1), -1 for all components
@@ -488,6 +523,22 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      */
     virtual OFCondition getPatientSex(OFString &value,
                                       const signed long pos = 0) const;
+
+    /** get patient's size
+     ** @param  value  reference to variable in which the value should be stored
+     *  @param  pos    index of the value to get (0..vm-1), -1 for all components
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition getPatientSize(OFString &value,
+                                       const signed long pos = 0) const;
+
+    /** get patient's weight
+     ** @param  value  reference to variable in which the value should be stored
+     *  @param  pos    index of the value to get (0..vm-1), -1 for all components
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition getPatientWeight(OFString &value,
+                                         const signed long pos = 0) const;
 
     /** get referring physician's name
      ** @param  value  reference to variable in which the value should be stored
@@ -545,13 +596,37 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     virtual OFCondition getDeviceSerialNumber(OFString &value,
                                               const signed long pos = 0) const;
 
-    /** get software version(s). Please note that only the first component is returned.
+    /** get software version(s)
      ** @param  value  reference to variable in which the value should be stored
      *  @param  pos    index of the value to get (0..vm-1), -1 for all components
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition getSoftwareVersions(OFString &value,
                                             const signed long pos = 0) const;
+
+    /** get synchronization frame of reference UID
+     ** @param  value  reference to variable in which the value should be stored
+     *  @param  pos    index of the value to get (0..vm-1), -1 for all components
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition getSynchronizationFrameOfReferenceUID(OFString &value,
+                                                              const signed long pos = 0) const;
+
+    /** get synchronization trigger
+     ** @param  value  reference to variable in which the value should be stored
+     *  @param  pos    index of the value to get (0..vm-1), -1 for all components
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition getSynchronizationTrigger(OFString &value,
+                                                  const signed long pos = 0) const;
+
+    /** get acquisition time synchronized
+     ** @param  value  reference to variable in which the value should be stored
+     *  @param  pos    index of the value to get (0..vm-1), -1 for all components
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition getAcquisitionTimeSynchronized(OFString &value,
+                                                       const signed long pos = 0) const;
 
     /** get study date
      ** @param  value  reference to variable in which the value should be stored
@@ -633,6 +708,14 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     virtual OFCondition getPatientID(OFString &value,
                                      const signed long pos = 0) const;
 
+    /** get issuer of patient ID
+     ** @param  value  reference to variable in which the value should be stored
+     *  @param  pos    index of the value to get (0..vm-1), -1 for all components
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition getIssuerOfPatientID(OFString &value,
+                                             const signed long pos = 0) const;
+
     /** get series number
      ** @param  value  reference to variable in which the value should be stored
      *  @param  pos    index of the value to get (0..vm-1), -1 for all components
@@ -661,17 +744,20 @@ class DCMTK_DCMSR_EXPORT DSRDocument
   // --- set DICOM string attributes ---
 
     /** set specific character set.  The internal enumerated value is set accordingly.
-     *  Please note that code extensions techniques are not supported.  Therefore, only
-     *  a single value can be passed.
-     ** @param  value  value to be set (single value only) or "" for no value
-     *  @param  check  check 'value' for conformance with VR (CS) and VM (1) if enabled
+     *  Please note that this method does not return an error if the given 'value' is not
+     *  defined by the DICOM standard or not supported by this class, e.g. when no mapping
+     *  to the character set names needed for HTML/XHTML or XML output is defined.
+     *  If needed, check the return value of the method getSpecificCharacterSetType() for
+     *  DSRTypes::CS_invalid or DSRTypes::CS_unknown after calling this method.
+     ** @param  value  value to be set (single or multiple values) or "" for no value
+     *  @param  check  check 'value' for conformance with VR (CS) and VM (1-n) if enabled
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition setSpecificCharacterSet(const OFString &value,
                                                 const OFBool check = OFTrue);
 
     /** set completion flag description.
-     *  @note Not applicable to Key Object Selection Documents.
+     *  @note Not applicable to document types that use the Key Object Document Module.
      ** @param  value  explanation of the value that is set for completion flag.  If an empty
      *                 string is passed, the description is removed from the dataset (type 3).
      *  @param  check  check 'value' for conformance with VR (LO) and VM (1) if enabled
@@ -679,6 +765,16 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      */
     virtual OFCondition setCompletionFlagDescription(const OFString &value,
                                                      const OFBool check = OFTrue);
+
+    /** set timezone offset from UTC
+     ** @param  value  value to be set (single value only) or "" for no value
+     *  @param  check  check 'value' for conformance with VR (SH) and VM (1) if enabled.
+     *                 Please note that it is not checked whether the 'value' conforms
+     *                 to the requirements of a valid timezone offset (see DICOM PS3.3).
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition setTimezoneOffsetFromUTC(const OFString &value,
+                                                 const OFBool check = OFTrue);
 
     /** set patient's name
      ** @param  value  value to be set (single value only) or "" for no value
@@ -703,6 +799,22 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      */
     virtual OFCondition setPatientSex(const OFString &value,
                                       const OFBool check = OFTrue);
+
+    /** set patient's size
+     ** @param  value  value to be set (single value only) or "" for no value
+     *  @param  check  check 'value' for conformance with VR (DS) and VM (1) if enabled
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition setPatientSize(const OFString &value,
+                                       const OFBool check = OFTrue);
+
+    /** set patient's weight
+     ** @param  value  value to be set (single value only) or "" for no value
+     *  @param  check  check 'value' for conformance with VR (DS) and VM (1) if enabled
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition setPatientWeight(const OFString &value,
+                                         const OFBool check = OFTrue);
 
     /** set referring physician's name
      ** @param  value  value to be set (single value only) or "" for no value
@@ -767,6 +879,29 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      */
     virtual OFCondition setSoftwareVersions(const OFString &value,
                                             const OFBool check = OFTrue);
+
+    /** set synchronization frame of reference UID
+     ** @param  value  value to be set (single value only) or "" for no value
+     *  @param  check  check 'value' for conformance with VR (UI) and VM (1) if enabled
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition setSynchronizationFrameOfReferenceUID(const OFString &value,
+                                                              const OFBool check = OFTrue);
+    /** set synchronization trigger
+     ** @param  value  value to be set (single value only) or "" for no value
+     *  @param  check  check 'value' for conformance with VR (CS) and VM (1) if enabled
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition setSynchronizationTrigger(const OFString &value,
+                                                  const OFBool check = OFTrue);
+
+    /** set acquisition time synchronized
+     ** @param  value  value to be set (single value only) or "" for no value
+     *  @param  check  check 'value' for conformance with VR (CS) and VM (1) if enabled
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition setAcquisitionTimeSynchronized(const OFString &value,
+                                                       const OFBool check = OFTrue);
 
     /** set content date
      ** @param  value  value to be set (single value only).  If an empty string is passed,
@@ -836,6 +971,14 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     virtual OFCondition setPatientID(const OFString &value,
                                      const OFBool check = OFTrue);
 
+    /** set issuer of patient ID
+     ** @param  value  value to be set (single value only) or "" for no value
+     *  @param  check  check 'value' for conformance with VR (LO) and VM (1) if enabled
+     ** @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition setIssuerOfPatientID(const OFString &value,
+                                             const OFBool check = OFTrue);
+
     /** set series number
      ** @param  value  value to be set (single value only).  If an empty string is passed,
      *                 the value "1" is set when displaying or writing the document since
@@ -871,7 +1014,7 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      *  After generating a new study instance UID the method createNewSeries() is called,
      *  i.e. also a new series instance UID and SOP instance UID are generated.  This is
      *  a requirement of the DICOM standard.  All other study-related attributes are
-     *  cleared.
+     *  cleared (including the attributes from the Patient Study Module).
      */
     virtual void createNewStudy();
 
@@ -951,7 +1094,7 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      *  reset (OFFalse).  The preliminary flag is not modified by this method.  Also the
      *  various lists of referenced instances remain unchanged, i.e. they have to be
      *  adapted manually if needed.
-     *  @note Not applicable to Key Object Selection Documents.
+     *  @note Not applicable to document types that use the Key Object Document Module.
      *  @param  clearList  clear list of predecessor documents before adding the current
      *                     document if OFTrue.  Append current document to existing list
      *                     otherwise.
@@ -964,7 +1107,7 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      *  describes the estimated degree of completeness of an SR Document (see DICOM standard
      *  for details).  The completion flag description is set to an empty string (i.e. absent
      *  in DICOM dataset).
-     *  @note Not applicable to Key Object Selection Documents.
+     *  @note Not applicable to document types that use the Key Object Document Module.
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition completeDocument();
@@ -974,7 +1117,7 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      *  describes the estimated degree of completeness of an SR Document (see DICOM standard
      *  for details).  The completion flag description can be modified independently from the
      *  flag by means of the method setCompletionFlagDescription() - see above.
-     *  @note Not applicable to Key Object Selection Documents.
+     *  @note Not applicable to document types that use the Key Object Document Module.
      ** @param  description  explanation of the value set for completion flag.
      *                       (optional, see previous method, VR=LO)
      *  @param  check        check 'description' for conformance with VR and VM if enabled
@@ -990,7 +1133,7 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      *  Please note that only completed documents (see completion flag) can be verified and that
      *  a new SOP instance UID has to be generated (manually) according to the DICOM standard when
      *  creating a dataset/file from this document.
-     *  @note Not applicable to Key Object Selection Documents.
+     *  @note Not applicable to document types that use the Key Object Document Module.
      ** @param  observerName  name of the person who has verified this document (required, VR=PN)
      *  @param  organization  name of the organization to which the observer belongs (required, VR=LO)
      *  @param  dateTime      verification date time (optional). If empty/absent the current date and
@@ -1011,7 +1154,7 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      *  Please note that only completed documents (see completion flag) can be verified and that
      *  a new SOP instance UID has to be generated (manually) according to the DICOM standard when
      *  creating a dataset/file from this document.
-     *  @note Not applicable to Key Object Selection Documents.
+     *  @note Not applicable to document types that use the Key Object Document Module.
      ** @param  observerName  name of the person who has verified this document (required, VR=PN)
      *  @param  observerCode  code identifying the verifying observer (optional, see previous method)
      *  @param  organization  name of the organization to which the observer belongs (required, VR=LO)
@@ -1044,9 +1187,9 @@ class DCMTK_DCMSR_EXPORT DSRDocument
      *      document management functions do reset the flag (i.e. set the FinalizedFlag to OFFalse),
      *      other methods (e.g. setXXX) do not change the flag though the state of the document is
      *      not finalized any more after they have been called.
-     *  @note Not applicable to Key Object Selection Documents since there's no completion flag in
-     *        this type of SR document.  Please note that this method has nothing to do with the
-     *        preliminary flag.
+     *  @note Not applicable to document types that use the Key Object Document Module since there
+     *        is no completion flag attribute in this module.  Please note that this method has
+     *        nothing to do with the preliminary flag.
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition finalizeDocument();
@@ -1160,13 +1303,20 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     OFCondition checkDatasetForReading(DcmItem &dataset,
                                        E_DocumentType &documentType);
 
+    /** get current value of specific character set
+     ** @return pointer to character string (never NULL)
+     */
+    const char *getSpecificCharacterSet() const;
+
     /** update various DICOM attributes.
      *  (e.g. set the modality and SOP class UID, generate a new Study, Series and SOP instance UID
      *  if required, set date/time values, etc.)
-     ** @param  updateAll  flag indicating whether all DICOM attributes should be updated or only
-     *                     the IOD-specific ones. (e.g. set DICOM defined terms from enum values)
+     ** @param  updateAll   flag indicating whether all DICOM attributes should be updated or only
+     *                      the IOD-specific ones. (e.g. set DICOM defined terms from enum values)
+     *  @param  verboseMode report (more) processing details to the logger if enabled (default)
      */
-    void updateAttributes(const OFBool updateAll = OFTrue);
+    void updateAttributes(const OFBool updateAll = OFTrue,
+                          const OFBool verboseMode = OFTrue);
 
 
   private:
@@ -1185,7 +1335,7 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     /// defined term: see class DSRTypes
     E_CharacterSet     SpecificCharacterSetEnum;
 
-    // DICOM attributes are listed ordered by module.
+    // DICOM attributes are listed ordered by Module.
     // The comments for each attribute describe "Name: (VR, VM, Type)".
     // Please note that for particular SR documents (e.g. Key Object Selection)
     // other rules might apply.  See DICOM standard for further reference.
@@ -1207,6 +1357,12 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     DcmUniqueIdentifier InstanceCreatorUID;
     /// Coding Scheme Identification Sequence: (SQ, 1-n, 3)
     DSRCodingSchemeIdentificationList CodingSchemeIdentification;
+    /// Context Group Identification Sequence: (SQ, 1-n, 3)
+     // - tbd: optional attribute not yet supported
+    /// Mapping Resource Identification Sequence: (SQ, 1-n, 3)
+     // - tbd: optional attribute not yet supported
+    /// Timezone Offset from UTC: (SH, 1, 3)
+    DcmShortString      TimezoneOffsetFromUTC;
 
     // --- General Study Module (M) ---
 
@@ -1231,10 +1387,19 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     DcmPersonName       PatientName;
     /// Patient ID: (LO, 1, 2)
     DcmLongString       PatientID;
+    /// Issuer of Patient ID: (LO, 1, 3)
+    DcmLongString       IssuerOfPatientID;
     /// Patient's Birth Date: (DA, 1, 2)
     DcmDate             PatientBirthDate;
     /// Patient's Sex: (CS, 1, 2)
     DcmCodeString       PatientSex;
+
+    // --- Patient Study Module (U) ---
+
+    /// Patient's Size: (DS, 1, 3)
+    DcmDecimalString    PatientSize;
+    /// Patient's Weight: (DS, 1, 3)
+    DcmDecimalString    PatientWeight;
 
     // --- General Equipment Module (M) ---
 
@@ -1258,9 +1423,14 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     // Software Version(s): (LO, 1-n, 1)
     // - see 'General Equipment Module'
 
-    // --- Synchronization Module (C/U - for some IODs) ---
+    // --- Synchronization Module (M/C/U - for some IODs) ---
 
-    // tbd: conditional/optional module not yet supported
+    /// Synchronization Frame of Reference UID: (UI, 1, 1)
+    DcmUniqueIdentifier SynchronizationFrameOfReferenceUID;
+    /// Synchronization Trigger: (CS, 1, 1)
+    DcmCodeString       SynchronizationTrigger;
+    /// Acquisition Time Synchronized: (CS, 1, 1)
+    DcmCodeString       AcquisitionTimeSynchronized;
 
     // --- SR Document Series / Key Object Document Series Module (M) ---
 
@@ -1278,7 +1448,9 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     DcmLongString       ProtocolName;
     /// Series Description: (LO, 1, 3)
     DcmLongString       SeriesDescription;
-    /// Referenced Performed Procedure Step Sequence: (SQ, 1-n, 2)
+    /// Series Description Code Sequence: (SQ, 1, 3)
+     // - tbd: optional attribute not yet supported
+    /// Referenced Performed Procedure Step Sequence: (SQ, 1, 2)
     DcmSequenceOfItems  ReferencedPerformedProcedureStep;
 
     // --- SR Document General Module (M) ---
@@ -1299,12 +1471,18 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     DcmTime             ContentTime;
     /// Verifying Observer Sequence: (SQ, 1-n, 1C)
     DcmSequenceOfItems  VerifyingObserver;
+    /// Author Observer Sequence: (SQ, 1-n, 3)
+     // - tbd: optional attribute not yet supported
+    /// Participant Sequence: (SQ, 1-n, 3)
+     // - tbd: optional attribute not yet supported
+    /// Custodial Organization Sequence: (SQ, 1, 3)
+     // - tbd: optional attribute not yet supported
     /// Predecessor Documents Sequence: (SQ, 1-n, 1C)
     DSRSOPInstanceReferenceList PredecessorDocuments;
     /// Identical Documents Sequence: (SQ, 1-n, 1C)
     DSRSOPInstanceReferenceList IdenticalDocuments;
     // Referenced Request Sequence: (SQ, 1-n, 1C)
-    // - tbd: conditional attribute not yet supported
+     // - tbd: conditional attribute not yet supported
     /// Performed Procedure Code Sequence: (SQ, 1-n, 2)
     DcmSequenceOfItems  PerformedProcedureCode;
     /// Current Requested Procedure Evidence Sequence: (SQ, 1-n, 1C)
@@ -1313,6 +1491,11 @@ class DCMTK_DCMSR_EXPORT DSRDocument
     DSRSOPInstanceReferenceList PertinentOtherEvidence;
     /// Referenced Instance Sequence: (SQ, 1-n, 1C)
     DSRReferencedInstanceList ReferencedInstances;
+
+    // --- Timezone Module (M - for some IODs) ---
+
+    // Timezone Offset from UTC: (SH, 1, 1)
+    // - see 'SOP Common Module'
 
  // --- declaration of copy constructor and assignment operator ---
 

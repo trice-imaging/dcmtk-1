@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2015, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -69,7 +69,10 @@ const unsigned short OFM_dcmenc   = 28;
 const unsigned short OFM_dcmiod   = 29;
 const unsigned short OFM_dcmseg   = 30;
 const unsigned short OFM_dcmfg    = 31;
-
+const unsigned short OFM_dcmtract = 32;
+const unsigned short OFM_dcmpmap  = 33;
+const unsigned short OFM_dcmelekt = 34;
+const unsigned short OFM_dcmect   = 35;
 
 // condition constants
 
@@ -148,7 +151,7 @@ extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_UnknownVR;
 extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_InvalidValue;
 /// An expected Item was not found
 extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_ItemNotFound;
-/// Given transfersyntax is unknown
+/// Given transfer syntax is unknown
 extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_UnknownTransferSyntax;
 /// Cannot check
 extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_CannotCheck;
@@ -158,6 +161,29 @@ extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_MissingValue;
 extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_MissingAttribute;
 /// Internal error
 extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_InternalError;
+/// Invalid character, e.g. non-ASCII character used but no Specific Character Set defined
+extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_InvalidCharacter;
+/// Illegal element with OB or OW Value Representation and undefined length encountered
+extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_UndefinedLengthOBOW;
+/// Illegal VOI LUT Sequence element with OB or OW Value Representation and explicit length encountered
+extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_VOI_LUT_OBOW;
+/// Pixel data in top level dataset in compressed Transfer Syntax uses explicit length (undefined required)
+extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_PixelDataExplLengthIllegal;
+/// Element length is larger than 32-bit length field permits
+extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_ElemLengthExceeds32BitField;
+/// Cannot write 'nan' or 'inf' as JSON number
+extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_CannotWriteJsonNumber;
+/// Cannot write compressed pixel data JSON InlineBinary
+extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_CannotWriteJsonInlineBinary;
+/// XML parse error
+extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_XMLParseError;
+/// XML validation failure
+extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_XMLValidationFailure;
+/// SOP class mismatch
+extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_SOPClassMismatch;
+/// Unknown UID name: No mapping to UID value defined
+extern DCMTK_DCMDATA_EXPORT const OFConditionConst EC_UnknownUIDName;
+
 //@}
 
 // status code constants
@@ -168,6 +194,7 @@ extern DCMTK_DCMDATA_EXPORT const unsigned short EC_CODE_CannotSelectCharacterSe
 extern DCMTK_DCMDATA_EXPORT const unsigned short EC_CODE_CannotConvertCharacterSet;
 /// error, cannot convert to XML
 extern DCMTK_DCMDATA_EXPORT const unsigned short EC_CODE_CannotConvertToXML;
-
+/// error, cannot determine start fragment (of compressed pixel data)
+extern DCMTK_DCMDATA_EXPORT const unsigned short EC_CODE_CannotDetermineStartFragment;
 
 #endif /* !DCERROR_H */

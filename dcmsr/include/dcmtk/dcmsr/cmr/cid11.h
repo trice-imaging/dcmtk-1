@@ -1,12 +1,12 @@
 /*
  *
- *  Copyright (C) 2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2015-2021, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class CID11_RouteOfAdministration
  *
- *  Generated automatically from DICOM PS 3.16-2015c
- *  File created on 2015-08-23 14:59:11 by J. Riesmeier
+ *  Generated automatically from DICOM PS 3.16-2021d
+ *  File created on 2021-09-13 09:26:28 by J. Riesmeier
  *
  */
 
@@ -19,6 +19,8 @@
 #include "dcmtk/dcmsr/dsrctxgr.h"
 #include "dcmtk/dcmsr/cmr/define.h"
 
+#include "dcmtk/ofstd/ofmap.h"
+
 
 /*---------------------*
  *  class declaration  *
@@ -26,7 +28,7 @@
 
 /** Implementation of DCMR Context Group:
  *  CID 11 - Route of Administration.
- *  (type: extensible, version: 20100608)
+ *  (type: extensible, version: 20200117)
  */
 class DCMTK_CMR_EXPORT CID11_RouteOfAdministration
   : public DSRContextGroup
@@ -38,48 +40,58 @@ class DCMTK_CMR_EXPORT CID11_RouteOfAdministration
      */
     enum EnumType
     {
-        /// (G-D101,SRT,"Intravenous route")
+        /// (47625008,SCT,"Intravenous route")
         IntravenousRoute,
-        /// (G-D102,SRT,"Intra-arterial route")
+        /// (58100008,SCT,"Intra-arterial route")
         IntraArterialRoute,
-        /// (G-D103,SRT,"Intramuscular route")
+        /// (78421000,SCT,"Intramuscular route")
         IntramuscularRoute,
-        /// (G-D104,SRT,"Subcutaneous route")
+        /// (34206005,SCT,"Subcutaneous route")
         SubcutaneousRoute,
-        /// (G-D105,SRT,"Intracutaneous route")
+        /// (372464004,SCT,"Intracutaneous route")
         IntracutaneousRoute,
-        /// (G-D106,SRT,"Intraperitoneal route")
+        /// (38239002,SCT,"Intraperitoneal route")
         IntraperitonealRoute,
-        /// (G-D107,SRT,"Intramedullary route")
+        /// (60213007,SCT,"Intramedullary route")
         IntramedullaryRoute,
-        /// (G-D108,SRT,"Intrathecal route")
+        /// (72607000,SCT,"Intrathecal route")
         IntrathecalRoute,
-        /// (G-D109,SRT,"Intra-articular route")
+        /// (12130007,SCT,"Intra-articular route")
         IntraArticularRoute,
-        /// (G-D111,SRT,"Intraepithelial route")
+        /// (C38244,NCIt,"Intraepithelial route")
         IntraepithelialRoute,
-        /// (G-D112,SRT,"Topical route")
+        /// (6064005,SCT,"Topical route")
         TopicalRoute,
-        /// (G-D140,SRT,"Oral route")
+        /// (26643006,SCT,"Oral route")
         OralRoute,
-        /// (G-D142,SRT,"Transluminal route")
+        /// (C38306,NCIt,"Transluminal route")
         TransluminalRoute,
-        /// (G-D144,SRT,"Intraluminal route")
+        /// (37737002,SCT,"Intraluminal route")
         IntraluminalRoute,
-        /// (G-D146,SRT,"Extraluminal route")
+        /// (C38213,NCIt,"Extraluminal route")
         ExtraluminalRoute,
-        /// (G-D150,SRT,"By inhalation")
+        /// (446406008,SCT,"By inhalation")
         ByInhalation,
-        /// (G-D160,SRT,"Per rectum")
+        /// (37161004,SCT,"Per rectum")
         PerRectum,
-        /// (G-D164,SRT,"Vaginal route")
+        /// (16857009,SCT,"Vaginal route")
         VaginalRoute,
-        /// (G-D17C,SRT,"Intracoronary route")
+        /// (372463005,SCT,"Intracoronary route")
         IntracoronaryRoute,
-        /// (G-D173,SRT,"Intracardiac route")
+        /// (372460008,SCT,"Intracardiac route")
         IntracardiacRoute,
-        /// (R-F2C86,SRT,"Intraventricular route - cardiac")
-        IntraventricularRouteCardiac
+        /// (420287000,SCT,"Intraventricular route - cardiac")
+        IntraventricularRouteCardiac,
+        /// (127070,DCM,"Retro-orbital route")
+        RetroOrbitalRoute,
+        /// (46713006,SCT,"Nasal route")
+        NasalRoute,
+        /// (372464004,SCT,"Intradermal route")
+        IntradermalRoute,
+        /// (447122006,SCT,"Intratumor route")
+        IntratumorRoute,
+        /// (445769006,SCT,"Intracorpus cavernosum route")
+        IntracorpusCavernosumRoute
     };
 
     /** (default) constructor
@@ -183,5 +195,14 @@ class DCMTK_CMR_EXPORT CID11_RouteOfAdministration
     /// pointer to internal code list (use a static variable for singleton pattern)
     static CodeList *Codes;
 };
+
+
+/*-------------------*
+ *  type definition  *
+ *-------------------*/
+
+// define short name for the context group class
+typedef CID11_RouteOfAdministration CMR_CID11;
+
 
 #endif

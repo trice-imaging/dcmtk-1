@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2015, OFFIS e.V.
+ *  Copyright (C) 1994-2018, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,6 +25,12 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 #include "dcmtk/dcmdata/dctypes.h"
 #include "dcmtk/dcmdata/dcvr.h"
+
+// include this file in doxygen documentation
+
+/** @file dcxfer.h
+ *  @brief definition and handling of transfer syntaxes
+ */
 
 /** enumeration of all DICOM transfer syntaxes known to the toolkit
  */
@@ -77,38 +83,44 @@ typedef enum {
     EXS_JPEGProcess14SV1 = 21,
     /// Run Length Encoding (lossless)
     EXS_RLELossless = 22,
-    /// JPEG-LS (lossless)
-    EXS_JPEGLSLossless = 23,
-    /// JPEG-LS (lossless or near-lossless mode)
-    EXS_JPEGLSLossy = 24,
     /// Deflated Explicit VR Little Endian
-    EXS_DeflatedLittleEndianExplicit = 25,
+    EXS_DeflatedLittleEndianExplicit = 23,
+    /// JPEG-LS (lossless)
+    EXS_JPEGLSLossless = 24,
+    /// JPEG-LS (lossless or near-lossless mode)
+    EXS_JPEGLSLossy = 25,
     /// JPEG 2000 (lossless)
     EXS_JPEG2000LosslessOnly = 26,
     /// JPEG 2000 (lossless or lossy)
     EXS_JPEG2000 = 27,
-    /// MPEG2 Main Profile at Main Level
-    EXS_MPEG2MainProfileAtMainLevel = 28,
-    /// MPEG2 Main Profile at High Level
-    EXS_MPEG2MainProfileAtHighLevel = 29,
-    /// MPEG4 High Profile / Level 4.1
-    EXS_MPEG4HighProfileLevel4_1 = 30,
-    /// MPEG4 BD-compatible High Profile / Level 4.1
-    EXS_MPEG4BDcompatibleHighProfileLevel4_1 = 31,
-    /// MPEG4 High Profile / Level 4.2 For 2D Video
-    EXS_MPEG4HighProfileLevel4_2_For2DVideo = 32,
-    /// MPEG4 High Profile / Level 4.2 For 3D Video
-    EXS_MPEG4HighProfileLevel4_2_For3DVideo = 33,
-    /// MPEG4 Stereo High Profile / Level 4.2
-    EXS_MPEG4StereoHighProfileLevel4_2 = 34,
     /// JPEG 2000 part 2 multi-component extensions (lossless)
-    EXS_JPEG2000MulticomponentLosslessOnly = 35,
+    EXS_JPEG2000MulticomponentLosslessOnly = 28,
     /// JPEG 2000 part 2 multi-component extensions (lossless or lossy)
-    EXS_JPEG2000Multicomponent = 36,
+    EXS_JPEG2000Multicomponent = 29,
     /// JPIP Referenced
-    EXS_JPIPReferenced = 37,
+    EXS_JPIPReferenced = 30,
     /// JPIP Referenced Deflate
-    EXS_JPIPReferencedDeflate = 38
+    EXS_JPIPReferencedDeflate = 31,
+    /// MPEG2 Main Profile at Main Level
+    EXS_MPEG2MainProfileAtMainLevel = 32,
+    /// MPEG2 Main Profile at High Level
+    EXS_MPEG2MainProfileAtHighLevel = 33,
+    /// MPEG4 High Profile / Level 4.1
+    EXS_MPEG4HighProfileLevel4_1 = 34,
+    /// MPEG4 BD-compatible High Profile / Level 4.1
+    EXS_MPEG4BDcompatibleHighProfileLevel4_1 = 35,
+    /// MPEG4 High Profile / Level 4.2 For 2D Video
+    EXS_MPEG4HighProfileLevel4_2_For2DVideo = 36,
+    /// MPEG4 High Profile / Level 4.2 For 3D Video
+    EXS_MPEG4HighProfileLevel4_2_For3DVideo = 37,
+    /// MPEG4 Stereo High Profile / Level 4.2
+    EXS_MPEG4StereoHighProfileLevel4_2 = 38,
+    /// HEVC/H.265 Main Profile / Level 5.1
+    EXS_HEVCMainProfileLevel5_1 = 39,
+    /// HEVC/H.265 Main 10 Profile / Level 5.1
+    EXS_HEVCMain10ProfileLevel5_1 = 40,
+    /// Private GE Little Endian Implicit with big endian pixel data
+    EXS_PrivateGE_LEI_WithBigEndianPixelData = 41
 } E_TransferSyntax;
 
 /** enumeration of byte orders
@@ -153,7 +165,8 @@ typedef enum
     /// unsupported stream compression
   , ESC_unsupported = 1
 #ifdef WITH_ZLIB
-    /// zlib stream compression
+    /// zlib stream compression.
+    /// This enum value only available if DCMTK is compiled with ZLIB support enabled.
   , ESC_zlib = 2
 #endif
 } E_StreamCompression;
@@ -191,6 +204,9 @@ public:
 
     /// return byte order for this transfer syntax
     inline E_ByteOrder getByteOrder() const { return byteOrder; }
+
+    /// return byte order for this transfer syntax
+    inline E_ByteOrder getPixelDataByteOrder() const { return pixelDataByteOrder; }
 
     /// return name string for this transfer syntax
     inline const char* getXferName() const { return xferName; }
@@ -272,6 +288,15 @@ public:
         return streamCompression;
     }
 
+    /** check whether transfer syntax uses (0028,7FE0) Pixel Data Provider URL
+     *  to reference pixel data
+     *  @return true if transfer syntax uses URL reference to pixel data
+     */
+    inline OFBool isReferenced() const
+    {
+        return referenced;
+    }
+
     /** return the number of bytes needed to describe the tag, length, VR
      *  and any reserved fields for this transfer syntax when encoding the
      *  specified VR.
@@ -293,6 +318,9 @@ private:
     /// transfer syntax byte order
     E_ByteOrder         byteOrder;
 
+    /// transfer syntax byte order for pixel data
+    E_ByteOrder         pixelDataByteOrder;
+
     /// transfer syntax VR encoding (implicit/explicit)
     E_VRType            vrType;
 
@@ -313,6 +341,10 @@ private:
 
     /// transfer syntax stream compression type
     E_StreamCompression streamCompression;
+
+    /// flag indicating whether this transfer syntax uses a pixel data URL reference
+    OFBool              referenced;
+
 };
 
 /** global constant describing the byte order on the machine the application

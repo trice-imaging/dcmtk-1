@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1993-2011, OFFIS e.V.
+ *  Copyright (C) 1993-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,15 +20,18 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
 #include "dcmtk/dcmqrdb/dcmqrcbm.h"
 
 #include "dcmtk/dcmqrdb/dcmqrcnf.h"
 #include "dcmtk/dcmdata/dcdeftag.h"
 #include "dcmtk/dcmqrdb/dcmqropt.h"
 #include "dcmtk/dcmnet/diutil.h"
+#include "dcmtk/dcmnet/dimse.h"       /* for DICOM_WARNING_STATUS */
 #include "dcmtk/dcmdata/dcfilefo.h"
 #include "dcmtk/dcmqrdb/dcmqrdbs.h"
 #include "dcmtk/dcmqrdb/dcmqrdbi.h"
+#include "dcmtk/ofstd/ofstd.h"
 
 BEGIN_EXTERN_C
 #ifdef HAVE_FCNTL_H
@@ -164,24 +167,24 @@ void DcmQueryRetrieveMoveContext::callbackHandler(
 
 void DcmQueryRetrieveMoveContext::addFailedUIDInstance(const char *sopInstance)
 {
-    int len;
-
+    size_t len;
+    size_t buflen = DIC_UI_LEN+1;
     if (failedUIDs == NULL) {
-        if ((failedUIDs = (char*)malloc(DIC_UI_LEN+1)) == NULL) {
+        if ((failedUIDs = (char*)malloc(buflen)) == NULL) {
             DCMQRDB_ERROR("malloc failure: addFailedUIDInstance");
             return;
         }
-        strcpy(failedUIDs, sopInstance);
+        OFStandard::strlcpy(failedUIDs, sopInstance, buflen);
     } else {
         len = strlen(failedUIDs);
-        if ((failedUIDs = (char*)realloc(failedUIDs,
-            (len+strlen(sopInstance)+2))) == NULL) {
+        buflen = len+strlen(sopInstance)+2;
+        if ((failedUIDs = (char*)realloc(failedUIDs, buflen)) == NULL) {
             DCMQRDB_ERROR("realloc failure: addFailedUIDInstance");
             return;
         }
         /* tag sopInstance onto end of old with '\' between */
-        strcat(failedUIDs, "\\");
-        strcat(failedUIDs, sopInstance);
+        OFStandard::strlcat(failedUIDs, "\\", buflen);
+        OFStandard::strlcat(failedUIDs, sopInstance, buflen);
     }
 }
 
@@ -203,10 +206,9 @@ OFCondition DcmQueryRetrieveMoveContext::performMoveSubOp(DIC_UI sopClass, DIC_U
     lockfd = open(fname, O_RDONLY , 0666);
 #endif
     if (lockfd < 0) {
-        char buf[256];
         /* due to quota system the file could have been deleted */
         DCMQRDB_ERROR("Move SCP: storeSCU: [file: " << fname << "]: "
-            << OFStandard::strerror(errno, buf, sizeof(buf)));
+            << OFStandard::getLastSystemErrorCode().message());
         nFailed++;
         addFailedUIDInstance(sopInstance);
         return EC_Normal;
@@ -228,12 +230,12 @@ OFCondition DcmQueryRetrieveMoveContext::performMoveSubOp(DIC_UI sopClass, DIC_U
     }
 
     req.MessageID = msgId;
-    strcpy(req.AffectedSOPClassUID, sopClass);
-    strcpy(req.AffectedSOPInstanceUID, sopInstance);
+    OFStandard::strlcpy(req.AffectedSOPClassUID, sopClass, DIC_UI_LEN + 1); // see declaration of DIC_UI in dcmtk/dcmnet/dicom.h
+    OFStandard::strlcpy(req.AffectedSOPInstanceUID, sopInstance, DIC_UI_LEN + 1);
     req.DataSetType = DIMSE_DATASET_PRESENT;
     req.Priority = priority;
     req.opts = (O_STORE_MOVEORIGINATORAETITLE | O_STORE_MOVEORIGINATORID);
-    strcpy(req.MoveOriginatorApplicationEntityTitle, origAETitle);
+    OFStandard::strlcpy(req.MoveOriginatorApplicationEntityTitle, origAETitle, DIC_AE_LEN + 1);
     req.MoveOriginatorID = origMsgId;
 
     DCMQRDB_INFO("Store SCU RQ: MsgID " << msgId << ", ("
@@ -256,7 +258,7 @@ OFCondition DcmQueryRetrieveMoveContext::performMoveSubOp(DIC_UI sopClass, DIC_U
         if (rsp.DimseStatus == STATUS_Success) {
             /* everything ok */
             nCompleted++;
-        } else if ((rsp.DimseStatus & 0xf000) == 0xb000) {
+        } else if (DICOM_WARNING_STATUS(rsp.DimseStatus)) {
             /* a warning status message */
             nWarning++;
             DCMQRDB_ERROR("Move SCP: Store Warning: Response Status: " <<
@@ -287,11 +289,10 @@ OFCondition DcmQueryRetrieveMoveContext::buildSubAssociation(T_DIMSE_C_MoveRQ *r
     DIC_NODENAME dstHostName;
     DIC_NODENAME dstHostNamePlusPort;
     int dstPortNumber;
-    DIC_NODENAME localHostName;
-    T_ASC_Parameters *params;
+    T_ASC_Parameters *params = NULL;
     OFString temp_str;
 
-    strcpy(dstAETitle, request->MoveDestination);
+    OFStandard::strlcpy(dstAETitle, request->MoveDestination, DIC_AE_LEN + 1);
 
     /*
      * We must map the destination AE Title into a host name and port
@@ -301,13 +302,13 @@ OFCondition DcmQueryRetrieveMoveContext::buildSubAssociation(T_DIMSE_C_MoveRQ *r
 
     DIC_AE aeTitle;
     aeTitle[0] = '\0';
-    ASC_getAPTitles(origAssoc->params, origAETitle, aeTitle, NULL);
+    ASC_getAPTitles(origAssoc->params, origAETitle, sizeof(origAETitle), aeTitle, sizeof(aeTitle), NULL, 0);
     ourAETitle = aeTitle;
 
-    ASC_getPresentationAddresses(origAssoc->params, origHostName, NULL);
+    ASC_getPresentationAddresses(origAssoc->params, origHostName, sizeof(origHostName), NULL, 0);
 
     if (!mapMoveDestination(origHostName, origAETitle,
-        request->MoveDestination, dstHostName, &dstPortNumber)) {
+        request->MoveDestination, dstHostName, DIC_NODENAME_LEN + 1, &dstPortNumber)) {
         return QR_EC_InvalidPeer;
     }
     if (cond.good()) {
@@ -317,13 +318,16 @@ OFCondition DcmQueryRetrieveMoveContext::buildSubAssociation(T_DIMSE_C_MoveRQ *r
         }
     }
     if (cond.good()) {
-        gethostname(localHostName, sizeof(localHostName) - 1);
-        sprintf(dstHostNamePlusPort, "%s:%d", dstHostName, dstPortNumber);
-        ASC_setPresentationAddresses(params, localHostName,
+        OFStandard::snprintf(dstHostNamePlusPort, sizeof(DIC_NODENAME), "%s:%d", dstHostName, dstPortNumber);
+        ASC_setPresentationAddresses(params, OFStandard::getHostName().c_str(),
             dstHostNamePlusPort);
         ASC_setAPTitles(params, ourAETitle.c_str(), dstAETitle,NULL);
 
-        cond = addAllStoragePresentationContexts(params);
+        if (options_.outgoingProfile.empty()) {
+            cond = addAllStoragePresentationContexts(params);
+        } else {
+            cond = associationConfiguration_.setAssociationParameters(options_.outgoingProfile.c_str(), *params);
+        }
         if (cond.bad()) {
             DCMQRDB_ERROR(DimseCondition::dump(temp_str, cond));
         }
@@ -389,13 +393,13 @@ void DcmQueryRetrieveMoveContext::moveNextImage(DcmQueryRetrieveDatabaseStatus *
     char subImgFileName[MAXPATHLEN + 1];    /* sub-operation image file */
 
     /* clear out strings */
-    bzero(subImgFileName, sizeof(subImgFileName));
-    bzero(subImgSOPClass, sizeof(subImgSOPClass));
-    bzero(subImgSOPInstance, sizeof(subImgSOPInstance));
+    memset(subImgFileName, 0, sizeof(subImgFileName));
+    memset(subImgSOPClass, 0, sizeof(subImgSOPClass));
+    memset(subImgSOPInstance,0, sizeof(subImgSOPInstance));
 
     /* get DB response */
     dbcond = dbHandle.nextMoveResponse(
-        subImgSOPClass, subImgSOPInstance, subImgFileName, &nRemaining, dbStatus);
+        subImgSOPClass, sizeof(subImgSOPClass), subImgSOPInstance, sizeof(subImgSOPInstance), subImgFileName, sizeof(subImgFileName), &nRemaining, dbStatus);
     if (dbcond.bad()) {
         DCMQRDB_ERROR("moveSCP: Database: nextMoveResponse Failed ("
                 << DU_cmoveStatusString(dbStatus->status()) << "):");
@@ -420,14 +424,14 @@ void DcmQueryRetrieveMoveContext::failAllSubOperations(DcmQueryRetrieveDatabaseS
     char subImgFileName[MAXPATHLEN + 1];    /* sub-operation image file */
 
     /* clear out strings */
-    bzero(subImgFileName, sizeof(subImgFileName));
-    bzero(subImgSOPClass, sizeof(subImgSOPClass));
-    bzero(subImgSOPInstance, sizeof(subImgSOPInstance));
+    memset(subImgFileName, 0, sizeof(subImgFileName));
+    memset(subImgSOPClass, 0, sizeof(subImgSOPClass));
+    memset(subImgSOPInstance, 0, sizeof(subImgSOPInstance));
 
     while (dbStatus->status() == STATUS_Pending) {
         /* get DB response */
         dbcond = dbHandle.nextMoveResponse(
-            subImgSOPClass, subImgSOPInstance, subImgFileName, &nRemaining, dbStatus);
+            subImgSOPClass, sizeof(subImgSOPClass), subImgSOPInstance, sizeof(subImgSOPInstance), subImgFileName, sizeof(subImgFileName), &nRemaining, dbStatus);
         if (dbcond.bad()) {
             DCMQRDB_ERROR("moveSCP: Database: nextMoveResponse Failed ("
                 << DU_cmoveStatusString(dbStatus->status()) << "):");
@@ -458,7 +462,7 @@ void DcmQueryRetrieveMoveContext::buildFailedInstanceList(DcmDataset ** rspIds)
 
 OFBool DcmQueryRetrieveMoveContext::mapMoveDestination(
   const char *origPeer, const char *origAE,
-  const char *dstAE, char *dstPeer, int *dstPort)
+  const char *dstAE, char *dstPeer, size_t dstPeerLen, int *dstPort)
 {
     /*
      * This routine enforces RSNA'93 Demo Requirements regarding
@@ -483,7 +487,7 @@ OFBool DcmQueryRetrieveMoveContext::mapMoveDestination(
         return OFFalse;     /* dstAE not known */
     }
 
-    strcpy(dstPeer, dstPeerName);
+    OFStandard::strlcpy(dstPeer, dstPeerName, dstPeerLen);
 
     if (options_.restrictMoveToSameHost_) {
         /* hosts the same ? */
@@ -630,6 +634,31 @@ OFCondition DcmQueryRetrieveMoveContext::addAllStoragePresentationContexts(T_ASC
         transferSyntaxes[0] = UID_MPEG4BDcompatibleHighProfileLevel4_1TransferSyntax;
         numTransferSyntaxes = 1;
         break;
+      case EXS_MPEG4HighProfileLevel4_2_For2DVideo:
+        /* we only propose MPEG4 HP/L4.2 for 2D Videos since we don't want to decompress */
+        transferSyntaxes[0] = UID_MPEG4HighProfileLevel4_2_For2DVideoTransferSyntax;
+        numTransferSyntaxes = 1;
+        break;
+      case EXS_MPEG4HighProfileLevel4_2_For3DVideo:
+        /* we only propose MPEG4 HP/L4.2 for 3D Videos since we don't want to decompress */
+        transferSyntaxes[0] = UID_MPEG4HighProfileLevel4_2_For3DVideoTransferSyntax;
+        numTransferSyntaxes = 1;
+        break;
+      case EXS_MPEG4StereoHighProfileLevel4_2:
+        /* we only propose MPEG4 Stereo HP/L4.2 since we don't want to decompress */
+        transferSyntaxes[0] = UID_MPEG4StereoHighProfileLevel4_2TransferSyntax;
+        numTransferSyntaxes = 1;
+        break;
+      case EXS_HEVCMainProfileLevel5_1:
+        /* we only propose HEVC/H.265 Main Profile/L5.1 since we don't want to decompress */
+        transferSyntaxes[0] = UID_HEVCMainProfileLevel5_1TransferSyntax;
+        numTransferSyntaxes = 1;
+        break;
+      case EXS_HEVCMain10ProfileLevel5_1:
+        /* we only propose HEVC/H.265 Main 10 Profile/L5.1 since we don't want to decompress */
+        transferSyntaxes[0] = UID_HEVCMain10ProfileLevel5_1TransferSyntax;
+        numTransferSyntaxes = 1;
+        break;
       case EXS_RLELossless:
         /* we prefer RLE Lossless */
         transferSyntaxes[0] = UID_RLELosslessTransferSyntax;
@@ -669,7 +698,7 @@ OFCondition DcmQueryRetrieveMoveContext::addAllStoragePresentationContexts(T_ASC
 
     for (i = 0; i < numberOfDcmLongSCUStorageSOPClassUIDs && cond.good(); i++) {
         cond = ASC_addPresentationContext(
-            params, pid, dcmLongSCUStorageSOPClassUIDs[i],
+            params, OFstatic_cast(T_ASC_PresentationContextID, pid), dcmLongSCUStorageSOPClassUIDs[i],
             transferSyntaxes, numTransferSyntaxes);
         pid += 2;   /* only odd presentation context id's */
     }

@@ -41,6 +41,7 @@ check-exhaustive: tests-all
 include-install:
 	./mkinstalldirs $(DESTDIR)$(includedir)/dcmtk/config
 	$(INSTALL_DATA) include/dcmtk/config/osconfig.h $(DESTDIR)$(includedir)/dcmtk/config
+	$(INSTALL_DATA) include/dcmtk/config/arith.h $(DESTDIR)$(includedir)/dcmtk/config
 
 docs-install:
 	./mkinstalldirs $(DESTDIR)$(docdir)
@@ -62,7 +63,7 @@ distclean:
 include/dcmtk/config/arith.h: arith
 	./arith $@
 
-arith: arith.cc
-	$(CXX) $(CXXFLAGS) -Iinclude -I../ofstd/include -I../ofstd/libsrc -o$@ $@.cc
+arith: tests/arith.cc
+	$(CXX) $(CXXFLAGS) -Iinclude -I../ofstd/include -I../ofstd/libsrc -o$@ tests/$@.cc
 
 dependencies: include/dcmtk/config/arith.h

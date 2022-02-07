@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTContentItemModifierSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -28,6 +28,7 @@ DRTContentItemModifierSequence::Item::Item(const OFBool emptyDefaultItem)
     FloatingPointValue(DCM_FloatingPointValue),
     MeasurementUnitsCodeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     NumericValue(DCM_NumericValue),
+    ObservationDateTime(DCM_ObservationDateTime),
     PersonName(DCM_PersonName),
     RationalDenominatorValue(DCM_RationalDenominatorValue),
     RationalNumeratorValue(DCM_RationalNumeratorValue),
@@ -49,6 +50,7 @@ DRTContentItemModifierSequence::Item::Item(const Item &copy)
     FloatingPointValue(copy.FloatingPointValue),
     MeasurementUnitsCodeSequence(copy.MeasurementUnitsCodeSequence),
     NumericValue(copy.NumericValue),
+    ObservationDateTime(copy.ObservationDateTime),
     PersonName(copy.PersonName),
     RationalDenominatorValue(copy.RationalDenominatorValue),
     RationalNumeratorValue(copy.RationalNumeratorValue),
@@ -78,6 +80,7 @@ DRTContentItemModifierSequence::Item &DRTContentItemModifierSequence::Item::oper
         FloatingPointValue = copy.FloatingPointValue;
         MeasurementUnitsCodeSequence = copy.MeasurementUnitsCodeSequence;
         NumericValue = copy.NumericValue;
+        ObservationDateTime = copy.ObservationDateTime;
         PersonName = copy.PersonName;
         RationalDenominatorValue = copy.RationalDenominatorValue;
         RationalNumeratorValue = copy.RationalNumeratorValue;
@@ -97,6 +100,7 @@ void DRTContentItemModifierSequence::Item::clear()
     {
         /* clear all DICOM attributes */
         ValueType.clear();
+        ObservationDateTime.clear();
         ConceptNameCodeSequence.clear();
         DateTime.clear();
         Date.clear();
@@ -118,6 +122,7 @@ void DRTContentItemModifierSequence::Item::clear()
 OFBool DRTContentItemModifierSequence::Item::isEmpty()
 {
     return ValueType.isEmpty() &&
+           ObservationDateTime.isEmpty() &&
            ConceptNameCodeSequence.isEmpty() &&
            DateTime.isEmpty() &&
            Date.isEmpty() &&
@@ -149,6 +154,7 @@ OFCondition DRTContentItemModifierSequence::Item::read(DcmItem &item)
         /* re-initialize object */
         clear();
         getAndCheckElementFromDataset(item, ValueType, "1", "1", "ContentItemModifierSequence");
+        getAndCheckElementFromDataset(item, ObservationDateTime, "1", "3", "ContentItemModifierSequence");
         ConceptNameCodeSequence.read(item, "1-n", "1", "ContentItemModifierSequence");
         getAndCheckElementFromDataset(item, DateTime, "1", "1C", "ContentItemModifierSequence");
         getAndCheckElementFromDataset(item, Date, "1", "1C", "ContentItemModifierSequence");
@@ -176,6 +182,7 @@ OFCondition DRTContentItemModifierSequence::Item::write(DcmItem &item)
     {
         result = EC_Normal;
         addElementToDataset(result, item, new DcmCodeString(ValueType), "1", "1", "ContentItemModifierSequence");
+        addElementToDataset(result, item, new DcmDateTime(ObservationDateTime), "1", "3", "ContentItemModifierSequence");
         if (result.good()) result = ConceptNameCodeSequence.write(item, "1-n", "1", "ContentItemModifierSequence");
         addElementToDataset(result, item, new DcmDateTime(DateTime), "1", "1C", "ContentItemModifierSequence");
         addElementToDataset(result, item, new DcmDate(Date), "1", "1C", "ContentItemModifierSequence");
@@ -246,6 +253,15 @@ OFCondition DRTContentItemModifierSequence::Item::getNumericValue(OFVector<Float
         return EC_IllegalCall;
     else
         return OFconst_cast(DcmDecimalString &, NumericValue).getFloat64Vector(value);
+}
+
+
+OFCondition DRTContentItemModifierSequence::Item::getObservationDateTime(OFString &value, const signed long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return getStringValueFromElement(ObservationDateTime, value, pos);
 }
 
 
@@ -355,6 +371,19 @@ OFCondition DRTContentItemModifierSequence::Item::setNumericValue(const OFString
         result = (check) ? DcmDecimalString::checkStringValue(value, "1-n") : EC_Normal;
         if (result.good())
             result = NumericValue.putOFStringArray(value);
+    }
+    return result;
+}
+
+
+OFCondition DRTContentItemModifierSequence::Item::setObservationDateTime(const OFString &value, const OFBool check)
+{
+    OFCondition result = EC_IllegalCall;
+    if (!EmptyDefaultItem)
+    {
+        result = (check) ? DcmDateTime::checkStringValue(value, "1") : EC_Normal;
+        if (result.good())
+            result = ObservationDateTime.putOFStringArray(value);
     }
     return result;
 }
@@ -546,7 +575,7 @@ OFBool DRTContentItemModifierSequence::isValid() const
 }
 
 
-unsigned long DRTContentItemModifierSequence::getNumberOfItems() const
+size_t DRTContentItemModifierSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -576,12 +605,12 @@ OFCondition DRTContentItemModifierSequence::gotoNextItem()
 }
 
 
-OFCondition DRTContentItemModifierSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTContentItemModifierSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -596,12 +625,12 @@ OFCondition DRTContentItemModifierSequence::gotoItem(const unsigned long num, OF
 }
 
 
-OFCondition DRTContentItemModifierSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTContentItemModifierSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -616,7 +645,7 @@ OFCondition DRTContentItemModifierSequence::gotoItem(const unsigned long num, OF
 }
 
 
-OFCondition DRTContentItemModifierSequence::gotoItem(const unsigned long num)
+OFCondition DRTContentItemModifierSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -652,7 +681,7 @@ const DRTContentItemModifierSequence::Item &DRTContentItemModifierSequence::getC
 }
 
 
-OFCondition DRTContentItemModifierSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTContentItemModifierSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -662,7 +691,7 @@ OFCondition DRTContentItemModifierSequence::getItem(const unsigned long num, Ite
 }
 
 
-DRTContentItemModifierSequence::Item &DRTContentItemModifierSequence::getItem(const unsigned long num)
+DRTContentItemModifierSequence::Item &DRTContentItemModifierSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -672,7 +701,7 @@ DRTContentItemModifierSequence::Item &DRTContentItemModifierSequence::getItem(co
 }
 
 
-const DRTContentItemModifierSequence::Item &DRTContentItemModifierSequence::getItem(const unsigned long num) const
+const DRTContentItemModifierSequence::Item &DRTContentItemModifierSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -682,13 +711,13 @@ const DRTContentItemModifierSequence::Item &DRTContentItemModifierSequence::getI
 }
 
 
-DRTContentItemModifierSequence::Item &DRTContentItemModifierSequence::operator[](const unsigned long num)
+DRTContentItemModifierSequence::Item &DRTContentItemModifierSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTContentItemModifierSequence::Item &DRTContentItemModifierSequence::operator[](const unsigned long num) const
+const DRTContentItemModifierSequence::Item &DRTContentItemModifierSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -711,7 +740,7 @@ OFCondition DRTContentItemModifierSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTContentItemModifierSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTContentItemModifierSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -734,7 +763,7 @@ OFCondition DRTContentItemModifierSequence::insertItem(const unsigned long pos, 
 }
 
 
-OFCondition DRTContentItemModifierSequence::removeItem(const unsigned long pos)
+OFCondition DRTContentItemModifierSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

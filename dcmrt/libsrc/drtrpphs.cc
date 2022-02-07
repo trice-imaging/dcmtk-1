@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTReferencedPatientPhotoSequence
  *
- *  Generated automatically from DICOM PS 3.3-2014b
- *  File created on 2014-10-31 15:59:21
+ *  Generated automatically from DICOM PS 3.3-2017e
+ *  File created on 2017-12-05 09:30:54
  *
  */
 
@@ -27,6 +27,7 @@ DRTReferencedPatientPhotoSequence::Item::Item(const OFBool emptyDefaultItem)
     SeriesInstanceUID(DCM_SeriesInstanceUID),
     StudyInstanceUID(DCM_StudyInstanceUID),
     TypeOfInstances(DCM_TypeOfInstances),
+    WADORSRetrievalSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     WADORetrievalSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     XDSRetrievalSequence(emptyDefaultItem /*emptyDefaultSequence*/)
 {
@@ -41,6 +42,7 @@ DRTReferencedPatientPhotoSequence::Item::Item(const Item &copy)
     SeriesInstanceUID(copy.SeriesInstanceUID),
     StudyInstanceUID(copy.StudyInstanceUID),
     TypeOfInstances(copy.TypeOfInstances),
+    WADORSRetrievalSequence(copy.WADORSRetrievalSequence),
     WADORetrievalSequence(copy.WADORetrievalSequence),
     XDSRetrievalSequence(copy.XDSRetrievalSequence)
 {
@@ -63,6 +65,7 @@ DRTReferencedPatientPhotoSequence::Item &DRTReferencedPatientPhotoSequence::Item
         SeriesInstanceUID = copy.SeriesInstanceUID;
         StudyInstanceUID = copy.StudyInstanceUID;
         TypeOfInstances = copy.TypeOfInstances;
+        WADORSRetrievalSequence = copy.WADORSRetrievalSequence;
         WADORetrievalSequence = copy.WADORetrievalSequence;
         XDSRetrievalSequence = copy.XDSRetrievalSequence;
     }
@@ -83,6 +86,7 @@ void DRTReferencedPatientPhotoSequence::Item::clear()
         DICOMMediaRetrievalSequence.clear();
         WADORetrievalSequence.clear();
         XDSRetrievalSequence.clear();
+        WADORSRetrievalSequence.clear();
     }
 }
 
@@ -96,7 +100,8 @@ OFBool DRTReferencedPatientPhotoSequence::Item::isEmpty()
            DICOMRetrievalSequence.isEmpty() &&
            DICOMMediaRetrievalSequence.isEmpty() &&
            WADORetrievalSequence.isEmpty() &&
-           XDSRetrievalSequence.isEmpty();
+           XDSRetrievalSequence.isEmpty() &&
+           WADORSRetrievalSequence.isEmpty();
 }
 
 
@@ -121,6 +126,7 @@ OFCondition DRTReferencedPatientPhotoSequence::Item::read(DcmItem &item)
         DICOMMediaRetrievalSequence.read(item, "1-n", "1C", "ReferencedPatientPhotoSequence");
         WADORetrievalSequence.read(item, "1-n", "1C", "ReferencedPatientPhotoSequence");
         XDSRetrievalSequence.read(item, "1-n", "1C", "ReferencedPatientPhotoSequence");
+        WADORSRetrievalSequence.read(item, "1-n", "1C", "ReferencedPatientPhotoSequence");
         result = EC_Normal;
     }
     return result;
@@ -141,6 +147,7 @@ OFCondition DRTReferencedPatientPhotoSequence::Item::write(DcmItem &item)
         if (result.good()) result = DICOMMediaRetrievalSequence.write(item, "1-n", "1C", "ReferencedPatientPhotoSequence");
         if (result.good()) result = WADORetrievalSequence.write(item, "1-n", "1C", "ReferencedPatientPhotoSequence");
         if (result.good()) result = XDSRetrievalSequence.write(item, "1-n", "1C", "ReferencedPatientPhotoSequence");
+        if (result.good()) result = WADORSRetrievalSequence.write(item, "1-n", "1C", "ReferencedPatientPhotoSequence");
     }
     return result;
 }
@@ -315,7 +322,7 @@ OFBool DRTReferencedPatientPhotoSequence::isValid() const
 }
 
 
-unsigned long DRTReferencedPatientPhotoSequence::getNumberOfItems() const
+size_t DRTReferencedPatientPhotoSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -345,12 +352,12 @@ OFCondition DRTReferencedPatientPhotoSequence::gotoNextItem()
 }
 
 
-OFCondition DRTReferencedPatientPhotoSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
+OFCondition DRTReferencedPatientPhotoSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -365,12 +372,12 @@ OFCondition DRTReferencedPatientPhotoSequence::gotoItem(const unsigned long num,
 }
 
 
-OFCondition DRTReferencedPatientPhotoSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTReferencedPatientPhotoSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        unsigned long idx = num + 1;
+        size_t idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -385,7 +392,7 @@ OFCondition DRTReferencedPatientPhotoSequence::gotoItem(const unsigned long num,
 }
 
 
-OFCondition DRTReferencedPatientPhotoSequence::gotoItem(const unsigned long num)
+OFCondition DRTReferencedPatientPhotoSequence::gotoItem(const size_t num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -421,7 +428,7 @@ const DRTReferencedPatientPhotoSequence::Item &DRTReferencedPatientPhotoSequence
 }
 
 
-OFCondition DRTReferencedPatientPhotoSequence::getItem(const unsigned long num, Item *&item)
+OFCondition DRTReferencedPatientPhotoSequence::getItem(const size_t num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -431,7 +438,7 @@ OFCondition DRTReferencedPatientPhotoSequence::getItem(const unsigned long num, 
 }
 
 
-DRTReferencedPatientPhotoSequence::Item &DRTReferencedPatientPhotoSequence::getItem(const unsigned long num)
+DRTReferencedPatientPhotoSequence::Item &DRTReferencedPatientPhotoSequence::getItem(const size_t num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -441,7 +448,7 @@ DRTReferencedPatientPhotoSequence::Item &DRTReferencedPatientPhotoSequence::getI
 }
 
 
-const DRTReferencedPatientPhotoSequence::Item &DRTReferencedPatientPhotoSequence::getItem(const unsigned long num) const
+const DRTReferencedPatientPhotoSequence::Item &DRTReferencedPatientPhotoSequence::getItem(const size_t num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -451,13 +458,13 @@ const DRTReferencedPatientPhotoSequence::Item &DRTReferencedPatientPhotoSequence
 }
 
 
-DRTReferencedPatientPhotoSequence::Item &DRTReferencedPatientPhotoSequence::operator[](const unsigned long num)
+DRTReferencedPatientPhotoSequence::Item &DRTReferencedPatientPhotoSequence::operator[](const size_t num)
 {
     return getItem(num);
 }
 
 
-const DRTReferencedPatientPhotoSequence::Item &DRTReferencedPatientPhotoSequence::operator[](const unsigned long num) const
+const DRTReferencedPatientPhotoSequence::Item &DRTReferencedPatientPhotoSequence::operator[](const size_t num) const
 {
     return getItem(num);
 }
@@ -480,7 +487,7 @@ OFCondition DRTReferencedPatientPhotoSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTReferencedPatientPhotoSequence::insertItem(const unsigned long pos, Item *&item)
+OFCondition DRTReferencedPatientPhotoSequence::insertItem(const size_t pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -503,7 +510,7 @@ OFCondition DRTReferencedPatientPhotoSequence::insertItem(const unsigned long po
 }
 
 
-OFCondition DRTReferencedPatientPhotoSequence::removeItem(const unsigned long pos)
+OFCondition DRTReferencedPatientPhotoSequence::removeItem(const size_t pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

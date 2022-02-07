@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2011, OFFIS e.V.
+ *  Copyright (C) 1998-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,12 +25,8 @@
 #ifdef WITH_OPENSSL
 
 #include "dcmtk/dcmsign/siprivat.h"
-#include "dcmtk/dcmsign/sirsa.h"
-#include "dcmtk/dcmsign/sidsa.h"
+#include "dcmtk/dcmsign/sipkey.h"
 #include "dcmtk/dcmsign/sicert.h"
-
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
 
 BEGIN_EXTERN_C
 #include <openssl/evp.h>
@@ -38,6 +34,9 @@ BEGIN_EXTERN_C
 #include <openssl/pem.h>
 END_EXTERN_C
 
+#ifndef HAVE_OPENSSL_PROTOTYPE_EVP_PKEY_ID
+#define EVP_PKEY_id(key) key->type
+#endif
 
 /* buf     : buffer to write password into
  * size    : length of buffer in bytes
@@ -51,7 +50,7 @@ int SiPrivateKey_passwordCallback(char *buf, int size, int /* rwflag */, void *u
 {
   if (userdata == NULL) return -1;
   OFString *password = (OFString *)userdata;
-  int passwordSize = password->length();
+  int passwordSize = OFstatic_cast(int, password->length());
   if (passwordSize > size) passwordSize = size;
   strncpy(buf, password->c_str(), passwordSize);
   return passwordSize;
@@ -91,12 +90,12 @@ void SiPrivateKey::setPrivateKeyPasswdFromConsole()
 
 OFCondition SiPrivateKey::loadPrivateKey(const char *filename, int filetype)
 {
-  OFCondition result = SI_EC_CannotRead;  
+  OFCondition result = SI_EC_CannotRead;
   if (pkey) EVP_PKEY_free(pkey);
   pkey = NULL;
   if (filename)
   {
-    BIO *in = BIO_new(BIO_s_file_internal());
+    BIO *in = BIO_new(BIO_s_file());
     if (in)
     {
       if (BIO_read_filename(in, filename) > 0)
@@ -125,7 +124,7 @@ E_KeyType SiPrivateKey::getKeyType() const
   E_KeyType result = EKT_none;
   if (pkey)
   {
-    switch(pkey->type)
+    switch(EVP_PKEY_type(EVP_PKEY_id(pkey)))
     {
       case EVP_PKEY_RSA:
         result = EKT_RSA;
@@ -135,6 +134,9 @@ E_KeyType SiPrivateKey::getKeyType() const
         break;
       case EVP_PKEY_DH:
         result = EKT_DH;
+        break;
+      case EVP_PKEY_EC:
+        result = EKT_EC;
         break;
       default:
         /* nothing */
@@ -147,22 +149,7 @@ E_KeyType SiPrivateKey::getKeyType() const
 
 SiAlgorithm *SiPrivateKey::createAlgorithmForPrivateKey()
 {
-  if (pkey)
-  {
-    switch(pkey->type)
-    {
-      case EVP_PKEY_RSA:
-        return new SiRSA(EVP_PKEY_get1_RSA(pkey));
-        /* break; */
-      case EVP_PKEY_DSA:
-        return new SiDSA(EVP_PKEY_get1_DSA(pkey));
-        /* break; */
-      case EVP_PKEY_DH:
-      default:
-        /* nothing */
-        break;
-    }
-  }    
+  if (pkey) return new SiPKEY(pkey, OFFalse);
   return NULL;
 }
 

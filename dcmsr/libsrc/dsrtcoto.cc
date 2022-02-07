@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2015, OFFIS e.V.
+ *  Copyright (C) 2000-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,19 +24,19 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #include "dcmtk/dcmsr/dsrtcoto.h"
+
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcvrds.h"
+
 #include "dcmtk/ofstd/ofstd.h"
 
-#define INCLUDE_CSTDIO
-#include "dcmtk/ofstd/ofstdinc.h"
-
-#ifdef HAVE_EXPLICIT_TEMPLATE_SPECIALIZATION
-#define EXPLICIT_SPECIALIZATION template<>
-#else
-#define EXPLICIT_SPECIALIZATION
-#endif
-
-/* declared in class DSRListOfItems<T> */
-EXPLICIT_SPECIALIZATION const Float64 DSRListOfItems<Float64>::EmptyItem = 0;
+template<>
+const Float64& DSRgetEmptyItem<Float64>()
+{
+    // no need to be thread-safe, since it is only a float
+    static const Float64 t = 0;
+    return t;
+}
 
 
 DSRReferencedTimeOffsetList::DSRReferencedTimeOffsetList()
@@ -73,7 +73,7 @@ OFCondition DSRReferencedTimeOffsetList::print(STD_NAMESPACE ostream &stream,
     while (iterator != endPos)
     {
         /* need to convert float to avoid problems with decimal point ('.' or ',') */
-        OFStandard::ftoa(buffer, sizeof(buffer), *iterator);
+        OFStandard::ftoa(buffer, sizeof(buffer), *iterator, 0, 0, 17 /* DBL_DECIMAL_DIG for DICOM FD */);
         stream << buffer;
         iterator++;
         if (iterator != endPos)

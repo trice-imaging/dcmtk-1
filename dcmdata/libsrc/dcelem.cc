@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2014, OFFIS e.V.
+ *  Copyright (C) 1994-2021, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,15 +22,11 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#define INCLUDE_NEW
-#define INCLUDE_CSTDLIB
-#define INCLUDE_CSTRING
-#include "dcmtk/ofstd/ofstdinc.h"
-
 #include "dcmtk/ofstd/ofdefine.h"
 
 #include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/ofstd/ofstream.h"
+#include "dcmtk/dcmdata/dcjson.h"
 #include "dcmtk/dcmdata/dcelem.h"
 #include "dcmtk/dcmdata/dcobject.h"
 #include "dcmtk/dcmdata/dcswap.h"
@@ -42,6 +38,8 @@
 #include "dcmtk/dcmdata/dcdeftag.h"
 #include "dcmtk/dcmdata/vrscan.h"
 #include "dcmtk/dcmdata/dcpath.h"
+
+#include <cstring>                      /* for memset() */
 
 #define SWAPBUFFER_SIZE 16  /* sufficient for all DICOM VRs as per the 2007 edition */
 
@@ -305,13 +303,35 @@ Uint32 DcmElement::calcElementLength(const E_TransferSyntax xfer,
 {
     DcmXfer xferSyn(xfer);
     DcmEVR vr = getVR();
-    /* These don't use extended length encoding, but when writing, they are
-     * converted to EVR_UN which does use extended length encoding.
-     * (EVR_na should never happen here, it's just handled for completeness) */
+
+    /* These VRs don't use extended length encoding, but when writing, they are
+     * converted to EVR_UN, which DOES use extended length encoding.
+     * (EVR_na should never happen here, it's just handled for completeness)
+     */
     if (vr == EVR_UNKNOWN2B || vr == EVR_na)
         vr = EVR_UN;
-    const Uint32 headerLength = xferSyn.sizeofTagHeader(vr);
+
+    /* compute length of element value */
     const Uint32 elemLength = getLength(xfer, enctype);
+
+    /* Create an object that represents this object's "valid" data type */
+    DcmVR myvalidvr(vr);
+
+    if ((elemLength) > 0xffff && (! myvalidvr.usesExtendedLengthEncoding()) && xferSyn.isExplicitVR())
+    {
+      /* special case: we are writing in explicit VR, the VR of this
+       * element uses a 2-byte length encoding, but the element length is
+       * too large for a 2-byte length field. We need to write this element
+       * as VR=UN (or VR=OB) and adjust the length calculation accordingly.
+       * Since UN and OB always have the same header length, we can simply
+       * assume that we are using UN.
+       */
+       vr = EVR_UN;
+    }
+
+    /* now compute length of header */
+    const Uint32 headerLength = xferSyn.sizeofTagHeader(vr);
+
     if (OFStandard::check32BitAddOverflow(headerLength, elemLength))
       return DCM_UndefinedLength;
     else
@@ -322,22 +342,7 @@ Uint32 DcmElement::calcElementLength(const E_TransferSyntax xfer,
 OFBool DcmElement::canWriteXfer(const E_TransferSyntax newXfer,
                                 const E_TransferSyntax /*oldXfer*/)
 {
-    OFBool canWrite = (newXfer != EXS_Unknown);
-    if (canWrite)
-    {
-        /* check whether element value exceeds length field (in case of 16 bit) */
-        if (DcmXfer(newXfer).isExplicitVR() && !DcmVR(getVR()).usesExtendedLengthEncoding())
-        {
-            const Uint32 length = getLength(newXfer);
-            if (length > 0xffff)
-            {
-                DCMDATA_DEBUG("DcmElement::canWriteXfer() Length of element " << getTagName() << " " << getTag()
-                    << " exceeds maximum of 16-bit length field (" << length << " > 65535 bytes)");
-                canWrite = OFFalse;
-            }
-        }
-    }
-    return canWrite;
+    return (newXfer != EXS_Unknown);
 }
 
 
@@ -430,6 +435,22 @@ OFCondition DcmElement::getUint32(Uint32 & /*val*/,
 
 OFCondition DcmElement::getFloat32(Float32 & /*val*/,
                                    const unsigned long /*pos*/)
+{
+    errorFlag = EC_IllegalCall;
+    return errorFlag;
+}
+
+
+OFCondition DcmElement::getSint64(Sint64 & /*val*/,
+                                  const unsigned long /*pos*/)
+{
+    errorFlag = EC_IllegalCall;
+    return errorFlag;
+}
+
+
+OFCondition DcmElement::getUint64(Uint64 & /*val*/,
+                                  const unsigned long /*pos*/)
 {
     errorFlag = EC_IllegalCall;
     return errorFlag;
@@ -542,6 +563,20 @@ OFCondition DcmElement::getUint32Array(Uint32 * & /*val*/)
 
 
 OFCondition DcmElement::getFloat32Array(Float32 * & /*val*/)
+{
+    errorFlag = EC_IllegalCall;
+    return errorFlag;
+}
+
+
+OFCondition DcmElement::getSint64Array(Sint64 * & /*val*/)
+{
+    errorFlag = EC_IllegalCall;
+    return errorFlag;
+}
+
+
+OFCondition DcmElement::getUint64Array(Uint64 * & /*val*/)
 {
     errorFlag = EC_IllegalCall;
     return errorFlag;
@@ -845,12 +880,18 @@ OFCondition DcmElement::changeValue(const void *value,
             }
         }
     } else {
-        // swap to local byte order
-        swapIfNecessary(gLocalByteOrder, fByteOrder, fValue,
-                        getLengthField(), getTag().getVR().getValueWidth());
-        // copy value at given position
-        memcpy(&fValue[position], OFstatic_cast(const Uint8 *, value), size_t(num));
-        fByteOrder = gLocalByteOrder;
+        // load value (if not loaded yet)
+        if (!fValue)
+            errorFlag = loadValue();
+        if (errorFlag.good())
+        {
+            // swap to local byte order
+            swapIfNecessary(gLocalByteOrder, fByteOrder, fValue,
+                            getLengthField(), getTag().getVR().getValueWidth());
+            // copy value at given position
+            memcpy(&fValue[position], OFstatic_cast(const Uint8 *, value), size_t(num));
+            fByteOrder = gLocalByteOrder;
+        }
     }
     return errorFlag;
 }
@@ -1087,7 +1128,7 @@ OFCondition DcmElement::createEmptyValue(const Uint32 length)
 
         // initialize <length> bytes (which may be odd), not Length (which is always even)
         if (fValue)
-            memzero(fValue, size_t(length));
+            memset(fValue, 0, size_t(length));
         else
             errorFlag = EC_MemoryExhausted;
     }
@@ -1112,8 +1153,12 @@ OFCondition DcmElement::read(DcmInputStream &inStream,
         /* if this is not an illegal call, go ahead and create a DcmXfer */
         /* object based on the transfer syntax which was passed */
         DcmXfer inXfer(ixfer);
+
         /* determine the transfer syntax's byte ordering */
-        fByteOrder = inXfer.getByteOrder();
+        if (getTag() == DCM_PixelData)
+          fByteOrder = inXfer.getPixelDataByteOrder();
+          else fByteOrder = inXfer.getByteOrder();
+
         /* check if the stream reported an error */
         errorFlag = inStream.status();
         /* if we encountered the end of the stream, set the error flag correspondingly */
@@ -1128,7 +1173,7 @@ OFCondition DcmElement::read(DcmInputStream &inStream,
             {
                 /* Return error code if we are are not ignoring parsing errors */
                 if (!dcmIgnoreParsingErrors.get())
-                    errorFlag = EC_StreamNotifyClient;
+                    errorFlag = EC_StreamNotifyClient; // should we rather return EC_InvalidStream?
                 /* In any case, make sure that calling the load value routine on this
                  * element will fail later. For that, create the stream factory that
                  * the load routine will use. Otherwise it would not realize
@@ -1162,7 +1207,7 @@ OFCondition DcmElement::read(DcmInputStream &inStream,
                     if (fLoadValue)
                     {
                         offile_off_t skipped = inStream.skip(getLengthField());
-                        if (skipped < getLengthField())
+                        if (skipped < OFstatic_cast(offile_off_t, getLengthField()))
                         {
                             /* If desired, specific parser errors will be ignored */
                             if (dcmIgnoreParsingErrors.get())
@@ -1234,10 +1279,38 @@ void DcmElement::transferInit()
 
 OFCondition DcmElement::write(DcmOutputStream &outStream,
                               const E_TransferSyntax oxfer,
-                              const E_EncodingType /*enctype*/,
+                              const E_EncodingType enctype,
                               DcmWriteCache *wcache)
 {
     DcmWriteCache wcache2;
+
+    /* Create an object that represents this object's data type */
+    DcmVR myvr(getVR());
+
+    /* create an object that represents the transfer syntax */
+    DcmXfer outXfer(oxfer);
+
+    /* getValidEVR() will convert post 1993 VRs to "OB" if these are disabled */
+    DcmEVR vr = myvr.getValidEVR();
+
+    /* compute length of element value */
+    const Uint32 elemLength = getLength(oxfer, enctype);
+
+    /* Create an object that represents this object's "valid" data type */
+    DcmVR myvalidvr(vr);
+
+    if ((elemLength) > 0xffff && (! myvalidvr.usesExtendedLengthEncoding()) && outXfer.isExplicitVR())
+    {
+        /* special case: we are writing in explicit VR, the VR of this
+         * element uses a 2-byte length encoding, but the element length is
+         * too large for a 2-byte length field. We need to write this element
+         * as VR=UN (or VR=OB if the generation of UN is disabled).
+         * In this method, the variable "vr" is only used to determine the
+         * output byte order, which is always the same for OB and UN.
+         * Therefore, we do not need to distinguish between these two.
+         */
+        vr = EVR_UN;
+    }
 
     /* In case the transfer state is not initialized, this is an illegal call */
     if (getTransferState() == ERW_notInitialized)
@@ -1250,8 +1323,17 @@ OFCondition DcmElement::write(DcmOutputStream &outStream,
         errorFlag = outStream.status();
         if (errorFlag.good())
         {
-            /* create an object that represents the transfer syntax */
-            DcmXfer outXfer(oxfer);
+            E_ByteOrder outByteOrder;
+
+            /* determine the transfer syntax's byte ordering for this element */
+            if (getTag() == DCM_PixelData)
+              outByteOrder = outXfer.getPixelDataByteOrder();
+              else outByteOrder = outXfer.getByteOrder();
+
+            /* UN and OB element content always needs to be written in little endian.
+               We need to set this manually for the case that we are converting
+               elements to UN or OB while writing because some post-1993 VRs are disabled */
+            if ((vr == EVR_OB) || (vr == EVR_UN)) outByteOrder = EBO_LittleEndian;
 
             /* pointer to element value if value resides in memory or old-style
              * write behaviour is active (i.e. everything loaded into memory upon write)
@@ -1270,7 +1352,7 @@ OFCondition DcmElement::write(DcmOutputStream &outStream,
               {
                 /* get this element's value. Mind the byte ordering (little */
                 /* or big endian) of the transfer syntax which shall be used */
-                value = OFstatic_cast(Uint8 *, getValue(outXfer.getByteOrder()));
+                value = OFstatic_cast(Uint8 *, getValue(outByteOrder));
                 if (value) accessPossible = OFTrue;
               }
               else
@@ -1283,7 +1365,7 @@ OFCondition DcmElement::write(DcmOutputStream &outStream,
                 if (!wcache) wcache = &wcache2;
 
                 /* initialize cache object. This is safe even if the object was already initialized */
-                wcache->init(this, getLengthField(), getTransferredBytes(), outXfer.getByteOrder());
+                wcache->init(this, getLengthField(), getTransferredBytes(), outByteOrder);
 
                 /* access first block of element content */
                 errorFlag = wcache->fillBuffer(*this);
@@ -1302,8 +1384,8 @@ OFCondition DcmElement::write(DcmOutputStream &outStream,
                  * in the buffer, check if the buffer is still sufficient for the requirements
                  * of this element, which may need only 8 instead of 12 bytes.
                  */
-                if ((outStream.avail() >= DCM_TagInfoLength) ||
-                    (outStream.avail() >= getTagAndLengthSize(oxfer)))
+                if ((outStream.avail() >= OFstatic_cast(offile_off_t, DCM_TagInfoLength)) ||
+                    (outStream.avail() >= OFstatic_cast(offile_off_t, getTagAndLengthSize(oxfer))))
                 {
                     /* if there is no value, Length (member variable) shall be set to 0 */
                     if (! accessPossible) setLengthField(0);
@@ -1465,7 +1547,7 @@ void DcmElement::writeXMLStartTag(STD_NAMESPACE ostream &out,
                     DCMDATA_WARN("Cannot write private creator for group 0x"
                         << STD_NAMESPACE hex << STD_NAMESPACE setfill('0') << STD_NAMESPACE setw(4)
                         << tag.getGTag() << STD_NAMESPACE dec << STD_NAMESPACE setfill(' ')
-                        << " to XML output: Not present in dataset");
+                        << " to XML output: Not present in data set");
                 }
             }
         } else {
@@ -1567,6 +1649,81 @@ OFCondition DcmElement::writeXML(STD_NAMESPACE ostream &out,
 // ********************************
 
 
+void DcmElement::writeJsonOpener(STD_NAMESPACE ostream &out,
+                                 DcmJsonFormat &format)
+{
+    DcmVR vr(getTag().getVR());
+    DcmTag tag = getTag();
+    /* increase indention level */
+    /* write attribute tag */
+    out << ++format.indent() << "\""
+        << STD_NAMESPACE hex << STD_NAMESPACE setfill('0')
+        << STD_NAMESPACE setw(4) << STD_NAMESPACE uppercase << tag.getGTag();
+    /* write "ggggeeee" (no comma, upper case!) */
+    /* for private element numbers, zero out 2 first element digits */
+    /* or output full element number "eeee" */
+    out << STD_NAMESPACE setw(4) << STD_NAMESPACE uppercase << tag.getETag() << "\":"
+        << format.space() << "{" << STD_NAMESPACE dec << STD_NAMESPACE setfill(' ');
+    out << STD_NAMESPACE nouppercase;
+    /* increase indention level */
+    /* value representation = VR */
+    out << format.newline() << ++format.indent() << "\"vr\":" << format.space() << "\""
+        << vr.getValidVRName() << "\"";
+}
+
+
+void DcmElement::writeJsonCloser(STD_NAMESPACE ostream &out,
+                                 DcmJsonFormat &format)
+{
+    /* output JSON ending and decrease indention level */
+    out << format.newline() << --format.indent() << "}";
+    --format.indent();
+}
+
+
+OFCondition DcmElement::writeJson(STD_NAMESPACE ostream &out,
+                                  DcmJsonFormat &format)
+{
+    /* always write JSON Opener */
+    writeJsonOpener(out, format);
+    /* write element value (if non-empty) */
+    if (!isEmpty())
+    {
+        OFString value;
+        if (format.asBulkDataURI(getTag(), value))
+        {
+            format.printBulkDataURIPrefix(out);
+            DcmJsonFormat::printString(out, value);
+        }
+        else
+        {
+            OFCondition status = getOFString(value, 0L);
+            if (status.bad())
+                return status;
+            format.printValuePrefix(out);
+            DcmJsonFormat::printNumberDecimal(out, value);
+            const unsigned long vm = getVM();
+            for (unsigned long valNo = 1; valNo < vm; ++valNo)
+            {
+                status = getOFString(value, valNo);
+                if (status.bad())
+                    return status;
+                format.printNextArrayElementPrefix(out);
+                DcmJsonFormat::printNumberDecimal(out, value);
+            }
+            format.printValueSuffix(out);
+        }
+    }
+    /* write JSON Closer  */
+    writeJsonCloser(out, format);
+    /* always report success */
+    return EC_Normal;
+}
+
+
+// ********************************
+
+
 OFCondition DcmElement::getPartialValue(void *targetBuffer,
                                         const Uint32 offset,
                                         Uint32 numBytes,
@@ -1656,14 +1813,21 @@ OFCondition DcmElement::getPartialValue(void *targetBuffer,
     // initialize the cache with new stream
     if (!readStream)
     {
+      // create input stream object
       readStream = fLoadValue->create();
 
       // check that read stream is non-NULL
       if (readStream == NULL) return EC_InvalidStream;
 
       // check that stream status is OK
-      if (readStream->status().bad()) return readStream->status();
+      if (readStream->status().bad())
+      {
+        OFCondition result = readStream->status();
+        delete readStream;
+        return result;
+      }
 
+      // readStream will be deleted when the cache is deleted
       cache->init(readStream, this);
     }
 
@@ -1691,7 +1855,7 @@ OFCondition DcmElement::getPartialValue(void *targetBuffer,
       partialvalue = OFstatic_cast(Uint32, valueWidth - partialoffset);
 
       // we need to read a single data element into the swap buffer
-      if (valueWidth != OFstatic_cast(size_t, readStream->read(swapBuffer, valueWidth)))
+      if (valueWidth != OFstatic_cast(size_t, readStream->read(swapBuffer, OFstatic_cast(offile_off_t, valueWidth))))
           return EC_InvalidStream;
 
       // swap to desired byte order. fByteOrder contains the byte order in file.
@@ -1722,7 +1886,7 @@ OFCondition DcmElement::getPartialValue(void *targetBuffer,
     if (bytesToRead > 0)
     {
       // here we read the main block of data
-     if (bytesToRead != readStream->read(targetBufferChar, bytesToRead))
+     if (OFstatic_cast(offile_off_t, bytesToRead) != readStream->read(targetBufferChar, bytesToRead))
          return EC_InvalidStream;
 
       // swap to desired byte order. fByteOrder contains the byte order in file.
@@ -1766,7 +1930,7 @@ OFCondition DcmElement::getPartialValue(void *targetBuffer,
       }
 
       // we need to read a single data element into the swap buffer
-      if (partialBytesToRead != OFstatic_cast(size_t, readStream->read(swapBuffer, partialBytesToRead)))
+      if (partialBytesToRead != OFstatic_cast(size_t, readStream->read(swapBuffer, OFstatic_cast(offile_off_t, partialBytesToRead))))
           return EC_InvalidStream;
 
       if (appendDuplicateByte)
@@ -1825,38 +1989,115 @@ OFCondition DcmElement::createValueFromTempFile(DcmInputStreamFactory *factory,
 }
 
 
+// the following macro makes the source code more readable and easier to maintain
+
+#define GET_AND_CHECK_UINT16_VALUE(tag, variable)                                                                   \
+    result = dataset->findAndGetUint16(tag, variable);                                                              \
+    if (result == EC_TagNotFound)                                                                                   \
+    {                                                                                                               \
+        DCMDATA_WARN("DcmElement: Mandatory element " << DcmTag(tag).getTagName() << " " << tag << " is missing");  \
+        result = EC_MissingAttribute;                                                                               \
+    }                                                                                                               \
+    else if ((result == EC_IllegalCall) || (result == EC_IllegalParameter))                                         \
+    {                                                                                                               \
+        DCMDATA_WARN("DcmElement: No value for mandatory element " << DcmTag(tag).getTagName() << " " << tag);      \
+        result = EC_MissingValue;                                                                                   \
+    }                                                                                                               \
+    else if (result.bad())                                                                                          \
+        DCMDATA_WARN("DcmElement: Cannot retrieve value of element " << DcmTag(tag).getTagName() << " " << tag << ": " << result.text());
+
+
 OFCondition DcmElement::getUncompressedFrameSize(DcmItem *dataset,
                                                  Uint32 &frameSize) const
 {
-  if (dataset == NULL) return EC_IllegalCall;
-  Uint16 rows = 0;
-  Uint16 cols = 0;
-  Uint16 samplesPerPixel = 0;
-  Uint16 bitsAllocated = 0;
-  // retrieve values from dataset
-  OFCondition result = EC_Normal;
-  if (result.good()) result = dataset->findAndGetUint16(DCM_Columns, cols);
-  if (result.good()) result = dataset->findAndGetUint16(DCM_Rows, rows);
-  if (result.good()) result = dataset->findAndGetUint16(DCM_SamplesPerPixel, samplesPerPixel);
-  if (result.good()) result = dataset->findAndGetUint16(DCM_BitsAllocated, bitsAllocated);
+    OFCondition result = EC_IllegalParameter;
+    if (dataset != NULL)
+    {
+        Uint16 rows = 0;
+        Uint16 cols = 0;
+        Uint16 samplesPerPixel = 0;
+        Uint16 bitsAllocated = 0;
+        /* retrieve values from dataset (and check them for validity and plausibility) */
+        GET_AND_CHECK_UINT16_VALUE(DCM_Columns, cols)
+        else if (cols == 0)
+            DCMDATA_WARN("DcmElement: Dubious value (" << cols << ") for element Columns " << DCM_Columns);
+        if (result.good())
+        {
+            GET_AND_CHECK_UINT16_VALUE(DCM_Rows, rows)
+            else if (rows == 0)
+                DCMDATA_WARN("DcmElement: Dubious value (" << rows << ") for element Rows " << DCM_Rows);
+        }
+        if (result.good())
+        {
+            GET_AND_CHECK_UINT16_VALUE(DCM_SamplesPerPixel, samplesPerPixel)
+            else /* result.good() */
+            {
+                /* also need to check value of PhotometricInterpretation */
+                OFString photometricInterpretation;
+                if (dataset->findAndGetOFStringArray(DCM_PhotometricInterpretation, photometricInterpretation).good())
+                {
+                    if (photometricInterpretation.empty())
+                        DCMDATA_WARN("DcmElement: No value for mandatory element PhotometricInterpretation " << DCM_PhotometricInterpretation);
+                    else {
+                        const OFBool isMono =   (photometricInterpretation == "MONOCHROME1") ||
+                                                (photometricInterpretation == "MONOCHROME2");
+                        const OFBool isColor1 = (photometricInterpretation == "PALETTE COLOR");
+                        const OFBool isColor3 = (photometricInterpretation == "RGB") ||
+                                                (photometricInterpretation == "HSV" /* retired */) ||
+                                                (photometricInterpretation == "YBR_FULL") ||
+                                                (photometricInterpretation == "YBR_FULL_422") ||
+                                                (photometricInterpretation == "YBR_PARTIAL_422" /* retired */) ||
+                                                (photometricInterpretation == "YBR_PARTIAL_420") ||
+                                                (photometricInterpretation == "YBR_ICT") ||
+                                                (photometricInterpretation == "YBR_RCT");
+                        const OFBool isColor4 = (photometricInterpretation == "ARGB" /* retired */) ||
+                                                (photometricInterpretation == "CMYK" /* retired */);
+                        if (((isMono || isColor1) && (samplesPerPixel != 1)) || (isColor3 && (samplesPerPixel != 3)) || (isColor4 && (samplesPerPixel != 4)))
 
-  // compute frame size
-  if ((bitsAllocated % 8) == 0)
-  {
-    const Uint16 bytesAllocated = bitsAllocated / 8;
-    frameSize = bytesAllocated * rows * cols * samplesPerPixel;
-  }
-  else
-  {
-    /* need to split calculation in order to avoid integer overflow for large pixel data */
-    const Uint32 v1 = rows * cols * samplesPerPixel;
-    const Uint32 v2 = (bitsAllocated / 8) * v1;
-    const Uint32 v3 = ((bitsAllocated % 8) * v1 + 7) / 8;
-//  # old code: frameSize = (bitsAllocated * rows * cols * samplesPerPixel + 7) / 8;
-    frameSize = v2 + v3;
-  }
-
-  return result;
+                        {
+                            DCMDATA_WARN("DcmElement: Invalid value (" << samplesPerPixel << ") for element SamplesPerPixel " << DCM_SamplesPerPixel
+                                << " when PhotometricInterpretation " << DCM_PhotometricInterpretation << " is " << photometricInterpretation);
+                            result = EC_InvalidValue;
+                        }
+                        else if (!isMono && !isColor1 && !isColor3 && !isColor4)
+                            DCMDATA_WARN("DcmElement: Unsupported value (" << photometricInterpretation << ") for element PhotometricInterpretation " << DCM_PhotometricInterpretation);
+                    }
+                }
+                if (result.good() && (samplesPerPixel != 1) && (samplesPerPixel != 3))
+                    DCMDATA_WARN("DcmElement: Dubious value (" << samplesPerPixel << ") for element SamplesPerPixel " << DCM_SamplesPerPixel);
+            }
+        }
+        if (result.good())
+        {
+            GET_AND_CHECK_UINT16_VALUE(DCM_BitsAllocated, bitsAllocated)
+            /* see PS3.3 Table C.7-11c: "Bits Allocated (0028,0100) shall be either 1, or a multiple of 8." */
+            else if ((bitsAllocated == 0) || ((bitsAllocated > 1) && (bitsAllocated % 8 != 0)))
+                DCMDATA_WARN("DcmElement: Dubious value (" << bitsAllocated << ") for element BitsAllocated " << DCM_BitsAllocated);
+        }
+        /* if all checks were passed... */
+        if (result.good())
+        {
+            /* compute frame size (TODO: check for 32-bit integer overflow?) */
+            if ((bitsAllocated % 8) == 0)
+            {
+                const Uint16 bytesAllocated = bitsAllocated / 8;
+                frameSize = bytesAllocated * rows * cols * samplesPerPixel;
+            }
+            else
+            {
+                /* need to split calculation in order to avoid integer overflow for large pixel data */
+                const Uint32 v1 = rows * cols * samplesPerPixel;
+                const Uint32 v2 = (bitsAllocated / 8) * v1;
+                const Uint32 v3 = ((bitsAllocated % 8) * v1 + 7) / 8;
+            //  # old code: frameSize = (bitsAllocated * rows * cols * samplesPerPixel + 7) / 8;
+                frameSize = v2 + v3;
+            }
+        } else {
+            /* in case of error, return a frame size of 0 */
+            frameSize = 0;
+        }
+    }
+    return result;
 }
 
 
@@ -1887,13 +2128,15 @@ int DcmElement::scanValue(const OFString &value,
                           const size_t pos,
                           const size_t num)
 {
-  // Only create a copy of the string if we have to, this could be a lot of data
-  if (pos == 0 && (num == OFString_npos || num >= value.length()))
-      return vrscan::scan(vr, value);
+  return scanValue(vr, value.data() + pos, num != OFString_npos ? num : value.size() - pos);
+}
 
-  // construct input string to be scanned
-  OFString realValue(value, pos, num);
-  return vrscan::scan(vr, realValue);
+
+int DcmElement::scanValue(const OFString& vr,
+                          const char* const value,
+                          const size_t size)
+{
+  return vrscan::scan(vr, value, size);
 }
 
 
@@ -2038,11 +2281,38 @@ OFCondition DcmElement::checkVM(const unsigned long vmNum,
     {
       if (vmNum != 256) result = EC_ValueMultiplicityViolated;
     }
-    else if ( (vmStr != "1-n") && (vmStr != "0-n") )
+    else if ((vmStr != "1-n") && (vmStr != "0-n"))
     {
       // given value of 'vmStr' not (yet) supported
       result = EC_IllegalParameter;
     }
   }
   return result;
+}
+
+
+OFBool DcmElement::isUniversalMatch(const OFBool normalize,
+                                    const OFBool enableWildCardMatching)
+{
+  OFstatic_cast(void,enableWildCardMatching);
+  return isEmpty(normalize);
+}
+
+OFBool DcmElement::matches(const DcmElement& candidate,
+                           const OFBool enableWildCardMatching) const
+{
+  OFstatic_cast(void,candidate);
+  OFstatic_cast(void,enableWildCardMatching);
+  return OFFalse;
+}
+
+
+OFBool DcmElement::combinationMatches(const DcmElement& keySecond,
+                                      const DcmElement& candidateFirst,
+                                      const DcmElement& candidateSecond) const
+{
+  OFstatic_cast(void,keySecond);
+  OFstatic_cast(void,candidateFirst);
+  OFstatic_cast(void,candidateSecond);
+  return OFFalse;
 }

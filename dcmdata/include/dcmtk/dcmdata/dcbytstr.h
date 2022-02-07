@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2013, OFFIS e.V.
+ *  Copyright (C) 1994-2019, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -29,6 +29,14 @@
 #include "dcmtk/dcmdata/dcelem.h"
 #include "dcmtk/ofstd/ofstring.h"
 
+// forward declarations
+class DcmJsonFormat;
+
+// include this file in doxygen documentation
+
+/** @file dcbytstr.h
+ *  @brief base class for all DICOM value representations storing a character string
+ */
 
 /** This flag defines whether the VR checker is actually used by the various
  *  checkStringValue() methods.  Since this checker is currently limited to
@@ -48,13 +56,15 @@ class DCMTK_DCMDATA_EXPORT DcmByteString: public DcmElement
 
  public:
 
+    // Make friend with DcmItem which requires access to protected
+    // constructor allowing construction using an explicit value length.
+    friend class DcmItem;
+
     /** constructor.
-     *  Create new element from given tag and length.
+     *  Create new element from given tag.
      *  @param tag DICOM tag for the new element
-     *  @param len value length for the new element
      */
-    DcmByteString(const DcmTag &tag,
-                  const Uint32 len = 0);
+    DcmByteString(const DcmTag &tag);
 
     /** copy constructor
      *  @param old element to be copied
@@ -75,17 +85,19 @@ class DCMTK_DCMDATA_EXPORT DcmByteString: public DcmElement
      *  with a given object of the same type. The tag of the element is also
      *  considered as the first component that is compared, followed by the
      *  object types (VR, i.e. DCMTK'S EVR) and the comparison of all value
-     *  components of the object, preferrably in the order declared in the
+     *  components of the object, preferably in the order declared in the
      *  object (if applicable).
      *  @param  rhs the right hand side of the comparison
      *  @return 0 if the object values are equal.
-     *          -1 if either the value of the  first component that does not match
-     *          is lower in this object than in rhs, or all compared components match
-     *          but this object has fewer components than rhs. Also returned if rhs
-     *          cannot be casted to this object type.
-     *          1 if either the value of the first component that does not match
-     *          is greater in this object than in rhs object, or all compared
-     *          components match but the this component is longer.
+     *    -1 if this element has fewer components than the rhs element.
+     *    Also -1 if the value of the first component that does not match
+     *    is lower in this object than in rhs. Also returned if rhs
+     *    cannot be casted to this object type or both objects are of
+     *    different VR (i.e. the DcmEVR returned by the element's ident()
+     *    call are different).
+     *    1 if either this element has more components than the rhs element, or
+     *    if the first component that does not match is greater in this object
+     *    than in rhs object.
      */
     virtual int compare(const DcmElement& rhs) const;
 
@@ -127,6 +139,12 @@ class DCMTK_DCMDATA_EXPORT DcmByteString: public DcmElement
      */
     virtual unsigned long getVM();
 
+    /** get number of values stored in this element.
+     *  The result is the same as getVM() unless overwritten in a derived class.
+     *  @return number of values in this element
+     */
+    virtual unsigned long getNumberOfValues();
+
     /** get length of the stored value.
      *  Trailing spaces (padding characters) are ignored for the "real" length.
      *  @return number of characters stored for the string value
@@ -152,7 +170,7 @@ class DCMTK_DCMDATA_EXPORT DcmByteString: public DcmElement
      *  @param pixelFileName not used
      *  @param pixelCounter not used
      */
-    virtual void print(STD_NAMESPACE ostream&out,
+    virtual void print(STD_NAMESPACE ostream &out,
                        const size_t flags = 0,
                        const int level = 0,
                        const char *pixelFileName = NULL,
@@ -163,6 +181,7 @@ class DCMTK_DCMDATA_EXPORT DcmByteString: public DcmElement
      *  @param oxfer transfer syntax used to write the data
      *  @param enctype flag, specifying the encoding with undefined or explicit length
      *  @param wcache pointer to write cache object, may be NULL
+     *  @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition write(DcmOutputStream &outStream,
                               const E_TransferSyntax oxfer,
@@ -174,6 +193,7 @@ class DCMTK_DCMDATA_EXPORT DcmByteString: public DcmElement
      *  @param oxfer transfer syntax used to write the data
      *  @param enctype flag, specifying the encoding with undefined or explicit length
      *  @param wcache pointer to write cache object, may be NULL
+     *  @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition writeSignatureFormat(DcmOutputStream &outStream,
                                              const E_TransferSyntax oxfer,
@@ -227,6 +247,14 @@ class DCMTK_DCMDATA_EXPORT DcmByteString: public DcmElement
      */
     virtual OFCondition putString(const char *stringVal);
 
+    /** set element value at specific VM position in the given character string.
+     *  @param stringVal input character string (possibly multi-valued)
+     *  @param pos position (0..vm) where the value should be inserted
+     *  @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition putOFStringAtPos(const OFString& stringVal,
+                                         const unsigned long pos = 0);
+
     /** set element value from the given character string.
      *  The length of the string has to be specified explicitly. The string can, therefore,
      *  also contain more than one NULL byte.
@@ -252,7 +280,8 @@ class DCMTK_DCMDATA_EXPORT DcmByteString: public DcmElement
      *  codes below 128 are considered to be ASCII codes and all others are considered to
      *  be non-ASCII.
      *  @param checkAllStrings if true, also check elements with string values not affected
-     *    by SpecificCharacterSet (0008,0005), default: only check PN, LO, LT, SH, ST, UT
+     *    by SpecificCharacterSet (0008,0005). By default, only check PN, LO, LT, SH, ST,
+     *    UC and UT, i.e. none of the derived VR classes.
      *  @return true if element contains non-ASCII characters, false otherwise
      */
     virtual OFBool containsExtendedCharacters(const OFBool checkAllStrings = OFFalse);
@@ -269,7 +298,50 @@ class DCMTK_DCMDATA_EXPORT DcmByteString: public DcmElement
      */
     virtual OFBool isEmpty(const OFBool normalize = OFTrue);
 
+    /** write object in JSON format
+     *  @param out output stream to which the JSON document is written
+     *  @param format used to format and customize the output
+     *  @return status, EC_Normal if successful, an error code otherwise
+     */
+    virtual OFCondition writeJson(STD_NAMESPACE ostream &out,
+                                  DcmJsonFormat &format);
+
+    /// @copydoc DcmElement::matches()
+    virtual OFBool matches(const DcmElement& candidate,
+                           const OFBool enableWildCardMatching = OFTrue) const;
+
+    /** perform attribute matching on a single pair of string values.
+     *  Compare two single string values using the attribute matching function appropriate for
+     *  this element's VR (Universal Matching, Single Value Matching, Wild Card Matching or
+     *  Range Matching).
+     *  @note This method is called by the other overload of matches() for each combination of
+     *    values in the key and candidate element (implementing multi value matching for
+     *    elements with VM>1).
+     *  @param key the key value to match against the candidate.
+     *  @param candidate the candidate value to match the key against.
+     *  @param enableWildCardMatching enable or disable wild card matching. Defaults to OFTrue,
+     *    which means wild card matching is performed if the element's VR supports it. Set to
+     *    OFFalse to force single value matching instead.
+     *  @return OFTrue if the candidate string matches the key string, OFFalse otherwise.
+     */
+    virtual OFBool matches(const OFString& key,
+                           const OFString& candidate,
+                           const OFBool enableWildCardMatching = OFTrue) const;
+
  protected:
+
+    /** constructor. Create new element from given tag and length.
+     *  Only reachable from friend classes since construction with
+     *  length different from 0 leads to a state with length being set but
+     *  the element's value still being uninitialized. This can lead to crashes
+     *  when the value is read or written. Thus the method calling this
+     *  constructor with length > 0 must ensure that the element's value is
+     *  explicitly initialized, too.
+     *  @param tag DICOM tag for the new element
+     *  @param len value length for the new element
+     */
+    DcmByteString(const DcmTag &tag,
+                  const Uint32 len);
 
     /// internal type used to specify the current string representation
     enum E_StringMode
@@ -348,6 +420,19 @@ class DCMTK_DCMDATA_EXPORT DcmByteString: public DcmElement
 
     /* --- static helper functions --- */
 
+    /** check if a given character string contains non-ASCII characters.
+     *  Please note that this check is pretty simple and only works for single-byte character
+     *  sets that do include the 7-bit ASCII codes, e.g. for the ISO 8859 family. In other
+     *  words: All character codes below 128 are considered to be ASCII codes and all others
+     *  are considered to be non-ASCII.
+     *  @param stringVal character string to be checked
+     *  @param stringLen length of the string (number of characters without the trailing
+     *    NULL byte)
+     * @return true if character string contains non-ASCII characters, false otherwise
+     */
+    static OFBool containsExtendedCharacters(const char *stringVal,
+                                             const size_t stringLen);
+
     /** check whether given string value conforms to a certain VR and VM.
      *  @param value string value to be checked (possibly multi-valued)
      *  @param vm value multiplicity (according to the data dictionary) to be checked for.
@@ -357,6 +442,8 @@ class DCMTK_DCMDATA_EXPORT DcmByteString: public DcmElement
      *  @param maxLen maximum number of characters allowed for a single value (0 = no check)
      *  @param charset character set (according to the value of the SpecificCharacterSet
      *    element) to be used for checking the string value. The default is ASCII (7-bit).
+     *    Currently, the VR checker only supports ASCII (ISO_IR 6) and Latin-1 (ISO_IR 100).
+     *    All other values disable the check of the value representation, e.g. "UNKNOWN".
      *  @return status of the check, EC_Normal if value is correct, an error code otherwise
      */
     static OFCondition checkStringValue(const OFString &value,

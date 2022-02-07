@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2012-2015, OFFIS e.V.
+ *  Copyright (C) 2012-2020, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,13 +28,16 @@
 #include "dcmtk/dcmnet/dimse.h"
 #include "dcmtk/ofstd/ofmem.h"      /* For OFshared_ptr */
 
+class DcmTransportLayer;
+
 /** Class that encapsulates an SCP configuration that is needed in order to
  *  configure the service negotiation behavior (presentation contexts, AE
  *  title, listening port, etc) as well as some runtime configuration like
  *  the DIMSE timeout. The configuration, however, is not updated to reflect
  *  any runtime connection information, e.g. information about the current
  *  SCU connected or the like.
- *
+ *  The presentation context configuration is held in profiles. Per default, the
+ *  name of the active association configuration is DEFAULT.
  */
 class DCMTK_DCMNET_EXPORT DcmSCPConfig
 {
@@ -53,7 +56,8 @@ public:
   DcmSCPConfig(const DcmSCPConfig &old);
 
   /** assignment operator, performs deep copy.
-   *  @param obj the config to copy from
+   *  @param  obj the config to copy from
+   *  @return Reference to "this" object
    */
   DcmSCPConfig &operator=(const DcmSCPConfig &obj);
 
@@ -120,6 +124,19 @@ public:
    */
   OFCondition setAndCheckAssociationProfile(const OFString &profileName);
 
+  /** Returns the name of the currently active association profile
+   *  @return The name of the association profile that is currently active
+   */
+  OFString getActiveAssociationProfile() const;
+
+  /** The profile with the given name is checked for validity using this method.
+   *  @param profileName [in] The name of the association profile which should be checked
+   *  @param mangledName [out] The mangled profile name
+   *  @return EC_Normal if profile is a valid SCP profile, error otherwise
+   */
+  OFCondition checkAssociationProfile(const OFString &profileName,
+                                      OFString& mangledName) const;
+
   /** Force every association request to be refused by SCP, no matter what the SCU is
    *  offering
    *  @param doRefuse [in] If OFTrue, every association is being refused. DcmSCP's default
@@ -181,7 +198,7 @@ public:
   /** Enables or disables looking up the host name from a connecting system.
    *  Note that this sets a GLOBAL flag in DCMTK, i.e. the behavior changes
    *  for all servers. This should be changed in the future.
-   *  @param mode [in] OFTrue, if hostname lookup should be enabled,
+   *  @param mode [in] OFTrue, if host name lookup should be enabled,
    *              OFFalse for disabling it.
    */
   void setHostLookupEnabled(const OFBool mode);
@@ -192,6 +209,19 @@ public:
    *  @param mode [in] Disable progress notification if OFFalse
    */
   void setProgressNotificationMode(const OFBool mode);
+
+  /** Option to always accept a default role as association acceptor.
+   *  If OFFalse (default) the acceptor will reject a presentation context proposed
+   *  with Default role (no role selection at all) when it is configured for role
+   *  SCP only. If this option is set to OFTrue then such presentation contexts will
+   *  be accepted in Default role (i.e. acceptor does not return role selection for
+   *  this presentation context at all). Overall, if set to OFTrue, there are no
+   *  requestor proposals possible that lead to a complete rejection of a presentation
+   *  context. See also role documentation in dul.h.
+   *  @param  enabled If OFTrue, do not reject Default role proposals when configured
+   *          for SCP role. OFFalse (default behaviour): Reject such proposals.
+   */
+  void setAlwaysAcceptDefaultRole(const OFBool enabled);
 
   /* Get methods for SCP settings */
 
@@ -256,7 +286,7 @@ public:
   OFBool getVerbosePCMode() const;
 
   /** Returns whether a connecting system's host name is looked up.
-   *  @return OFTrue, if hostname lookup is enabled, OFFalse otherwise
+   *  @return OFTrue, if host name lookup is enabled, OFFalse otherwise
    */
   OFBool getHostLookupEnabled() const;
 
@@ -267,6 +297,23 @@ public:
    *  @return The current progress notification mode, enabled if OFTrue
    */
   OFBool getProgressNotificationMode() const;
+
+  /** Returns true if an external transport layer (e.g. TLS) is enabled,
+   *  false if the default, transparent layer is used.
+   *  @return true if an external transport layer is enabled
+   */
+  OFBool transportLayerEnabled() const;
+
+  /** Returns pointer to the transport layer object in use
+   *  @return pointer to the transport layer object in use, may be NULL.
+   */
+  DcmTransportLayer * getTransportLayer() const;
+
+  /** set an explicit transport layer (e.g. for TLS communication) to use
+   *  @param tlayer [in] The transport layer object.
+   *                     This function does not take ownership of tlayer.
+   */
+  void setTransportLayer(DcmTransportLayer *tlayer);
 
   /** Dump presentation contexts to given output stream, useful for debugging.
    *  @param out [out] The output stream
@@ -365,6 +412,10 @@ protected:
 
   /// Progress notification mode (default: OFTrue)
   OFBool m_progressNotificationMode;
+
+  /// The transport layer in use for communication (e.g. for TLS). 
+  /// Default is NULL for the normal TCP layer.
+  DcmTransportLayer *m_tLayer; /// Doesn't have ownership
 };
 
 /** Enables sharing configurations by multiple DcmSCPs.
