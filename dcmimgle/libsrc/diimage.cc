@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2021, OFFIS e.V.
+ *  Copyright (C) 1996-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -31,6 +31,10 @@
 #include "dcmtk/dcmimgle/didocu.h"
 #include "dcmtk/dcmimgle/diutils.h"
 #include "dcmtk/ofstd/ofstd.h"
+
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
+
 
 /*----------------*
  *  constructors  *
@@ -99,11 +103,8 @@ DiImage::DiImage(const DiDocument *docu,
         if (Document->getValue(DCM_FrameTime, ds))
         {
             if (ds <= 0)
-            {
-                /* there are rare cases, where a frame time of 0 makes sense */
-                if ((ds < 0) || (NumberOfFrames > 1))
-                    DCMIMGLE_WARN("invalid value for 'FrameTime' (" << ds << ") ... ignoring");
-            } else
+                DCMIMGLE_WARN("invalid value for 'FrameTime' (" << ds << ") ... ignoring");
+            else
                 FrameTime = ds;
         }
         FirstFrame = (docu->getFrameStart() < NumberOfFrames) ? docu->getFrameStart() : NumberOfFrames - 1;
@@ -116,14 +117,7 @@ DiImage::DiImage(const DiDocument *docu,
         /* start from first processed frame (might still exceed number of loaded frames) */
         RepresentativeFrame -= FirstFrame;
         int ok = (Document->getValue(DCM_Rows, Rows) > 0);
-        if (!ok)
-            DCMIMGLE_ERROR("mandatory attribute 'Rows' is missing");
-        if (Document->getValue(DCM_Columns, Columns) == 0)
-        {
-            ok = 0;
-            DCMIMGLE_ERROR("mandatory attribute 'Columns' is missing");
-        }
-        /* check whether to proceed */
+        ok &= (Document->getValue(DCM_Columns, Columns) > 0);
         if (!ok || ((Rows > 0) && (Columns > 0)))
         {
             ok &= (Document->getValue(DCM_BitsAllocated, BitsAllocated) > 0);
@@ -146,37 +140,12 @@ DiImage::DiImage(const DiDocument *docu,
             }
             if (!(Document->getFlags() & CIF_UsePresentationState))
             {
-                /* check whether pixels are non-square (start with pixel spacing attribute) */
                 hasPixelSpacing = (Document->getValue(DCM_PixelSpacing, PixelHeight, 0) > 0);
                 if (hasPixelSpacing)
                 {
                     if (Document->getValue(DCM_PixelSpacing, PixelWidth, 1) < 2)
                         DCMIMGLE_WARN("missing second value for 'PixelSpacing' ... assuming 'Width' = " << PixelWidth);
                 } else {
-                    /* then check for functional groups sequence */
-                    DcmSequenceOfItems *seq = NULL;
-                    if (docu->getSequence(DCM_SharedFunctionalGroupsSequence, seq))
-                    {
-                        DcmItem *item = seq->getItem(0);
-                        if ((item != NULL) && docu->getSequence(DCM_PixelMeasuresSequence, seq, item))
-                        {
-                            item = seq->getItem(0);
-                            if (item != NULL)
-                            {
-                                hasPixelSpacing = (docu->getValue(DCM_PixelSpacing, PixelHeight, 0, item) > 0);
-                                if (hasPixelSpacing)
-                                {
-                                    DCMIMGLE_DEBUG("found 'PixelSpacing' in 'SharedFunctionalGroupsSequence'");
-                                    if (docu->getValue(DCM_PixelSpacing, PixelWidth, 1, item) < 2)
-                                        DCMIMGLE_WARN("missing second value for 'PixelSpacing' ... assuming 'Width' = " << PixelWidth);
-                                }
-                            }
-                        }
-                    }
-                }
-                /* if there is no pixel spacing, check for various other attributes */
-                if (!hasPixelSpacing)
-                {
                     hasImagerPixelSpacing = (Document->getValue(DCM_ImagerPixelSpacing, PixelHeight, 0) > 0);
                     if (hasImagerPixelSpacing)
                     {
@@ -409,9 +378,9 @@ DiImage::DiImage(const DiImage *image,
     Columns(image->Columns),
     PixelWidth(image->PixelWidth),
     PixelHeight(image->PixelHeight),
-    BitsAllocated(OFstatic_cast(const Uint16, alloc)),
-    BitsStored(OFstatic_cast(const Uint16, stored)),
-    HighBit(OFstatic_cast(const Uint16, (stored - 1))),
+    BitsAllocated(alloc),
+    BitsStored(stored),
+    HighBit(stored - 1),
     BitsPerSample(image->BitsPerSample),
     SamplesPerPixel(image->SamplesPerPixel),
     Polarity(image->Polarity),
@@ -618,7 +587,7 @@ void DiImage::convertPixelData()
         else if (InputData->getData() == NULL)
         {
             ImageStatus = EIS_InvalidImage;
-            DCMIMGLE_ERROR("can't convert input pixel data");
+            DCMIMGLE_ERROR("can't convert input pixel data, probably unsupported compression");
         }
         else if (InputData->getPixelStart() >= InputData->getCount())
         {
@@ -707,7 +676,7 @@ void DiImage::updateImagePixelModuleAttributes(DcmItem &dataset)
     /* update PixelAspectRatio & Co. */
     char buffer[32];
     OFStandard::ftoa(buffer, 15, PixelHeight, OFStandard::ftoa_format_f);
-    OFStandard::strlcat(buffer, "\\", 32);
+    strcat(buffer, "\\");
     OFStandard::ftoa(strchr(buffer, 0), 15, PixelWidth, OFStandard::ftoa_format_f);
 
     if (hasPixelSpacing)
@@ -764,8 +733,8 @@ int DiImage::writeFrameToDataset(DcmItem &dataset,
             dataset.putAndInsertUint16(DCM_BitsAllocated, 16);
         else
             dataset.putAndInsertUint16(DCM_BitsAllocated, 32);
-        dataset.putAndInsertUint16(DCM_BitsStored, OFstatic_cast(const Uint16, bitsStored));
-        dataset.putAndInsertUint16(DCM_HighBit, OFstatic_cast(Uint16, bitsStored - 1));
+        dataset.putAndInsertUint16(DCM_BitsStored, bitsStored);
+        dataset.putAndInsertUint16(DCM_HighBit, bitsStored - 1);
         dataset.putAndInsertUint16(DCM_PixelRepresentation, 0);
         /* handle VOI transformations */
         if (dataset.tagExists(DCM_WindowCenter) ||
@@ -822,7 +791,7 @@ int DiImage::writeBMP(FILE *stream,
             infoHeader.biWidth = Columns;
             infoHeader.biHeight = Rows;
             infoHeader.biPlanes = 1;
-            infoHeader.biBitCount = OFstatic_cast(const Uint16, bits);
+            infoHeader.biBitCount = bits;
             infoHeader.biCompression = 0;
             infoHeader.biSizeImage = 0;
             infoHeader.biXPelsPerMeter = 0;
@@ -854,32 +823,31 @@ int DiImage::writeBMP(FILE *stream,
                     swapBytes(OFreinterpret_cast(Uint8 *, palette), 256 * 4 /*byteLength*/, 4 /*valWidth*/);
             }
             /* write bitmap file header: do not write the struct because of 32-bit alignment */
-            int ok = (fwrite(&fileHeader.bfType, sizeof(fileHeader.bfType), 1, stream) == 1);
-            ok &= (fwrite(&fileHeader.bfSize, sizeof(fileHeader.bfSize), 1, stream) == 1);
-            ok &= (fwrite(&fileHeader.bfReserved1, sizeof(fileHeader.bfReserved1), 1, stream) == 1);
-            ok &= (fwrite(&fileHeader.bfReserved2, sizeof(fileHeader.bfReserved2), 1, stream) == 1);
-            ok &= (fwrite(&fileHeader.bfOffBits, sizeof(fileHeader.bfOffBits), 1, stream) == 1);
+            fwrite(&fileHeader.bfType, sizeof(fileHeader.bfType), 1, stream);
+            fwrite(&fileHeader.bfSize, sizeof(fileHeader.bfSize), 1, stream);
+            fwrite(&fileHeader.bfReserved1, sizeof(fileHeader.bfReserved1), 1, stream);
+            fwrite(&fileHeader.bfReserved2, sizeof(fileHeader.bfReserved2), 1, stream);
+            fwrite(&fileHeader.bfOffBits, sizeof(fileHeader.bfOffBits), 1, stream);
             /* write bitmap info header: do not write the struct because of 32-bit alignment  */
-            ok &= (fwrite(&infoHeader.biSize, sizeof(infoHeader.biSize), 1, stream) == 1);
-            ok &= (fwrite(&infoHeader.biWidth, sizeof(infoHeader.biWidth), 1, stream) == 1);
-            ok &= (fwrite(&infoHeader.biHeight, sizeof(infoHeader.biHeight), 1, stream) == 1);
-            ok &= (fwrite(&infoHeader.biPlanes, sizeof(infoHeader.biPlanes), 1, stream) == 1);
-            ok &= (fwrite(&infoHeader.biBitCount, sizeof(infoHeader.biBitCount), 1, stream) == 1);
-            ok &= (fwrite(&infoHeader.biCompression, sizeof(infoHeader.biCompression), 1, stream) == 1);
-            ok &= (fwrite(&infoHeader.biSizeImage, sizeof(infoHeader.biSizeImage), 1, stream) == 1);
-            ok &= (fwrite(&infoHeader.biXPelsPerMeter, sizeof(infoHeader.biXPelsPerMeter), 1, stream) == 1);
-            ok &= (fwrite(&infoHeader.biYPelsPerMeter, sizeof(infoHeader.biYPelsPerMeter), 1, stream) == 1);
-            ok &= (fwrite(&infoHeader.biClrUsed, sizeof(infoHeader.biClrUsed), 1, stream) == 1);
-            ok &= (fwrite(&infoHeader.biClrImportant, sizeof(infoHeader.biClrImportant), 1, stream) == 1);
+            fwrite(&infoHeader.biSize, sizeof(infoHeader.biSize), 1, stream);
+            fwrite(&infoHeader.biWidth, sizeof(infoHeader.biWidth), 1, stream);
+            fwrite(&infoHeader.biHeight, sizeof(infoHeader.biHeight), 1, stream);
+            fwrite(&infoHeader.biPlanes, sizeof(infoHeader.biPlanes), 1, stream);
+            fwrite(&infoHeader.biBitCount, sizeof(infoHeader.biBitCount), 1, stream);
+            fwrite(&infoHeader.biCompression, sizeof(infoHeader.biCompression), 1, stream);
+            fwrite(&infoHeader.biSizeImage, sizeof(infoHeader.biSizeImage), 1, stream);
+            fwrite(&infoHeader.biXPelsPerMeter, sizeof(infoHeader.biXPelsPerMeter), 1, stream);
+            fwrite(&infoHeader.biYPelsPerMeter, sizeof(infoHeader.biYPelsPerMeter), 1, stream);
+            fwrite(&infoHeader.biClrUsed, sizeof(infoHeader.biClrUsed), 1, stream);
+            fwrite(&infoHeader.biClrImportant, sizeof(infoHeader.biClrImportant), 1, stream);
             /* write color palette (if applicable) */
             if (palette != NULL)
-                ok &= (fwrite(palette, 4, 256, stream) == 256);
+                fwrite(palette, 4, 256, stream);
             /* write pixel data */
-            ok &= (fwrite(data, 1, OFstatic_cast(size_t, bytes), stream) == OFstatic_cast(size_t, bytes));
+            fwrite(data, 1, OFstatic_cast(size_t, bytes), stream);
             /* delete color palette */
             delete[] palette;
-            if (ok)
-                result = 1;
+            result = 1;
         }
         /* delete pixel data */
         delete OFstatic_cast(char *, data);     // type cast necessary to avoid compiler warnings using gcc >2.95

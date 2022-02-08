@@ -1,6 +1,7 @@
+#define TRICE
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,16 +22,25 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CSTDARG
+#include "dcmtk/ofstd/ofstdinc.h"
+
 #include "dcmtk/dcmnet/dimse.h"
 #include "dcmtk/dcmnet/diutil.h"
-#include "dcmtk/dcmnet/dcmtrans.h"    /* for dcmSocketSend/ReceiveTimeout */
 #include "dcmtk/dcmdata/dcfilefo.h"
 #include "dcmtk/dcmdata/dcdict.h"
 #include "dcmtk/dcmdata/dcuid.h"
 #include "dcmtk/dcmdata/cmdlnarg.h"
 #include "dcmtk/ofstd/ofconapp.h"
 #include "dcmtk/dcmdata/dcuid.h"      /* for dcmtk version name */
-#include "dcmtk/dcmtls/tlsopt.h"      /* for DcmTLSOptions */
+
+#ifdef WITH_OPENSSL
+#include "dcmtk/dcmtls/tlstrans.h"
+#include "dcmtk/dcmtls/tlslayer.h"
+#endif
 
 #ifdef WITH_ZLIB
 #include <zlib.h>                     /* for zlibVersion() */
@@ -50,12 +60,6 @@ static char rcsid[] = "$dcmtk: " OFFIS_CONSOLE_APPLICATION " v"
 /* default application titles */
 #define APPLICATIONTITLE     "ECHOSCU"
 #define PEERAPPLICATIONTITLE "ANY-SCP"
-
-
-/* exit codes for this command line tool */
-/* (common codes are defined in "ofexit.h" included from "ofconapp.h") */
-// network errors
-#define EXITCODE_ASSOCIATION_ABORTED    70
 
 static T_DIMSE_BlockingMode opt_blockMode = DIMSE_BLOCKING;
 static int opt_dimse_timeout = 0;
@@ -86,32 +90,20 @@ static const char* transferSyntaxes[] = {
       UID_JPEGProcess29TransferSyntax,
       UID_JPEGProcess14SV1TransferSyntax,
       UID_RLELosslessTransferSyntax,
-      UID_DeflatedExplicitVRLittleEndianTransferSyntax,
       UID_JPEGLSLosslessTransferSyntax,
       UID_JPEGLSLossyTransferSyntax,
+      UID_DeflatedExplicitVRLittleEndianTransferSyntax,
       UID_JPEG2000LosslessOnlyTransferSyntax,
       UID_JPEG2000TransferSyntax,
-      UID_JPEG2000Part2MulticomponentImageCompressionLosslessOnlyTransferSyntax,
-      UID_JPEG2000Part2MulticomponentImageCompressionTransferSyntax,
       UID_MPEG2MainProfileAtMainLevelTransferSyntax,
       UID_MPEG2MainProfileAtHighLevelTransferSyntax,
+      UID_JPEG2000Part2MulticomponentImageCompressionLosslessOnlyTransferSyntax,
+      UID_JPEG2000Part2MulticomponentImageCompressionTransferSyntax,
       UID_MPEG4HighProfileLevel4_1TransferSyntax,
-      UID_MPEG4BDcompatibleHighProfileLevel4_1TransferSyntax,
-      UID_MPEG4HighProfileLevel4_2_For2DVideoTransferSyntax,
-      UID_MPEG4HighProfileLevel4_2_For3DVideoTransferSyntax,
-      UID_MPEG4StereoHighProfileLevel4_2TransferSyntax,
-      UID_HEVCMainProfileLevel5_1TransferSyntax,
-      UID_HEVCMain10ProfileLevel5_1TransferSyntax
+      UID_MPEG4BDcompatibleHighProfileLevel4_1TransferSyntax
 };
 
 // ********************************************
-
-/* helper macro for converting stream output to a string */
-#define CONVERT_TO_STRING(output, string) \
-    optStream.str(""); \
-    optStream.clear(); \
-    optStream << output << OFStringStream_ends; \
-    OFSTRINGSTREAM_GETOFSTRING(optStream, string)
 
 #define SHORTCOL 4
 #define LONGCOL 19
@@ -119,31 +111,54 @@ static const char* transferSyntaxes[] = {
 int
 main(int argc, char *argv[])
 {
-  OFOStringStream optStream;
-  int result = EXITCODE_NO_ERROR;
+    const char *     opt_peer                = NULL;
+    OFCmdUnsignedInt opt_port                = 104;
+    const char *     opt_peerTitle           = PEERAPPLICATIONTITLE;
+    const char *     opt_ourTitle            = APPLICATIONTITLE;
+    OFCmdUnsignedInt opt_maxReceivePDULength = ASC_DEFAULTMAXPDU;
+    OFCmdUnsignedInt opt_repeatCount         = 1;
+    OFBool           opt_abortAssociation    = OFFalse;
+    OFCmdUnsignedInt opt_numXferSyntaxes     = 1;
+    OFCmdUnsignedInt opt_numPresentationCtx  = 1;
+    OFCmdUnsignedInt maxXferSyntaxes         = OFstatic_cast(OFCmdUnsignedInt, (DIM_OF(transferSyntaxes)));
+    OFBool           opt_secureConnection    = OFFalse; /* default: no secure connection */
+    int opt_acse_timeout = 30;
 
-  const char *     opt_peer                = "localhost";
-  OFCmdUnsignedInt opt_port                = 104;
-  const char *     opt_peerTitle           = PEERAPPLICATIONTITLE;
-  const char *     opt_ourTitle            = APPLICATIONTITLE;
-  OFCmdUnsignedInt opt_maxReceivePDULength = ASC_DEFAULTMAXPDU;
-  OFCmdUnsignedInt opt_repeatCount         = 1;
-  OFBool           opt_abortAssociation    = OFFalse;
-  OFCmdUnsignedInt opt_numXferSyntaxes     = 1;
-  OFCmdUnsignedInt opt_numPresentationCtx  = 1;
-  OFCmdUnsignedInt maxXferSyntaxes         = OFstatic_cast(OFCmdUnsignedInt, (DIM_OF(transferSyntaxes)));
-  int              opt_acse_timeout        = 30;
-  OFCmdSignedInt   opt_socket_timeout      = 60;
-  DcmTLSOptions    tlsOptions(NET_REQUESTOR);
-  T_ASC_Network *net;
-  T_ASC_Parameters *params;
-  DIC_NODENAME peerHost;
-  T_ASC_Association *assoc;
-  OFString temp_str;
-
-  OFStandard::initializeNetwork();
 #ifdef WITH_OPENSSL
-  DcmTLSTransportLayer::initializeOpenSSL();
+    int         opt_keyFileFormat = SSL_FILETYPE_PEM;
+    OFBool      opt_doAuthenticate = OFFalse;
+    const char *opt_privateKeyFile = NULL;
+    const char *opt_certificateFile = NULL;
+    const char *opt_passwd = NULL;
+#if OPENSSL_VERSION_NUMBER >= 0x0090700fL
+    OFString    opt_ciphersuites(TLS1_TXT_RSA_WITH_AES_128_SHA ":" SSL3_TXT_RSA_DES_192_CBC3_SHA);
+#else
+    OFString    opt_ciphersuites(SSL3_TXT_RSA_DES_192_CBC3_SHA);
+#endif
+    const char *opt_readSeedFile = NULL;
+    const char *opt_writeSeedFile = NULL;
+    DcmCertificateVerification opt_certVerification = DCV_requireCertificate;
+    const char *opt_dhparam = NULL;
+#endif
+
+    T_ASC_Network *net;
+    T_ASC_Parameters *params;
+    DIC_NODENAME localHost;
+    DIC_NODENAME peerHost;
+    T_ASC_Association *assoc;
+    OFString temp_str;
+
+#ifdef HAVE_GUSI_H
+    /* needed for Macintosh */
+    GUSISetup(GUSIwithSIOUXSockets);
+    GUSISetup(GUSIwithInternetSockets);
+#endif
+
+#ifdef HAVE_WINSOCK_H
+    WSAData winSockData;
+    /* we need at least version 1.1 */
+    WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
+    WSAStartup(winSockVersionNeeded, &winSockData);
 #endif
 
   char tempstr[20];
@@ -156,43 +171,83 @@ main(int argc, char *argv[])
 
   cmd.setOptionColumns(LONGCOL, SHORTCOL);
   cmd.addGroup("general options:", LONGCOL, SHORTCOL + 2);
-   cmd.addOption("--help",              "-h",      "print this help text and exit", OFCommandLine::AF_Exclusive);
-   cmd.addOption("--version",                      "print version information and exit", OFCommandLine::AF_Exclusive);
+   cmd.addOption("--help",                 "-h",      "print this help text and exit", OFCommandLine::AF_Exclusive);
+   cmd.addOption("--version",                         "print version information and exit", OFCommandLine::AF_Exclusive);
    OFLog::addOptions(cmd);
 
   cmd.addGroup("network options:");
     cmd.addSubGroup("application entity titles:");
-      cmd.addOption("--aetitle",        "-aet", 1, "[a]etitle: string", "set my calling AE title (default: " APPLICATIONTITLE ")");
-      cmd.addOption("--call",           "-aec", 1, "[a]etitle: string", "set called AE title of peer (default: " PEERAPPLICATIONTITLE ")");
+      OFString opt1 = "set my calling AE title (default: ";
+      opt1 += APPLICATIONTITLE;
+      opt1 += ")";
+      cmd.addOption("--aetitle",           "-aet", 1, "[a]etitle: string", opt1.c_str());
+      OFString opt2 = "set called AE title of peer (default: ";
+      opt2 += PEERAPPLICATIONTITLE;
+      opt2 += ")";
+      cmd.addOption("--call",              "-aec", 1, "[a]etitle: string", opt2.c_str());
     cmd.addSubGroup("association negotiation debugging:");
       OFString opt5 = "[n]umber: integer (1..";
       sprintf(tempstr, "%ld", OFstatic_cast(long, maxXferSyntaxes));
       opt5 += tempstr;
       opt5 += ")";
-      cmd.addOption("--propose-ts",     "-pts", 1, opt5.c_str(), "propose n transfer syntaxes");
-      cmd.addOption("--propose-pc",     "-ppc", 1, "[n]umber: integer (1..128)", "propose n presentation contexts");
+      cmd.addOption("--propose-ts",        "-pts", 1, opt5.c_str(), "propose n transfer syntaxes");
+      cmd.addOption("--propose-pc",        "-ppc", 1, "[n]umber: integer (1..128)", "propose n presentation contexts");
 
     cmd.addSubGroup("other network options:");
-      cmd.addOption("--timeout",        "-to",  1, "[s]econds: integer (default: unlimited)", "timeout for connection requests");
-      CONVERT_TO_STRING("[s]econds: integer (default: " << opt_socket_timeout << ")", optString1);
-      cmd.addOption("--socket-timeout", "-ts",  1, optString1.c_str(), "timeout for network socket (0 for none)");
-      CONVERT_TO_STRING("[s]econds: integer (default: " << opt_acse_timeout << ")", optString2);
-      cmd.addOption("--acse-timeout",   "-ta",  1, optString2.c_str(), "timeout for ACSE messages");
-      cmd.addOption("--dimse-timeout",  "-td",  1, "[s]econds: integer (default: unlimited)", "timeout for DIMSE messages");
+      cmd.addOption("--timeout",           "-to",  1, "[s]econds: integer (default: unlimited)", "timeout for connection requests");
+      cmd.addOption("--acse-timeout",      "-ta",  1, "[s]econds: integer (default: 30)", "timeout for ACSE messages");
+      cmd.addOption("--dimse-timeout",     "-td",  1, "[s]econds: integer (default: unlimited)", "timeout for DIMSE messages");
 
-      CONVERT_TO_STRING("[n]umber of bytes: integer (" << ASC_MINIMUMPDUSIZE << ".." << ASC_MAXIMUMPDUSIZE << ")", optString3);
-      CONVERT_TO_STRING("set max receive pdu to n bytes (default: " << opt_maxReceivePDULength << ")", optString4);
-      cmd.addOption("--max-pdu",        "-pdu", 1, optString3.c_str(), optString4.c_str());
-      cmd.addOption("--repeat",                 1, "[n]umber: integer", "repeat n times");
-      cmd.addOption("--abort",                     "abort association instead of releasing it");
-
-    // add TLS specific command line options if (and only if) we are compiling with OpenSSL
-    tlsOptions.addTLSCommandlineOptions(cmd);
+      OFString opt3 = "set max receive pdu to n bytes (default: ";
+      sprintf(tempstr, "%ld", OFstatic_cast(long, ASC_DEFAULTMAXPDU));
+      opt3 += tempstr;
+      opt3 += ")";
+      OFString opt4 = "[n]umber of bytes: integer (";
+      sprintf(tempstr, "%ld", OFstatic_cast(long, ASC_MINIMUMPDUSIZE));
+      opt4 += tempstr;
+      opt4 += "..";
+      sprintf(tempstr, "%ld", OFstatic_cast(long, ASC_MAXIMUMPDUSIZE));
+      opt4 += tempstr;
+      opt4 += ")";
+      cmd.addOption("--max-pdu",           "-pdu", 1, opt4.c_str(), opt3.c_str());
+      cmd.addOption("--repeat",                    1, "[n]umber: integer", "repeat n times");
+      cmd.addOption("--abort",                        "abort association instead of releasing it");
 
 #ifdef WITH_OPENSSL
-    cmd.addSubGroup("offline certificate verification:");
-      cmd.addOption("--verify-cert",   "+vc",   1, "[f]ilename: string", "verify certificate against CA settings", OFCommandLine::AF_Exclusive);
-      cmd.addOption("--is-root-cert",  "+rc",   1, "[f]ilename: string", "check if certificate is self-signed root CA", OFCommandLine::AF_Exclusive);
+  cmd.addGroup("transport layer security (TLS) options:");
+    cmd.addSubGroup("transport protocol stack:");
+      cmd.addOption("--disable-tls",       "-tls",    "use normal TCP/IP connection (default)");
+      cmd.addOption("--enable-tls",        "+tls", 2, "[p]rivate key file, [c]ertificate file: string",
+                                                      "use authenticated secure TLS connection");
+      cmd.addOption("--anonymous-tls",     "+tla",    "use secure TLS connection without certificate");
+    cmd.addSubGroup("private key password (only with --enable-tls):");
+      cmd.addOption("--std-passwd",        "+ps",     "prompt user to type password on stdin (default)");
+      cmd.addOption("--use-passwd",        "+pw",  1, "[p]assword: string ",
+                                                      "use specified password");
+      cmd.addOption("--null-passwd",       "-pw",     "use empty string as password");
+    cmd.addSubGroup("key and certificate file format:");
+      cmd.addOption("--pem-keys",          "-pem",    "read keys and certificates as PEM file (default)");
+      cmd.addOption("--der-keys",          "-der",    "read keys and certificates as DER file");
+    cmd.addSubGroup("certification authority:");
+      cmd.addOption("--add-cert-file",     "+cf",  1, "[c]ertificate filename: string",
+                                                      "add certificate file to list of certificates", OFCommandLine::AF_NoWarning);
+      cmd.addOption("--add-cert-dir",      "+cd",  1, "[c]ertificate directory: string",
+                                                      "add certificates in d to list of certificates", OFCommandLine::AF_NoWarning);
+    cmd.addSubGroup("ciphersuite:");
+      cmd.addOption("--cipher",            "+cs",  1, "[c]iphersuite name: string",
+                                                      "add ciphersuite to list of negotiated suites");
+      cmd.addOption("--dhparam",           "+dp",  1, "[f]ilename: string",
+                                                      "read DH parameters for DH/DSS ciphersuites");
+    cmd.addSubGroup("pseudo random generator:");
+      cmd.addOption("--seed",              "+rs",  1, "[f]ilename: string",
+                                                      "seed random generator with contents of f");
+      cmd.addOption("--write-seed",        "+ws",     "write back modified seed (only with --seed)");
+      cmd.addOption("--write-seed-file",   "+wf",  1, "[f]ilename: string (only with --seed)",
+                                                      "write modified seed to file f");
+    cmd.addSubGroup("peer authentication:");
+      cmd.addOption("--require-peer-cert", "-rc",     "verify peer certificate, fail if absent (default)");
+      cmd.addOption("--verify-peer-cert",  "-vc",     "verify peer certificate if present");
+      cmd.addOption("--ignore-peer-cert",  "-ic",     "don't verify peer certificate");
 #endif
 
     /* evaluate command line */
@@ -214,33 +269,17 @@ main(int argc, char *argv[])
 #ifdef WITH_ZLIB
           COUT << "- ZLIB, Version " << zlibVersion() << OFendl;
 #endif
-          // print OpenSSL version if (and only if) we are compiling with OpenSSL
-          tlsOptions.printLibraryVersion();
-          return EXITCODE_NO_ERROR;
-        }
-
-        // check if the command line contains the --list-ciphers option
-        if (tlsOptions.listOfCiphersRequested(cmd))
-        {
-            tlsOptions.printSupportedCiphersuites(app, COUT);
-            return EXITCODE_NO_ERROR;
+#ifdef WITH_OPENSSL
+          COUT << "- " << OPENSSL_VERSION_TEXT << OFendl;
+#endif
+          return 0;
         }
       }
 
       /* command line parameters */
 
-#ifdef WITH_OPENSSL
-      // special handling for the exclusive options that can only be evaluated
-      // once all other options have been processed
-      if ((! cmd.findOption("--verify-cert")) && (! cmd.findOption("--is-root-cert")))
-      {
-        cmd.getParam(1, opt_peer);
-        app.checkParam(cmd.getParamAndCheckMinMax(2, opt_port, 1, 65535));
-      }
-#else
       cmd.getParam(1, opt_peer);
       app.checkParam(cmd.getParamAndCheckMinMax(2, opt_port, 1, 65535));
-#endif
 
       OFLog::configureFromCommandLine(cmd, app);
 
@@ -253,12 +292,6 @@ main(int argc, char *argv[])
         app.checkValue(cmd.getValueAndCheckMin(opt_timeout, 1));
         dcmConnectionTimeout.set(OFstatic_cast(Sint32, opt_timeout));
       }
-
-      if (cmd.findOption("--socket-timeout"))
-        app.checkValue(cmd.getValueAndCheckMin(opt_socket_timeout, -1));
-      // always set the timeout values since the global default might be different
-      dcmSocketSendTimeout.set(OFstatic_cast(Sint32, opt_socket_timeout));
-      dcmSocketReceiveTimeout.set(OFstatic_cast(Sint32, opt_socket_timeout));
 
       if (cmd.findOption("--acse-timeout"))
       {
@@ -281,19 +314,126 @@ main(int argc, char *argv[])
       if (cmd.findOption("--propose-ts")) app.checkValue(cmd.getValueAndCheckMinMax(opt_numXferSyntaxes, 1, maxXferSyntaxes));
       if (cmd.findOption("--propose-pc")) app.checkValue(cmd.getValueAndCheckMinMax(opt_numPresentationCtx, 1, 128));
 
-      // evaluate (most of) the TLS command line options (if we are compiling with OpenSSL)
-      tlsOptions.parseArguments(app, cmd);
+#ifdef WITH_OPENSSL
 
+      cmd.beginOptionBlock();
+      if (cmd.findOption("--disable-tls")) opt_secureConnection = OFFalse;
+      if (cmd.findOption("--enable-tls"))
+      {
+        opt_secureConnection = OFTrue;
+        opt_doAuthenticate = OFTrue;
+        app.checkValue(cmd.getValue(opt_privateKeyFile));
+        app.checkValue(cmd.getValue(opt_certificateFile));
+      }
+      if (cmd.findOption("--anonymous-tls"))
+      {
+        opt_secureConnection = OFTrue;
+      }
+      cmd.endOptionBlock();
+
+      cmd.beginOptionBlock();
+      if (cmd.findOption("--std-passwd"))
+      {
+        app.checkDependence("--std-passwd", "--enable-tls", opt_doAuthenticate);
+        opt_passwd = NULL;
+      }
+      if (cmd.findOption("--use-passwd"))
+      {
+        app.checkDependence("--use-passwd", "--enable-tls", opt_doAuthenticate);
+        app.checkValue(cmd.getValue(opt_passwd));
+      }
+      if (cmd.findOption("--null-passwd"))
+      {
+        app.checkDependence("--null-passwd", "--enable-tls", opt_doAuthenticate);
+        opt_passwd = "";
+      }
+      cmd.endOptionBlock();
+
+      cmd.beginOptionBlock();
+      if (cmd.findOption("--pem-keys")) opt_keyFileFormat = SSL_FILETYPE_PEM;
+      if (cmd.findOption("--der-keys")) opt_keyFileFormat = SSL_FILETYPE_ASN1;
+      cmd.endOptionBlock();
+
+      if (cmd.findOption("--dhparam"))
+      {
+        app.checkValue(cmd.getValue(opt_dhparam));
+      }
+
+      if (cmd.findOption("--seed"))
+      {
+        app.checkValue(cmd.getValue(opt_readSeedFile));
+      }
+
+      cmd.beginOptionBlock();
+      if (cmd.findOption("--write-seed"))
+      {
+        app.checkDependence("--write-seed", "--seed", opt_readSeedFile != NULL);
+        opt_writeSeedFile = opt_readSeedFile;
+      }
+      if (cmd.findOption("--write-seed-file"))
+      {
+        app.checkDependence("--write-seed-file", "--seed", opt_readSeedFile != NULL);
+        app.checkValue(cmd.getValue(opt_writeSeedFile));
+      }
+      cmd.endOptionBlock();
+
+      cmd.beginOptionBlock();
+      if (cmd.findOption("--require-peer-cert")) opt_certVerification = DCV_requireCertificate;
+      if (cmd.findOption("--verify-peer-cert"))  opt_certVerification = DCV_checkCertificate;
+      if (cmd.findOption("--ignore-peer-cert"))  opt_certVerification = DCV_ignoreCertificate;
+      cmd.endOptionBlock();
+
+      const char *current = NULL;
+      const char *currentOpenSSL;
+      if (cmd.findOption("--cipher", 0, OFCommandLine::FOM_First))
+      {
+        opt_ciphersuites.clear();
+        do
+        {
+          app.checkValue(cmd.getValue(current));
+          if (NULL == (currentOpenSSL = DcmTLSTransportLayer::findOpenSSLCipherSuiteName(current)))
+          {
+            OFLOG_FATAL(echoscuLogger, "ciphersuite '" << current << "' is unknown. Known ciphersuites are:");
+            unsigned long numSuites = DcmTLSTransportLayer::getNumberOfCipherSuites();
+            for (unsigned long cs=0; cs < numSuites; cs++)
+            {
+              OFLOG_FATAL(echoscuLogger, "    " << DcmTLSTransportLayer::getTLSCipherSuiteName(cs));
+            }
+            return 1;
+          } else {
+            if (!opt_ciphersuites.empty()) opt_ciphersuites += ":";
+            opt_ciphersuites += currentOpenSSL;
+          }
+        } while (cmd.findOption("--cipher", 0, OFCommandLine::FOM_Next));
+      }
+
+#endif
     }
 
     /* print resource identifier */
     OFLOG_DEBUG(echoscuLogger, rcsid << OFendl);
 
+#ifndef TRICE
     /* make sure data dictionary is loaded */
     if (!dcmDataDict.isDictionaryLoaded())
     {
-        OFLOG_WARN(echoscuLogger, "no data dictionary loaded, check environment variable: "
-            << DCM_DICT_ENVIRONMENT_VARIABLE);
+#else
+    if (fopen("./dicom.dic", "r") != NULL)
+    {
+#ifndef __windows__
+         int s; char* dicomPath = (char*)malloc(s=64);
+         snprintf(dicomPath, s, "./dicom.dic");
+         (void)setenv("DCMDICTPATH", dicomPath, 1);
+#else
+         int s;  char* envStr = (char*)malloc(s=64);
+         snprintf(envStr, s, "DCMDICTPATH=./dicom.dic");
+         (void)putenv(envStr);
+#endif
+
+         if (!dcmDataDict.isDictionaryLoaded())
+#endif
+             OFLOG_WARN(echoscuLogger, "no data dictionary loaded, check environment variable: "
+                 << DCM_DICT_ENVIRONMENT_VARIABLE);
     }
 
     /* initialize network, i.e. create an instance of T_ASC_Network*. */
@@ -303,58 +443,95 @@ main(int argc, char *argv[])
         exit(1);
     }
 
+#ifdef WITH_OPENSSL
+
+    DcmTLSTransportLayer *tLayer = NULL;
+    if (opt_secureConnection)
+    {
+      tLayer = new DcmTLSTransportLayer(DICOM_APPLICATION_REQUESTOR, opt_readSeedFile);
+      if (tLayer == NULL)
+      {
+        OFLOG_FATAL(echoscuLogger, "unable to create TLS transport layer");
+        return 1;
+      }
+
+      if (cmd.findOption("--add-cert-file", 0, OFCommandLine::FOM_First))
+      {
+        const char *current = NULL;
+        do
+        {
+          app.checkValue(cmd.getValue(current));
+          if (TCS_ok != tLayer->addTrustedCertificateFile(current, opt_keyFileFormat))
+          {
+              OFLOG_WARN(echoscuLogger, "unable to load certificate file '" << current << "', ignoring");
+          }
+        } while (cmd.findOption("--add-cert-file", 0, OFCommandLine::FOM_Next));
+      }
+
+      if (cmd.findOption("--add-cert-dir", 0, OFCommandLine::FOM_First))
+      {
+        const char *current = NULL;
+        do
+        {
+          app.checkValue(cmd.getValue(current));
+          if (TCS_ok != tLayer->addTrustedCertificateDir(current, opt_keyFileFormat))
+          {
+            OFLOG_WARN(echoscuLogger, "unable to load certificates from directory '" << current << "', ignoring");
+          }
+        } while (cmd.findOption("--add-cert-dir", 0, OFCommandLine::FOM_Next));
+      }
+
+      if (opt_dhparam && ! (tLayer->setTempDHParameters(opt_dhparam)))
+      {
+        OFLOG_WARN(echoscuLogger, "unable to load temporary DH parameter file '" << opt_dhparam << "', ignoring");
+      }
+
+      if (opt_doAuthenticate)
+      {
+        if (opt_passwd) tLayer->setPrivateKeyPasswd(opt_passwd);
+
+        if (TCS_ok != tLayer->setPrivateKeyFile(opt_privateKeyFile, opt_keyFileFormat))
+        {
+          OFLOG_ERROR(echoscuLogger, "unable to load private TLS key from '" << opt_privateKeyFile << "'");
+          return 1;
+        }
+        if (TCS_ok != tLayer->setCertificateFile(opt_certificateFile, opt_keyFileFormat))
+        {
+          OFLOG_ERROR(echoscuLogger, "unable to load certificate from '" << opt_certificateFile << "'");
+          return 1;
+        }
+        if (! tLayer->checkPrivateKeyMatchesCertificate())
+        {
+          OFLOG_ERROR(echoscuLogger, "private key '" << opt_privateKeyFile << "' and certificate '" << opt_certificateFile << "' do not match");
+          return 1;
+        }
+      }
+
+      if (TCS_ok != tLayer->setCipherSuites(opt_ciphersuites.c_str()))
+      {
+        OFLOG_ERROR(echoscuLogger, "unable to set selected cipher suites");
+        return 1;
+      }
+
+      tLayer->setCertificateVerification(opt_certVerification);
+
+
+      cond = ASC_setTransportLayer(net, tLayer, 0);
+      if (cond.bad())
+      {
+          OFLOG_FATAL(echoscuLogger, DimseCondition::dump(temp_str, cond));
+          return 1;
+      }
+    }
+
+#endif
+
     /* initialize association parameters, i.e. create an instance of T_ASC_Parameters*. */
     cond = ASC_createAssociationParameters(&params, opt_maxReceivePDULength);
     if (cond.bad()) {
         OFLOG_FATAL(echoscuLogger, DimseCondition::dump(temp_str, cond));
         exit(1);
     }
-
-    /* create a secure transport layer if requested and OpenSSL is available */
-    cond = tlsOptions.createTransportLayer(net, params, app, cmd);
-    if (cond.bad()) {
-        OFLOG_FATAL(echoscuLogger, DimseCondition::dump(temp_str, cond));
-        exit(1);
-    }
-
-#ifdef WITH_OPENSSL
-    if (cmd.findOption( "--verify-cert" ))
-    {
-        const char *cert_filename = NULL;
-        app.checkValue( cmd.getValue( cert_filename ) );
-
-        cond = tlsOptions.verifyClientCertificate(cert_filename);
-        if (cond.good())
-        {
-          COUT << "Verification of certificate '" << cert_filename << "' passed." << OFendl;
-          return EXITCODE_NO_ERROR;
-        }
-        else
-        {
-          COUT << "Verification of certificate '" << cert_filename << "' failed." << OFendl;
-          return EXITCODE_INVALID_INPUT_FILE;
-        }
-    }
-
-    if (cmd.findOption( "--is-root-cert" ))
-    {
-        const char *cert_filename = NULL;
-        app.checkValue( cmd.getValue( cert_filename ) );
-
-        cond = tlsOptions.isRootCertificate(cert_filename);
-        if (cond.good())
-        {
-          COUT << "Certificate '" << cert_filename << "' is a valid, self-signed root CA." << OFendl;
-          return EXITCODE_NO_ERROR;
-        }
-        else
-        {
-          COUT << "Certificate '" << cert_filename << "' is not a valid, self-signed root CA." << OFendl;
-          return EXITCODE_INVALID_INPUT_FILE;
-        }
-    }
-
-#endif
 
 #ifdef PRIVATE_ECHOSCU_CODE
     PRIVATE_ECHOSCU_CODE
@@ -364,18 +541,28 @@ main(int argc, char *argv[])
     /* structure. The default values to be set here are "STORESCU" and "ANY-SCP". */
     ASC_setAPTitles(params, opt_ourTitle, opt_peerTitle, NULL);
 
+    /* Set the transport layer type (type of network connection) in the params */
+    /* structure. The default is an insecure connection; where OpenSSL is  */
+    /* available the user is able to request an encrypted,secure connection. */
+    cond = ASC_setTransportLayerType(params, opt_secureConnection);
+    if (cond.bad()) {
+        OFLOG_FATAL(echoscuLogger, DimseCondition::dump(temp_str, cond));
+        return 1;
+    }
+
     /* Figure out the presentation addresses and copy the */
     /* corresponding values into the association parameters.*/
+    gethostname(localHost, sizeof(localHost) - 1);
     sprintf(peerHost, "%s:%d", opt_peer, OFstatic_cast(int, opt_port));
-    ASC_setPresentationAddresses(params, OFStandard::getHostName().c_str(), peerHost);
+    ASC_setPresentationAddresses(params, localHost, peerHost);
 
     /* Set the presentation contexts which will be negotiated */
     /* when the network connection will be established */
     int presentationContextID = 1; /* odd byte value 1, 3, 5, .. 255 */
     for (unsigned long ii=0; ii<opt_numPresentationCtx; ii++)
     {
-        cond = ASC_addPresentationContext(params, OFstatic_cast(T_ASC_PresentationContextID, presentationContextID), 
-                 UID_VerificationSOPClass, transferSyntaxes, OFstatic_cast(int, opt_numXferSyntaxes));
+        cond = ASC_addPresentationContext(params, presentationContextID, UID_VerificationSOPClass,
+                 transferSyntaxes, OFstatic_cast(int, opt_numXferSyntaxes));
         presentationContextID += 2;
         if (cond.bad())
         {
@@ -449,7 +636,6 @@ main(int argc, char *argv[])
         OFLOG_FATAL(echoscuLogger, "Protocol Error: Peer requested release (Aborting)");
         OFLOG_INFO(echoscuLogger, "Aborting Association");
         cond = ASC_abortAssociation(assoc);
-        result = EXITCODE_ASSOCIATION_ABORTED;// return an error code at the end of main
         if (cond.bad()) {
             OFLOG_FATAL(echoscuLogger, "Association Abort Failed: " << DimseCondition::dump(temp_str, cond));
             exit(1);
@@ -464,7 +650,6 @@ main(int argc, char *argv[])
         OFLOG_ERROR(echoscuLogger, "Echo SCU Failed: " << DimseCondition::dump(temp_str, cond));
         OFLOG_INFO(echoscuLogger, "Aborting Association");
         cond = ASC_abortAssociation(assoc);
-        result = EXITCODE_ASSOCIATION_ABORTED; // return an error code at the end of main
         if (cond.bad()) {
             OFLOG_FATAL(echoscuLogger, "Association Abort Failed: " << DimseCondition::dump(temp_str, cond));
             exit(1);
@@ -487,15 +672,27 @@ main(int argc, char *argv[])
         exit(1);
     }
 
-    OFStandard::shutdownNetwork();
+#ifdef HAVE_WINSOCK_H
+    WSACleanup();
+#endif
 
-    cond = tlsOptions.writeRandomSeed();
-    if (cond.bad()) {
-        // failure to write back the random seed is a warning, not an error
-        OFLOG_WARN(echoscuLogger, DimseCondition::dump(temp_str, cond));
+#ifdef WITH_OPENSSL
+    if (tLayer && opt_writeSeedFile)
+    {
+      if (tLayer->canWriteRandomSeed())
+      {
+        if (!tLayer->writeRandomSeed(opt_writeSeedFile))
+        {
+          OFLOG_ERROR(echoscuLogger, "cannot write random seed file '" << opt_writeSeedFile << "', ignoring");
+        }
+      } else {
+        OFLOG_ERROR(echoscuLogger, "cannot write random seed, ignoring");
+      }
     }
+    delete tLayer;
+#endif
 
-    return result;
+    return 0;
 }
 
 static OFCondition

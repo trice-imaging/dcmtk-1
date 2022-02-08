@@ -1,6 +1,7 @@
+#define TRICE
 /*
  *
- *  Copyright (C) 2002-2021, OFFIS e.V.
+ *  Copyright (C) 2002-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,11 +28,17 @@
 #include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofconapp.h"
+#ifdef TRICE
+#include <box.h>
+static bool opt_limited = false;   //**whether to limit the database on dcm2xml
+static bool opt_limited_anon = false;   
+#include "trice_dicom.cc"
+#endif
 
 #ifdef WITH_ZLIB
 #include <zlib.h>                       /* for zlibVersion() */
 #endif
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
+#ifdef WITH_LIBICONV
 #include "dcmtk/ofstd/ofchrenc.h"       /* for OFCharacterEncoding */
 #endif
 
@@ -39,6 +46,7 @@
 #define OFFIS_CONSOLE_DESCRIPTION "Convert DICOM file and data set to XML"
 
 #define DOCUMENT_TYPE_DEFINITION_FILE "dcm2xml.dtd"
+
 
 static OFLogger dcm2xmlLogger = OFLog::getLogger("dcmtk.apps." OFFIS_CONSOLE_APPLICATION);
 
@@ -55,14 +63,22 @@ static OFCondition writeFile(STD_NAMESPACE ostream &out,
                              const char *dtdFilename,
                              const char *defaultCharset,
                              /*const*/ size_t writeFlags,
-                             const OFBool checkAllStrings)
+                             const OFBool checkAllStrings, const OFBool checkUuids=false)
 {
     OFCondition result = EC_IllegalParameter;
     if ((ifname != NULL) && (dfile != NULL))
     {
         DcmDataset *dset = dfile->getDataset();
+#ifdef TRICE
+        if (opt_limited)
+            dset = limitDataset(dset);
+        else if (opt_limited_anon)
+            dset = limitDataset(dset, true);
+#endif
+
         if (loadIntoMemory)
             dset->loadAllDataIntoMemory();
+
         /* determine dataset character encoding */
         OFString encString;
         OFString csetString;
@@ -95,7 +111,7 @@ static OFCondition writeFile(STD_NAMESPACE ostream &out,
                 {
                     OFLOG_WARN(dcm2xmlLogger, OFFIS_CONSOLE_APPLICATION << ": SpecificCharacterSet (0008,0005) "
                         << "value '" << csetString << "' not supported ... quoting non-ASCII characters");
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
+#ifdef WITH_LIBICONV
                     OFLOG_DEBUG(dcm2xmlLogger, "using option --convert-to-utf8 to convert the DICOM file to "
                         "UTF-8 encoding might also help to solve this problem more appropriately");
 #endif
@@ -109,15 +125,20 @@ static OFCondition writeFile(STD_NAMESPACE ostream &out,
             {
                 if (defaultCharset == NULL)
                 {
+#ifdef TRICE
+                       //**Don't fail - remove illegal characters - try to accept everything from machines
+                    defaultCharset = "ISO_IR 192";
+#else
                     /* the dataset contains non-ASCII characters that really should not be there */
                     OFLOG_ERROR(dcm2xmlLogger, OFFIS_CONSOLE_APPLICATION << ": SpecificCharacterSet (0008,0005) "
-                        << "element absent (on the main data set level) but extended characters used in file: " << ifname);
+                        << "element absent (on the main dataset level) but extended characters used in file: " << ifname);
                     OFLOG_DEBUG(dcm2xmlLogger, "use option --charset-assume to manually specify an appropriate character set");
-                    return makeOFCondition(OFM_dcmdata, EC_CODE_CannotSelectCharacterSet, OF_error, "Missing Specific Character Set");;
+                    return EC_IllegalCall;
                 } else {
+#endif
                     OFString sopClass;
                     csetString = defaultCharset;
-                    /* use the default character set specified by the user */
+                    //* use the default character set specified by the user 
                     if (csetString == "ISO_IR 192")
                         encString = "UTF-8";
                     else if (csetString == "ISO_IR 100")
@@ -141,7 +162,7 @@ static OFCondition writeFile(STD_NAMESPACE ostream &out,
                     else {
                         OFLOG_FATAL(dcm2xmlLogger, OFFIS_CONSOLE_APPLICATION << ": Character set '"
                             << defaultCharset << "' specified with option --charset-assume not supported");
-                        return makeOFCondition(OFM_dcmdata, EC_CODE_CannotSelectCharacterSet, OF_error, "Cannot select character set");
+                        return EC_IllegalCall;
                     }
                     /* check whether this file is a DICOMDIR */
                     if (dfile->getMetaInfo()->findAndGetOFString(DCM_MediaStorageSOPClassUID, sopClass).bad() ||
@@ -158,12 +179,60 @@ static OFCondition writeFile(STD_NAMESPACE ostream &out,
                 {
                     /* use "debug" instead of "warn" in order to avoid too much output in default mode */
                     OFLOG_DEBUG(dcm2xmlLogger, "ignoring character set '" << defaultCharset
-                        << "' specified with option --charset-assume since it is not needed for this data set");
+                        << "' specified with option --charset-assume since it is not needed for this dataset");
                 }
                 /* by default, we use UTF-8 encoding */
                 encString = "UTF-8";
             }
         }
+
+#ifdef TRICE
+          //**Check Uuid syntax - use different uids if format is invalid
+        if (checkUuids)
+        {   const char* c, *c1;
+
+	    if (dset->findAndGetString(DCM_SOPInstanceUID, c).good() && c)
+            {   int size = strlen(c);
+                bool valid = true;
+                if (c[0] == '.')  valid = false;
+                if (size > 64) valid = false;
+                for (int i = 1; i < size && valid; i++)
+                {  if (!isdigit(c[i]) && c[i] != '.')
+                      valid = false;
+                   if (c[i] == '.' && c[i-1] == '.')
+                      valid = false;
+                }
+                if (!valid)
+                {    dset->putAndInsertString(DCM_SOPInstanceUID, c1=genSopInstanceId());
+                     OFLOG_INFO(dcm2xmlLogger, "Illegal sopInstanceUID" << c << " changed to " << c1);
+                }
+            }
+
+            if (dset->findAndGetString(DCM_StudyInstanceUID, c).good() && c) 
+            {   int size = strlen(c);
+                bool valid = true;
+                if (c[0] == '.')  valid = false;
+                if (size > 64) valid = false;
+                for (int i = 1; i < size && valid; i++)
+                {  if (!isdigit(c[i]) && c[i] != '.')
+                      valid = false;
+                   if (c[i] == '.' && c[i-1] == '.')
+                      valid = false;
+                }
+                if (!valid)
+                {    const char* p2 = "";  dset->findAndGetString(DCM_PatientName, p2);
+                     const char* p3 = "";  dset->findAndGetString(DCM_StudyDate, p3);
+                     const char* p4 = "";  dset->findAndGetString(DCM_PatientID, p4);
+                     const char* p5 = "";  dset->findAndGetString(DCM_PatientBirthDate, p5);
+                     dset->putAndInsertString(DCM_StudyInstanceUID, c1=genInstanceFromParts(c, p2, p3, isnull(p4)?p5:p4));
+                     OFLOG_INFO(dcm2xmlLogger, "Illegal studyInstanceUID" << c << " changed to " << c1);
+                }
+            }
+
+        }
+#endif
+
+          //**TODO - check uuids (sop and study) for valid chars
 
         /* write XML document header */
         out << "<?xml version=\"1.0\"";
@@ -184,7 +253,11 @@ static OFCondition writeFile(STD_NAMESPACE ostream &out,
             {
                 out << " [" << OFendl;
                 /* copy content from DTD file */
-                STD_NAMESPACE ifstream dtdFile(dtdFilename, OFopenmode_in_nocreate);
+#ifdef HAVE_IOS_NOCREATE
+                STD_NAMESPACE ifstream dtdFile(dtdFilename, STD_NAMESPACE ios::in | STD_NAMESPACE ios::nocreate);
+#else
+                STD_NAMESPACE ifstream dtdFile(dtdFilename, STD_NAMESPACE ios::in);
+#endif
                 if (dtdFile)
                 {
                     char c;
@@ -200,8 +273,12 @@ static OFCondition writeFile(STD_NAMESPACE ostream &out,
             }
             out << ">" << OFendl;
         }
-        /* write XML document content */
+          /* write XML document content */
+#ifdef TRICE
+        if (readMode == ERM_dataset || opt_limited || opt_limited_anon)
+#else
         if (readMode == ERM_dataset)
+#endif
             result = dset->writeXML(out, writeFlags);
         else
             result = dfile->writeXML(out, writeFlags);
@@ -219,7 +296,7 @@ int main(int argc, char *argv[])
     size_t opt_writeFlags = 0;
     OFBool opt_loadIntoMemory = OFFalse;
     OFBool opt_checkAllStrings = OFFalse;
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
+#ifdef WITH_LIBICONV
     OFBool opt_convertToUTF8 = OFFalse;
 #endif
     const char *opt_defaultCharset = NULL;
@@ -263,8 +340,8 @@ int main(int argc, char *argv[])
         cmd.addOption("--charset-require",    "+Cr",    "require declaration of extended charset (def.)");
         cmd.addOption("--charset-assume",     "+Ca", 1, "[c]harset: string",
                                                         "assume charset c if no extended charset declared");
-        cmd.addOption("--charset-check-all",  "+Cc",    "check all data elements with string values\n(default: only PN, LO, LT, SH, ST, UC and UT)");
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
+        cmd.addOption("--charset-check-all",  "+Cc",    "check all data elements with string values\n(default: only PN, LO, LT, SH, ST and UT)");
+#ifdef WITH_LIBICONV
         cmd.addOption("--convert-to-utf8",    "+U8",    "convert all element values that are affected\nby Specific Character Set (0008,0005) to UTF-8");
 #endif
     cmd.addGroup("output options:");
@@ -287,6 +364,11 @@ int main(int argc, char *argv[])
         cmd.addOption("--encode-hex",         "+Eh",    "encode binary data as hex numbers\n(default for DCMTK-specific format)");
         cmd.addOption("--encode-uuid",        "+Eu",    "encode binary data as a UUID reference\n(default for Native DICOM Model)");
         cmd.addOption("--encode-base64",      "+Eb",    "encode binary data as Base64 (RFC 2045, MIME)");
+#ifdef TRICE
+    cmd.addGroup("Trice options:");
+        cmd.addOption("--limited",             "+li",    "Limit Dataset to Trice required attributes only");
+        cmd.addOption("--limited-anon",        "+la",    "Limit Dataset to Trice required attributes without PHI");
+#endif
 
     /* evaluate command line */
     prepareCmdLineArgs(argc, argv, OFFIS_CONSOLE_APPLICATION);
@@ -299,7 +381,7 @@ int main(int argc, char *argv[])
             {
                 app.printHeader(OFTrue /*print host identifier*/);
                 COUT << OFendl << "External libraries used:";
-#if !defined(WITH_ZLIB) && !defined(DCMTK_ENABLE_CHARSET_CONVERSION)
+#if !defined(WITH_ZLIB) && !defined(WITH_LIBICONV)
                 COUT << " none" << OFendl;
 #else
                 COUT << OFendl;
@@ -307,7 +389,7 @@ int main(int argc, char *argv[])
 #ifdef WITH_ZLIB
                 COUT << "- ZLIB, Version " << zlibVersion() << OFendl;
 #endif
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
+#ifdef WITH_LIBICONV
                 COUT << "- " << OFCharacterEncoding::getLibraryVersionString() << OFendl;
 #endif
                 return 0;
@@ -367,7 +449,7 @@ int main(int argc, char *argv[])
         cmd.endOptionBlock();
         if (cmd.findOption("--charset-check-all"))
             opt_checkAllStrings = OFTrue;
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
+#ifdef WITH_LIBICONV
         if (cmd.findOption("--convert-to-utf8"))
             opt_convertToUTF8 = OFTrue;
 #endif
@@ -441,6 +523,12 @@ int main(int argc, char *argv[])
             opt_writeFlags |= DCMTypes::XF_encodeBase64;
         }
         cmd.endOptionBlock();
+#ifdef TRICE
+        if (cmd.findOption("--limited"))
+            opt_limited = true;
+        if (cmd.findOption("--limited-anon"))
+            opt_limited = true;  //opt_limited_anon = true;
+#endif
     }
 
     /* print resource identifier */
@@ -471,6 +559,26 @@ int main(int argc, char *argv[])
         /* read DICOM file or data set */
         DcmFileFormat dfile;
         OFCondition status = dfile.loadFile(ifname, opt_ixfer, EGL_noChange, OFstatic_cast(Uint32, opt_maxReadLength), opt_readMode);
+#ifdef TRICE
+        OFString ifnameIn, ifname1;
+        if (!status.good() && isDicom((char*)ifname))
+        {    OFString command = "dcmdump -q +E -vr  -ml +uc +Ep +rd --convert-to-utf8 ";
+             ifnameIn.append(ifname).append(".dump");
+             command.append(ifname).append(" > ").append(ifnameIn);
+             if (system(command.c_str()) == 0 || nonZeroFile((char*)ifnameIn.c_str()))  //**Worked
+             {    OFString command1 = "dump2dcm -q +E --update-meta-info";
+                  ifname1.append(ifname).append(".OUT");
+                  command1.append(" ").append(ifnameIn);
+                  command1.append(" ").append(ifname1);
+                  if (system(command1.c_str()) == 0)  //**Worked 
+                  {   OFString ifname1(ifname);  ifname1.append(".OUT");
+                      status = dfile.loadFile(ifname1.c_str(), opt_ixfer, EGL_noChange, OFstatic_cast(Uint32, opt_maxReadLength), opt_readMode);
+                      fprintf(stderr, "Repairing the file and continuing to generate XML...\n");
+                  }
+             }
+        }
+
+#endif
         if (status.good())
         {
             // map "old" charset names to DICOM defined terms
@@ -496,7 +604,7 @@ int main(int argc, char *argv[])
                 else if (charset == "hebrew")
                     opt_defaultCharset = "ISO_IR 138";
             }
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
+#ifdef WITH_LIBICONV
             DcmDataset *dset = dfile.getDataset();
             /* convert all DICOM strings to UTF-8 (if requested) */
             if (opt_convertToUTF8)
@@ -534,48 +642,36 @@ int main(int argc, char *argv[])
 #endif
             if (result == 0)
             {
-                /* if second parameter is present, it is treated as the output filename,
-                 * unless it is "-". If the name is absent or equal to "-", write to stdout */
-                const char *ofname = NULL;
+                /* if second parameter is present, it is treated as the output filename ("stdout" otherwise) */
                 if (cmd.getParamCount() == 2)
                 {
+                    const char *ofname = NULL;
                     cmd.getParam(2, ofname);
-                }
-
-                if (ofname && (strcmp(ofname, "-") != 0))
-                {
                     STD_NAMESPACE ofstream stream(ofname);
                     if (stream.good())
                     {
                         /* write content in XML format to file */
-                        status = writeFile(stream, ifname, &dfile, opt_readMode, opt_loadIntoMemory, opt_dtdFilename,
-                            opt_defaultCharset, opt_writeFlags, opt_checkAllStrings);
-                        if (status.bad())
-                        {
-                            OFLOG_ERROR(dcm2xmlLogger, OFFIS_CONSOLE_APPLICATION << ": error (" << status.text() << ") writing file: "<< ofname);
+                        if (writeFile(stream, ifname, &dfile, opt_readMode, opt_loadIntoMemory, opt_dtdFilename,
+                                      opt_defaultCharset, opt_writeFlags, opt_checkAllStrings).bad())
                             result = 2;
-                        }
                     } else
                         result = 1;
                 } else {
                     /* write content in XML format to standard output */
-                    status = writeFile(COUT, ifname, &dfile, opt_readMode, opt_loadIntoMemory, opt_dtdFilename,
-                        opt_defaultCharset, opt_writeFlags, opt_checkAllStrings);
-                    if (status.bad())
-                    {
-                        OFLOG_ERROR(dcm2xmlLogger, OFFIS_CONSOLE_APPLICATION << ": error (" << status.text() << ") writing to standard output");
+                    if (writeFile(COUT, ifname, &dfile, opt_readMode, opt_loadIntoMemory, opt_dtdFilename,
+                                  opt_defaultCharset, opt_writeFlags, opt_checkAllStrings).bad())
                         result = 3;
-                    }
                 }
             }
-        } else {
+        } else
             OFLOG_ERROR(dcm2xmlLogger, OFFIS_CONSOLE_APPLICATION << ": error (" << status.text() << ") reading file: "<< ifname);
-            result = 5;
-        }
-    } else {
+        
+#ifdef TRICE
+        if (!isnull(ifnameIn.c_str()))  rmFile(ifnameIn.c_str());
+        if (!isnull(ifname1.c_str()) )  rmFile(ifname1.c_str());
+#endif
+    } else
         OFLOG_ERROR(dcm2xmlLogger, OFFIS_CONSOLE_APPLICATION << ": invalid filename: <empty string>");
-        result = 6;
-    }
 
     return result;
 }

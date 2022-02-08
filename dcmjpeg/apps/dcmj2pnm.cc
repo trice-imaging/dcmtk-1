@@ -22,6 +22,8 @@
 
 // compile "dcm2pnm" with dcmjpeg support
 #define BUILD_DCM2PNM_AS_DCMJ2PNM
+//Also include  JPEG-LS
+#define BUILD_DCM2PNM_AS_DCML2PNM
 
 // include full implementation of "dcm2pnm"
-#include "../../dcmimage/apps/dcm2pnm.cc"
+#include "dcm2pnm.cc"

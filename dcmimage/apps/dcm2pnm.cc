@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2021, OFFIS e.V.
+ *  Copyright (C) 1996-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,6 +21,14 @@
 
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
+
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>
+#endif
 
 #include "dcmtk/dcmdata/dctk.h"          /* for various dcmdata headers */
 #include "dcmtk/dcmdata/cmdlnarg.h"      /* for prepareCmdLineArgs */
@@ -128,7 +136,7 @@ int main(int argc, char *argv[])
     OFCmdUnsignedInt    opt_frameCount = 1;               /* default: one frame */
     OFBool              opt_useFrameNumber = OFFalse;     /* default: use frame counter */
     OFBool              opt_multiFrame = OFFalse;         /* default: no multiframes */
-    int                 opt_convertToGrayscale = 0;       /* default: no conversion */
+    int                 opt_convertToGrayscale = 0;       /* default: color or grayscale */
     int                 opt_changePolarity = 0;           /* default: normal polarity */
     int                 opt_useAspectRatio = 1;           /* default: use aspect ratio for scaling */
     OFCmdUnsignedInt    opt_useInterpolation = 1;         /* default: use interpolation method '1' for scaling */
@@ -160,7 +168,11 @@ int main(int argc, char *argv[])
 
 #ifdef WITH_LIBTIFF
     // TIFF parameters
+#ifdef HAVE_LIBTIFF_LZW_COMPRESSION
     DiTIFFCompression   opt_tiffCompression = E_tiffLZWCompression;
+#else
+    DiTIFFCompression   opt_tiffCompression = E_tiffPackBitsCompression;
+#endif
     DiTIFFLZWPredictor  opt_lzwPredictor = E_tiffLZWPredictorDefault;
     OFCmdUnsignedInt    opt_rowsPerStrip = 0;
 #endif
@@ -176,9 +188,6 @@ int main(int argc, char *argv[])
     OFCmdUnsignedInt    opt_quality = 90;                 /* default: 90% JPEG quality */
     E_SubSampling       opt_sampling = ESS_422;           /* default: 4:2:2 sub-sampling */
     E_DecompressionColorSpaceConversion opt_decompCSconversion = EDC_photometricInterpretation;
-    OFBool              opt_predictor6WorkaroundEnable = OFFalse;
-    OFBool              opt_cornellWorkaroundEnable = OFFalse;
-    OFBool              opt_forceSingleFragmentPerFrame = OFFalse;
 #endif
 
     int                 opt_Overlay[16];
@@ -229,7 +238,7 @@ int main(int argc, char *argv[])
 
      cmd.addSubGroup("frame selection:");
       cmd.addOption("--frame",              "+F",   1, "[n]umber: integer",
-                                                       "select specified frame (default: 1)");
+                                                        "select specified frame (default: 1)");
       cmd.addOption("--frame-range",        "+Fr",  2, "[n]umber [c]ount: integer",
                                                        "select c frames beginning with frame n");
       cmd.addOption("--all-frames",         "+Fa",     "select all frames");
@@ -245,7 +254,7 @@ int main(int argc, char *argv[])
       cmd.addOption("--flip-both-axes",     "+Lhv",    "flip image horizontally and vertically");
 
      cmd.addSubGroup("scaling:");
-      cmd.addOption("--recognize-aspect",   "+a",      "recognize pixel aspect ratio when scaling (def.)");
+      cmd.addOption("--recognize-aspect",   "+a",      "recognize pixel aspect ratio (default)");
       cmd.addOption("--ignore-aspect",      "-a",      "ignore pixel aspect ratio when scaling");
       cmd.addOption("--interpolate",        "+i",   1, "[n]umber of algorithm: integer",
                                                        "use interpolation when scaling (1..4, def: 1)");
@@ -260,18 +269,13 @@ int main(int argc, char *argv[])
       cmd.addOption("--scale-y-size",       "+Syv", 1, "[n]umber: integer",
                                                        "scale y axis to n pixels, auto-compute x axis");
 #ifdef BUILD_DCM2PNM_AS_DCMJ2PNM
-     cmd.addSubGroup("color space conversion (JPEG compressed images only):");
+     cmd.addSubGroup("color space conversion (compressed images only):");
       cmd.addOption("--conv-photometric",   "+cp",     "convert if YCbCr photometric interpr. (default)");
       cmd.addOption("--conv-lossy",         "+cl",     "convert YCbCr to RGB if lossy JPEG");
       cmd.addOption("--conv-guess",         "+cg",     "convert to RGB if YCbCr is guessed by library");
       cmd.addOption("--conv-guess-lossy",   "+cgl",    "convert to RGB if lossy JPEG and YCbCr is\nguessed by the underlying JPEG library");
       cmd.addOption("--conv-always",        "+ca",     "always convert YCbCr to RGB");
       cmd.addOption("--conv-never",         "+cn",     "never convert color space");
-
-     cmd.addSubGroup("workaround options for incorrect encodings (JPEG compressed images only):");
-      cmd.addOption("--workaround-pred6",    "+w6",    "enable workaround for JPEG lossless images\nwith overflow in predictor 6");
-      cmd.addOption("--workaround-incpl",    "+wi",    "enable workaround for incomplete JPEG data");
-      cmd.addOption("--workaround-cornell",  "+wc",    "enable workaround for 16-bit JPEG lossless\nCornell images with Huffman table overflow");
 #endif
 
      cmd.addSubGroup("modality LUT transformation:");
@@ -323,9 +327,9 @@ int main(int argc, char *argv[])
                                                        "ambient light value (cd/m^2, default: file f)");
       cmd.addOption("--illumination",       "+Di",  1, "[i]llumination: float",
                                                        "illumination value (cd/m^2, default: file f)");
-      cmd.addOption("--min-density",        "+Dn",  1, "[m]inimum optical density: float",
+      cmd.addOption("--min-density",        "+Dn", 1,  "[m]inimum optical density: float",
                                                        "Dmin value (default: off, only with +Dp)");
-      cmd.addOption("--max-density",        "+Dx",  1, "[m]aximum optical density: float",
+      cmd.addOption("--max-density",        "+Dx", 1,  "[m]aximum optical density: float",
                                                        "Dmax value (default: off, only with +Dp)");
       cmd.addOption("--gsd-function",       "+Dg",     "use GSDF for calibration (default for +Dm/+Dp)");
       cmd.addOption("--cielab-function",    "+Dc",     "use CIELAB function for calibration ");
@@ -339,12 +343,17 @@ int main(int argc, char *argv[])
 
 #ifdef WITH_LIBTIFF
      cmd.addSubGroup("TIFF format:");
+#ifdef HAVE_LIBTIFF_LZW_COMPRESSION
       cmd.addOption("--compr-lzw",          "+Tl",     "LZW compression (default)");
       cmd.addOption("--compr-rle",          "+Tr",     "RLE compression");
       cmd.addOption("--compr-none",         "+Tn",     "uncompressed");
       cmd.addOption("--predictor-default",  "+Pd",     "no LZW predictor (default)");
       cmd.addOption("--predictor-none",     "+Pn",     "LZW predictor 1 (no prediction)");
       cmd.addOption("--predictor-horz",     "+Ph",     "LZW predictor 2 (horizontal differencing)");
+#else
+      cmd.addOption("--compr-rle",          "+Tr",     "RLE compression (default)");
+      cmd.addOption("--compr-none",         "+Tn",     "uncompressed");
+#endif
       cmd.addOption("--rows-per-strip",     "+Rs",  1, "[r]ows: integer (default: 0)",
                                                        "rows per strip, default 8K per strip");
 #endif
@@ -367,7 +376,7 @@ int main(int argc, char *argv[])
 #endif
 
      cmd.addSubGroup("other transformations:");
-      cmd.addOption("--grayscale",          "+G",      "convert color image to grayscale (monochrome)");
+      cmd.addOption("--grayscale",          "+G",      "convert to grayscale if necessary");
       cmd.addOption("--change-polarity",    "+P",      "change polarity (invert pixel output)");
       cmd.addOption("--clip-region",        "+C",   4, "[l]eft [t]op [w]idth [h]eight: integer",
                                                        "clip image region (l, t, w, h)");
@@ -428,6 +437,11 @@ int main(int argc, char *argv[])
 #endif
 #ifdef WITH_LIBTIFF
                 COUT << "- " << DiTIFFPlugin::getLibraryVersionString() << OFendl;
+#ifdef HAVE_LIBTIFF_LZW_COMPRESSION
+                COUT << "  with LZW compression support" << OFendl;
+#else
+                COUT << "  without LZW compression support" << OFendl;
+#endif
 #endif
 #ifdef WITH_LIBPNG
                 COUT << "- " << DiPNGPlugin::getLibraryVersionString() << OFendl;
@@ -604,10 +618,6 @@ int main(int argc, char *argv[])
         if (cmd.findOption("--conv-never"))
             opt_decompCSconversion = EDC_never;
         cmd.endOptionBlock();
-
-        if (cmd.findOption("--workaround-pred6")) opt_predictor6WorkaroundEnable = OFTrue;
-        if (cmd.findOption("--workaround-incpl")) opt_forceSingleFragmentPerFrame = OFTrue;
-        if (cmd.findOption("--workaround-cornell")) opt_cornellWorkaroundEnable = OFTrue;
 #endif
 
         /* image processing options: modality LUT transformation */
@@ -726,14 +736,14 @@ int main(int argc, char *argv[])
         {
             do {
                 unsigned long l;
-                app.checkValue(cmd.getValueAndCheckMinMax(l, 0, 16));
+                app.checkValue(cmd.getValueAndCheckMinMax(l, 1, 16));
                 if (!opt_O_used)
                 {
                     for (i = 0; i < 16; i++) opt_Overlay[i] = 0;
                     opt_O_used = 1;
                 }
                 if (l > 0)
-                    opt_Overlay[l - 1] = 1;
+                    opt_Overlay[l - 1]=1;
                 else
                 {
                     for (i = 0; i < 16; i++)
@@ -765,16 +775,20 @@ int main(int argc, char *argv[])
 
 #ifdef WITH_LIBTIFF
         cmd.beginOptionBlock();
+#ifdef HAVE_LIBTIFF_LZW_COMPRESSION
         if (cmd.findOption("--compr-lzw")) opt_tiffCompression = E_tiffLZWCompression;
+#endif
         if (cmd.findOption("--compr-rle")) opt_tiffCompression = E_tiffPackBitsCompression;
         if (cmd.findOption("--compr-none")) opt_tiffCompression = E_tiffNoCompression;
         cmd.endOptionBlock();
 
+#ifdef HAVE_LIBTIFF_LZW_COMPRESSION
         cmd.beginOptionBlock();
         if (cmd.findOption("--predictor-default")) opt_lzwPredictor = E_tiffLZWPredictorDefault;
         if (cmd.findOption("--predictor-none")) opt_lzwPredictor = E_tiffLZWPredictorNoPrediction;
         if (cmd.findOption("--predictor-horz")) opt_lzwPredictor = E_tiffLZWPredictorHDifferencing;
         cmd.endOptionBlock();
+#endif
 
         if (cmd.findOption("--rows-per-strip"))
             app.checkValue(cmd.getValueAndCheckMinMax(opt_rowsPerStrip, 0, 65535));
@@ -883,18 +897,13 @@ int main(int argc, char *argv[])
             << DCM_DICT_ENVIRONMENT_VARIABLE);
     }
 
-    if (opt_suppressOutput && opt_ofname)
-        OFLOG_WARN(dcm2pnmLogger, "ignoring parameter bitmap-out because of option --no-output");
-
     OFLOG_INFO(dcm2pnmLogger, "reading DICOM file: " << opt_ifname);
 
     // register RLE decompression codec
     DcmRLEDecoderRegistration::registerCodecs();
 #ifdef BUILD_DCM2PNM_AS_DCMJ2PNM
     // register JPEG decompression codecs
-    DJDecoderRegistration::registerCodecs(opt_decompCSconversion, EUC_default,
-        EPC_default, opt_predictor6WorkaroundEnable, opt_cornellWorkaroundEnable,
-        opt_forceSingleFragmentPerFrame);
+    DJDecoderRegistration::registerCodecs(opt_decompCSconversion);
 #endif
 #ifdef BUILD_DCM2PNM_AS_DCML2PNM
     // register JPEG-LS decompression codecs
@@ -1097,7 +1106,7 @@ int main(int argc, char *argv[])
             return 1;
         }
 
-        /* convert to grayscale if image is not monochrome */
+        /* convert to grayscale if necessary */
         if ((opt_convertToGrayscale) && (!di->isMonochrome()))
         {
              OFLOG_INFO(dcm2pnmLogger, "converting image to grayscale");

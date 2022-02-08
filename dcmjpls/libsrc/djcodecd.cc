@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2007-2020, OFFIS e.V.
+ *  Copyright (C) 2007-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -69,7 +69,8 @@ OFBool DJLSDecoderBase::canChangeCoding(
   // this codec only handles conversion from JPEG-LS to uncompressed.
 
   DcmXfer newRep(newRepType);
-  if (newRep.isNotEncapsulated() && (oldRepType == supportedTransferSyntax()))
+  if (newRep.isNotEncapsulated() &&
+     ((oldRepType == EXS_JPEGLSLossless)||(oldRepType == EXS_JPEGLSLossy)))
      return OFTrue;
 
   return OFFalse;
@@ -81,16 +82,8 @@ OFCondition DJLSDecoderBase::decode(
     DcmPixelSequence * pixSeq,
     DcmPolymorphOBOW& uncompressedPixelData,
     const DcmCodecParameter * cp,
-    const DcmStack& objStack,
-    OFBool& removeOldRep) const
+    const DcmStack& objStack) const
 {
-
-  // this codec may modify the DICOM header such that the previous pixel
-  // representation is not valid anymore, e.g. in the case of color images
-  // where the planar configuration can change. Indicate this to the caller
-  // to trigger removal.
-  removeOldRep = OFTrue;
-
   // retrieve pointer to dataset from parameter stack
   DcmStack localStack(objStack);
   (void)localStack.pop();  // pop pixel data element from stack
@@ -102,7 +95,6 @@ OFCondition DJLSDecoderBase::decode(
   // determine properties of uncompressed dataset
   Uint16 imageSamplesPerPixel = 0;
   if (dataset->findAndGetUint16(DCM_SamplesPerPixel, imageSamplesPerPixel).bad()) return EC_TagNotFound;
-
   // we only handle one or three samples per pixel
   if ((imageSamplesPerPixel != 3) && (imageSamplesPerPixel != 1)) return EC_InvalidTag;
 
@@ -165,7 +157,6 @@ OFCondition DJLSDecoderBase::decode(
   Sint32 currentFrame = 0;
   Uint32 currentItem = 1; // item 0 contains the offset table
   OFBool done = OFFalse;
-  OFBool forceSingleFragmentPerFrame = djcp->getForceSingleFragmentPerFrame();
 
   while (result.good() && !done)
   {
@@ -173,16 +164,6 @@ OFCondition DJLSDecoderBase::decode(
 
       result = decodeFrame(pixSeq, djcp, dataset, currentFrame, currentItem, pixeldata8, frameSize,
           imageFrames, imageColumns, imageRows, imageSamplesPerPixel, bytesPerSample);
-
-      // check if we should enforce "one fragment per frame" while
-      // decompressing a multi-frame image even if stream suspension occurs
-      if ((result == EC_JLSInvalidCompressedData) && forceSingleFragmentPerFrame)
-      {
-        // frame is incomplete. Nevertheless skip to next frame.
-        // This permits decompression of faulty multi-frame images.
-        DCMJPLS_WARN("JPEG-LS bitstream invalid or incomplete, ignoring (but image is likely to be incomplete).");
-        result = EC_Normal;
-      }
 
       if (result.good())
       {
@@ -200,23 +181,17 @@ OFCondition DJLSDecoderBase::decode(
     result = ((DcmItem *)dataset)->putAndInsertString(DCM_NumberOfFrames, numBuf);
   }
 
-  if (result.good() && (dataset->ident() == EVR_dataset))
+  if (result.good())
   {
-    DcmItem *ditem = OFreinterpret_cast(DcmItem*, dataset);
-
     // the following operations do not affect the Image Pixel Module
     // but other modules such as SOP Common.  We only perform these
     // changes if we're on the main level of the dataset,
     // which should always identify itself as dataset, not as item.
-    if (djcp->getUIDCreation() == EJLSUC_always)
+    if ((dataset->ident() == EVR_dataset) && (djcp->getUIDCreation() == EJLSUC_always))
     {
         // create new SOP instance UID
-        result = DcmCodec::newInstance(ditem, NULL, NULL, NULL);
+        result = DcmCodec::newInstance((DcmItem *)dataset, NULL, NULL, NULL);
     }
-
-    // set Lossy Image Compression to "01" (see DICOM part 3, C.7.6.1.1.5)
-    if (result.good() && (supportedTransferSyntax() == EXS_JPEGLSLossy)) result = ditem->putAndInsertString(DCM_LossyImageCompression, "01");
-
   }
 
   return result;
@@ -428,15 +403,11 @@ OFCondition DJLSDecoderBase::decodeFrame(
 
       if (result.good() && imageSamplesPerPixel == 3)
       {
-        if (params.colorTransform != 0)
-        {
-          DCMJPLS_WARN("Color Transformation " << params.colorTransform << " is a non-standard HP/JPEG-LS extension.");
-        }
         if (imagePlanarConfiguration == 1 && params.ilv != ILV_NONE)
         {
           // The dataset says this should be planarConfiguration == 1, but
           // it isn't -> convert it.
-          DCMJPLS_WARN("different planar configuration in JPEG-LS bitstream, converting to \"1\"");
+          DCMJPLS_WARN("different planar configuration in JPEG stream, converting to \"1\"");
           if (bytesPerSample == 1)
             result = createPlanarConfiguration1Byte(OFreinterpret_cast(Uint8*, buffer), imageColumns, imageRows);
           else
@@ -463,12 +434,6 @@ OFCondition DJLSDecoderBase::decodeFrame(
                       bufSize, sizeof(Uint16));
           }
       }
-
-      // update planar configuration if we are decoding a color image
-      if (result.good() && (imageSamplesPerPixel > 1))
-      {
-        dataset->putAndInsertUint16(DCM_PlanarConfiguration, imagePlanarConfiguration);
-      }
     }
   }
 
@@ -482,8 +447,7 @@ OFCondition DJLSDecoderBase::encode(
     const DcmRepresentationParameter * /* toRepParam */,
     DcmPixelSequence * & /* pixSeq */,
     const DcmCodecParameter * /* cp */,
-    DcmStack & /* objStack */,
-    OFBool& /* removeOldRep */) const
+    DcmStack & /* objStack */) const
 {
   // we are a decoder only
   return EC_IllegalCall;
@@ -497,8 +461,7 @@ OFCondition DJLSDecoderBase::encode(
     const DcmRepresentationParameter * /* toRepParam */,
     DcmPixelSequence * & /* toPixSeq */,
     const DcmCodecParameter * /* cp */,
-    DcmStack & /* objStack */,
-    OFBool& /* removeOldRep */) const
+    DcmStack & /* objStack */) const
 {
   // we don't support re-coding for now.
   return EC_IllegalCall;
@@ -517,20 +480,6 @@ OFCondition DJLSDecoderBase::determineDecompressedColorModel(
   {
     // retrieve color model from given dataset
     result = dataset->findAndGetOFString(DCM_PhotometricInterpretation, decompressedColorModel);
-    if (result == EC_TagNotFound)
-    {
-        DCMJPLS_WARN("mandatory element PhotometricInterpretation " << DCM_PhotometricInterpretation << " is missing");
-        result = EC_MissingAttribute;
-    }
-    else if (result.bad())
-    {
-        DCMJPLS_WARN("cannot retrieve value of element PhotometricInterpretation " << DCM_PhotometricInterpretation << ": " << result.text());
-    }
-    else if (decompressedColorModel.empty())
-    {
-        DCMJPLS_WARN("no value for mandatory element PhotometricInterpretation " << DCM_PhotometricInterpretation);
-        result = EC_MissingValue;
-    }
   }
   return result;
 }
@@ -688,11 +637,11 @@ OFCondition DJLSDecoderBase::createPlanarConfiguration1Byte(
   if (buf)
   {
     memcpy(buf, imageFrame, (size_t)(3*numPixels));
-    Uint8 *s = buf;                        // source
-    Uint8 *r = imageFrame;                 // red plane
-    Uint8 *g = imageFrame + numPixels;     // green plane
-    Uint8 *b = imageFrame + (2*numPixels); // blue plane
-    for (unsigned long i=numPixels; i; i--)
+    register Uint8 *s = buf;                        // source
+    register Uint8 *r = imageFrame;                 // red plane
+    register Uint8 *g = imageFrame + numPixels;     // green plane
+    register Uint8 *b = imageFrame + (2*numPixels); // blue plane
+    for (register unsigned long i=numPixels; i; i--)
     {
       *r++ = *s++;
       *g++ = *s++;
@@ -718,11 +667,11 @@ OFCondition DJLSDecoderBase::createPlanarConfiguration1Word(
   if (buf)
   {
     memcpy(buf, imageFrame, (size_t)(3*numPixels*sizeof(Uint16)));
-    Uint16 *s = buf;                        // source
-    Uint16 *r = imageFrame;                 // red plane
-    Uint16 *g = imageFrame + numPixels;     // green plane
-    Uint16 *b = imageFrame + (2*numPixels); // blue plane
-    for (unsigned long i=numPixels; i; i--)
+    register Uint16 *s = buf;                        // source
+    register Uint16 *r = imageFrame;                 // red plane
+    register Uint16 *g = imageFrame + numPixels;     // green plane
+    register Uint16 *b = imageFrame + (2*numPixels); // blue plane
+    for (register unsigned long i=numPixels; i; i--)
     {
       *r++ = *s++;
       *g++ = *s++;
@@ -747,11 +696,11 @@ OFCondition DJLSDecoderBase::createPlanarConfiguration0Byte(
   if (buf)
   {
     memcpy(buf, imageFrame, (size_t)(3*numPixels));
-    Uint8 *t = imageFrame;          // target
-    Uint8 *r = buf;                 // red plane
-    Uint8 *g = buf + numPixels;     // green plane
-    Uint8 *b = buf + (2*numPixels); // blue plane
-    for (unsigned long i=numPixels; i; i--)
+    register Uint8 *t = imageFrame;          // target
+    register Uint8 *r = buf;                 // red plane
+    register Uint8 *g = buf + numPixels;     // green plane
+    register Uint8 *b = buf + (2*numPixels); // blue plane
+    for (register unsigned long i=numPixels; i; i--)
     {
       *t++ = *r++;
       *t++ = *g++;
@@ -777,11 +726,11 @@ OFCondition DJLSDecoderBase::createPlanarConfiguration0Word(
   if (buf)
   {
     memcpy(buf, imageFrame, (size_t)(3*numPixels*sizeof(Uint16)));
-    Uint16 *t = imageFrame;          // target
-    Uint16 *r = buf;                 // red plane
-    Uint16 *g = buf + numPixels;     // green plane
-    Uint16 *b = buf + (2*numPixels); // blue plane
-    for (unsigned long i=numPixels; i; i--)
+    register Uint16 *t = imageFrame;          // target
+    register Uint16 *r = buf;                 // red plane
+    register Uint16 *g = buf + numPixels;     // green plane
+    register Uint16 *b = buf + (2*numPixels); // blue plane
+    for (register unsigned long i=numPixels; i; i--)
     {
       *t++ = *r++;
       *t++ = *g++;

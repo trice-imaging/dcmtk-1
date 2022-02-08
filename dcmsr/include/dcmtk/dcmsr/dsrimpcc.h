@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2010-2015, OFFIS e.V.
+ *  Copyright (C) 2010-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -33,10 +33,8 @@
  *  class declaration  *
  *---------------------*/
 
-/** Class for checking the relationship content constraints of the Implantation Plan
- *  SR Document IOD.
- *  According to DICOM PS 3.3: "The document shall be constructed from TID 7000
- *  (Implantation Plan) invoked at the root node."
+/** Class for checking the content relationship constraints of the
+ *  Implantation Plan SR Document IOD
  */
 class DCMTK_DCMSR_EXPORT DSRImplantationPlanSRDocumentConstraintChecker
   : public DSRIODConstraintChecker
@@ -62,14 +60,10 @@ class DCMTK_DCMSR_EXPORT DSRImplantationPlanSRDocumentConstraintChecker
      */
     virtual OFBool isTemplateSupportRequired() const;
 
-    /** get identifier and mapping resource of the root template (if any)
-     ** @param  templateIdentifier  identifier of the root template (might be empty)
-     *  @param  mappingResource     mapping resource that defines the root template
-     *                              (might be empty)
-     ** @return status, EC_Normal if successful, an error code otherwise
+    /** get identifier of the root template
+     ** @return root template identifier (TID) "7000"
      */
-    virtual OFCondition getRootTemplateIdentification(OFString &templateIdentifier,
-                                                      OFString &mappingResource) const;
+    virtual const char *getRootTemplateIdentifier() const;
 
     /** get the associated document type of the SR IOD
      ** @return document type (DSRTypes::DT_ImplantationPlanSRDocument)

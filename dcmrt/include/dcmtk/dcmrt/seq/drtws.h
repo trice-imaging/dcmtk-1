@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class DRTWedgeSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -55,7 +55,6 @@ class DCMTK_DCMRT_EXPORT DRTWedgeSequence
 
         /** assigment operator
          *  @param copy item object to be copied
-         *  @return reference to this object
          */
         Item &operator=(const Item &copy);
 
@@ -97,20 +96,6 @@ class DCMTK_DCMRT_EXPORT DRTWedgeSequence
          *  @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition getAccessoryCode(OFString &value, const signed long pos = 0) const;
-
-        /** get EffectiveWedgeAngle (300a,00de)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getEffectiveWedgeAngle(OFString &value, const signed long pos = 0) const;
-
-        /** get EffectiveWedgeAngle (300a,00de)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getEffectiveWedgeAngle(Float64 &value, const unsigned long pos = 0) const;
 
         /** get SourceToWedgeTrayDistance (300a,00da)
          *  @param  value  reference to variable in which the value should be stored
@@ -205,13 +190,6 @@ class DCMTK_DCMRT_EXPORT DRTWedgeSequence
          */
         OFCondition setAccessoryCode(const OFString &value, const OFBool check = OFTrue);
 
-        /** set EffectiveWedgeAngle (300a,00de)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (DS) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setEffectiveWedgeAngle(const OFString &value, const OFBool check = OFTrue);
-
         /** set SourceToWedgeTrayDistance (300a,00da)
          *  @param  value  value to be set (single value only) or "" for no value
          *  @param  check  check 'value' for conformance with VR (DS) and VM (1) if enabled
@@ -268,21 +246,19 @@ class DCMTK_DCMRT_EXPORT DRTWedgeSequence
 
         /// AccessoryCode (300a,00f9) vr=LO, vm=1, type=3
         DcmLongString AccessoryCode;
-        /// EffectiveWedgeAngle (300a,00de) vr=DS, vm=1, type=3
-        DcmDecimalString EffectiveWedgeAngle;
         /// SourceToWedgeTrayDistance (300a,00da) vr=DS, vm=1, type=3
         DcmDecimalString SourceToWedgeTrayDistance;
-        /// WedgeAngle (300a,00d5) vr=IS, vm=1, type=2
+        /// WedgeAngle (300a,00d5) vr=IS, vm=1, type=2C
         DcmIntegerString WedgeAngle;
-        /// WedgeFactor (300a,00d6) vr=DS, vm=1, type=2
+        /// WedgeFactor (300a,00d6) vr=DS, vm=1, type=2C
         DcmDecimalString WedgeFactor;
         /// WedgeID (300a,00d4) vr=SH, vm=1, type=3
         DcmShortString WedgeID;
-        /// WedgeNumber (300a,00d2) vr=IS, vm=1, type=1
+        /// WedgeNumber (300a,00d2) vr=IS, vm=1, type=1C
         DcmIntegerString WedgeNumber;
-        /// WedgeOrientation (300a,00d8) vr=DS, vm=1, type=2
+        /// WedgeOrientation (300a,00d8) vr=DS, vm=1, type=2C
         DcmDecimalString WedgeOrientation;
-        /// WedgeType (300a,00d3) vr=CS, vm=1, type=2
+        /// WedgeType (300a,00d3) vr=CS, vm=1, type=2C
         DcmCodeString WedgeType;
 
     };
@@ -305,7 +281,6 @@ class DCMTK_DCMRT_EXPORT DRTWedgeSequence
 
     /** assigment operator
      *  @param copy sequence object to be copied
-     *  @return reference to this object
      */
     DRTWedgeSequence &operator=(const DRTWedgeSequence &copy);
 
@@ -328,7 +303,7 @@ class DCMTK_DCMRT_EXPORT DRTWedgeSequence
     /** get number of items in the sequence
      *  @return number of items
      */
-    size_t getNumberOfItems() const;
+    unsigned long getNumberOfItems() const;
 
     /** goto first item in the sequence
      *  @return status, EC_Normal if successful, an error code otherwise
@@ -344,7 +319,7 @@ class DCMTK_DCMRT_EXPORT DRTWedgeSequence
      *  @param  num  number of the item to be selected (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num);
+    OFCondition gotoItem(const unsigned long num);
 
     /** get current item in the sequence
      *  @param  item  reference to item pointer (result variable)
@@ -367,31 +342,31 @@ class DCMTK_DCMRT_EXPORT DRTWedgeSequence
      *  @param  item  reference to item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition getItem(const size_t num, Item *&item);
+    OFCondition getItem(const unsigned long num, Item *&item);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &getItem(const size_t num);
+    Item &getItem(const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &getItem(const size_t num) const;
+    const Item &getItem(const unsigned long num) const;
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &operator[](const size_t num);
+    Item &operator[](const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &operator[](const size_t num) const;
+    const Item &operator[](const unsigned long num) const;
 
     /** add new item to the end of this sequence
      *  @param  item  reference to new item pointer (result variable)
@@ -404,13 +379,13 @@ class DCMTK_DCMRT_EXPORT DRTWedgeSequence
      *  @param  item  reference to new item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition insertItem(const size_t pos, Item *&item);
+    OFCondition insertItem(const unsigned long pos, Item *&item);
 
     /** remove particular item from the sequence
      *  @param  pos  position of the item to be removed (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition removeItem(const size_t pos);
+    OFCondition removeItem(const unsigned long pos);
 
   // --- input/output methods ---
 
@@ -445,7 +420,7 @@ class DCMTK_DCMRT_EXPORT DRTWedgeSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListIterator(Item *) &iterator);
 
     /** goto particular item in the sequence
@@ -453,7 +428,7 @@ class DCMTK_DCMRT_EXPORT DRTWedgeSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListConstIterator(Item *) &iterator) const;
 
   private:

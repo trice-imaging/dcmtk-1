@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTBrachyControlPointSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -24,7 +24,6 @@ DRTBrachyControlPointSequence::Item::Item(const OFBool emptyDefaultItem)
     BrachyReferencedDoseReferenceSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     ControlPoint3DPosition(DCM_ControlPoint3DPosition),
     ControlPointIndex(DCM_ControlPointIndex),
-    ControlPointOrientation(DCM_ControlPointOrientation),
     ControlPointRelativePosition(DCM_ControlPointRelativePosition),
     CumulativeTimeWeight(DCM_CumulativeTimeWeight)
 {
@@ -36,7 +35,6 @@ DRTBrachyControlPointSequence::Item::Item(const Item &copy)
     BrachyReferencedDoseReferenceSequence(copy.BrachyReferencedDoseReferenceSequence),
     ControlPoint3DPosition(copy.ControlPoint3DPosition),
     ControlPointIndex(copy.ControlPointIndex),
-    ControlPointOrientation(copy.ControlPointOrientation),
     ControlPointRelativePosition(copy.ControlPointRelativePosition),
     CumulativeTimeWeight(copy.CumulativeTimeWeight)
 {
@@ -56,7 +54,6 @@ DRTBrachyControlPointSequence::Item &DRTBrachyControlPointSequence::Item::operat
         BrachyReferencedDoseReferenceSequence = copy.BrachyReferencedDoseReferenceSequence;
         ControlPoint3DPosition = copy.ControlPoint3DPosition;
         ControlPointIndex = copy.ControlPointIndex;
-        ControlPointOrientation = copy.ControlPointOrientation;
         ControlPointRelativePosition = copy.ControlPointRelativePosition;
         CumulativeTimeWeight = copy.CumulativeTimeWeight;
     }
@@ -73,7 +70,6 @@ void DRTBrachyControlPointSequence::Item::clear()
         CumulativeTimeWeight.clear();
         ControlPointRelativePosition.clear();
         ControlPoint3DPosition.clear();
-        ControlPointOrientation.clear();
         BrachyReferencedDoseReferenceSequence.clear();
     }
 }
@@ -85,7 +81,6 @@ OFBool DRTBrachyControlPointSequence::Item::isEmpty()
            CumulativeTimeWeight.isEmpty() &&
            ControlPointRelativePosition.isEmpty() &&
            ControlPoint3DPosition.isEmpty() &&
-           ControlPointOrientation.isEmpty() &&
            BrachyReferencedDoseReferenceSequence.isEmpty();
 }
 
@@ -107,7 +102,6 @@ OFCondition DRTBrachyControlPointSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, CumulativeTimeWeight, "1", "2", "BrachyControlPointSequence");
         getAndCheckElementFromDataset(item, ControlPointRelativePosition, "1", "1", "BrachyControlPointSequence");
         getAndCheckElementFromDataset(item, ControlPoint3DPosition, "3", "3", "BrachyControlPointSequence");
-        getAndCheckElementFromDataset(item, ControlPointOrientation, "3", "3", "BrachyControlPointSequence");
         BrachyReferencedDoseReferenceSequence.read(item, "1-n", "3", "BrachyControlPointSequence");
         result = EC_Normal;
     }
@@ -125,7 +119,6 @@ OFCondition DRTBrachyControlPointSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmDecimalString(CumulativeTimeWeight), "1", "2", "BrachyControlPointSequence");
         addElementToDataset(result, item, new DcmDecimalString(ControlPointRelativePosition), "1", "1", "BrachyControlPointSequence");
         addElementToDataset(result, item, new DcmDecimalString(ControlPoint3DPosition), "3", "3", "BrachyControlPointSequence");
-        addElementToDataset(result, item, new DcmFloatingPointSingle(ControlPointOrientation), "3", "3", "BrachyControlPointSequence");
         if (result.good()) result = BrachyReferencedDoseReferenceSequence.write(item, "1-n", "3", "BrachyControlPointSequence");
     }
     return result;
@@ -174,15 +167,6 @@ OFCondition DRTBrachyControlPointSequence::Item::getControlPointIndex(Sint32 &va
         return EC_IllegalCall;
     else
         return OFconst_cast(DcmIntegerString &, ControlPointIndex).getSint32(value, pos);
-}
-
-
-OFCondition DRTBrachyControlPointSequence::Item::getControlPointOrientation(Float32 &value, const unsigned long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return OFconst_cast(DcmFloatingPointSingle &, ControlPointOrientation).getFloat32(value, pos);
 }
 
 
@@ -245,15 +229,6 @@ OFCondition DRTBrachyControlPointSequence::Item::setControlPointIndex(const OFSt
             result = ControlPointIndex.putOFStringArray(value);
     }
     return result;
-}
-
-
-OFCondition DRTBrachyControlPointSequence::Item::setControlPointOrientation(const Float32 value, const unsigned long pos)
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return ControlPointOrientation.putFloat32(value, pos);
 }
 
 
@@ -386,7 +361,7 @@ OFBool DRTBrachyControlPointSequence::isValid() const
 }
 
 
-size_t DRTBrachyControlPointSequence::getNumberOfItems() const
+unsigned long DRTBrachyControlPointSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -416,12 +391,12 @@ OFCondition DRTBrachyControlPointSequence::gotoNextItem()
 }
 
 
-OFCondition DRTBrachyControlPointSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTBrachyControlPointSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -436,12 +411,12 @@ OFCondition DRTBrachyControlPointSequence::gotoItem(const size_t num, OFListIter
 }
 
 
-OFCondition DRTBrachyControlPointSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTBrachyControlPointSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -456,7 +431,7 @@ OFCondition DRTBrachyControlPointSequence::gotoItem(const size_t num, OFListCons
 }
 
 
-OFCondition DRTBrachyControlPointSequence::gotoItem(const size_t num)
+OFCondition DRTBrachyControlPointSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -492,7 +467,7 @@ const DRTBrachyControlPointSequence::Item &DRTBrachyControlPointSequence::getCur
 }
 
 
-OFCondition DRTBrachyControlPointSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTBrachyControlPointSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -502,7 +477,7 @@ OFCondition DRTBrachyControlPointSequence::getItem(const size_t num, Item *&item
 }
 
 
-DRTBrachyControlPointSequence::Item &DRTBrachyControlPointSequence::getItem(const size_t num)
+DRTBrachyControlPointSequence::Item &DRTBrachyControlPointSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -512,7 +487,7 @@ DRTBrachyControlPointSequence::Item &DRTBrachyControlPointSequence::getItem(cons
 }
 
 
-const DRTBrachyControlPointSequence::Item &DRTBrachyControlPointSequence::getItem(const size_t num) const
+const DRTBrachyControlPointSequence::Item &DRTBrachyControlPointSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -522,13 +497,13 @@ const DRTBrachyControlPointSequence::Item &DRTBrachyControlPointSequence::getIte
 }
 
 
-DRTBrachyControlPointSequence::Item &DRTBrachyControlPointSequence::operator[](const size_t num)
+DRTBrachyControlPointSequence::Item &DRTBrachyControlPointSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTBrachyControlPointSequence::Item &DRTBrachyControlPointSequence::operator[](const size_t num) const
+const DRTBrachyControlPointSequence::Item &DRTBrachyControlPointSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -551,7 +526,7 @@ OFCondition DRTBrachyControlPointSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTBrachyControlPointSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTBrachyControlPointSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -574,7 +549,7 @@ OFCondition DRTBrachyControlPointSequence::insertItem(const size_t pos, Item *&i
 }
 
 
-OFCondition DRTBrachyControlPointSequence::removeItem(const size_t pos)
+OFCondition DRTBrachyControlPointSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

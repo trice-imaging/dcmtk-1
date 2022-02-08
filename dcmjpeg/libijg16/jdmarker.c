@@ -344,12 +344,6 @@ get_sos (j_decompress_ptr cinfo)
     
     TRACEMS3(cinfo, 1, JTRC_SOS_COMPONENT, cc,
          compptr->dc_tbl_no, compptr->ac_tbl_no);
-
-    /* This CSi (cc) should differ from the previous CSi */
-    for (ci = 0; ci < i; ci++) {
-      if (cinfo->cur_comp_info[ci] == compptr)
-        ERREXIT1(cinfo, JERR_BAD_COMPONENT_ID, cc);
-    }
   }
 
   /* Collect the additional scan parameters Ss, Se, Ah/Al. */
@@ -589,7 +583,7 @@ get_dri (j_decompress_ptr cinfo)
 
 
 LOCAL(void)
-examine_app0 (j_decompress_ptr cinfo, const JOCTET FAR * data,
+examine_app0 (j_decompress_ptr cinfo, JOCTET FAR * data,
           unsigned int datalen, IJG_INT32 remaining)
 /* Examine first few bytes from an APP0.
  * Take appropriate action if it is a JFIF marker.
@@ -665,7 +659,7 @@ examine_app0 (j_decompress_ptr cinfo, const JOCTET FAR * data,
 
 
 LOCAL(void)
-examine_app14 (j_decompress_ptr cinfo, const JOCTET FAR * data,
+examine_app14 (j_decompress_ptr cinfo, JOCTET FAR * data,
            unsigned int datalen, IJG_INT32 remaining)
 /* Examine first few bytes from an APP14.
  * Take appropriate action if it is an Adobe marker.

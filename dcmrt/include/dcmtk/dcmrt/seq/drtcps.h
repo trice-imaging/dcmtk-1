@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class DRTControlPointSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -59,7 +59,6 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
 
         /** assigment operator
          *  @param copy item object to be copied
-         *  @return reference to this object
          */
         Item &operator=(const Item &copy);
 
@@ -158,13 +157,6 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
          */
         OFCondition getDoseRateSet(Float64 &value, const unsigned long pos = 0) const;
 
-        /** get ExternalContourEntryPoint (300a,0133)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getExternalContourEntryPoint(Float32 &value, const unsigned long pos = 0) const;
-
         /** get GantryAngle (300a,011e)
          *  @param  value  reference to variable in which the value should be stored
          *  @param  pos    index of the value to get (0..vm-1), -1 for all components
@@ -254,13 +246,6 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
          *  @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition getPatientSupportRotationDirection(OFString &value, const signed long pos = 0) const;
-
-        /** get SourceToExternalContourDistance (300a,0132)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getSourceToExternalContourDistance(Float32 &value, const unsigned long pos = 0) const;
 
         /** get SourceToSurfaceDistance (300a,0130)
          *  @param  value  reference to variable in which the value should be stored
@@ -358,34 +343,6 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
          *  @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition getTableTopLongitudinalPosition(Float64 &value, const unsigned long pos = 0) const;
-
-        /** get TableTopPitchAngle (300a,0140)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getTableTopPitchAngle(Float32 &value, const unsigned long pos = 0) const;
-
-        /** get TableTopPitchRotationDirection (300a,0142)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getTableTopPitchRotationDirection(OFString &value, const signed long pos = 0) const;
-
-        /** get TableTopRollAngle (300a,0144)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getTableTopRollAngle(Float32 &value, const unsigned long pos = 0) const;
-
-        /** get TableTopRollRotationDirection (300a,0146)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getTableTopRollRotationDirection(OFString &value, const signed long pos = 0) const;
 
         /** get TableTopVerticalPosition (300a,0128)
          *  @param  value  reference to variable in which the value should be stored
@@ -488,13 +445,6 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
          */
         OFCondition setDoseRateSet(const OFString &value, const OFBool check = OFTrue);
 
-        /** set ExternalContourEntryPoint (300a,0133)
-         *  @param  value  value to be set (should be valid for this VR)
-         *  @param  pos    index of the value to be set (0..vm-1), vm=3
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setExternalContourEntryPoint(const Float32 value, const unsigned long pos = 0);
-
         /** set GantryAngle (300a,011e)
          *  @param  value  value to be set (single value only) or "" for no value
          *  @param  check  check 'value' for conformance with VR (DS) and VM (1) if enabled
@@ -551,13 +501,6 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
          */
         OFCondition setPatientSupportRotationDirection(const OFString &value, const OFBool check = OFTrue);
 
-        /** set SourceToExternalContourDistance (300a,0132)
-         *  @param  value  value to be set (should be valid for this VR)
-         *  @param  pos    index of the value to be set (0..vm-1), vm=1
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setSourceToExternalContourDistance(const Float32 value, const unsigned long pos = 0);
-
         /** set SourceToSurfaceDistance (300a,0130)
          *  @param  value  value to be set (single value only) or "" for no value
          *  @param  check  check 'value' for conformance with VR (DS) and VM (1) if enabled
@@ -607,34 +550,6 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
          */
         OFCondition setTableTopLongitudinalPosition(const OFString &value, const OFBool check = OFTrue);
 
-        /** set TableTopPitchAngle (300a,0140)
-         *  @param  value  value to be set (should be valid for this VR)
-         *  @param  pos    index of the value to be set (0..vm-1), vm=1
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setTableTopPitchAngle(const Float32 value, const unsigned long pos = 0);
-
-        /** set TableTopPitchRotationDirection (300a,0142)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (CS) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setTableTopPitchRotationDirection(const OFString &value, const OFBool check = OFTrue);
-
-        /** set TableTopRollAngle (300a,0144)
-         *  @param  value  value to be set (should be valid for this VR)
-         *  @param  pos    index of the value to be set (0..vm-1), vm=1
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setTableTopRollAngle(const Float32 value, const unsigned long pos = 0);
-
-        /** set TableTopRollRotationDirection (300a,0146)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (CS) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setTableTopRollRotationDirection(const OFString &value, const OFBool check = OFTrue);
-
         /** set TableTopVerticalPosition (300a,0128)
          *  @param  value  value to be set (single value only) or "" for no value
          *  @param  check  check 'value' for conformance with VR (DS) and VM (1) if enabled
@@ -653,14 +568,12 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
         DRTBeamLimitingDevicePositionSequence BeamLimitingDevicePositionSequence;
         /// BeamLimitingDeviceRotationDirection (300a,0121) vr=CS, vm=1, type=1C
         DcmCodeString BeamLimitingDeviceRotationDirection;
-        /// ControlPointIndex (300a,0112) vr=IS, vm=1, type=1
+        /// ControlPointIndex (300a,0112) vr=IS, vm=1, type=1C
         DcmIntegerString ControlPointIndex;
-        /// CumulativeMetersetWeight (300a,0134) vr=DS, vm=1, type=2
+        /// CumulativeMetersetWeight (300a,0134) vr=DS, vm=1, type=2C
         DcmDecimalString CumulativeMetersetWeight;
         /// DoseRateSet (300a,0115) vr=DS, vm=1, type=3
         DcmDecimalString DoseRateSet;
-        /// ExternalContourEntryPoint (300a,0133) vr=FL, vm=3, type=3
-        DcmFloatingPointSingle ExternalContourEntryPoint;
         /// GantryAngle (300a,011e) vr=DS, vm=1, type=1C
         DcmDecimalString GantryAngle;
         /// GantryPitchAngle (300a,014a) vr=FL, vm=1, type=3
@@ -681,8 +594,6 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
         DRTReferencedDoseReferenceSequenceInRTBeamsModule ReferencedDoseReferenceSequence;
         /// ReferencedDoseSequence (300c,0080) vr=SQ, vm=1, type=1C
         DRTReferencedDoseSequence ReferencedDoseSequence;
-        /// SourceToExternalContourDistance (300a,0132) vr=FL, vm=1, type=3
-        DcmFloatingPointSingle SourceToExternalContourDistance;
         /// SourceToSurfaceDistance (300a,0130) vr=DS, vm=1, type=3
         DcmDecimalString SourceToSurfaceDistance;
         /// SurfaceEntryPoint (300a,012e) vr=DS, vm=3, type=3
@@ -697,17 +608,9 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
         DcmDecimalString TableTopLateralPosition;
         /// TableTopLongitudinalPosition (300a,0129) vr=DS, vm=1, type=2C
         DcmDecimalString TableTopLongitudinalPosition;
-        /// TableTopPitchAngle (300a,0140) vr=FL, vm=1, type=1C
-        DcmFloatingPointSingle TableTopPitchAngle;
-        /// TableTopPitchRotationDirection (300a,0142) vr=CS, vm=1, type=1C
-        DcmCodeString TableTopPitchRotationDirection;
-        /// TableTopRollAngle (300a,0144) vr=FL, vm=1, type=1C
-        DcmFloatingPointSingle TableTopRollAngle;
-        /// TableTopRollRotationDirection (300a,0146) vr=CS, vm=1, type=1C
-        DcmCodeString TableTopRollRotationDirection;
         /// TableTopVerticalPosition (300a,0128) vr=DS, vm=1, type=2C
         DcmDecimalString TableTopVerticalPosition;
-        /// WedgePositionSequence (300a,0116) vr=SQ, vm=1, type=1C
+        /// WedgePositionSequence (300a,0116) vr=SQ, vm=1, type=3
         DRTWedgePositionSequence WedgePositionSequence;
 
     };
@@ -730,7 +633,6 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
 
     /** assigment operator
      *  @param copy sequence object to be copied
-     *  @return reference to this object
      */
     DRTControlPointSequence &operator=(const DRTControlPointSequence &copy);
 
@@ -753,7 +655,7 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
     /** get number of items in the sequence
      *  @return number of items
      */
-    size_t getNumberOfItems() const;
+    unsigned long getNumberOfItems() const;
 
     /** goto first item in the sequence
      *  @return status, EC_Normal if successful, an error code otherwise
@@ -769,7 +671,7 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
      *  @param  num  number of the item to be selected (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num);
+    OFCondition gotoItem(const unsigned long num);
 
     /** get current item in the sequence
      *  @param  item  reference to item pointer (result variable)
@@ -792,31 +694,31 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
      *  @param  item  reference to item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition getItem(const size_t num, Item *&item);
+    OFCondition getItem(const unsigned long num, Item *&item);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &getItem(const size_t num);
+    Item &getItem(const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &getItem(const size_t num) const;
+    const Item &getItem(const unsigned long num) const;
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &operator[](const size_t num);
+    Item &operator[](const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &operator[](const size_t num) const;
+    const Item &operator[](const unsigned long num) const;
 
     /** add new item to the end of this sequence
      *  @param  item  reference to new item pointer (result variable)
@@ -829,13 +731,13 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
      *  @param  item  reference to new item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition insertItem(const size_t pos, Item *&item);
+    OFCondition insertItem(const unsigned long pos, Item *&item);
 
     /** remove particular item from the sequence
      *  @param  pos  position of the item to be removed (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition removeItem(const size_t pos);
+    OFCondition removeItem(const unsigned long pos);
 
   // --- input/output methods ---
 
@@ -870,7 +772,7 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListIterator(Item *) &iterator);
 
     /** goto particular item in the sequence
@@ -878,7 +780,7 @@ class DCMTK_DCMRT_EXPORT DRTControlPointSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListConstIterator(Item *) &iterator) const;
 
   private:

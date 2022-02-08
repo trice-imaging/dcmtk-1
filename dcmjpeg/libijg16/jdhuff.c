@@ -16,6 +16,7 @@
 #include "jlossls16.h"      /* Private declarations for lossless codec */
 #include "jdhuff16.h"       /* Declarations shared with jd*huff.c */
 
+
 /*
  * Compute the derived values for a Huffman table.
  * This routine also performs some validation checks on the table.
@@ -52,7 +53,7 @@ jpeg_make_d_derived_tbl (j_decompress_ptr cinfo, boolean isDC, int tblno,
                   SIZEOF(d_derived_tbl));
   dtbl = *pdtbl;
   dtbl->pub = htbl;     /* fill in back link */
-
+  
   /* Figure C.1: make table of Huffman code length for each symbol */
 
   p = 0;
@@ -65,10 +66,10 @@ jpeg_make_d_derived_tbl (j_decompress_ptr cinfo, boolean isDC, int tblno,
   }
   huffsize[p] = 0;
   numsymbols = p;
-
+  
   /* Figure C.2: generate the codes themselves */
   /* We also validate that the counts represent a legal Huffman code tree. */
-
+  
   code = 0;
   si = huffsize[0];
   p = 0;
@@ -79,7 +80,7 @@ jpeg_make_d_derived_tbl (j_decompress_ptr cinfo, boolean isDC, int tblno,
     }
     /* code is now 1 more than the last code used for codelength si; but
      * it must still fit in si bits, since no code is allowed to be all ones.
-     * BUG FIX: Comparison must be >, not >=
+     * BUG FIX 2001-09-03: Comparison must be >, not >=
      */
     if (((IJG_INT32) code) > (((IJG_INT32) 1) << si))
       ERREXIT(cinfo, JERR_BAD_HUFF_TABLE);
@@ -279,7 +280,7 @@ jpeg_fill_bit_buffer (bitread_working_state * state,
 GLOBAL(int)
 jpeg_huff_decode (bitread_working_state * state,
           register bit_buf_type get_buffer, register int bits_left,
-          d_derived_tbl * htbl, int min_bits, boolean enable_cornell_workaround)
+          d_derived_tbl * htbl, int min_bits)
 {
   register int l = min_bits;
   register IJG_INT32 code;
@@ -308,17 +309,7 @@ jpeg_huff_decode (bitread_working_state * state,
 
   if (l > 16) {
     WARNMS(state->cinfo, JWRN_HUFF_BAD_CODE);
-    if (enable_cornell_workaround)
-    {
-        if (l == 17)
-          return 17;        /* this is the result of the buggy Cornell encoder */
-        else
-          return 0;         /* fake a zero as the safest result */
-    }
-    else
-    {
-        return 0;           /* fake a zero as the safest result */
-    }
+    return 0;           /* fake a zero as the safest result */
   }
 
   return htbl->pub->huffval[ (int) (code + htbl->valoffset[l]) ];

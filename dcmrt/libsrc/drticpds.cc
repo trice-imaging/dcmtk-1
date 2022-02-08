@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTIonControlPointDeliverySequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -24,7 +24,6 @@ DRTIonControlPointDeliverySequence::Item::Item(const OFBool emptyDefaultItem)
     BeamLimitingDeviceAngle(DCM_BeamLimitingDeviceAngle),
     BeamLimitingDevicePositionSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     BeamLimitingDeviceRotationDirection(DCM_BeamLimitingDeviceRotationDirection),
-    ChairHeadFramePosition(DCM_ChairHeadFramePosition),
     CorrectedParameterSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     DeliveredMeterset(DCM_DeliveredMeterset),
     GantryAngle(DCM_GantryAngle),
@@ -48,9 +47,6 @@ DRTIonControlPointDeliverySequence::Item::Item(const OFBool emptyDefaultItem)
     ReferencedControlPointIndex(DCM_ReferencedControlPointIndex),
     ScanSpotMetersetsDelivered(DCM_ScanSpotMetersetsDelivered),
     ScanSpotPositionMap(DCM_ScanSpotPositionMap),
-    ScanSpotPrescribedIndices(DCM_ScanSpotPrescribedIndices),
-    ScanSpotReordered(DCM_ScanSpotReordered),
-    ScanSpotTimeOffset(DCM_ScanSpotTimeOffset),
     ScanSpotTuneID(DCM_ScanSpotTuneID),
     ScanningSpotSize(DCM_ScanningSpotSize),
     SnoutPosition(DCM_SnoutPosition),
@@ -73,7 +69,6 @@ DRTIonControlPointDeliverySequence::Item::Item(const Item &copy)
     BeamLimitingDeviceAngle(copy.BeamLimitingDeviceAngle),
     BeamLimitingDevicePositionSequence(copy.BeamLimitingDevicePositionSequence),
     BeamLimitingDeviceRotationDirection(copy.BeamLimitingDeviceRotationDirection),
-    ChairHeadFramePosition(copy.ChairHeadFramePosition),
     CorrectedParameterSequence(copy.CorrectedParameterSequence),
     DeliveredMeterset(copy.DeliveredMeterset),
     GantryAngle(copy.GantryAngle),
@@ -97,9 +92,6 @@ DRTIonControlPointDeliverySequence::Item::Item(const Item &copy)
     ReferencedControlPointIndex(copy.ReferencedControlPointIndex),
     ScanSpotMetersetsDelivered(copy.ScanSpotMetersetsDelivered),
     ScanSpotPositionMap(copy.ScanSpotPositionMap),
-    ScanSpotPrescribedIndices(copy.ScanSpotPrescribedIndices),
-    ScanSpotReordered(copy.ScanSpotReordered),
-    ScanSpotTimeOffset(copy.ScanSpotTimeOffset),
     ScanSpotTuneID(copy.ScanSpotTuneID),
     ScanningSpotSize(copy.ScanningSpotSize),
     SnoutPosition(copy.SnoutPosition),
@@ -130,7 +122,6 @@ DRTIonControlPointDeliverySequence::Item &DRTIonControlPointDeliverySequence::It
         BeamLimitingDeviceAngle = copy.BeamLimitingDeviceAngle;
         BeamLimitingDevicePositionSequence = copy.BeamLimitingDevicePositionSequence;
         BeamLimitingDeviceRotationDirection = copy.BeamLimitingDeviceRotationDirection;
-        ChairHeadFramePosition = copy.ChairHeadFramePosition;
         CorrectedParameterSequence = copy.CorrectedParameterSequence;
         DeliveredMeterset = copy.DeliveredMeterset;
         GantryAngle = copy.GantryAngle;
@@ -154,9 +145,6 @@ DRTIonControlPointDeliverySequence::Item &DRTIonControlPointDeliverySequence::It
         ReferencedControlPointIndex = copy.ReferencedControlPointIndex;
         ScanSpotMetersetsDelivered = copy.ScanSpotMetersetsDelivered;
         ScanSpotPositionMap = copy.ScanSpotPositionMap;
-        ScanSpotPrescribedIndices = copy.ScanSpotPrescribedIndices;
-        ScanSpotReordered = copy.ScanSpotReordered;
-        ScanSpotTimeOffset = copy.ScanSpotTimeOffset;
         ScanSpotTuneID = copy.ScanSpotTuneID;
         ScanningSpotSize = copy.ScanningSpotSize;
         SnoutPosition = copy.SnoutPosition;
@@ -204,11 +192,8 @@ void DRTIonControlPointDeliverySequence::Item::clear()
         NumberOfScanSpotPositions.clear();
         ScanSpotPositionMap.clear();
         ScanSpotMetersetsDelivered.clear();
-        ScanSpotTimeOffset.clear();
         ScanningSpotSize.clear();
         NumberOfPaintings.clear();
-        ScanSpotReordered.clear();
-        ScanSpotPrescribedIndices.clear();
         PatientSupportAngle.clear();
         PatientSupportRotationDirection.clear();
         TableTopPitchAngle.clear();
@@ -216,7 +201,6 @@ void DRTIonControlPointDeliverySequence::Item::clear()
         TableTopRollAngle.clear();
         TableTopRollRotationDirection.clear();
         HeadFixationAngle.clear();
-        ChairHeadFramePosition.clear();
         TableTopVerticalPosition.clear();
         TableTopLongitudinalPosition.clear();
         TableTopLateralPosition.clear();
@@ -253,11 +237,8 @@ OFBool DRTIonControlPointDeliverySequence::Item::isEmpty()
            NumberOfScanSpotPositions.isEmpty() &&
            ScanSpotPositionMap.isEmpty() &&
            ScanSpotMetersetsDelivered.isEmpty() &&
-           ScanSpotTimeOffset.isEmpty() &&
            ScanningSpotSize.isEmpty() &&
            NumberOfPaintings.isEmpty() &&
-           ScanSpotReordered.isEmpty() &&
-           ScanSpotPrescribedIndices.isEmpty() &&
            PatientSupportAngle.isEmpty() &&
            PatientSupportRotationDirection.isEmpty() &&
            TableTopPitchAngle.isEmpty() &&
@@ -265,7 +246,6 @@ OFBool DRTIonControlPointDeliverySequence::Item::isEmpty()
            TableTopRollAngle.isEmpty() &&
            TableTopRollRotationDirection.isEmpty() &&
            HeadFixationAngle.isEmpty() &&
-           ChairHeadFramePosition.isEmpty() &&
            TableTopVerticalPosition.isEmpty() &&
            TableTopLongitudinalPosition.isEmpty() &&
            TableTopLateralPosition.isEmpty() &&
@@ -312,11 +292,8 @@ OFCondition DRTIonControlPointDeliverySequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, NumberOfScanSpotPositions, "1", "1C", "IonControlPointDeliverySequence");
         getAndCheckElementFromDataset(item, ScanSpotPositionMap, "1-n", "1C", "IonControlPointDeliverySequence");
         getAndCheckElementFromDataset(item, ScanSpotMetersetsDelivered, "1-n", "1C", "IonControlPointDeliverySequence");
-        getAndCheckElementFromDataset(item, ScanSpotTimeOffset, "1-n", "3", "IonControlPointDeliverySequence");
         getAndCheckElementFromDataset(item, ScanningSpotSize, "2", "3", "IonControlPointDeliverySequence");
         getAndCheckElementFromDataset(item, NumberOfPaintings, "1", "1C", "IonControlPointDeliverySequence");
-        getAndCheckElementFromDataset(item, ScanSpotReordered, "1", "3", "IonControlPointDeliverySequence");
-        getAndCheckElementFromDataset(item, ScanSpotPrescribedIndices, "1-n", "1C", "IonControlPointDeliverySequence");
         getAndCheckElementFromDataset(item, PatientSupportAngle, "1", "1C", "IonControlPointDeliverySequence");
         getAndCheckElementFromDataset(item, PatientSupportRotationDirection, "1", "1C", "IonControlPointDeliverySequence");
         getAndCheckElementFromDataset(item, TableTopPitchAngle, "1", "2C", "IonControlPointDeliverySequence");
@@ -324,7 +301,6 @@ OFCondition DRTIonControlPointDeliverySequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, TableTopRollAngle, "1", "2C", "IonControlPointDeliverySequence");
         getAndCheckElementFromDataset(item, TableTopRollRotationDirection, "1", "2C", "IonControlPointDeliverySequence");
         getAndCheckElementFromDataset(item, HeadFixationAngle, "1", "3", "IonControlPointDeliverySequence");
-        getAndCheckElementFromDataset(item, ChairHeadFramePosition, "1", "3", "IonControlPointDeliverySequence");
         getAndCheckElementFromDataset(item, TableTopVerticalPosition, "1", "2C", "IonControlPointDeliverySequence");
         getAndCheckElementFromDataset(item, TableTopLongitudinalPosition, "1", "2C", "IonControlPointDeliverySequence");
         getAndCheckElementFromDataset(item, TableTopLateralPosition, "1", "2C", "IonControlPointDeliverySequence");
@@ -367,11 +343,8 @@ OFCondition DRTIonControlPointDeliverySequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmIntegerString(NumberOfScanSpotPositions), "1", "1C", "IonControlPointDeliverySequence");
         addElementToDataset(result, item, new DcmFloatingPointSingle(ScanSpotPositionMap), "1-n", "1C", "IonControlPointDeliverySequence");
         addElementToDataset(result, item, new DcmFloatingPointSingle(ScanSpotMetersetsDelivered), "1-n", "1C", "IonControlPointDeliverySequence");
-        addElementToDataset(result, item, new DcmFloatingPointSingle(ScanSpotTimeOffset), "1-n", "3", "IonControlPointDeliverySequence");
         addElementToDataset(result, item, new DcmFloatingPointSingle(ScanningSpotSize), "2", "3", "IonControlPointDeliverySequence");
         addElementToDataset(result, item, new DcmIntegerString(NumberOfPaintings), "1", "1C", "IonControlPointDeliverySequence");
-        addElementToDataset(result, item, new DcmCodeString(ScanSpotReordered), "1", "3", "IonControlPointDeliverySequence");
-        addElementToDataset(result, item, new DcmIntegerString(ScanSpotPrescribedIndices), "1-n", "1C", "IonControlPointDeliverySequence");
         addElementToDataset(result, item, new DcmDecimalString(PatientSupportAngle), "1", "1C", "IonControlPointDeliverySequence");
         addElementToDataset(result, item, new DcmCodeString(PatientSupportRotationDirection), "1", "1C", "IonControlPointDeliverySequence");
         addElementToDataset(result, item, new DcmFloatingPointSingle(TableTopPitchAngle), "1", "2C", "IonControlPointDeliverySequence");
@@ -379,7 +352,6 @@ OFCondition DRTIonControlPointDeliverySequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmFloatingPointSingle(TableTopRollAngle), "1", "2C", "IonControlPointDeliverySequence");
         addElementToDataset(result, item, new DcmCodeString(TableTopRollRotationDirection), "1", "2C", "IonControlPointDeliverySequence");
         addElementToDataset(result, item, new DcmFloatingPointSingle(HeadFixationAngle), "1", "3", "IonControlPointDeliverySequence");
-        addElementToDataset(result, item, new DcmDecimalString(ChairHeadFramePosition), "1", "3", "IonControlPointDeliverySequence");
         addElementToDataset(result, item, new DcmDecimalString(TableTopVerticalPosition), "1", "2C", "IonControlPointDeliverySequence");
         addElementToDataset(result, item, new DcmDecimalString(TableTopLongitudinalPosition), "1", "2C", "IonControlPointDeliverySequence");
         addElementToDataset(result, item, new DcmDecimalString(TableTopLateralPosition), "1", "2C", "IonControlPointDeliverySequence");
@@ -415,24 +387,6 @@ OFCondition DRTIonControlPointDeliverySequence::Item::getBeamLimitingDeviceRotat
         return EC_IllegalCall;
     else
         return getStringValueFromElement(BeamLimitingDeviceRotationDirection, value, pos);
-}
-
-
-OFCondition DRTIonControlPointDeliverySequence::Item::getChairHeadFramePosition(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(ChairHeadFramePosition, value, pos);
-}
-
-
-OFCondition DRTIonControlPointDeliverySequence::Item::getChairHeadFramePosition(Float64 &value, const unsigned long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return OFconst_cast(DcmDecimalString &, ChairHeadFramePosition).getFloat64(value, pos);
 }
 
 
@@ -661,42 +615,6 @@ OFCondition DRTIonControlPointDeliverySequence::Item::getScanSpotPositionMap(Flo
 }
 
 
-OFCondition DRTIonControlPointDeliverySequence::Item::getScanSpotPrescribedIndices(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(ScanSpotPrescribedIndices, value, pos);
-}
-
-
-OFCondition DRTIonControlPointDeliverySequence::Item::getScanSpotPrescribedIndices(Sint32 &value, const unsigned long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return OFconst_cast(DcmIntegerString &, ScanSpotPrescribedIndices).getSint32(value, pos);
-}
-
-
-OFCondition DRTIonControlPointDeliverySequence::Item::getScanSpotReordered(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(ScanSpotReordered, value, pos);
-}
-
-
-OFCondition DRTIonControlPointDeliverySequence::Item::getScanSpotTimeOffset(Float32 &value, const unsigned long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return OFconst_cast(DcmFloatingPointSingle &, ScanSpotTimeOffset).getFloat32(value, pos);
-}
-
-
 OFCondition DRTIonControlPointDeliverySequence::Item::getScanSpotTuneID(OFString &value, const signed long pos) const
 {
     if (EmptyDefaultItem)
@@ -871,19 +789,6 @@ OFCondition DRTIonControlPointDeliverySequence::Item::setBeamLimitingDeviceRotat
         result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
             result = BeamLimitingDeviceRotationDirection.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTIonControlPointDeliverySequence::Item::setChairHeadFramePosition(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmDecimalString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = ChairHeadFramePosition.putOFStringArray(value);
     }
     return result;
 }
@@ -1083,41 +988,6 @@ OFCondition DRTIonControlPointDeliverySequence::Item::setScanSpotPositionMap(con
         return EC_IllegalCall;
     else
         return ScanSpotPositionMap.putFloat32(value, pos);
-}
-
-
-OFCondition DRTIonControlPointDeliverySequence::Item::setScanSpotPrescribedIndices(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmIntegerString::checkStringValue(value, "1-n") : EC_Normal;
-        if (result.good())
-            result = ScanSpotPrescribedIndices.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTIonControlPointDeliverySequence::Item::setScanSpotReordered(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = ScanSpotReordered.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTIonControlPointDeliverySequence::Item::setScanSpotTimeOffset(const Float32 value, const unsigned long pos)
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return ScanSpotTimeOffset.putFloat32(value, pos);
 }
 
 
@@ -1377,7 +1247,7 @@ OFBool DRTIonControlPointDeliverySequence::isValid() const
 }
 
 
-size_t DRTIonControlPointDeliverySequence::getNumberOfItems() const
+unsigned long DRTIonControlPointDeliverySequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -1407,12 +1277,12 @@ OFCondition DRTIonControlPointDeliverySequence::gotoNextItem()
 }
 
 
-OFCondition DRTIonControlPointDeliverySequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTIonControlPointDeliverySequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -1427,12 +1297,12 @@ OFCondition DRTIonControlPointDeliverySequence::gotoItem(const size_t num, OFLis
 }
 
 
-OFCondition DRTIonControlPointDeliverySequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTIonControlPointDeliverySequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -1447,7 +1317,7 @@ OFCondition DRTIonControlPointDeliverySequence::gotoItem(const size_t num, OFLis
 }
 
 
-OFCondition DRTIonControlPointDeliverySequence::gotoItem(const size_t num)
+OFCondition DRTIonControlPointDeliverySequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -1483,7 +1353,7 @@ const DRTIonControlPointDeliverySequence::Item &DRTIonControlPointDeliverySequen
 }
 
 
-OFCondition DRTIonControlPointDeliverySequence::getItem(const size_t num, Item *&item)
+OFCondition DRTIonControlPointDeliverySequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -1493,7 +1363,7 @@ OFCondition DRTIonControlPointDeliverySequence::getItem(const size_t num, Item *
 }
 
 
-DRTIonControlPointDeliverySequence::Item &DRTIonControlPointDeliverySequence::getItem(const size_t num)
+DRTIonControlPointDeliverySequence::Item &DRTIonControlPointDeliverySequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -1503,7 +1373,7 @@ DRTIonControlPointDeliverySequence::Item &DRTIonControlPointDeliverySequence::ge
 }
 
 
-const DRTIonControlPointDeliverySequence::Item &DRTIonControlPointDeliverySequence::getItem(const size_t num) const
+const DRTIonControlPointDeliverySequence::Item &DRTIonControlPointDeliverySequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -1513,13 +1383,13 @@ const DRTIonControlPointDeliverySequence::Item &DRTIonControlPointDeliverySequen
 }
 
 
-DRTIonControlPointDeliverySequence::Item &DRTIonControlPointDeliverySequence::operator[](const size_t num)
+DRTIonControlPointDeliverySequence::Item &DRTIonControlPointDeliverySequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTIonControlPointDeliverySequence::Item &DRTIonControlPointDeliverySequence::operator[](const size_t num) const
+const DRTIonControlPointDeliverySequence::Item &DRTIonControlPointDeliverySequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -1542,7 +1412,7 @@ OFCondition DRTIonControlPointDeliverySequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTIonControlPointDeliverySequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTIonControlPointDeliverySequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -1565,7 +1435,7 @@ OFCondition DRTIonControlPointDeliverySequence::insertItem(const size_t pos, Ite
 }
 
 
-OFCondition DRTIonControlPointDeliverySequence::removeItem(const size_t pos)
+OFCondition DRTIonControlPointDeliverySequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

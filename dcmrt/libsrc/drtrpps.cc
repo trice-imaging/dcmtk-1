@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTROIPhysicalPropertiesSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -21,7 +21,6 @@
 
 DRTROIPhysicalPropertiesSequence::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
-    ROIElementalCompositionSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     ROIPhysicalProperty(DCM_ROIPhysicalProperty),
     ROIPhysicalPropertyValue(DCM_ROIPhysicalPropertyValue)
 {
@@ -30,7 +29,6 @@ DRTROIPhysicalPropertiesSequence::Item::Item(const OFBool emptyDefaultItem)
 
 DRTROIPhysicalPropertiesSequence::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
-    ROIElementalCompositionSequence(copy.ROIElementalCompositionSequence),
     ROIPhysicalProperty(copy.ROIPhysicalProperty),
     ROIPhysicalPropertyValue(copy.ROIPhysicalPropertyValue)
 {
@@ -47,7 +45,6 @@ DRTROIPhysicalPropertiesSequence::Item &DRTROIPhysicalPropertiesSequence::Item::
     if (this != &copy)
     {
         EmptyDefaultItem = copy.EmptyDefaultItem;
-        ROIElementalCompositionSequence = copy.ROIElementalCompositionSequence;
         ROIPhysicalProperty = copy.ROIPhysicalProperty;
         ROIPhysicalPropertyValue = copy.ROIPhysicalPropertyValue;
     }
@@ -61,7 +58,6 @@ void DRTROIPhysicalPropertiesSequence::Item::clear()
     {
         /* clear all DICOM attributes */
         ROIPhysicalProperty.clear();
-        ROIElementalCompositionSequence.clear();
         ROIPhysicalPropertyValue.clear();
     }
 }
@@ -70,7 +66,6 @@ void DRTROIPhysicalPropertiesSequence::Item::clear()
 OFBool DRTROIPhysicalPropertiesSequence::Item::isEmpty()
 {
     return ROIPhysicalProperty.isEmpty() &&
-           ROIElementalCompositionSequence.isEmpty() &&
            ROIPhysicalPropertyValue.isEmpty();
 }
 
@@ -88,9 +83,8 @@ OFCondition DRTROIPhysicalPropertiesSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, ROIPhysicalProperty, "1", "1", "ROIPhysicalPropertiesSequence");
-        ROIElementalCompositionSequence.read(item, "1-n", "1C", "ROIPhysicalPropertiesSequence");
-        getAndCheckElementFromDataset(item, ROIPhysicalPropertyValue, "1", "1", "ROIPhysicalPropertiesSequence");
+        getAndCheckElementFromDataset(item, ROIPhysicalProperty, "1", "1C", "ROIPhysicalPropertiesSequence");
+        getAndCheckElementFromDataset(item, ROIPhysicalPropertyValue, "1", "1C", "ROIPhysicalPropertiesSequence");
         result = EC_Normal;
     }
     return result;
@@ -103,9 +97,8 @@ OFCondition DRTROIPhysicalPropertiesSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmCodeString(ROIPhysicalProperty), "1", "1", "ROIPhysicalPropertiesSequence");
-        if (result.good()) result = ROIElementalCompositionSequence.write(item, "1-n", "1C", "ROIPhysicalPropertiesSequence");
-        addElementToDataset(result, item, new DcmDecimalString(ROIPhysicalPropertyValue), "1", "1", "ROIPhysicalPropertiesSequence");
+        addElementToDataset(result, item, new DcmCodeString(ROIPhysicalProperty), "1", "1C", "ROIPhysicalPropertiesSequence");
+        addElementToDataset(result, item, new DcmDecimalString(ROIPhysicalPropertyValue), "1", "1C", "ROIPhysicalPropertiesSequence");
     }
     return result;
 }
@@ -267,7 +260,7 @@ OFBool DRTROIPhysicalPropertiesSequence::isValid() const
 }
 
 
-size_t DRTROIPhysicalPropertiesSequence::getNumberOfItems() const
+unsigned long DRTROIPhysicalPropertiesSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -297,12 +290,12 @@ OFCondition DRTROIPhysicalPropertiesSequence::gotoNextItem()
 }
 
 
-OFCondition DRTROIPhysicalPropertiesSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTROIPhysicalPropertiesSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -317,12 +310,12 @@ OFCondition DRTROIPhysicalPropertiesSequence::gotoItem(const size_t num, OFListI
 }
 
 
-OFCondition DRTROIPhysicalPropertiesSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTROIPhysicalPropertiesSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -337,7 +330,7 @@ OFCondition DRTROIPhysicalPropertiesSequence::gotoItem(const size_t num, OFListC
 }
 
 
-OFCondition DRTROIPhysicalPropertiesSequence::gotoItem(const size_t num)
+OFCondition DRTROIPhysicalPropertiesSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -373,7 +366,7 @@ const DRTROIPhysicalPropertiesSequence::Item &DRTROIPhysicalPropertiesSequence::
 }
 
 
-OFCondition DRTROIPhysicalPropertiesSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTROIPhysicalPropertiesSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -383,7 +376,7 @@ OFCondition DRTROIPhysicalPropertiesSequence::getItem(const size_t num, Item *&i
 }
 
 
-DRTROIPhysicalPropertiesSequence::Item &DRTROIPhysicalPropertiesSequence::getItem(const size_t num)
+DRTROIPhysicalPropertiesSequence::Item &DRTROIPhysicalPropertiesSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -393,7 +386,7 @@ DRTROIPhysicalPropertiesSequence::Item &DRTROIPhysicalPropertiesSequence::getIte
 }
 
 
-const DRTROIPhysicalPropertiesSequence::Item &DRTROIPhysicalPropertiesSequence::getItem(const size_t num) const
+const DRTROIPhysicalPropertiesSequence::Item &DRTROIPhysicalPropertiesSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -403,13 +396,13 @@ const DRTROIPhysicalPropertiesSequence::Item &DRTROIPhysicalPropertiesSequence::
 }
 
 
-DRTROIPhysicalPropertiesSequence::Item &DRTROIPhysicalPropertiesSequence::operator[](const size_t num)
+DRTROIPhysicalPropertiesSequence::Item &DRTROIPhysicalPropertiesSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTROIPhysicalPropertiesSequence::Item &DRTROIPhysicalPropertiesSequence::operator[](const size_t num) const
+const DRTROIPhysicalPropertiesSequence::Item &DRTROIPhysicalPropertiesSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -432,7 +425,7 @@ OFCondition DRTROIPhysicalPropertiesSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTROIPhysicalPropertiesSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTROIPhysicalPropertiesSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -455,7 +448,7 @@ OFCondition DRTROIPhysicalPropertiesSequence::insertItem(const size_t pos, Item 
 }
 
 
-OFCondition DRTROIPhysicalPropertiesSequence::removeItem(const size_t pos)
+OFCondition DRTROIPhysicalPropertiesSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

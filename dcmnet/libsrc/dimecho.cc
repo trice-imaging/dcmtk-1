@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were partly developed by
@@ -82,19 +82,24 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
+
 #include "dcmtk/dcmnet/diutil.h"
-#include "dcmtk/dcmnet/dimse.h"     /* always include the module header */
+#include "dcmtk/dcmnet/dimse.h"		/* always include the module header */
 #include "dcmtk/dcmnet/cond.h"
 
 
 OFCondition
 DIMSE_echoUser(
-    /* in */
-    T_ASC_Association *assoc, DIC_US msgId,
-    /* blocking info for response */
-    T_DIMSE_BlockingMode blockMode, int timeout,
-    /* out */
-    DIC_US *status, DcmDataset **statusDetail)
+	/* in */
+	T_ASC_Association *assoc, DIC_US msgId,
+	/* blocking info for response */
+	T_DIMSE_BlockingMode blockMode, int timeout,
+	/* out */
+	DIC_US *status, DcmDataset **statusDetail)
 {
     T_DIMSE_Message req, rsp;
     T_ASC_PresentationContextID presID;
@@ -112,13 +117,13 @@ DIMSE_echoUser(
         return makeDcmnetCondition(DIMSEC_NOVALIDPRESENTATIONCONTEXTID, OF_error, buf);
     }
 
-    memset((char*)&req, 0, sizeof(req));
-    memset((char*)&rsp, 0, sizeof(rsp));
+    bzero((char*)&req, sizeof(req));
+    bzero((char*)&rsp, sizeof(rsp));
 
     req.CommandField = DIMSE_C_ECHO_RQ;
     req.msg.CEchoRQ.MessageID = msgId;
-    OFStandard::strlcpy(req.msg.CEchoRQ.AffectedSOPClassUID,
-       sopClass, sizeof(req.msg.CEchoRQ.AffectedSOPClassUID));
+    strcpy(req.msg.CEchoRQ.AffectedSOPClassUID,
+	   sopClass);
     req.msg.CEchoRQ.DataSetType = DIMSE_DATASET_NULL;
 
     OFCondition cond = DIMSE_sendMessageUsingMemoryData(assoc, presID, &req, NULL, NULL, NULL, NULL);
@@ -149,17 +154,17 @@ DIMSE_echoUser(
 
 OFCondition
 DIMSE_sendEchoResponse(T_ASC_Association * assoc,
-    T_ASC_PresentationContextID presID,
-    const T_DIMSE_C_EchoRQ *req, DIC_US status, DcmDataset *statusDetail)
+	T_ASC_PresentationContextID presID,
+	T_DIMSE_C_EchoRQ *req, DIC_US status, DcmDataset *statusDetail)
 {
     T_DIMSE_Message rsp;
 
-    memset((char*)&rsp, 0, sizeof(rsp));
+    bzero((char*)&rsp, sizeof(rsp));
 
     rsp.CommandField = DIMSE_C_ECHO_RSP;
     rsp.msg.CEchoRSP.MessageIDBeingRespondedTo = req->MessageID;
-    OFStandard::strlcpy(rsp.msg.CEchoRSP.AffectedSOPClassUID,
-        req->AffectedSOPClassUID, sizeof(rsp.msg.CEchoRSP.AffectedSOPClassUID));
+    strcpy(rsp.msg.CEchoRSP.AffectedSOPClassUID,
+	req->AffectedSOPClassUID);
     rsp.msg.CEchoRSP.opts = O_ECHO_AFFECTEDSOPCLASSUID;
     rsp.msg.CEchoRSP.DataSetType = DIMSE_DATASET_NULL;
     rsp.msg.CEchoRSP.DimseStatus = status;

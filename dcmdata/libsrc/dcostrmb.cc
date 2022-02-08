@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2017, OFFIS e.V.
+ *  Copyright (C) 2002-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -32,7 +32,7 @@ DcmBufferConsumer::DcmBufferConsumer(void *buf, offile_off_t bufLen)
 , filled_(0)
 , status_(EC_Normal)
 {
-  if (buffer_ == NULL) status_ = EC_IllegalCall;
+  if ((buffer_ == NULL) || (bufSize_ == 0)) status_ = EC_IllegalCall;
 }
 
 DcmBufferConsumer::~DcmBufferConsumer()
@@ -84,11 +84,6 @@ void DcmBufferConsumer::flushBuffer(void *& buffer, offile_off_t& length)
   filled_ = 0;
 }
 
-offile_off_t DcmBufferConsumer::filled()
-{
-  return filled_;
-}
-
 /* ======================================================================= */
 
 DcmOutputBufferStream::DcmOutputBufferStream(void *buf, offile_off_t bufLen)
@@ -110,9 +105,4 @@ DcmOutputBufferStream::~DcmOutputBufferStream()
 void DcmOutputBufferStream::flushBuffer(void *& buffer, offile_off_t& length)
 {
   consumer_.flushBuffer(buffer, length);
-}
-
-offile_off_t DcmOutputBufferStream::filled()
-{
-  return consumer_.filled();
 }

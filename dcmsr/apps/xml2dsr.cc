@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2003-2019, OFFIS e.V.
+ *  Copyright (C) 2003-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,25 +11,24 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
- *  Purpose:
- *    convert the contents of an XML document to a DICOM structured reporting file
+ *  Purpose: Convert the contents of an XML document to a DICOM structured
+ *            reporting file
  *
  */
 
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#include "dcmtk/dcmsr/dsrdoc.h"       /* for main interface class DSRDocument */
-
-#include "dcmtk/dcmdata/dctk.h"       /* for typical set of "dcmdata" headers */
-#include "dcmtk/dcmdata/dcostrmz.h"   /* for dcmZlibCompressionLevel */
-
+#include "dcmtk/dcmsr/dsrdoc.h"
+#include "dcmtk/dcmdata/cmdlnarg.h"
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofconapp.h"
+#include "dcmtk/dcmdata/dcuid.h"      /* for dcmtk version name */
+#include "dcmtk/dcmdata/dcostrmz.h"   /* for dcmZlibCompressionLevel */
 
 #ifdef WITH_ZLIB
 #include <zlib.h>                     /* for zlibVersion() */
@@ -48,25 +47,6 @@ static char rcsid[] = "$dcmtk: " OFFIS_CONSOLE_APPLICATION " v"
 
 
 #ifdef WITH_LIBXML
-
-#ifdef __ibmxl__
-// IBM xlC defines __GNUC__ but does not support the GNUC extension
-// __attribute__ ((format (printf, 2, 3))).
-// This avoids a compiler warning in <libxml/parser.h>.
-#define LIBXML_ATTR_FORMAT(fmt,args)
-#endif
-
-// The libxml library also uses unicode. So we have to reuse some
-// workarounds for the ICU library here as well.
-// The type char16_t is only supported since C++11.
-#ifndef HAVE_CHAR16_T
-#define UCHAR_TYPE uint16_t
-#endif
-
-//If U_NOEXCEPT is not defined, ICU falls back to NOEXCEPT.
-#ifndef HAVE_CXX11
-#define U_NOEXCEPT
-#endif
 
 #include <libxml/parser.h>
 
@@ -194,22 +174,13 @@ int main(int argc, char *argv[])
             opt_readFlags |= DSRTypes::XF_useDcmsrNamespace;
 
         if (cmd.findOption("--generate-new-uids"))
-        {
             opt_generateUIDs = OFTrue;
-            opt_readFlags |= DSRTypes::XF_acceptEmptyStudySeriesInstanceUID;
-        }
 
         cmd.beginOptionBlock();
         if (cmd.findOption("--dont-overwrite-uids"))
-        {
-            app.checkDependence("--dont-overwrite-uids", "--generate-new-uids", opt_generateUIDs);
             opt_overwriteUIDs = OFFalse;
-        }
         if (cmd.findOption("--overwrite-uids"))
-        {
-            app.checkDependence("--overwrite-uids", "--generate-new-uids", opt_generateUIDs);
             opt_overwriteUIDs = OFTrue;
-        }
         cmd.endOptionBlock();
 
         /* output options */
@@ -235,9 +206,19 @@ int main(int argc, char *argv[])
 
         cmd.beginOptionBlock();
         if (cmd.findOption("--enable-new-vr"))
-            dcmEnableGenerationOfNewVRs();
+        {
+            dcmEnableUnknownVRGeneration.set(OFTrue);
+            dcmEnableUnlimitedTextVRGeneration.set(OFTrue);
+            dcmEnableOtherFloatStringVRGeneration.set(OFTrue);
+            dcmEnableOtherDoubleStringVRGeneration.set(OFTrue);
+        }
         if (cmd.findOption("--disable-new-vr"))
-            dcmDisableGenerationOfNewVRs();
+        {
+            dcmEnableUnknownVRGeneration.set(OFFalse);
+            dcmEnableUnlimitedTextVRGeneration.set(OFFalse);
+            dcmEnableOtherFloatStringVRGeneration.set(OFFalse);
+            dcmEnableOtherDoubleStringVRGeneration.set(OFFalse);
+        }
         cmd.endOptionBlock();
 
         cmd.beginOptionBlock();

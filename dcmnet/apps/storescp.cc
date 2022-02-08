@@ -1,6 +1,46 @@
+#define TRICE 1  //**Set of Aud's changes are needed
+#ifdef TRICE
+#include "box.h"
+void setLocalConnection();
+static const char *opt_dataDir = NULL;                
+#ifdef __osx__
+//**See if new executable;  if so, exit
+void* new_proc(void* p)
+{
+   const char* exe = "/Applications/Tricefy_uplink/bin/storescp";
+   struct stat sbuff;
+   time_t base = 0;
+   if (stat(exe, &sbuff) == 0)
+       base = sbuff.st_mtime;
+   while (true)
+   {   sleep(60 * 20);  //**take a look once every 20 minutes
+       time_t mod = 0;
+       if (stat(exe, &sbuff) == 0)
+           mod = sbuff.st_mtime;
+       if (mod > base)
+           exit(1);  //*exe changed -
+   }
+}
+#else // shutdown command
+#ifndef __windows__
+void* new_proc(void* p)
+{  sleep(60);
+   while (true)
+   {    sleep(60);
+        if (isnull(opt_dataDir))  continue;
+	char deleteFile[strlen(opt_dataDir)+64];   snprintf(deleteFile, sizeof(deleteFile), "%s/SHUTDOWN.txt", opt_dataDir);
+        if (fileExists(deleteFile))
+        {   rmFile(deleteFile);
+            exit(1);
+        }
+   }
+}
+#endif
+#endif
+#endif
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -19,7 +59,17 @@
  *
  */
 
+#ifdef __windows__
+#undef sleep
+#endif
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTRING
+#define INCLUDE_CSTDARG
+#define INCLUDE_CCTYPE
+#define INCLUDE_CSIGNAL
+#include "dcmtk/ofstd/ofstdinc.h"
 
 BEGIN_EXTERN_C
 #ifdef HAVE_SYS_STAT_H
@@ -34,7 +84,9 @@ BEGIN_EXTERN_C
 #endif
 END_EXTERN_C
 
-#include <cerrno>
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>
+#endif
 
 #ifdef HAVE_WINDOWS_H
 #include <direct.h>      /* for _mkdir() */
@@ -42,12 +94,10 @@ END_EXTERN_C
 
 #include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/ofstd/ofconapp.h"
-#include "dcmtk/ofstd/ofbmanip.h"       /* for OFBitmanipTemplate */
 #include "dcmtk/ofstd/ofdatime.h"
 #include "dcmtk/dcmnet/dicom.h"         /* for DICOM_APPLICATION_ACCEPTOR */
 #include "dcmtk/dcmnet/dimse.h"
 #include "dcmtk/dcmnet/diutil.h"
-#include "dcmtk/dcmnet/dcmtrans.h"      /* for dcmSocketSend/ReceiveTimeout */
 #include "dcmtk/dcmnet/dcasccfg.h"      /* for class DcmAssociationConfiguration */
 #include "dcmtk/dcmnet/dcasccff.h"      /* for class DcmAssociationConfigurationFile */
 #include "dcmtk/dcmdata/dcfilefo.h"
@@ -58,10 +108,18 @@ END_EXTERN_C
 #include "dcmtk/dcmdata/dcuid.h"        /* for dcmtk version name */
 #include "dcmtk/dcmdata/dcdeftag.h"
 #include "dcmtk/dcmdata/dcostrmz.h"     /* for dcmZlibCompressionLevel */
-#include "dcmtk/dcmtls/tlsopt.h"      /* for DcmTLSOptions */
+
+#ifdef WITH_OPENSSL
+#include "dcmtk/dcmtls/tlstrans.h"
+#include "dcmtk/dcmtls/tlslayer.h"
+#endif
 
 #ifdef WITH_ZLIB
 #include <zlib.h>        /* for zlibVersion() */
+#endif
+
+#ifdef TRICE
+#include "trice_dicom.cc"
 #endif
 
 // we assume that the inetd super server is available on all non-Windows systems
@@ -69,6 +127,14 @@ END_EXTERN_C
 #define INETD_AVAILABLE
 #endif
 
+// run as a windows service
+#ifdef TRICE
+char *SERVICE_NAME = (char*)"Trice_storescp";
+extern char client_ip_address[20];
+#ifdef __windows__
+#include "service.cpp"  
+#endif
+#endif
 
 #ifdef PRIVATE_STORESCP_DECLARATIONS
 PRIVATE_STORESCP_DECLARATIONS
@@ -89,9 +155,30 @@ static char rcsid[] = "$dcmtk: " OFFIS_CONSOLE_APPLICATION " v" OFFIS_DCMTK_VERS
 #define CALLING_PRESENTATION_ADDRESS_PLACEHOLDER "#r"
 
 static OFCondition processCommands(T_ASC_Association *assoc);
-static OFCondition acceptAssociation(T_ASC_Network *net, DcmAssociationConfiguration& asccfg, OFBool secureConnection);
+static OFCondition acceptAssociation(T_ASC_Network *net, DcmAssociationConfiguration& asccfg);
 static OFCondition echoSCP(T_ASC_Association * assoc, T_DIMSE_Message * msg, T_ASC_PresentationContextID presID);
 static OFCondition storeSCP(T_ASC_Association * assoc, T_DIMSE_Message * msg, T_ASC_PresentationContextID presID);
+static OFCondition findSCP(T_ASC_Association * assoc, T_DIMSE_C_FindRQ * request, T_ASC_PresentationContextID presID);
+static OFCondition moveSCP(T_ASC_Association * assoc, T_DIMSE_C_MoveRQ * request, T_ASC_PresentationContextID presID);
+static void FindCallback( void *callbackData, OFBool cancelled, T_DIMSE_C_FindRQ* request , DcmDataset *requestIdentifiers, int responseCount, T_DIMSE_C_FindRSP *response, DcmDataset **responseIdentifiers, DcmDataset **statusDetail ); 
+static void MoveCallback(void *callbackData, OFBool cancelled, T_DIMSE_C_MoveRQ *request, DcmDataset *requestIdentifiers, int responseCount, T_DIMSE_C_MoveRSP *response, DcmDataset **statusDetail, DcmDataset **responseIdentifiers);
+
+typedef struct FindCallbackData
+{   char* m_json;
+    Memory m_mem;
+    int m_arraySize;
+} FindCallbackData;
+typedef struct MoveCallbackData
+{   char* m_json;
+    Memory m_mem;
+    int m_arraySize;
+    char* m_aeTitle;
+    int m_messageId;
+} MoveCallbackData;
+
+static void cancelMove(DIC_US msgId, bool deleteFlg=true);
+static void addMove(DIC_US msgId, char* aeTitle);
+
 static void executeOnReception();
 static void executeEndOfStudyEvents();
 static void executeOnEndOfStudy();
@@ -124,9 +211,17 @@ OFBool             opt_refuseAssociation = OFFalse;
 OFBool             opt_rejectWithoutImplementationUID = OFFalse;
 OFCmdUnsignedInt   opt_sleepAfter = 0;
 OFCmdUnsignedInt   opt_sleepDuring = 0;
+#ifdef TRICE
+OFCmdUnsignedInt   opt_maxPDU = ASC_MAXIMUMPDUSIZE;
+#else
 OFCmdUnsignedInt   opt_maxPDU = ASC_DEFAULTMAXPDU;
+#endif
 OFBool             opt_useMetaheader = OFTrue;
+#ifdef TRICE
+OFBool             opt_acceptAllXfers = OFTrue;
+#else
 OFBool             opt_acceptAllXfers = OFFalse;
+#endif
 E_TransferSyntax   opt_networkTransferSyntax = EXS_Unknown;
 E_TransferSyntax   opt_writeTransferSyntax = EXS_Unknown;
 E_GrpLenEncoding   opt_groupLength = EGL_recalcGL;
@@ -135,17 +230,29 @@ E_PaddingEncoding  opt_paddingType = EPD_withoutPadding;
 OFCmdUnsignedInt   opt_filepad = 0;
 OFCmdUnsignedInt   opt_itempad = 0;
 OFCmdUnsignedInt   opt_compressionLevel = 0;
+#ifdef TRICE
+OFBool             opt_bitPreserving = OFTrue;
+#else
 OFBool             opt_bitPreserving = OFFalse;
+#endif
 OFBool             opt_ignore = OFFalse;
 OFBool             opt_abortDuringStore = OFFalse;
 OFBool             opt_abortAfterStore = OFFalse;
-OFBool             opt_promiscuous = OFFalse;
+#ifdef TRICE
+OFBool             opt_correctUIDPadding = OFTrue;
+#else
 OFBool             opt_correctUIDPadding = OFFalse;
+#endif
+OFBool             opt_promiscuous = OFFalse;
 OFBool             opt_inetd_mode = OFFalse;
 OFString           callingAETitle;                    // calling application entity title will be stored here
+OFString           lastCallingAETitle;
 OFString           calledAETitle;                     // called application entity title will be stored here
+OFString           lastCalledAETitle;
 OFString           callingPresentationAddress;        // remote hostname or IP address will be stored here
+OFString           lastCallingPresentationAddress;
 const char *       opt_respondingAETitle = APPLICATIONTITLE;
+static OFBool      opt_secureConnection = OFFalse;    // default: no secure connection
 static OFString    opt_outputDirectory = ".";         // default: output directory equals "."
 E_SortStudyMode    opt_sortStudyMode = ESM_None;      // default: no sorting
 static const char *opt_sortStudyDirPrefix = NULL;     // default: no directory prefix
@@ -154,6 +261,12 @@ OFString           subdirectoryPathAndName;
 OFList<OFString>   outputFileNameArray;
 static const char *opt_execOnReception = NULL;        // default: don't execute anything on reception
 static const char *opt_execOnEndOfStudy = NULL;       // default: don't execute anything on end of study
+#ifdef TRICE
+//static const char *opt_dataDir = NULL;                
+static const char *opt_exportDir = NULL;                
+static OFBool      opt_exportOnly = true;
+static OFBool      opt_quiet = OFFalse;
+#endif
 
 OFString           lastStudySubdirectoryPathAndName;
 static OFBool      opt_renameOnEndOfStudy = OFFalse;  // default: don't rename any files on end of study
@@ -164,15 +277,33 @@ static const char *opt_profileName = NULL;
 T_DIMSE_BlockingMode opt_blockMode = DIMSE_BLOCKING;
 int                opt_dimse_timeout = 0;
 int                opt_acse_timeout = 30;
-OFCmdSignedInt     opt_socket_timeout = 60;
 
 #if defined(HAVE_FORK) || defined(_WIN32)
+#ifdef TRICE
+OFBool             opt_forkMode = OFTrue;  
+#else
 OFBool             opt_forkMode = OFFalse;
+#endif
 #endif
 
 OFBool             opt_forkedChild = OFFalse;
 OFBool             opt_execSync = OFFalse;            // default: execute in background
 
+#ifdef WITH_OPENSSL
+static int         opt_keyFileFormat = SSL_FILETYPE_PEM;
+static const char *opt_privateKeyFile = NULL;
+static const char *opt_certificateFile = NULL;
+static const char *opt_passwd = NULL;
+#if OPENSSL_VERSION_NUMBER >= 0x0090700fL
+static OFString    opt_ciphersuites(TLS1_TXT_RSA_WITH_AES_128_SHA ":" SSL3_TXT_RSA_DES_192_CBC3_SHA);
+#else
+static OFString    opt_ciphersuites(SSL3_TXT_RSA_DES_192_CBC3_SHA);
+#endif
+static const char *opt_readSeedFile = NULL;
+static const char *opt_writeSeedFile = NULL;
+static DcmCertificateVerification opt_certVerification = DCV_requireCertificate;
+static const char *opt_dhparam = NULL;
+#endif
 
 #ifdef HAVE_WAITPID
 /** signal handler for SIGCHLD signals that immediately cleans up
@@ -191,13 +322,6 @@ extern "C" void sigChildHandler(int)
 #endif
 
 
-/* helper macro for converting stream output to a string */
-#define CONVERT_TO_STRING(output, string) \
-    optStream.str(""); \
-    optStream.clear(); \
-    optStream << output << OFStringStream_ends; \
-    OFSTRINGSTREAM_GETOFSTRING(optStream, string)
-
 #define SHORTCOL 4
 #define LONGCOL 21
 
@@ -205,16 +329,42 @@ int main(int argc, char *argv[])
 {
   T_ASC_Network *net;
   DcmAssociationConfiguration asccfg;
-  DcmTLSOptions tlsOptions(NET_ACCEPTOR);
 
-  OFStandard::initializeNetwork();
-#ifdef WITH_OPENSSL
-  DcmTLSTransportLayer::initializeOpenSSL();
+#ifdef HAVE_GUSI_H
+  /* needed for Macintosh */
+  GUSISetup(GUSIwithSIOUXSockets);
+  GUSISetup(GUSIwithInternetSockets);
 #endif
 
-  OFString temp_str;
-  OFOStringStream optStream;
+#ifdef HAVE_WINSOCK_H
+  WSAData winSockData;
+  /* we need at least version 1.1 */
+  WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
+  WSAStartup(winSockVersionNeeded, &winSockData);
+#endif
 
+  //**Ability to drop cores (unix only)
+#ifdef TRICE
+#if ! defined(__android__) && ! defined(__windows__) && ! defined(__osx__)
+  chdir("/"); // change to the root directory
+      //**Let the daemon drop cores
+  prctl(PR_SET_DUMPABLE, 1);
+  struct rlimit rlim;
+  rlim.rlim_cur = 1000000000L; rlim.rlim_max = 1000000000L;
+  setrlimit(RLIMIT_CORE, &rlim);
+#endif
+   //**start background thread to watch for new executable (osx/unix only).  If so, exit so automatic restart will occur
+#ifndef __windows__
+  pthread_t appThread;
+  pthread_attr_t app_attr;
+  pthread_attr_init(&app_attr);
+  pthread_attr_setstacksize(&app_attr, 28*1024);
+  pthread_create( &appThread, &app_attr, new_proc, (void*)NULL);
+#endif
+#endif
+
+  char tempstr[20];
+  OFString temp_str;
   OFConsoleApplication app(OFFIS_CONSOLE_APPLICATION, "DICOM storage (C-STORE) SCP", rcsid);
   OFCommandLine cmd;
 
@@ -230,11 +380,22 @@ int main(int argc, char *argv[])
 
 #if defined(HAVE_FORK) || defined(_WIN32)
   cmd.addGroup("multi-process options:", LONGCOL, SHORTCOL + 2);
+#ifndef TRICE
     cmd.addOption("--single-process",                      "single process mode (default)");
+#endif
     cmd.addOption("--fork",                                "fork child process for each association");
 #ifdef _WIN32
     cmd.addOption("--forked-child",                        "process is forked child, internal use only", OFCommandLine::AF_Internal);
 #endif
+#endif
+#ifdef TRICE
+  cmd.addGroup("trice options:");
+    cmd.addOption("--data-dir",                 "-dd",  1, "[p]ath: string", "path to data directory for trice config data");
+    cmd.addOption("--qquiet",                   "-qq",      "silent version");
+    cmd.addOption("--local",                    "-lo",     "local-only connection");
+    cmd.addOption("--dict-path",                "-dp",  1, "[p]ath: string", "complete path (including file name) for dicom.dic");
+    cmd.addOption("--export-dir",               "-ed",  1, "[p]ath: string", "complete path of export directory");
+    cmd.addOption("--export-dir-only",          "-edo", 1, "[p]ath: string", "complete path of export directory; remove from output directory");
 #endif
 
   cmd.addGroup("network options:");
@@ -256,11 +417,6 @@ int main(int argc, char *argv[])
       cmd.addOption("--prefer-mpeg2-high",      "+xh",     "prefer MPEG2 Main Profile @ High Level TS");
       cmd.addOption("--prefer-mpeg4",           "+xn",     "prefer MPEG4 AVC/H.264 HP / Level 4.1 TS");
       cmd.addOption("--prefer-mpeg4-bd",        "+xl",     "prefer MPEG4 AVC/H.264 BD-compatible TS");
-      cmd.addOption("--prefer-mpeg4-2-2d",      "+x2",     "prefer MPEG4 AVC/H.264 HP / Level 4.2 TS (2D)");
-      cmd.addOption("--prefer-mpeg4-2-3d",      "+x3",     "prefer MPEG4 AVC/H.264 HP / Level 4.2 TS (3D)");
-      cmd.addOption("--prefer-mpeg4-2-st",      "+xo",     "prefer MPEG4 AVC/H.264 Stereo HP / Level 4.2 TS");
-      cmd.addOption("--prefer-hevc",            "+x4",     "prefer HEVC/H.265 Main Profile / Level 5.1 TS");
-      cmd.addOption("--prefer-hevc10",          "+x5",     "prefer HEVC/H.265 Main 10 Profile / Level 5.1 TS");
       cmd.addOption("--prefer-rle",             "+xr",     "prefer RLE lossless TS");
 #ifdef WITH_ZLIB
       cmd.addOption("--prefer-deflated",        "+xd",     "prefer deflated expl. VR little endian TS");
@@ -279,16 +435,26 @@ int main(int argc, char *argv[])
       // this option is only offered on Posix platforms
       cmd.addOption("--inetd",                  "-id",     "run from inetd super server (not with --fork)");
 #endif
-      CONVERT_TO_STRING("[s]econds: integer (default: " << opt_socket_timeout << ")", optString1);
-      cmd.addOption("--socket-timeout",         "-ts",  1, optString1.c_str(), "timeout for network socket (0 for none)");
-      CONVERT_TO_STRING("[s]econds: integer (default: " << opt_acse_timeout << ")", optString2);
-      cmd.addOption("--acse-timeout",           "-ta",  1, optString2.c_str(), "timeout for ACSE messages");
-      cmd.addOption("--dimse-timeout",          "-td",  1, "[s]econds: integer (default: unlimited)", "timeout for DIMSE messages");
-      cmd.addOption("--aetitle",                "-aet", 1, "[a]etitle: string", "set my AE title (default: " APPLICATIONTITLE ")");
-      CONVERT_TO_STRING("[n]umber of bytes: integer (" << ASC_MINIMUMPDUSIZE << ".." << ASC_MAXIMUMPDUSIZE << ")", optString3);
-      CONVERT_TO_STRING("set max receive pdu to n bytes (default: " << opt_maxPDU << ")", optString4);
-      cmd.addOption("--max-pdu",                "-pdu", 1, optString3.c_str(), optString4.c_str());
 
+      cmd.addOption("--acse-timeout",           "-ta",  1, "[s]econds: integer (default: 30)", "timeout for ACSE messages");
+      cmd.addOption("--dimse-timeout",          "-td",  1, "[s]econds: integer (default: unlimited)", "timeout for DIMSE messages");
+
+      OFString opt1 = "set my AE title (default: ";
+      opt1 += APPLICATIONTITLE;
+      opt1 += ")";
+      cmd.addOption("--aetitle",                "-aet", 1, "[a]etitle: string", opt1.c_str());
+      OFString opt3 = "set max receive pdu to n bytes (def.: ";
+      snprintf(tempstr, sizeof(tempstr), "%ld", OFstatic_cast(long, ASC_DEFAULTMAXPDU));
+      opt3 += tempstr;
+      opt3 += ")";
+      OFString opt4 = "[n]umber of bytes: integer (";
+      snprintf(tempstr, sizeof(tempstr), "%ld", OFstatic_cast(long, ASC_MINIMUMPDUSIZE));
+      opt4 += tempstr;
+      opt4 += "..";
+      snprintf(tempstr, sizeof(tempstr), "%ld", OFstatic_cast(long, ASC_MAXIMUMPDUSIZE));
+      opt4 += tempstr;
+      opt4 += ")";
+      cmd.addOption("--max-pdu",                "-pdu", 1, opt4.c_str(), opt3.c_str());
       cmd.addOption("--disable-host-lookup",    "-dhl",    "disable hostname lookup");
       cmd.addOption("--refuse",                            "refuse association");
       cmd.addOption("--reject",                            "reject association if no implement. class UID");
@@ -302,8 +468,41 @@ int main(int argc, char *argv[])
       cmd.addOption("--promiscuous",            "-pm",     "promiscuous mode, accept unknown SOP classes\n(not with --config-file)");
       cmd.addOption("--uid-padding",            "-up",     "silently correct space-padded UIDs");
 
-    // add TLS specific command line options if (and only if) we are compiling with OpenSSL
-    tlsOptions.addTLSCommandlineOptions(cmd);
+#ifdef WITH_OPENSSL
+  cmd.addGroup("transport layer security (TLS) options:");
+    cmd.addSubGroup("transport protocol stack:");
+      cmd.addOption("--disable-tls",            "-tls",    "use normal TCP/IP connection (default)");
+      cmd.addOption("--enable-tls",             "+tls", 2, "[p]rivate key file, [c]ertificate file: string",
+                                                           "use authenticated secure TLS connection");
+    cmd.addSubGroup("private key password (only with --enable-tls):");
+      cmd.addOption("--std-passwd",             "+ps",     "prompt user to type password on stdin (default)");
+      cmd.addOption("--use-passwd",             "+pw",  1, "[p]assword: string",
+                                                           "use specified password");
+      cmd.addOption("--null-passwd",            "-pw",     "use empty string as password");
+    cmd.addSubGroup("key and certificate file format:");
+      cmd.addOption("--pem-keys",               "-pem",    "read keys and certificates as PEM file (def.)");
+      cmd.addOption("--der-keys",               "-der",    "read keys and certificates as DER file");
+    cmd.addSubGroup("certification authority:");
+      cmd.addOption("--add-cert-file",          "+cf",  1, "[c]ertificate filename: string",
+                                                           "add certificate file to list of certificates", OFCommandLine::AF_NoWarning);
+      cmd.addOption("--add-cert-dir",           "+cd",  1, "[c]ertificate directory: string",
+                                                           "add certificates in d to list of certificates", OFCommandLine::AF_NoWarning);
+    cmd.addSubGroup("ciphersuite:");
+      cmd.addOption("--cipher",                 "+cs",  1, "[c]iphersuite name: string",
+                                                           "add ciphersuite to list of negotiated suites");
+      cmd.addOption("--dhparam",                "+dp",  1, "[f]ilename: string",
+                                                           "read DH parameters for DH/DSS ciphersuites");
+    cmd.addSubGroup("pseudo random generator:");
+      cmd.addOption("--seed",                   "+rs",  1, "[f]ilename: string",
+                                                           "seed random generator with contents of f");
+      cmd.addOption("--write-seed",             "+ws",     "write back modified seed (only with --seed)");
+      cmd.addOption("--write-seed-file",        "+wf",  1, "[f]ilename: string (only with --seed)",
+                                                           "write modified seed to file f");
+    cmd.addSubGroup("peer authentication");
+      cmd.addOption("--require-peer-cert",      "-rc",     "verify peer certificate, fail if absent (def.)");
+      cmd.addOption("--verify-peer-cert",       "-vc",     "verify peer certificate if present");
+      cmd.addOption("--ignore-peer-cert",       "-ic",     "don't verify peer certificate");
+#endif
 
   cmd.addGroup("output options:");
     cmd.addSubGroup("general:");
@@ -336,9 +535,6 @@ int main(int argc, char *argv[])
       cmd.addOption("--padding-off",            "-p",      "no padding (default)");
       cmd.addOption("--padding-create",         "+p",   2, "[f]ile-pad [i]tem-pad: integer",
                                                            "align file on multiple of f bytes and items\non multiple of i bytes");
-    cmd.addSubGroup("handling of defined length UN elements:");
-      cmd.addOption("--retain-un",              "-uc",     "retain elements as UN (default)");
-      cmd.addOption("--convert-un",             "+uc",     "convert to real VR if known");
 #ifdef WITH_ZLIB
     cmd.addSubGroup("deflate compression level (only with --write-xfer-deflated/same):");
       cmd.addOption("--compression-level",      "+cl",  1, "[l]evel: integer (default: 6)",
@@ -350,6 +546,7 @@ int main(int argc, char *argv[])
       cmd.addOption("--sort-on-study-uid",      "-su",  1, "[p]refix: string",
                                                            "sort studies using prefix p and the Study\nInstance UID");
       cmd.addOption("--sort-on-patientname",    "-sp",     "sort studies using the Patient's Name and\na timestamp");
+
     cmd.addSubGroup("filename generation:");
       cmd.addOption("--default-filenames",      "-uf",     "generate filename from instance UID (default)");
       cmd.addOption("--unique-filenames",       "+uf",     "generate unique filenames");
@@ -390,19 +587,13 @@ int main(int argc, char *argv[])
 #ifdef WITH_ZLIB
         COUT << "- ZLIB, Version " << zlibVersion() << OFendl;
 #endif
-        // print OpenSSL version if (and only if) we are compiling with OpenSSL
-        tlsOptions.printLibraryVersion();
+#ifdef WITH_OPENSSL
+        COUT << "- " << OPENSSL_VERSION_TEXT << OFendl;
+#endif
 #ifdef WITH_TCPWRAPPER
         COUT << "- LIBWRAP" << OFendl;
 #endif
         return 0;
-      }
-
-      // check if the command line contains the --list-ciphers option
-      if (tlsOptions.listOfCiphersRequested(cmd))
-      {
-          tlsOptions.printSupportedCiphersuites(app, COUT);
-          return 0;
       }
     }
 
@@ -494,11 +685,6 @@ int main(int argc, char *argv[])
     if (cmd.findOption("--prefer-mpeg2-high")) opt_networkTransferSyntax = EXS_MPEG2MainProfileAtHighLevel;
     if (cmd.findOption("--prefer-mpeg4")) opt_networkTransferSyntax = EXS_MPEG4HighProfileLevel4_1;
     if (cmd.findOption("--prefer-mpeg4-bd")) opt_networkTransferSyntax = EXS_MPEG4BDcompatibleHighProfileLevel4_1;
-    if (cmd.findOption("--prefer-mpeg4-2-2d")) opt_networkTransferSyntax = EXS_MPEG4HighProfileLevel4_2_For2DVideo;
-    if (cmd.findOption("--prefer-mpeg4-2-3d")) opt_networkTransferSyntax = EXS_MPEG4HighProfileLevel4_2_For3DVideo;
-    if (cmd.findOption("--prefer-mpeg4-2-st")) opt_networkTransferSyntax = EXS_MPEG4StereoHighProfileLevel4_2;
-    if (cmd.findOption("--prefer-hevc")) opt_networkTransferSyntax = EXS_HEVCMainProfileLevel5_1;
-    if (cmd.findOption("--prefer-hevc10")) opt_networkTransferSyntax = EXS_HEVCMain10ProfileLevel5_1;
     if (cmd.findOption("--prefer-rle")) opt_networkTransferSyntax = EXS_RLELossless;
 #ifdef WITH_ZLIB
     if (cmd.findOption("--prefer-deflated")) opt_networkTransferSyntax = EXS_DeflatedLittleEndianExplicit;
@@ -511,12 +697,6 @@ int main(int argc, char *argv[])
     }
     cmd.endOptionBlock();
     if (opt_networkTransferSyntax != EXS_Unknown) opt_acceptAllXfers = OFFalse;
-
-    if (cmd.findOption("--socket-timeout"))
-      app.checkValue(cmd.getValueAndCheckMin(opt_socket_timeout, -1));
-    // always set the timeout values since the global default might be different
-    dcmSocketSendTimeout.set(OFstatic_cast(Sint32, opt_socket_timeout));
-    dcmSocketReceiveTimeout.set(OFstatic_cast(Sint32, opt_socket_timeout));
 
     if (cmd.findOption("--acse-timeout"))
     {
@@ -561,11 +741,6 @@ int main(int argc, char *argv[])
       app.checkConflict("--config-file", "--prefer-mpeg2-high", opt_networkTransferSyntax == EXS_MPEG2MainProfileAtHighLevel);
       app.checkConflict("--config-file", "--prefer-mpeg4", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_1);
       app.checkConflict("--config-file", "--prefer-mpeg4-bd", opt_networkTransferSyntax == EXS_MPEG4BDcompatibleHighProfileLevel4_1);
-      app.checkConflict("--config-file", "--prefer-mpeg4-2-2d", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For2DVideo);
-      app.checkConflict("--config-file", "--prefer-mpeg4-2-3d", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For3DVideo);
-      app.checkConflict("--config-file", "--prefer-mpeg4-2-st", opt_networkTransferSyntax == EXS_MPEG4StereoHighProfileLevel4_2);
-      app.checkConflict("--config-file", "--prefer-hevc", opt_networkTransferSyntax == EXS_HEVCMainProfileLevel5_1);
-      app.checkConflict("--config-file", "--prefer-hevc10", opt_networkTransferSyntax == EXS_HEVCMain10ProfileLevel5_1);
       app.checkConflict("--config-file", "--prefer-rle", opt_networkTransferSyntax == EXS_RLELossless);
 #ifdef WITH_ZLIB
       app.checkConflict("--config-file", "--prefer-deflated", opt_networkTransferSyntax == EXS_DeflatedLittleEndianExplicit);
@@ -644,11 +819,6 @@ int main(int argc, char *argv[])
       app.checkConflict("--write-xfer-little", "--prefer-mpeg2-high", opt_networkTransferSyntax == EXS_MPEG2MainProfileAtHighLevel);
       app.checkConflict("--write-xfer-little", "--prefer-mpeg4", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_1);
       app.checkConflict("--write-xfer-little", "--prefer-mpeg4-bd", opt_networkTransferSyntax == EXS_MPEG4BDcompatibleHighProfileLevel4_1);
-      app.checkConflict("--write-xfer-little", "--prefer-mpeg4-2-2d", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For2DVideo);
-      app.checkConflict("--write-xfer-little", "--prefer-mpeg4-2-3d", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For3DVideo);
-      app.checkConflict("--write-xfer-little", "--prefer-mpeg4-2-st", opt_networkTransferSyntax == EXS_MPEG4StereoHighProfileLevel4_2);
-      app.checkConflict("--write-xfer-little", "--prefer-hevc", opt_networkTransferSyntax == EXS_HEVCMainProfileLevel5_1);
-      app.checkConflict("--write-xfer-little", "--prefer-hevc10", opt_networkTransferSyntax == EXS_HEVCMain10ProfileLevel5_1);
       app.checkConflict("--write-xfer-little", "--prefer-rle", opt_networkTransferSyntax == EXS_RLELossless);
       // we don't have to check a conflict for --prefer-deflated because we can always convert that to uncompressed.
       opt_writeTransferSyntax = EXS_LittleEndianExplicit;
@@ -668,11 +838,6 @@ int main(int argc, char *argv[])
       app.checkConflict("--write-xfer-big", "--prefer-mpeg2-high", opt_networkTransferSyntax == EXS_MPEG2MainProfileAtHighLevel);
       app.checkConflict("--write-xfer-big", "--prefer-mpeg4", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_1);
       app.checkConflict("--write-xfer-big", "--prefer-mpeg4-bd", opt_networkTransferSyntax == EXS_MPEG4BDcompatibleHighProfileLevel4_1);
-      app.checkConflict("--write-xfer-big", "--prefer-mpeg4-2-2d", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For2DVideo);
-      app.checkConflict("--write-xfer-big", "--prefer-mpeg4-2-3d", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For3DVideo);
-      app.checkConflict("--write-xfer-big", "--prefer-mpeg4-2-st", opt_networkTransferSyntax == EXS_MPEG4StereoHighProfileLevel4_2);
-      app.checkConflict("--write-xfer-big", "--prefer-hevc", opt_networkTransferSyntax == EXS_HEVCMainProfileLevel5_1);
-      app.checkConflict("--write-xfer-big", "--prefer-hevc10", opt_networkTransferSyntax == EXS_HEVCMain10ProfileLevel5_1);
       app.checkConflict("--write-xfer-big", "--prefer-rle", opt_networkTransferSyntax == EXS_RLELossless);
       // we don't have to check a conflict for --prefer-deflated because we can always convert that to uncompressed.
       opt_writeTransferSyntax = EXS_BigEndianExplicit;
@@ -692,11 +857,6 @@ int main(int argc, char *argv[])
       app.checkConflict("--write-xfer-implicit", "--prefer-mpeg2-high", opt_networkTransferSyntax == EXS_MPEG2MainProfileAtHighLevel);
       app.checkConflict("--write-xfer-implicit", "--prefer-mpeg4", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_1);
       app.checkConflict("--write-xfer-implicit", "--prefer-mpeg4-bd", opt_networkTransferSyntax == EXS_MPEG4BDcompatibleHighProfileLevel4_1);
-      app.checkConflict("--write-xfer-implicit", "--prefer-mpeg4-2-2d", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For2DVideo);
-      app.checkConflict("--write-xfer-implicit", "--prefer-mpeg4-2-3d", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For3DVideo);
-      app.checkConflict("--write-xfer-implicit", "--prefer-mpeg4-2-st", opt_networkTransferSyntax == EXS_MPEG4StereoHighProfileLevel4_2);
-      app.checkConflict("--write-xfer-implicit", "--prefer-hevc", opt_networkTransferSyntax == EXS_HEVCMainProfileLevel5_1);
-      app.checkConflict("--write-xfer-implicit", "--prefer-hevc10", opt_networkTransferSyntax == EXS_HEVCMain10ProfileLevel5_1);
       app.checkConflict("--write-xfer-implicit", "--prefer-rle", opt_networkTransferSyntax == EXS_RLELossless);
       // we don't have to check a conflict for --prefer-deflated because we can always convert that to uncompressed.
       opt_writeTransferSyntax = EXS_LittleEndianImplicit;
@@ -717,11 +877,6 @@ int main(int argc, char *argv[])
       app.checkConflict("--write-xfer-deflated", "--prefer-mpeg2-high", opt_networkTransferSyntax == EXS_MPEG2MainProfileAtHighLevel);
       app.checkConflict("--write-xfer-deflated", "--prefer-mpeg4", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_1);
       app.checkConflict("--write-xfer-deflated", "--prefer-mpeg4-bd", opt_networkTransferSyntax == EXS_MPEG4BDcompatibleHighProfileLevel4_1);
-      app.checkConflict("--write-xfer-deflated", "--prefer-mpeg4-2-2d", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For2DVideo);
-      app.checkConflict("--write-xfer-deflated", "--prefer-mpeg4-2-3d", opt_networkTransferSyntax == EXS_MPEG4HighProfileLevel4_2_For3DVideo);
-      app.checkConflict("--write-xfer-deflated", "--prefer-mpeg4-2-st", opt_networkTransferSyntax == EXS_MPEG4StereoHighProfileLevel4_2);
-      app.checkConflict("--write-xfer-deflated", "--prefer-hevc", opt_networkTransferSyntax == EXS_HEVCMainProfileLevel5_1);
-      app.checkConflict("--write-xfer-deflated", "--prefer-hevc10", opt_networkTransferSyntax == EXS_HEVCMain10ProfileLevel5_1);
       app.checkConflict("--write-xfer-deflated", "--prefer-rle", opt_networkTransferSyntax == EXS_RLELossless);
       opt_writeTransferSyntax = EXS_DeflatedLittleEndianExplicit;
     }
@@ -732,12 +887,18 @@ int main(int argc, char *argv[])
     if (cmd.findOption("--enable-new-vr"))
     {
       app.checkConflict("--enable-new-vr", "--bit-preserving", opt_bitPreserving);
-      dcmEnableGenerationOfNewVRs();
+      dcmEnableUnknownVRGeneration.set(OFTrue);
+      dcmEnableUnlimitedTextVRGeneration.set(OFTrue);
+      dcmEnableOtherFloatStringVRGeneration.set(OFTrue);
+      dcmEnableOtherDoubleStringVRGeneration.set(OFTrue);
     }
     if (cmd.findOption("--disable-new-vr"))
     {
       app.checkConflict("--disable-new-vr", "--bit-preserving", opt_bitPreserving);
-      dcmDisableGenerationOfNewVRs();
+      dcmEnableUnknownVRGeneration.set(OFFalse);
+      dcmEnableUnlimitedTextVRGeneration.set(OFFalse);
+      dcmEnableOtherFloatStringVRGeneration.set(OFFalse);
+      dcmEnableOtherDoubleStringVRGeneration.set(OFFalse);
     }
     cmd.endOptionBlock();
 
@@ -784,11 +945,6 @@ int main(int argc, char *argv[])
     }
     cmd.endOptionBlock();
 
-    cmd.beginOptionBlock();
-    if (cmd.findOption("--retain-un")) dcmEnableUnknownVRConversion.set(OFFalse);
-    if (cmd.findOption("--convert-un")) dcmEnableUnknownVRConversion.set(OFTrue);
-    cmd.endOptionBlock();
-
 #ifdef WITH_ZLIB
     if (cmd.findOption("--compression-level"))
     {
@@ -832,6 +988,74 @@ int main(int argc, char *argv[])
       app.checkConflict("--timenames", "--unique-filenames", opt_uniqueFilenames);
 
     if (cmd.findOption("--exec-on-reception")) app.checkValue(cmd.getValue(opt_execOnReception));
+#ifdef TRICE
+    dcmDisableGethostbyaddr.set(OFTrue);
+    opt_fileNameExtension = ".dcm";
+    if (cmd.findOption("--data-dir")) app.checkValue(cmd.getValue(opt_dataDir));
+    else opt_dataDir = "";
+    if (isnull(opt_dataDir) || !fileExists((char*)opt_dataDir))
+    {   OFLOG_FATAL(storescpLogger, "cannot read Trice dataDirectory: " << opt_dataDir);
+        return 1;
+    }
+    if (cmd.findOption("--export-dir")) 
+    {  app.checkValue(cmd.getValue(opt_exportDir));  
+       opt_exportOnly = false;   //**keep it in output_dir to process locally
+       BoxStore::disableComm();  //**Don't stream the file over;  instead persist to export Directory
+    }
+    if (cmd.findOption("--export-dir-only")) 
+    {  app.checkValue(cmd.getValue(opt_exportDir));  
+       opt_exportOnly = true;  
+       BoxStore::disableComm();  //**Don't stream the file over;  instead persist to export Directory
+    }
+    if (cmd.findOption("--qquiet")) opt_quiet = OFTrue;
+    if (cmd.findOption("--quiet"))  opt_quiet = OFTrue;
+    if (opt_quiet)
+    {      //redefine stderr and stdout so there will be no output
+        char errFile[120];  snprintf(errFile, sizeof(errFile), "%s/stderr.ss.txt", (char*)opt_dataDir);
+        freopen (errFile,"w",stderr);
+        char outFile[120];  snprintf(outFile, sizeof(outFile), "%s/stdout.ss.txt", (char*)opt_dataDir);
+        freopen (outFile,"w",stdout);
+    }
+    static const char* dicomPath;
+    if (cmd.findOption("--dict-path"))
+    {    app.checkValue(cmd.getValue(dicomPath));
+#ifndef __windows__
+         (void)setenv("DCMDICTPATH", dicomPath, 1);
+#else
+         int s; char* envStr = (char*)malloc(s=(strlen(dicomPath)+32));
+         snprintf(envStr, s, "DCMDICTPATH=%s", dicomPath);
+         (void)putenv(envStr);
+#endif
+    }
+    else //if (isnull(getenv("DCMDICTPATH"))) //**Go get it from S3
+    {    bool setVar = false;    
+         if (::fileExists((char*)opt_dataDir, "dicom.dic") == false)    
+         {   const char* req = "GET /dicom.dic HTTP/1.0\r\nUser-Agent: trice-device/1.0\r\nHost: trice-dcmtk.s3-website-eu-west-1.amazonaws.com\r\nAccept: */*\r\n\r\n";
+             int RC;  char* s = Network::GenHTTP((char*)"trice-dcmtk.s3-website-eu-west-1.amazonaws.com", (char*)"80", (char*)req, RC);
+             if (!isnull(s))
+             {   ::writeTxt((char*)opt_dataDir, (char*)"dicom.dic", s);  setVar = true; }
+         }
+         else
+             setVar = true;
+         if (setVar)
+         {
+#ifndef __windows__
+             int s; char* dicomPath = (char*)malloc(s=(strlen((char*)opt_dataDir)+32));
+             snprintf(dicomPath, s, "%s/dicom.dic", (char*)opt_dataDir);
+             (void)setenv("DCMDICTPATH", dicomPath, 1);
+#else
+             int s;  char* envStr = (char*)malloc(s=(strlen((char*)opt_dataDir)+32));
+             snprintf(envStr, s, "DCMDICTPATH=%s/dicom.dic", (char*)opt_dataDir);
+             (void)putenv(envStr);
+#endif
+         }
+    }
+       //**Limit connection for local only 
+    if (cmd.findOption("--local"))
+        setLocalConnection();
+       //**persist the port
+    char port[32];  ::writeTxt((char*)opt_dataDir, (char*)"scpPort.txt", Util::itoa(opt_port, port));
+#endif
 
     if (cmd.findOption("--exec-on-eostudy"))
     {
@@ -862,8 +1086,97 @@ int main(int argc, char *argv[])
   /* print resource identifier */
   OFLOG_DEBUG(storescpLogger, rcsid << OFendl);
 
-  // evaluate (most of) the TLS command line options (if we are compiling with OpenSSL)
-  tlsOptions.parseArguments(app, cmd);
+#ifdef WITH_OPENSSL
+
+  cmd.beginOptionBlock();
+  if (cmd.findOption("--disable-tls")) opt_secureConnection = OFFalse;
+  if (cmd.findOption("--enable-tls"))
+  {
+    opt_secureConnection = OFTrue;
+    app.checkValue(cmd.getValue(opt_privateKeyFile));
+    app.checkValue(cmd.getValue(opt_certificateFile));
+  }
+  cmd.endOptionBlock();
+
+  cmd.beginOptionBlock();
+  if (cmd.findOption("--std-passwd"))
+  {
+    app.checkDependence("--std-passwd", "--enable-tls", opt_secureConnection);
+    opt_passwd = NULL;
+  }
+  if (cmd.findOption("--use-passwd"))
+  {
+    app.checkDependence("--use-passwd", "--enable-tls", opt_secureConnection);
+    app.checkValue(cmd.getValue(opt_passwd));
+  }
+  if (cmd.findOption("--null-passwd"))
+  {
+    app.checkDependence("--null-passwd", "--enable-tls", opt_secureConnection);
+    opt_passwd = "";
+  }
+  cmd.endOptionBlock();
+
+  cmd.beginOptionBlock();
+  if (cmd.findOption("--pem-keys")) opt_keyFileFormat = SSL_FILETYPE_PEM;
+  if (cmd.findOption("--der-keys")) opt_keyFileFormat = SSL_FILETYPE_ASN1;
+  cmd.endOptionBlock();
+
+  if (cmd.findOption("--dhparam"))
+  {
+    app.checkValue(cmd.getValue(opt_dhparam));
+  }
+
+  if (cmd.findOption("--seed"))
+  {
+    app.checkValue(cmd.getValue(opt_readSeedFile));
+  }
+
+  cmd.beginOptionBlock();
+  if (cmd.findOption("--write-seed"))
+  {
+    app.checkDependence("--write-seed", "--seed", opt_readSeedFile != NULL);
+    opt_writeSeedFile = opt_readSeedFile;
+  }
+  if (cmd.findOption("--write-seed-file"))
+  {
+    app.checkDependence("--write-seed-file", "--seed", opt_readSeedFile != NULL);
+    app.checkValue(cmd.getValue(opt_writeSeedFile));
+  }
+  cmd.endOptionBlock();
+
+  cmd.beginOptionBlock();
+  if (cmd.findOption("--require-peer-cert")) opt_certVerification = DCV_requireCertificate;
+  if (cmd.findOption("--verify-peer-cert"))  opt_certVerification = DCV_checkCertificate;
+  if (cmd.findOption("--ignore-peer-cert"))  opt_certVerification = DCV_ignoreCertificate;
+  cmd.endOptionBlock();
+
+  const char *current = NULL;
+  const char *currentOpenSSL;
+  if (cmd.findOption("--cipher", 0, OFCommandLine::FOM_First))
+  {
+    opt_ciphersuites.clear();
+    do
+    {
+      app.checkValue(cmd.getValue(current));
+      if (NULL == (currentOpenSSL = DcmTLSTransportLayer::findOpenSSLCipherSuiteName(current)))
+      {
+        OFLOG_FATAL(storescpLogger, "ciphersuite '" << current << "' is unknown, known ciphersuites are:");
+        unsigned long numSuites = DcmTLSTransportLayer::getNumberOfCipherSuites();
+        for (unsigned long cs = 0; cs < numSuites; cs++)
+        {
+          OFLOG_FATAL(storescpLogger, "    " << DcmTLSTransportLayer::getTLSCipherSuiteName(cs));
+        }
+        return 1;
+      }
+      else
+      {
+        if (!opt_ciphersuites.empty()) opt_ciphersuites += ":";
+        opt_ciphersuites += currentOpenSSL;
+      }
+    } while (cmd.findOption("--cipher", 0, OFCommandLine::FOM_Next));
+  }
+
+#endif
 
 #ifndef DISABLE_PORT_PERMISSION_CHECK
 #ifdef HAVE_GETEUID
@@ -903,7 +1216,7 @@ int main(int argc, char *argv[])
   }
 
   /* check if the output directory is writeable */
-  if (!opt_ignore && !OFStandard::isWriteable(opt_outputDirectory))
+  if (!OFStandard::isWriteable(opt_outputDirectory))
   {
     OFLOG_FATAL(storescpLogger, "specified output directory is not writeable");
     return 1;
@@ -915,13 +1228,32 @@ int main(int argc, char *argv[])
 #elif defined(_WIN32)
   if (opt_forkedChild)
   {
-    // we are a child process in multi-process mode
-    if (DUL_readSocketHandleAsForkedChild().bad()) return 1;
+    // child process
+    DUL_markProcessAsForkedChild();
+
+    char buf[256];
+    DWORD bytesRead = 0;
+    HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
+
+    // read socket handle number from stdin, i.e. the anonymous pipe
+    // to which our parent process has written the handle number.
+    if (ReadFile(hStdIn, buf, sizeof(buf), &bytesRead, NULL))
+    {
+      // make sure buffer is zero terminated
+      buf[bytesRead] = '\0';
+      dcmExternalSocketHandle.set(atoi(buf));
+    }
+    else
+    {
+      OFLOG_ERROR(storescpLogger, "cannot read socket handle: " << GetLastError());
+      return 1;
+    }
   }
   else
   {
     // parent process
-    if (opt_forkMode) DUL_requestForkOnTransportConnectionReceipt(argc, argv);
+    if (opt_forkMode)
+      DUL_requestForkOnTransportConnectionReceipt(argc, argv);
   }
 #endif
 
@@ -940,12 +1272,80 @@ int main(int argc, char *argv[])
       return 1;
   }
 
-  /* create a secure transport layer if requested and OpenSSL is available */
-  cond = tlsOptions.createTransportLayer(net, NULL, app, cmd);
-  if (cond.bad()) {
-      OFLOG_FATAL(storescpLogger, DimseCondition::dump(temp_str, cond));
-      exit(1);
+#ifdef WITH_OPENSSL
+  DcmTLSTransportLayer *tLayer = NULL;
+  if (opt_secureConnection)
+  {
+    tLayer = new DcmTLSTransportLayer(DICOM_APPLICATION_ACCEPTOR, opt_readSeedFile);
+    if (tLayer == NULL)
+    {
+      OFLOG_FATAL(storescpLogger, "unable to create TLS transport layer");
+      return 1;
+    }
+
+    if (cmd.findOption("--add-cert-file", 0, OFCommandLine::FOM_First))
+    {
+      do
+      {
+        app.checkValue(cmd.getValue(current));
+        if (TCS_ok != tLayer->addTrustedCertificateFile(current, opt_keyFileFormat))
+        {
+          OFLOG_WARN(storescpLogger, "unable to load certificate file '" << current << "', ignoring");
+        }
+      } while (cmd.findOption("--add-cert-file", 0, OFCommandLine::FOM_Next));
+    }
+
+    if (cmd.findOption("--add-cert-dir", 0, OFCommandLine::FOM_First))
+    {
+      do
+      {
+        app.checkValue(cmd.getValue(current));
+        if (TCS_ok != tLayer->addTrustedCertificateDir(current, opt_keyFileFormat))
+        {
+          OFLOG_WARN(storescpLogger, "unable to load certificates from directory '" << current << "', ignoring");
+        }
+      } while (cmd.findOption("--add-cert-dir", 0, OFCommandLine::FOM_Next));
+    }
+
+    if (opt_dhparam && !(tLayer->setTempDHParameters(opt_dhparam)))
+    {
+      OFLOG_WARN(storescpLogger, "unable to load temporary DH parameter file '" << opt_dhparam << "', ignoring");
+    }
+
+    if (opt_passwd) tLayer->setPrivateKeyPasswd(opt_passwd);
+
+    if (TCS_ok != tLayer->setPrivateKeyFile(opt_privateKeyFile, opt_keyFileFormat))
+    {
+      OFLOG_WARN(storescpLogger, "unable to load private TLS key from '" << opt_privateKeyFile << "'");
+      return 1;
+    }
+    if (TCS_ok != tLayer->setCertificateFile(opt_certificateFile, opt_keyFileFormat))
+    {
+      OFLOG_WARN(storescpLogger, "unable to load certificate from '" << opt_certificateFile << "'");
+      return 1;
+    }
+    if (! tLayer->checkPrivateKeyMatchesCertificate())
+    {
+      OFLOG_WARN(storescpLogger, "private key '" << opt_privateKeyFile << "' and certificate '" << opt_certificateFile << "' do not match");
+      return 1;
+    }
+
+    if (TCS_ok != tLayer->setCipherSuites(opt_ciphersuites.c_str()))
+    {
+      OFLOG_WARN(storescpLogger, "unable to set selected cipher suites");
+      return 1;
+    }
+
+    tLayer->setCertificateVerification(opt_certVerification);
+
+    cond = ASC_setTransportLayer(net, tLayer, 0);
+    if (cond.bad())
+    {
+      OFLOG_ERROR(storescpLogger, DimseCondition::dump(temp_str, cond));
+      return 1;
+    }
   }
+#endif
 
 #ifdef HAVE_WAITPID
   // register signal handler
@@ -956,20 +1356,27 @@ int main(int argc, char *argv[])
   {
     /* receive an association and acknowledge or reject it. If the association was */
     /* acknowledged, offer corresponding services and invoke one or more if required. */
-    cond = acceptAssociation(net, asccfg, tlsOptions.secureConnectionRequested());
+    cond = acceptAssociation(net, asccfg);
 
     /* remove zombie child processes */
     cleanChildren(-1, OFFalse);
-
+#ifdef WITH_OPENSSL
     /* since storescp is usually terminated with SIGTERM or the like,
      * we write back an updated random seed after every association handled.
      */
-    cond = tlsOptions.writeRandomSeed();
-    if (cond.bad()) {
-        // failure to write back the random seed is a warning, not an error
-        OFLOG_WARN(storescpLogger, DimseCondition::dump(temp_str, cond));
+    if (tLayer && opt_writeSeedFile)
+    {
+      if (tLayer->canWriteRandomSeed())
+      {
+        if (!tLayer->writeRandomSeed(opt_writeSeedFile))
+          OFLOG_WARN(storescpLogger, "cannot write random seed file '" << opt_writeSeedFile << "', ignoring");
+      }
+      else
+      {
+        OFLOG_WARN(storescpLogger, "cannot write random seed, ignoring");
+      }
     }
-
+#endif
     // if running in inetd mode, we always terminate after one association
     if (opt_inetd_mode) break;
 
@@ -986,12 +1393,19 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  OFStandard::shutdownNetwork();
+#ifdef HAVE_WINSOCK_H
+  WSACleanup();
+#endif
+
+#ifdef WITH_OPENSSL
+  delete tLayer;
+#endif
+
   return 0;
 }
 
 
-static OFCondition acceptAssociation(T_ASC_Network *net, DcmAssociationConfiguration& asccfg, OFBool secureConnection)
+static OFCondition acceptAssociation(T_ASC_Network *net, DcmAssociationConfiguration& asccfg)
 {
   char buf[BUFSIZ];
   T_ASC_Association *assoc;
@@ -1005,24 +1419,30 @@ static OFCondition acceptAssociation(T_ASC_Network *net, DcmAssociationConfigura
 
   const char* knownAbstractSyntaxes[] =
   {
-    UID_VerificationSOPClass
+     UID_VerificationSOPClass,
+#ifdef TRICE
+     UID_FINDModalityWorklistInformationModel,
+     UID_FINDPatientRootQueryRetrieveInformationModel,  
+     UID_FINDStudyRootQueryRetrieveInformationModel,
+     UID_MOVEPatientRootQueryRetrieveInformationModel,  
+     UID_MOVEStudyRootQueryRetrieveInformationModel,
+     //UID_RETIRED_FINDPatientStudyOnlyQueryRetrieveInformationModel 
+#endif
   };
 
-  const char* transferSyntaxes[] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,  // 10
-                                     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,  // 20
-                                     NULL };                                                      // +1
+  const char* transferSyntaxes[] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
   int numTransferSyntaxes = 0;
 
   // try to receive an association. Here we either want to use blocking or
   // non-blocking, depending on if the option --eostudy-timeout is set.
   if( opt_endOfStudyTimeout == -1 )
-    cond = ASC_receiveAssociation(net, &assoc, opt_maxPDU, NULL, NULL, secureConnection);
+    cond = ASC_receiveAssociation(net, &assoc, opt_maxPDU, NULL, NULL, opt_secureConnection);
   else
-    cond = ASC_receiveAssociation(net, &assoc, opt_maxPDU, NULL, NULL, secureConnection, DUL_NOBLOCK, OFstatic_cast(int, opt_endOfStudyTimeout));
+    cond = ASC_receiveAssociation(net, &assoc, opt_maxPDU, NULL, NULL, opt_secureConnection, DUL_NOBLOCK, OFstatic_cast(int, opt_endOfStudyTimeout));
 
   if (cond.code() == DULC_FORKEDCHILD)
   {
-    // OFLOG_DEBUG(storescpLogger, DimseCondition::dump(temp_str, cond));
+    //OFLOG_DEBUG(storescpLogger, DimseCondition::dump(temp_str, cond));
     goto cleanup;
   }
 
@@ -1214,46 +1634,6 @@ static OFCondition acceptAssociation(T_ASC_Network *net, DcmAssociationConfigura
       transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
       numTransferSyntaxes = 4;
       break;
-    case EXS_MPEG4HighProfileLevel4_2_For2DVideo:
-      /* we prefer MPEG4 HP/L4.2 for 2d Videos */
-      transferSyntaxes[0] = UID_MPEG4HighProfileLevel4_2_For2DVideoTransferSyntax;
-      transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
-      transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
-      transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
-      numTransferSyntaxes = 4;
-      break;
-    case EXS_MPEG4HighProfileLevel4_2_For3DVideo:
-      /* we prefer MPEG4 HP/L4.2 for 3d Videos */
-      transferSyntaxes[0] = UID_MPEG4HighProfileLevel4_2_For3DVideoTransferSyntax;
-      transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
-      transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
-      transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
-      numTransferSyntaxes = 4;
-      break;
-    case EXS_MPEG4StereoHighProfileLevel4_2:
-      /* we prefer MPEG4 Stereo HP/L4.2 */
-      transferSyntaxes[0] = UID_MPEG4StereoHighProfileLevel4_2TransferSyntax;
-      transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
-      transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
-      transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
-      numTransferSyntaxes = 4;
-      break;
-    case EXS_HEVCMainProfileLevel5_1:
-      /* we prefer HEVC/H.265 Main Profile/L5.1 */
-      transferSyntaxes[0] = UID_HEVCMainProfileLevel5_1TransferSyntax;
-      transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
-      transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
-      transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
-      numTransferSyntaxes = 4;
-      break;
-    case EXS_HEVCMain10ProfileLevel5_1:
-      /* we prefer HEVC/H.265 Main 10 Profile/L5.1 */
-      transferSyntaxes[0] = UID_HEVCMain10ProfileLevel5_1TransferSyntax;
-      transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
-      transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
-      transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
-      numTransferSyntaxes = 4;
-      break;
     case EXS_RLELossless:
       /* we prefer RLE Lossless */
       transferSyntaxes[0] = UID_RLELosslessTransferSyntax;
@@ -1290,22 +1670,17 @@ static OFCondition acceptAssociation(T_ASC_Network *net, DcmAssociationConfigura
         transferSyntaxes[9] = UID_MPEG2MainProfileAtHighLevelTransferSyntax;
         transferSyntaxes[10] = UID_MPEG4HighProfileLevel4_1TransferSyntax;
         transferSyntaxes[11] = UID_MPEG4BDcompatibleHighProfileLevel4_1TransferSyntax;
-        transferSyntaxes[12] = UID_MPEG4HighProfileLevel4_2_For2DVideoTransferSyntax;
-        transferSyntaxes[13] = UID_MPEG4HighProfileLevel4_2_For3DVideoTransferSyntax;
-        transferSyntaxes[14] = UID_MPEG4StereoHighProfileLevel4_2TransferSyntax;
-        transferSyntaxes[15] = UID_HEVCMainProfileLevel5_1TransferSyntax;
-        transferSyntaxes[16] = UID_HEVCMain10ProfileLevel5_1TransferSyntax;
-        transferSyntaxes[17] = UID_DeflatedExplicitVRLittleEndianTransferSyntax;
+        transferSyntaxes[12] = UID_DeflatedExplicitVRLittleEndianTransferSyntax;
         if (gLocalByteOrder == EBO_LittleEndian)
         {
-          transferSyntaxes[18] = UID_LittleEndianExplicitTransferSyntax;
-          transferSyntaxes[19] = UID_BigEndianExplicitTransferSyntax;
+          transferSyntaxes[13] = UID_LittleEndianExplicitTransferSyntax;
+          transferSyntaxes[14] = UID_BigEndianExplicitTransferSyntax;
         } else {
-          transferSyntaxes[18] = UID_BigEndianExplicitTransferSyntax;
-          transferSyntaxes[19] = UID_LittleEndianExplicitTransferSyntax;
+          transferSyntaxes[13] = UID_BigEndianExplicitTransferSyntax;
+          transferSyntaxes[14] = UID_LittleEndianExplicitTransferSyntax;
         }
-        transferSyntaxes[20] = UID_LittleEndianImplicitTransferSyntax;
-        numTransferSyntaxes = 21;
+        transferSyntaxes[15] = UID_LittleEndianImplicitTransferSyntax;
+        numTransferSyntaxes = 16;
       } else {
         /* We prefer explicit transfer syntaxes.
          * If we are running on a Little Endian machine we prefer
@@ -1356,7 +1731,7 @@ static OFCondition acceptAssociation(T_ASC_Network *net, DcmAssociationConfigura
     }
 
     /* the array of Storage SOP Class UIDs comes from dcuid.h */
-    cond = ASC_acceptContextsWithPreferredTransferSyntaxes( assoc->params, dcmAllStorageSOPClassUIDs, numberOfDcmAllStorageSOPClassUIDs, transferSyntaxes, numTransferSyntaxes);
+    cond = ASC_acceptContextsWithPreferredTransferSyntaxes( assoc->params, dcmAllStorageSOPClassUIDs, numberOfAllDcmStorageSOPClassUIDs, transferSyntaxes, numTransferSyntaxes);
     if (cond.bad())
     {
       OFLOG_DEBUG(storescpLogger, DimseCondition::dump(temp_str, cond));
@@ -1380,7 +1755,7 @@ static OFCondition acceptAssociation(T_ASC_Network *net, DcmAssociationConfigura
   ASC_setAPTitles(assoc->params, NULL, NULL, opt_respondingAETitle);
 
   /* acknowledge or reject this association */
-  cond = ASC_getApplicationContextName(assoc->params, buf, sizeof(buf));
+  cond = ASC_getApplicationContextName(assoc->params, buf);
   if ((cond.bad()) || strcmp(buf, UID_StandardApplicationContext) != 0)
   {
     /* reject: the application context name is not supported */
@@ -1391,7 +1766,9 @@ static OFCondition acceptAssociation(T_ASC_Network *net, DcmAssociationConfigura
       ASC_REASON_SU_APPCONTEXTNAMENOTSUPPORTED
     };
 
+#ifndef TRICE  //**load balancer ping hits this
     OFLOG_INFO(storescpLogger, "Association Rejected: Bad Application Context Name: " << buf);
+#endif
     cond = ASC_rejectAssociation(assoc, &rej);
     if (cond.bad())
     {
@@ -1453,13 +1830,27 @@ static OFCondition acceptAssociation(T_ASC_Network *net, DcmAssociationConfigura
   }
 #endif
 
+  // store previous values for later use
+  lastCallingAETitle = callingAETitle;
+  lastCalledAETitle = calledAETitle;
+  lastCallingPresentationAddress = callingPresentationAddress;
   // store calling and called aetitle in global variables to enable
   // the --exec options using them. Enclose in quotation marks because
   // aetitles may contain space characters.
   DIC_AE callingTitle;
   DIC_AE calledTitle;
-  if (ASC_getAPTitles(assoc->params, callingTitle, sizeof(callingTitle), calledTitle,  sizeof(calledTitle), NULL, 0).good())
-  {
+  if (ASC_getAPTitles(assoc->params, callingTitle, calledTitle, NULL).good())
+  {    //**Make sure our delim char does not show up 
+    if (!isnull(callingTitle))
+    {   int l = strlen(callingTitle);
+        for (int i = 0; i < l; i++)
+           if (callingTitle[i] == '|') callingTitle[i] = '_';
+    }
+    if (!isnull(calledTitle))
+    {   int l = strlen(calledTitle);
+        for (int i = 0; i < l; i++)
+           if (calledTitle[i] == '|') calledTitle[i] = '_';
+    }
     callingAETitle = "\"";
     callingAETitle += OFSTRING_GUARD(callingTitle);
     callingAETitle += "\"";
@@ -1590,7 +1981,6 @@ processCommands(T_ASC_Association * assoc)
     if (cond == EC_Normal)
     {
       // in case we received a valid message, process this command
-      // note that storescp can only process a C-ECHO-RQ and a C-STORE-RQ
       switch (msg.CommandField)
       {
         case DIMSE_C_ECHO_RQ:
@@ -1601,20 +1991,488 @@ processCommands(T_ASC_Association * assoc)
           // process C-STORE-Request
           cond = storeSCP(assoc, &msg, presID);
           break;
+#ifdef TRICE
+        case DIMSE_C_FIND_RQ:
+          cond = findSCP(assoc, &msg.msg.CFindRQ, presID );
+          break;
+        case DIMSE_C_MOVE_RQ:
+          cond = moveSCP(assoc, &msg.msg.CMoveRQ, presID);
+          break;
+        case DIMSE_C_CANCEL_RQ:
+        { // Process C-CANCEL-Request
+          // A C-FIND could be happening in another process - it's not clear how we can really cancel it - so for now ignore
+          // C-STORE in response to C-MOVE-REQ is taking place in boxComm.  If the move is stil active, affect the map out on disk
+          cancelMove(msg.msg.CCancelRQ.MessageIDBeingRespondedTo);
+          break;
+        }
+#endif
         default:
-          OFString tempStr;
+        { OFString tempStr;
           // we cannot handle this kind of message
           cond = DIMSE_BADCOMMANDTYPE;
-          OFLOG_ERROR(storescpLogger, "Expected C-ECHO or C-STORE request but received DIMSE command 0x"
+          OFLOG_ERROR(storescpLogger, "Expected C-ECHO, C-FIND, C-CANCEL, C-MOVE, C-STORE request but received DIMSE command 0x"
                << STD_NAMESPACE hex << STD_NAMESPACE setfill('0') << STD_NAMESPACE setw(4)
                << OFstatic_cast(unsigned, msg.CommandField));
           OFLOG_DEBUG(storescpLogger, DIMSE_dumpMessage(tempStr, msg, DIMSE_INCOMING, NULL, presID));
           break;
+        }
       }
     }
   }
   return cond;
 }
+
+#ifdef TRICE
+
+static void cancelMove(DIC_US msgId, bool deleteFlg)
+{
+    OFString res;
+    char* file = Util::readTxt((char*)opt_dataDir, "dest.QR.txt");
+    Memory mem; int n, m;
+    char** lines = Util::split(file, '\n', n, &mem);
+    for (int i = 0; i < n; i++)
+    {   char** words = Util::split(lines[i], '|', m, &mem);
+        if (m >= 3 && atol(words[0]) != msgId && isalive(atol(words[2]), "storescp"))
+        {  res += lines[i];   res += "\n";   }
+        else  if (m >= 3 && deleteFlg)
+           SendFile::sendCancelMove((char*)opt_dataDir, words[1], false, opt_quiet);  //**Delete this aetitle from the table for this account
+    }
+    ::writeTxt((char*)opt_dataDir, "dest.QR.txt", (char*)res.c_str());
+}
+
+   //**Add in a new record so that boxComm queries for this
+static void addMove(DIC_US msgId, char* aeTitle)
+{   cancelMove(msgId);  //**Remove any old ones   
+    char line[120];  snprintf(line, sizeof(line), "%d|%s|%d|%s\n", msgId, aeTitle, getpid(), client_ip_address);
+    char moveFile[120];  snprintf(moveFile, sizeof(moveFile), "%s/dest.QR.txt", (char*)opt_dataDir);
+    ::writeLine(line, moveFile);
+}
+
+static OFCondition moveSCP(T_ASC_Association * assoc, T_DIMSE_C_MoveRQ * request, T_ASC_PresentationContextID presID)
+{
+    MoveCallbackData moveData;
+    DIC_AE aeTitle;
+    aeTitle[0] = '\0';
+    strlcpy(aeTitle, request->MoveDestination, sizeof(aeTitle));
+    moveData.m_aeTitle = aeTitle;
+    moveData.m_messageId = request->MessageID;
+
+    OFString temp_str;
+    OFLOG_INFO(storescpLogger, "Received MoveSCP Request");
+
+    OFCondition cond = DIMSE_moveProvider(assoc, presID, request, MoveCallback, &moveData, opt_blockMode, opt_dimse_timeout);
+    if (cond.bad()) 
+        OFLOG_ERROR(storescpLogger, "Move SCP Failed: " << DimseCondition::dump(temp_str, cond));
+    return cond;
+}
+
+static OFCondition findSCP(T_ASC_Association * assoc, T_DIMSE_C_FindRQ * request, T_ASC_PresentationContextID presID)
+{
+    FindCallbackData findData ;  
+    OFString temp_str;
+    OFLOG_INFO(storescpLogger, "Received FindSCP Request");
+
+    OFCondition cond = DIMSE_findProvider(assoc, presID, request, FindCallback, &findData, opt_blockMode, opt_dimse_timeout );
+    if (cond.bad()) {
+        OFLOG_ERROR(storescpLogger, "Find SCP Failed: " << DimseCondition::dump(temp_str, cond));
+    }
+    return cond;
+}
+
+static DcmDataset* json2Dataset(char* json, int i, bool worklist=true, const char* arrayTag="")
+{   JsnParser p(json, strlen(json));
+    char*  obj = p.getFullObject(0, (worklist?(char*)"worklist_response":(char*)arrayTag), i); 
+    DcmDataset* ds = new DcmDataset();
+    ds->putAndInsertString(DCM_SpecificCharacterSet, "ISO_IR 192");
+//**populate the aray
+    if (populateFromJson(obj, ds, worklist, !worklist) != 0)
+       return NULL;
+    if (!worklist)
+    {   obj = p.getFullObject(0, "meta");
+        populateFromJson(obj, ds, worklist, !worklist);
+    }
+//**Get the meta for Q/R
+    return ds;
+}
+
+static int getNumElts(char* json, bool worklist=true, const char* arrayTag="")
+{   JsnParser p(json, strlen(json));
+    return p.getArrayNum(0, worklist?(char*)"worklist_response":(char*)arrayTag);
+}
+
+static char* getTimeKeys(bool worklist, Memory* mem, const char* start_date, const char* start_time="")
+{    if (isnull(start_date) && !worklist)  return "";
+     //if (isnull(start_date) && worklist)  return "";
+//**If we don't want to send dates for a name lookup, add the above commented out line
+    
+     time_t d = time(0);
+     struct tm tm;  char now[64], today[64];
+     strftime(now, sizeof(now)-1, "%Y%m%d%H%M%S", localtime_r(&d, &tm));
+     strftime(today, sizeof(now)-1, "%Y%m%d", localtime_r(&d, &tm));
+
+     char begin[64]="", end[64]="", b[64]="", e[64]="", b1[64]="";
+     GrowingString keys;
+           //**default to today
+     strlcpy(begin, now, sizeof(begin));  strlcpy(begin+8,"000000", sizeof(begin)-8);   
+     strlcpy(end, now, sizeof(end));  strlcpy(end+8,"235959", sizeof(end)-8);   
+     
+     {  strlcpy(b, start_date, sizeof(b));
+        char* dash = strchr(b, '-');
+        if (dash != NULL)  
+        {  *dash++ = '\0';   strlcpy(e, dash, sizeof(e));  }
+        else if (strcmp(b, end) > 0)
+           strlcpy(e, b, sizeof(e));
+     }
+     if (!isnull(start_time))
+     {  strlcpy(b1, start_time, sizeof(b1));  
+        char* dash = strchr(b1, '-');
+        if (dash != NULL)  
+        {  *dash++ = '\0';  strlcpy(&e[8], dash, sizeof(e)-8); }
+        strlcpy(&b[8], b1, sizeof(b)-8);
+     }
+
+     if (strlen(b) < 12)  strlcat(b, &begin[strlen(b)], sizeof(b));
+     if (strlen(e) < 12 && strlen(e) > 0)  strlcat(e, &end[strlen(e)], sizeof(e));
+     else if (strlen(e) < 12 && worklist)  strlcat(e, &end[strlen(e)], sizeof(e));
+
+     if (!isnull(b))
+        strlcpy(begin, b, sizeof(begin));
+     if (!isnull(e))
+        strlcpy(end, e, sizeof(end));
+     if (isnull(b) && worklist)
+        keys.add("&start=").add(begin).add("&end=").add(end);  
+     else if (!isnull(b))
+     {  keys.add("&start=").add(begin); 
+        if (!isnull(e)) 
+           keys.add("&end=").add(end);
+     }
+
+     if (keys.size() > 0)
+         keys.add("&now=").add(now);
+
+     return keys.get(mem);
+}
+
+static char* getFindKeys(DcmDataset* dset, Memory* mem, bool worklist=true, const char* arrayTagName="") 
+{
+    const char* patientName = "", *patientID = "", *patientBirthDate = "",  *patientSex = "";
+
+    const char* c = NULL; if (dset->findAndGetString(DCM_PatientName, c).good() && c) patientName = c;
+    c = NULL; if (dset->findAndGetString(DCM_PatientID, c).good() && c) patientID = c;
+    c = NULL; if (dset->findAndGetString(DCM_PatientBirthDate, c).good() && c) patientBirthDate = c;
+    c = NULL; if (dset->findAndGetString(DCM_PatientSex, c).good() && c) patientSex = c;
+
+    GrowingString keys;
+    if (!isnull(patientName))
+    {  patientName = Util::replace((char*)patientName, "^", " ", mem);
+       patientName = Util::replace((char*)patientName, "*", " ", mem);
+       patientName = Util::replace((char*)patientName, "?", " ", mem);
+       keys.add("&name=").add(Util::encodeUrl((char*)patientName, mem));
+    }
+    if (!isnull(patientID))
+       keys.add("&patientid=").add(Util::encodeUrl((char*)patientID, mem));
+    if (!isnull(patientBirthDate))
+       keys.add("&birthdate=").add(patientBirthDate);  
+    if (!isnull(patientSex))
+       keys.add("&sex=").add(patientSex);  
+
+    if (worklist)
+    {   const char* modality = "", *ae_title = "",  *start_date = "", *start_time = "",  *accession = "";
+        DcmItem *item = NULL;
+        
+        if (dset->findAndGetSequenceItem(DCM_ScheduledProcedureStepSequence, item, 0 /* first item */).good())
+        {   c = NULL; if (item->findAndGetString(DCM_Modality, c).good() && c) modality = c;
+            c = NULL; if (item->findAndGetString(DCM_ScheduledStationAETitle, c).good() && c) ae_title = c;
+            c = NULL; if (item->findAndGetString(DCM_ScheduledProcedureStepStartDate, c).good() && c) start_date = c;
+            c = NULL; if (item->findAndGetString(DCM_ScheduledProcedureStepStartTime, c).good() && c) start_time = c;
+            char* k1 =   getTimeKeys(worklist, mem, start_date, start_time);
+            if (!isnull(k1))
+               keys.add(k1);
+            if (!isnull(modality))
+               keys.add("&modality=").add(Util::encodeUrl((char*)modality, mem));  
+            if (!isnull(ae_title))
+               keys.add("&aetitle=").add(Util::encodeUrl((char*)ae_title, mem));  
+       }
+
+       c = NULL; if (dset->findAndGetString(DCM_AccessionNumber, c).good() && c) accession = c;
+       if (!isnull(accession))
+          keys.add("&accession=").add(accession);  
+       
+       return keys.get(mem);
+    }
+
+    /** Q/R **/
+    if (strcmp(arrayTagName, "qr_patients") == 0)
+        return keys.get(mem);
+
+    //**non-patient - continue
+    {    
+         const char* studyUid = "", *study_id = "", *accession = "";
+         const char* start_date = "", *start_time = "";
+         const char* c = NULL; if (dset->findAndGetString(DCM_StudyDate, c).good() && c) start_date = c;
+         c = NULL; if (dset->findAndGetString(DCM_StudyTime, c).good() && c) start_time = c;
+         char* k1 = getTimeKeys(worklist, mem, start_date, start_time);
+         if (!isnull(k1))
+            keys.add(k1);
+         c = NULL; if (dset->findAndGetString(DCM_StudyInstanceUID, c).good() && c) studyUid = c;
+         c = NULL; if (dset->findAndGetString(DCM_StudyID, c).good() && c) study_id = c;
+         c = NULL; if (dset->findAndGetString(DCM_AccessionNumber, c).good() && c) accession = c;
+         if (!isnull(studyUid))
+            keys.add("&study_uid=").add(studyUid);  
+         if (!isnull(study_id))
+            keys.add("&study_id=").add(study_id);  
+         if (!isnull(accession))
+            keys.add("&accession=").add(Util::encodeUrl((char*)accession, mem));  
+
+         if (strcmp(arrayTagName, "qr_studies1") == 0 || strcmp(arrayTagName, "qr_studies2") == 0)
+             return keys.get(mem);
+    }
+    {      // series_uid=  & series_number=  & modality= 
+         const char* series_uid = "", *series_num = "", *modality = "";
+         const char* c = NULL; if (dset->findAndGetString(DCM_SeriesInstanceUID , c).good() && c) series_uid = c;
+         c = NULL; if (dset->findAndGetString(DCM_SeriesNumber , c).good() && c) series_num = c;
+         c = NULL; if (dset->findAndGetString(DCM_Modality , c).good() && c) modality = c;
+         if (!isnull(series_uid))
+            keys.add("&series_uid=").add(series_uid);  
+         if (!isnull(series_num))
+            keys.add("&series_number=").add(series_num);  
+         if (!isnull(modality))
+            keys.add("&modality=").add(Util::encodeUrl((char*)modality, mem));  
+         if (strcmp(arrayTagName, "qr_series") == 0)
+             return keys.get(mem);
+    }
+    {       //sop_uid=  & image_number
+         const char* sop_uid = "", *image_number = "";
+         const char* c = NULL; if (dset->findAndGetString(DCM_SOPInstanceUID , c).good() && c) sop_uid = c;
+         c = NULL; if (dset->findAndGetString(DCM_InstanceNumber , c).good() && c) image_number = c;
+         if (!isnull(sop_uid))
+            keys.add("&sop_uid=").add(Util::encodeUrl((char*)sop_uid, mem));  
+         if (!isnull(image_number))
+            keys.add("&image_number=").add(Util::encodeUrl((char*)image_number, mem));  
+         if (dset->tagExists(DCM_SOPClassUID))
+            keys.add("&get_class=1");
+         return keys.get(mem);
+    }
+}
+
+   //**Callback
+static void FindCallback( void *callbackData, OFBool cancelled, T_DIMSE_C_FindRQ * request, DcmDataset *requestIdentifiers, int responseCount, T_DIMSE_C_FindRSP *response, DcmDataset **responseIdentifiers, DcmDataset **statusDetail ) 
+// Parameters   : callbackData        - [in] data for this callback function
+//                cancelled           - [in] Specifies if we encounteres a C-CANCEL-RQ. In such a case
+//                                      the search shall be cancelled.
+//                request             - [in] The original C-FIND-RQ message.
+//                requestIdentifiers  - [in] Contains the search mask.
+//                responseCount       - [in] If we labelled C-FIND-RSP messages consecutively, starting
+//                                      at label "1", this number would provide the label's number.
+//                response            - [inout] the C-FIND-RSP message (will be sent after the call to
+//                                      this function). The status field will be set in this function.
+//                responseIdentifiers - [inout] Will in the end contain the next record that matches the
+//                                      search mask (captured in requestIdentifiers)
+//                statusDetail        - [inout] This variable can be used to capture detailed information
+//                                      with regard to the status information which is captured in the
+//                                      status element (0000,0900) of the C-FIND-RSP message.
+{
+        //**Worklist and Q/R
+    response->DimseStatus = 0x0000; 
+#ifdef WITH_LIBICONV
+    requestIdentifiers->convertToUTF8();
+#endif
+    FindCallbackData* fdata = (FindCallbackData*)callbackData;
+    if (strcmp(request->AffectedSOPClassUID, UID_FINDModalityWorklistInformationModel) == 0)  
+    {    if( responseCount == 1 )
+         {
+             /* Determine the records that match the search mask by calling Receiving.  
+                Receiving will return a JSON array.
+                With each call (responseCount increments), 
+                   * convert array elt -> DICOM
+                   * return first dataset in *responseIdentifiers
+                   * return appropriate DimseStatus (see below)
+             **/
+                 //**calculate the keys from the dataset requestIdentifiers 
+             char* keys = getFindKeys(requestIdentifiers, &fdata->m_mem, true);
+             char* json = SendFile::getWorklistResponse((char*)opt_dataDir, &keys[1], false, opt_quiet);  //**Clip the first '&'
+             fdata->m_arraySize = getNumElts(json, true);
+             fdata->m_json = fdata->m_mem.getCacheReturn(json);  
+         }
+
+         if (fdata->m_arraySize >= responseCount)
+            *responseIdentifiers = json2Dataset(fdata->m_json,  responseCount, true);
+         else
+            *responseIdentifiers = NULL;
+
+         if (cancelled)
+            response->DimseStatus = 0xFE00; //**Cancelled
+         else if (fdata->m_arraySize >= responseCount)
+            response->DimseStatus = 0xFF00; //Pending - MORE FOLLOWING
+         else
+            response->DimseStatus = 0x0000; //SUCCESS - done - this is the last time
+         *statusDetail = NULL;
+     }
+
+     else   //**Q/R
+     {  
+         bool patientModel = false;
+         const char* level;  //**PATIENT, STUDY, SERIES, IMAGE
+         const char* arrayTagName = "qr_instances";
+         const char* c = NULL; if (requestIdentifiers->findAndGetString(DCM_QueryRetrieveLevel, c).good() && c) level = c;
+         
+         if (strcmp(request->AffectedSOPClassUID, UID_FINDPatientRootQueryRetrieveInformationModel) == 0)
+            patientModel = true;
+         else if (strcmp(request->AffectedSOPClassUID, UID_FINDStudyRootQueryRetrieveInformationModel) == 0)
+           ;
+      
+            //**Set the tag name
+         if (strcasecmp(level, "PATIENT") == 0)
+            arrayTagName = "qr_patients";
+         else if (strcasecmp(level, "SERIES") == 0)
+             arrayTagName = "qr_series";
+         if (strcasecmp(level, "STUDY") == 0)
+         {   arrayTagName = (patientModel)?"qr_studies1":"qr_studies2";
+             level = (patientModel)?"STUDY1":"STUDY2";
+         }
+
+         if( responseCount == 1 )
+         {
+             /* Determine the records that match the search mask by calling Receiving.  
+                Receiving will return a JSON array.
+                With each call (responseCount increments), 
+                   * convert array elt -> DICOM
+                   * return first dataset in *responseIdentifiers
+                   * return appropriate DimseStatus (see below)
+             **/
+                 //**calculate the keys from the dataset requestIdentifiers 
+             char* keys = getFindKeys(requestIdentifiers, &fdata->m_mem, false, arrayTagName);
+             char* json = SendFile::getQueryRetrieveResponse((char*)opt_dataDir, (char*)level, keys, false, opt_quiet); //**Call Tricefy via Receiving
+             fdata->m_arraySize = getNumElts(json, false, arrayTagName);
+             fdata->m_json = fdata->m_mem.getCacheReturn(json);  
+         }
+         if (fdata->m_arraySize >= responseCount)
+            *responseIdentifiers = json2Dataset(fdata->m_json,  responseCount, false, arrayTagName);
+         else
+            *responseIdentifiers = NULL;
+
+         if (cancelled)
+            response->DimseStatus = 0xFE00; //**Cancelled
+         else if (fdata->m_arraySize >= responseCount)
+            response->DimseStatus = 0xFF00; //Pending - MORE FOLLOWING
+         else
+            response->DimseStatus = 0x0000; //SUCCESS - done - this is the last time
+         *statusDetail = NULL;
+     }
+}
+
+static void MoveCallback(void *callbackData, OFBool cancelled, T_DIMSE_C_MoveRQ *request, DcmDataset *requestIdentifiers, int responseCount, T_DIMSE_C_MoveRSP *response, DcmDataset **statusDetail, DcmDataset **responseIdentifiers)
+{
+/**
+      if (ids) then call Receiving to initiate move
+      otherwise, try to convert to ids and then call receiving
+**/
+      response->DimseStatus = 0x0000; 
+      *statusDetail = NULL;
+      MoveCallbackData* mdata = (MoveCallbackData*)callbackData;
+#ifdef WITH_LIBICONV
+      requestIdentifiers->convertToUTF8();
+#endif
+      const char* c = NULL; 
+      char* idType = "";
+      const char* ids = NULL;
+         //**Look for keys:  STUDY, IMAGE, SERIES.  Otherwise go get studies
+      c = NULL; if (requestIdentifiers->findAndGetString(DCM_SOPInstanceUID, c).good() && c)  
+      {  idType = "IMAGE";  ids = c;  }
+      if (ids == NULL)
+      {   c = NULL; if (requestIdentifiers->findAndGetString(DCM_SeriesInstanceUID, c).good() && c)  
+          {  idType = "SERIES";  ids = c;  }
+      }
+      if (ids == NULL)
+      {   c = NULL; if (requestIdentifiers->findAndGetString(DCM_StudyInstanceUID, c).good() && c)  
+          {  idType = "STUDY";  ids = c;  }
+      }
+      if (ids == NULL)  //**No IDs;  see if we have enough fields to get any
+      {    char* keys = getFindKeys(requestIdentifiers, &mdata->m_mem, false, "qr_studies2");
+           char* json = SendFile::getQueryRetrieveResponse((char*)opt_dataDir, "STUDY2", keys, false, opt_quiet); 
+           JsnParser p(json, strlen(json));
+           int num = p.getArrayNum(0, "qr_studies2");
+           GrowingString g;
+           for (int i = 0; i < num; i++)
+           {    char*  obj = p.getFullObject(0, "qr_studies2", i); 
+                JsnParser p1(obj, strlen(obj));
+                if (p1.jsonOk())
+                {   char* attr = p1.getString(0, (char*)"study_instance_uid");
+                    if (!isnull(attr))
+                    {   if (isnull(idType))
+                            idType = "STUDY";  
+                        else
+                            g.add("\\");
+                        g.add(attr);
+                    }
+                }
+           }
+           if (!isnull(idType))
+               ids = g.get(&mdata->m_mem);
+      }
+      if (isnull(idType))  //**Fail, NO Ids to move
+      {  *statusDetail = new DcmDataset();
+         response->DimseStatus = 0xA701; //**Error - cannot calculate IDs
+         (*statusDetail)->putAndInsertString(DCM_ErrorComment, "No IDs sent and No IDs could be calculated");
+         return;
+      }
+
+         //**Have IDS - initiate the move in receiving
+      int numIds = SendFile::executeMove((char*)opt_dataDir, mdata->m_aeTitle, idType, (char*)ids, false, opt_quiet);  
+      if (numIds < 0)
+      {  *statusDetail = new DcmDataset();
+         response->DimseStatus = 0xA701; //**Error - cannot calculate IDs
+         (*statusDetail)->putAndInsertString(DCM_ErrorComment, "Server API failed in match calculation");
+         return;
+      }
+      else
+      {   response->NumberOfRemainingSubOperations = 0;
+          response->NumberOfCompletedSubOperations = numIds;
+          response->NumberOfFailedSubOperations = 0;
+          response->NumberOfWarningSubOperations = 0;
+      }
+         //**Add this active move request so boxComm starts polling for it
+      addMove(mdata->m_messageId, mdata->m_aeTitle);
+      
+        //**Standard says can't return until the retrieve is complete - so hangout and wait for that
+      bool error = false;
+      int sameCount = 0;  //**Quit if # of records does not decrease
+      int numRecsSV = 0;
+      int currentCount = 0;
+      OFStandard::sleep(1);
+      while (true)
+      {   int currentCount = SendFile::getNumRetrieves((char*)opt_dataDir, mdata->m_aeTitle, false, opt_quiet);  
+//fprintf(stderr, "CurrentCount = %d, SameCount=%d\n", currentCount, sameCount);
+          if (currentCount < 0)  //**Error
+          {   error = true; break; }
+          if (currentCount == 0 && numRecsSV != 0)  //**Done
+              break;
+          if (numRecsSV == currentCount)  sameCount++;  //**no change since last call
+          else  sameCount = 0;
+          if (sameCount > 20)  //**Hasn't changed in a long time - better call it quits
+              break;
+          numRecsSV = currentCount;
+          OFStandard::sleep(10);
+      }
+          //**calculate Status
+      if (currentCount == 0 && sameCount <= 20)
+      {   response->DimseStatus = 0x0000; //SUCCESS - done 
+          cancelMove(mdata->m_messageId, false);  //**remove from the table - we're done with this retrieve
+      }
+      else if (currentCount != 0 && currentCount < numIds)
+      {   response->DimseStatus = 0xB000;  //**Partial Success
+          response->NumberOfCompletedSubOperations = numIds - currentCount;
+          response->NumberOfFailedSubOperations = currentCount;
+          cancelMove(mdata->m_messageId, true);  //**remove from the table - we're done with this retrieve
+      }
+      else
+      {   response->DimseStatus = 0xC000;  //total Fail
+          response->NumberOfCompletedSubOperations = 0;
+          response->NumberOfFailedSubOperations = numIds;
+          cancelMove(mdata->m_messageId, true);  //**remove from the table - we're done with this retrieve
+      }
+}
+#endif
 
 
 static OFCondition echoSCP( T_ASC_Association * assoc, T_DIMSE_Message * msg, T_ASC_PresentationContextID presID)
@@ -1630,10 +2488,19 @@ static OFCondition echoSCP( T_ASC_Association * assoc, T_DIMSE_Message * msg, T_
     OFLOG_INFO(storescpLogger, "Received Echo Request (MsgID " << req->MessageID << ")");
   }
 
-  /* the echo succeeded !! */
-  OFCondition cond = DIMSE_sendEchoResponse(assoc, presID, req, STATUS_Success, NULL);
-  if (cond.bad())
+  DIC_US s = STATUS_Success;
+#ifdef TRICE
+  {   int rc = 0;   
+      char*  out = SendFile::sendEcho((char*)opt_dataDir, rc, (char*)calledAETitle.c_str(), (char*)callingAETitle.c_str());
+      if (rc != 0 || strcasecmp(out, "ok") != 0)
+         s = 0xc000;
+  }
+#endif
+  OFCondition cond = DIMSE_sendEchoResponse(assoc, presID, req, s, NULL);
+  if (cond.bad() || s != STATUS_Success)
   {
+     if (cond.good())
+        cond = EC_IllegalCall;
     OFLOG_ERROR(storescpLogger, "Echo SCP Failed: " << DimseCondition::dump(temp_str, cond));
   }
   return cond;
@@ -1712,6 +2579,19 @@ storeSCPCallback(
     rsp->DimseStatus = STATUS_STORE_Refused_OutOfResources;
     return;
   }
+#ifdef TRICE
+      //**For cached uplinks, ensure that we don't save files that cannot be sent
+  char* dir = Util::readTxt((char*)opt_dataDir, "viewpointDir.txt");
+  char* dName = Util::readTxt((char*)opt_dataDir, "displayName.txt");
+  char* fCount = Util::readTxt((char*)opt_dataDir, "FileFailedCount.txt");
+  if (isnull(dName) || (!isnull(fCount) && atoi(fCount) >= 5 && fileExists(dir) && getFileCount(dir) >= 50))
+  {
+    OFLOG_INFO(storescpLogger, "ABORT initiated (due to Trice inability to send)");
+    ASC_abortAssociation((OFstatic_cast(StoreCallbackData*, callbackData))->assoc);
+    rsp->DimseStatus = STATUS_STORE_Refused_OutOfResources;
+    return;
+  }
+#endif
 
   // if opt_sleepAfter is set, the user requires that the application shall
   // sleep a certain amount of seconds after having received one PDU.
@@ -1792,17 +2672,6 @@ storeSCPCallback(
             OFLOG_WARN(storescpLogger, "element PatientName " << DCM_PatientName << " absent or empty in data set, using '"
                  << tmpName << "' instead");
           }
-          else
-          {
-              DcmElement *patElem = NULL;
-              OFString charset;
-              (*imageDataSet)->findAndGetElement(DCM_PatientName, patElem); // patElem cannot be NULL, see above
-              (*imageDataSet)->findAndGetOFStringArray(DCM_SpecificCharacterSet, charset);
-              if (!charset.empty() && !(charset == "ISO_IR 100") && (patElem->containsExtendedCharacters()))
-              {
-                  OFLOG_WARN(storescpLogger, "Patient name not in Latin-1 (charset: " << charset << "), ASCII dir name may be broken");
-              }
-          }
 
           /* substitute non-ASCII characters in patient name to ASCII "equivalent" */
           const size_t length = tmpName.length();
@@ -1833,7 +2702,7 @@ storeSCPCallback(
 
           // create a name for the new subdirectory.
           char timestamp[32];
-          sprintf(timestamp, "%04u%02u%02u_%02u%02u%02u%03u",
+          snprintf(timestamp, sizeof(timestamp), "%04u%02u%02u_%02u%02u%02u%03u",
             dateTime.getDate().getYear(), dateTime.getDate().getMonth(), dateTime.getDate().getDay(),
             dateTime.getTime().getHour(), dateTime.getTime().getMinute(), dateTime.getTime().getIntSecond(), dateTime.getTime().getMilliSecond());
 
@@ -1867,31 +2736,24 @@ storeSCPCallback(
           // create subdirectoryPathAndName (string with full path to new subdirectory)
           OFStandard::combineDirAndFilename(subdirectoryPathAndName, OFStandard::getDirNameFromPath(tmpStr, cbdata->imageFileName), subdirectoryName);
 
-          // create the subdirectory and then check errno, in order to avoid a "time of check to time of use" (TOC-TOU) race condition.
-#ifdef HAVE_WINDOWS_H
-          int mkdirStatus = _mkdir( subdirectoryPathAndName.c_str() );
-#else
-          int mkdirStatus = mkdir( subdirectoryPathAndName.c_str(), S_IRWXU | S_IRWXG | S_IRWXO );
-#endif
-
-          if( mkdirStatus == -1 )
+          // check if the subdirectory already exists
+          // if it already exists dump a warning
+          if( OFStandard::dirExists(subdirectoryPathAndName) )
+            OFLOG_WARN(storescpLogger, "subdirectory for study already exists: " << subdirectoryPathAndName);
+          else
           {
-            if (errno == EEXIST)
-            {
-              // If the subdirectory already exists, then re-use it. It might have been created by another
-              // process receiving images in parallel.
-              OFLOG_INFO(storescpLogger, "using existing subdirectory for study: " << subdirectoryPathAndName);
-            }
-            else
+            // if it does not exist create it
+            OFLOG_INFO(storescpLogger, "creating new subdirectory for study: " << subdirectoryPathAndName);
+#ifdef HAVE_WINDOWS_H
+            if( _mkdir( subdirectoryPathAndName.c_str() ) == -1 )
+#else
+            if( mkdir( subdirectoryPathAndName.c_str(), S_IRWXU | S_IRWXG | S_IRWXO ) == -1 )
+#endif
             {
               OFLOG_ERROR(storescpLogger, "could not create subdirectory for study: " << subdirectoryPathAndName);
               rsp->DimseStatus = STATUS_STORE_Error_CannotUnderstand;
               return;
             }
-          }
-          else
-          {
-            OFLOG_INFO(storescpLogger, "created new subdirectory for study: " << subdirectoryPathAndName);
             // all objects of a study have been received, so a new subdirectory is started.
             // ->timename counter can be reset, because the next filename can't cause a duplicate.
             // if no reset would be done, files of a new study (->new directory) would start with a counter in filename
@@ -1935,17 +2797,14 @@ storeSCPCallback(
       {
         OFLOG_ERROR(storescpLogger, "cannot write DICOM file: " << fileName << ": " << cond.text());
         rsp->DimseStatus = STATUS_STORE_Refused_OutOfResources;
-
-        // delete incomplete file
-        OFStandard::deleteFile(fileName);
       }
 
       // check the image to make sure it is consistent, i.e. that its sopClass and sopInstance correspond
       // to those mentioned in the request. If not, set the status in the response message variable.
-      if (rsp->DimseStatus == STATUS_Success)
+      if ((rsp->DimseStatus == STATUS_Success)&&(!opt_ignore))
       {
         // which SOP class and SOP instance ?
-        if (!DU_findSOPClassAndInstanceInDataSet(*imageDataSet, sopClass, sizeof(sopClass), sopInstance, sizeof(sopInstance), opt_correctUIDPadding))
+        if (!DU_findSOPClassAndInstanceInDataSet(*imageDataSet, sopClass, sopInstance, opt_correctUIDPadding))
         {
            OFLOG_ERROR(storescpLogger, "bad DICOM file: " << fileName);
            rsp->DimseStatus = STATUS_STORE_Error_CannotUnderstand;
@@ -1968,6 +2827,67 @@ storeSCPCallback(
       // able to perform the placeholder substitution in executeOnReception()
       outputFileNameArray.push_back(OFStandard::getFilenameFromPath(tmpStr, cbdata->imageFileName));
     }
+
+#ifdef TRICE
+         //**logic moved so we can fail in a legal way
+    if(rsp->DimseStatus == STATUS_Success)
+    {  int rc = BoxStore::cleanup(false);
+       if (rc != 0)
+           rsp->DimseStatus = STATUS_STORE_Error_CannotUnderstand;  //**force a failure since something upstream did not work right
+    }
+    else
+        BoxStore::cleanup(true);
+
+       //**We didn't communicate the file - we saved it locally and are using the file export process to send the file over.  Move to export
+    if (opt_exportDir != NULL && rsp->DimseStatus == STATUS_Success)
+    {     //**Check the file and make sure it is complete
+       DcmFileFormat*  dfile = new DcmFileFormat();
+       OFCondition error = dfile->loadFile(cbdata->imageFileName);
+       if (!error.good())
+       {   OFStandard::sleep(7);
+           error = dfile->loadFile(cbdata->imageFileName);
+       }
+       if (!error.good())
+           rsp->DimseStatus = STATUS_STORE_Error_CannotUnderstand;  //**File didn't persist
+       delete dfile;
+    }
+    if (opt_exportDir != NULL && rsp->DimseStatus == STATUS_Success)
+    {     //**Just use the fileName (not the path)  
+       char* fileName = &cbdata->imageFileName[strlen(cbdata->imageFileName)-1];
+       while (fileName > cbdata->imageFileName && *fileName != PATH_SEPARATOR)  fileName--;
+       fileName++;  
+       OFString exportPath;
+       exportPath = opt_exportDir;
+       exportPath += PATH_SEPARATOR;
+       exportPath += fileName;
+//**Add the in eaetitles & internal-ip for tracking
+       exportPath += "~" + OFString(Util::encode((char*)calledAETitle.c_str(), calledAETitle.length())) + "~" + OFString(Util::encode((char*)callingAETitle.c_str(), callingAETitle.length())) + "~";
+       exportPath += client_ip_address;
+       char* ep = (char*)exportPath.c_str();
+       ep = Util::replace(ep, (char*)"\"", (char*)"");
+       if( rename(cbdata->imageFileName, ep ) != 0 )  //**move to processing directory failes
+       {   if (fileExists(ep))
+              rmFile(cbdata->imageFileName);   //**File is already being processed
+           else 
+           {   if( cpFile(cbdata->imageFileName, ep ) != 0 )
+                   rsp->DimseStatus = STATUS_STORE_Error_CannotUnderstand;  //**File didn't persist
+               rmFile(cbdata->imageFileName);   //**file copy succeeded
+           }
+       }
+       if (!opt_exportOnly && rsp->DimseStatus == STATUS_Success)  //**Copy back to the output directory if we need it both places
+       {
+#ifdef _WIN32
+          CopyFile(exportPath.c_str(), cbdata->imageFileName, true);
+#else
+          std::ofstream  dst(cbdata->imageFileName, std::ios::binary);
+          std::ifstream  src(exportPath.c_str(), std::ios::binary);
+          dst << src.rdbuf();
+#endif
+       }
+    }
+    else
+       OFStandard::deleteFile(cbdata->imageFileName); // delete the temporary file
+#endif
   }
 }
 
@@ -2003,7 +2923,7 @@ static OFCondition storeSCP(
 #ifdef _WIN32
     tmpnam(imageFileName);
 #else
-    OFStandard::strlcpy(imageFileName, NULL_DEVICE_NAME, 2048);
+    strlcpy(imageFileName, NULL_DEVICE_NAME, sizeof(imageFileName));
 #endif
   }
   else
@@ -2014,7 +2934,7 @@ static OFCondition storeSCP(
       // create unique filename by generating a temporary UID and using ".X." as an infix
       char buf[70];
       dcmGenerateUniqueIdentifier(buf);
-      sprintf(imageFileName, "%s%c%s.X.%s%s", opt_outputDirectory.c_str(), PATH_SEPARATOR, dcmSOPClassUIDToModality(req->AffectedSOPClassUID, "UNKNOWN"),
+      snprintf(imageFileName, sizeof(imageFileName), "%s%c%s.X.%s%s", opt_outputDirectory.c_str(), PATH_SEPARATOR, dcmSOPClassUIDToModality(req->AffectedSOPClassUID, "UNKNOWN"),
         buf, opt_fileNameExtension.c_str());
     }
     else if (opt_timeNames)
@@ -2029,7 +2949,7 @@ static OFCondition storeSCP(
       if (timeNameCounter == -1)
       {
         // timeNameCounter not set -> last written filename has to be without "serial number"
-        sprintf(cmpFileName, "%04u%02u%02u%02u%02u%02u%03u.%s%s",
+        snprintf(cmpFileName, sizeof(cmpFileName), "%04u%02u%02u%02u%02u%02u%03u.%s%s",
           dateTime.getDate().getYear(), dateTime.getDate().getMonth(), dateTime.getDate().getDay(),
           dateTime.getTime().getHour(), dateTime.getTime().getMinute(), dateTime.getTime().getIntSecond(), dateTime.getTime().getMilliSecond(),
           dcmSOPClassUIDToModality(req->AffectedSOPClassUID, "UNKNOWN"), opt_fileNameExtension.c_str());
@@ -2037,7 +2957,7 @@ static OFCondition storeSCP(
       else
       {
         // counter was active before, so generate filename with "serial number" for comparison
-        sprintf(cmpFileName, "%04u%02u%02u%02u%02u%02u%03u_%04u.%s%s", // millisecond version
+        snprintf(cmpFileName, sizeof(cmpFileName), "%04u%02u%02u%02u%02u%02u%03u_%04u.%s%s", // millisecond version
           dateTime.getDate().getYear(), dateTime.getDate().getMonth(), dateTime.getDate().getDay(),
           dateTime.getTime().getHour(), dateTime.getTime().getMinute(), dateTime.getTime().getIntSecond(), dateTime.getTime().getMilliSecond(),
           timeNameCounter, dcmSOPClassUIDToModality(req->AffectedSOPClassUID, "UNKNOWN"), opt_fileNameExtension.c_str());
@@ -2047,7 +2967,7 @@ static OFCondition storeSCP(
         // if this is not the first run and the prospective filename is equal to the last written filename
         // generate one with a serial number (incremented by 1)
         timeNameCounter++;
-        sprintf(imageFileName, "%s%c%04u%02u%02u%02u%02u%02u%03u_%04u.%s%s", opt_outputDirectory.c_str(), PATH_SEPARATOR, // millisecond version
+        snprintf(imageFileName, sizeof(imageFileName), "%s%c%04u%02u%02u%02u%02u%02u%03u_%04u.%s%s", opt_outputDirectory.c_str(), PATH_SEPARATOR, // millisecond version
           dateTime.getDate().getYear(), dateTime.getDate().getMonth(), dateTime.getDate().getDay(),
           dateTime.getTime().getHour(), dateTime.getTime().getMinute(), dateTime.getTime().getIntSecond(), dateTime.getTime().getMilliSecond(),
           timeNameCounter, dcmSOPClassUIDToModality(req->AffectedSOPClassUID, "UNKNOWN"), opt_fileNameExtension.c_str());
@@ -2055,7 +2975,7 @@ static OFCondition storeSCP(
       else
       {
         // first run or filenames are different: create filename without serial number
-        sprintf(imageFileName, "%s%c%04u%02u%02u%02u%02u%02u%03u.%s%s", opt_outputDirectory.c_str(), PATH_SEPARATOR, // millisecond version
+        snprintf(imageFileName, sizeof(imageFileName), "%s%c%04u%02u%02u%02u%02u%02u%03u.%s%s", opt_outputDirectory.c_str(), PATH_SEPARATOR, // millisecond version
           dateTime.getDate().getYear(), dateTime.getDate().getMonth(), dateTime.getDate().getDay(),
           dateTime.getTime().getHour(), dateTime.getTime().getMinute(),dateTime.getTime().getIntSecond(), dateTime.getTime().getMilliSecond(),
           dcmSOPClassUIDToModality(req->AffectedSOPClassUID, "UNKNOWN"), opt_fileNameExtension.c_str());
@@ -2066,7 +2986,7 @@ static OFCondition storeSCP(
     else
     {
       // don't create new UID, use the study instance UID as found in object
-      sprintf(imageFileName, "%s%c%s.%s%s", opt_outputDirectory.c_str(), PATH_SEPARATOR, dcmSOPClassUIDToModality(req->AffectedSOPClassUID, "UNKNOWN"),
+      snprintf(imageFileName, sizeof(imageFileName), "%s%c%s.%s%s", opt_outputDirectory.c_str(), PATH_SEPARATOR, dcmSOPClassUIDToModality(req->AffectedSOPClassUID, "UNKNOWN"),
         req->AffectedSOPInstanceUID, opt_fileNameExtension.c_str());
     }
   }
@@ -2098,6 +3018,11 @@ static OFCondition storeSCP(
 
   // define an address where the information which will be received over the network will be stored
   DcmDataset *dset = dcmff.getDataset();
+//**initialize BoxStore
+#ifdef TRICE
+  OFString tmpStr;
+  BoxStore::init((char*)OFStandard::getFilenameFromPath(tmpStr, imageFileName).c_str(), (char*)opt_dataDir, (char*)calledAETitle.c_str(), (char*)callingAETitle.c_str(), (char*)"NONE", opt_quiet, client_ip_address);
+#endif
 
   // if opt_bitPreserving is set, the user requires that the data shall be
   // written exactly as it was received. Depending on this option, function
@@ -2118,6 +3043,9 @@ static OFCondition storeSCP(
   {
     OFString temp_str;
     OFLOG_ERROR(storescpLogger, "Store SCP Failed: " << DimseCondition::dump(temp_str, cond));
+#ifdef TRICE
+    BoxStore::Log((char*)DimseCondition::dump(temp_str, cond).c_str());
+#endif
     // remove file
     if (!opt_ignore)
     {
@@ -2135,8 +3063,10 @@ static OFCondition storeSCP(
 
   // if everything was successful so far and option --exec-on-reception is set,
   // we want to execute a certain command which was passed to the application
-  if( cond.good() && opt_execOnReception != NULL )
-    executeOnReception();
+#ifndef TRICE
+  if( cond.good() && opt_execOnReception != NULL)
+      executeOnReception();
+#endif
 
   // if everything was successful so far, go ahead and handle possible end-of-study events
   if( cond.good() )
@@ -2221,7 +3151,7 @@ static void executeOnReception()
   // perform substitution for placeholder #r
   cmd = replaceChars( cmd, OFString(CALLING_PRESENTATION_ADDRESS_PLACEHOLDER), callingPresentationAddress );
 
-  // Execute command in a new process
+  // Execute  
   executeCommand( cmd );
 }
 
@@ -2260,7 +3190,7 @@ static void renameOnEndOfStudy()
     // determine the new file name: The first two characters of the old file name make up the [modality-prefix].
     // The value for [consecutive-numbering] will be determined using the counter variable.
     char modalityId[3];
-    char newFileName[20];
+    char newFileName[9];
     if (opt_timeNames)
     {
       // modality prefix are the first 2 characters after serial number (if present)
@@ -2280,7 +3210,7 @@ static void renameOnEndOfStudy()
     {
       OFStandard::strlcpy( modalityId, (*first).c_str(), 3 );
     }
-    sprintf( newFileName, "%s%06d", modalityId, counter );
+    snprintf( newFileName, sizeof(newFileName), "%s%06d", modalityId, counter );
 
     // create two strings containing path and file name for
     // the current filename and the future filename
@@ -2326,13 +3256,13 @@ static void executeOnEndOfStudy()
   cmd = replaceChars( cmd, OFString(PATH_PLACEHOLDER), lastStudySubdirectoryPathAndName );
 
   // perform substitution for placeholder #a
-  cmd = replaceChars( cmd, OFString(CALLING_AETITLE_PLACEHOLDER), callingAETitle );
+  cmd = replaceChars( cmd, OFString(CALLING_AETITLE_PLACEHOLDER), (endOfStudyThroughTimeoutEvent) ? callingAETitle : lastCallingAETitle );
 
   // perform substitution for placeholder #c
-  cmd = replaceChars( cmd, OFString(CALLED_AETITLE_PLACEHOLDER), calledAETitle );
+  cmd = replaceChars( cmd, OFString(CALLED_AETITLE_PLACEHOLDER), (endOfStudyThroughTimeoutEvent) ? calledAETitle : lastCalledAETitle );
 
   // perform substitution for placeholder #r
-  cmd = replaceChars( cmd, OFString(CALLING_PRESENTATION_ADDRESS_PLACEHOLDER), callingPresentationAddress );
+  cmd = replaceChars( cmd, OFString(CALLING_PRESENTATION_ADDRESS_PLACEHOLDER), (endOfStudyThroughTimeoutEvent) ? callingPresentationAddress : lastCallingPresentationAddress );
 
   // Execute command in a new process
   executeCommand( cmd );
@@ -2395,7 +3325,7 @@ static void executeCommand( const OFString &cmd )
     // we 'emulate' a call to system() by passing the command to /bin/sh
     // which hopefully exists on all Posix systems.
 
-    if (execl( "/bin/sh", "/bin/sh", "-c", cmd.c_str(), OFreinterpret_cast(char *, 0) ) < 0)
+    if (execl( "/bin/sh", "/bin/sh", "-c", cmd.c_str(), NULL ) < 0)
       OFLOG_ERROR(storescpLogger, "cannot execute /bin/sh");
 
     // if execl succeeds, this part will not get executed.
@@ -2404,13 +3334,13 @@ static void executeCommand( const OFString &cmd )
   }
 #else
   PROCESS_INFORMATION procinfo;
-  STARTUPINFOA sinfo;
+  STARTUPINFO sinfo;
   OFBitmanipTemplate<char>::zeroMem((char *)&sinfo, sizeof(sinfo));
   sinfo.cb = sizeof(sinfo);
 
   // execute command (Attention: Do not pass DETACHED_PROCESS as sixth argument to the below
   // called function because in such a case the execution of batch-files is not going to work.)
-  if( !CreateProcessA(NULL, OFconst_cast(char *, cmd.c_str()), NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo) )
+  if( !CreateProcess(NULL, OFconst_cast(char *, cmd.c_str()), NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo) )
     OFLOG_ERROR(storescpLogger, "cannot execute command '" << cmd << "'");
 
   if (opt_execSync)
@@ -2425,13 +3355,8 @@ static void executeCommand( const OFString &cmd )
 #endif
 }
 
-#ifdef HAVE_WAITPID
+
 static void cleanChildren(pid_t pid, OFBool synch)
-#elif defined(HAVE_WAIT3)
-static void cleanChildren(pid_t /* pid */, OFBool synch)
-#else
-static void cleanChildren(pid_t /* pid */, OFBool /* synch */)
-#endif
   /*
    * This function removes child processes that have terminated,
    * i.e. converted to zombies. Should be called now and then.
@@ -2439,7 +3364,7 @@ static void cleanChildren(pid_t /* pid */, OFBool /* synch */)
 {
 #ifdef HAVE_WAITPID
   int stat_loc;
-#elif defined(HAVE_WAIT3)
+#elif HAVE_WAIT3
   struct rusage rusage;
 #if defined(__NeXT__)
   /* some systems need a union wait as argument to wait3 */

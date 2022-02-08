@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -53,7 +53,7 @@ public:
     virtual ~DcmRepresentationParameter() {}
 
     /** this methods creates a copy of type DcmRepresentationParameter *
-     *  it must be overwritten in every subclass.
+     *  it must be overweritten in every subclass.
      *  @return copy of this object
      */
     virtual DcmRepresentationParameter *clone() const = 0;
@@ -151,7 +151,7 @@ private:
     /// List of representations of pixel data
     DcmRepresentationList repList;
 
-    /// Iterator to the last dummy element in representation list
+    /// Iterator to the last dummy element in representation lis
     DcmRepresentationListIterator repListEnd;
 
     /// Iterator to the original representation. if an uncompressed
@@ -161,7 +161,7 @@ private:
     /// current list element for some operations
     DcmRepresentationListIterator current;
 
-    /// shows if an unencapsulated representation is stored
+    /// shows if an unecapsulated representation is stored
     OFBool existUnencapsulated;
 
     /** this flag indicates that this pixel data element will be written
@@ -249,8 +249,7 @@ private:
 
 public:
 
-    /** constructor.
-     *  Create new element from given tag and length.
+    /** constructor
      *  @param tag attribute tag
      *  @param len length of the attribute value
      */
@@ -277,21 +276,7 @@ public:
       return new DcmPixelData(*this);
     }
 
-    /** comparison operator that compares the value of this element
-     *  with a given element of the same type (e.g. an DcmPixelData with a
-     *  DcmPixelData). The tag of the element is also considered as the first
-     *  component that is compared, followed by the object types (VR, i.e. DCMTK'S EVR).
-     *  The DcmPixelData implementation checks whether the uncompressed data of
-     *  both objects are identical, and if not provided, if the compressed data
-     *  of both objects is the same, by comparing the pixel items bytewise.
-     *  @param  rhs the right hand side of the comparison
-     *  @return 0 if the object values are equal.
-     *          -1 is returned if rhs is considered greater than this object.
-     *          1 is returned if rhs is considered smaller than this object.
-     */
-    virtual int compare(const DcmElement& rhs) const;
-
-    /** virtual object copying. This method can be used for DcmObject
+    /** Virtual object copying. This method can be used for DcmObject
      *  and derived classes to get a deep copy of an object. Internally
      *  the assignment operator is called if the given DcmObject parameter
      *  is of the same type as "this" object instance. If not, an error
@@ -307,9 +292,9 @@ public:
 
     /** set/change the current value representation of the uncompressed image representation, if any
      *  @param vr new value representation to be set.  All VRs except for OW (Other
-     *    Word String) are treated as 8 bit data (OB).  This is particularly useful
+     *    Word String) are treated as 8 bit data (OB).  This is particularily useful
      *    for unknown (UN) or unsupported VRs.
-     *  @return status, EC_Normal if successful, an error code otherwise
+     *  @return status status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition setVR(DcmEVR vr);
 
@@ -328,7 +313,7 @@ public:
      *  @param pixelFileName optional filename used to write the raw pixel data file
      *  @param pixelCounter optional counter used for automatic pixel data filename creation
      */
-    virtual void print(STD_NAMESPACE ostream &out,
+    virtual void print(STD_NAMESPACE ostream&out,
                        const size_t flags = 0,
                        const int level = 0,
                        const char *pixelFileName = NULL,
@@ -341,7 +326,10 @@ public:
     virtual OFBool canWriteXfer(const E_TransferSyntax newXfer,
                                 const E_TransferSyntax oldXfer);
 
-    /** @copydoc DcmObject::calcElementLength()
+    /** returns length of representation conforming to the
+     *  transfer syntax with tag, vr, ... It does not create a
+     *  representation. If no conforming representation exists an
+     *  error code is set and 0 returned.
      */
     virtual Uint32 calcElementLength(const E_TransferSyntax xfer,
                                      const E_EncodingType enctype);
@@ -373,7 +361,7 @@ public:
      *  @param maxReadLength Maximum read length for reading an attribute value.
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual OFCondition read(DcmInputStream &inStream,
+    virtual OFCondition read(DcmInputStream & inStream,
                              const E_TransferSyntax ixfer,
                              const E_GrpLenEncoding glenc = EGL_noChange,
                              const Uint32 maxReadLength = DCM_MaxReadLength);
@@ -394,16 +382,8 @@ public:
      *  @param flags optional flag used to customize the output (see DCMTypes::XF_xxx)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual OFCondition writeXML(STD_NAMESPACE ostream &out,
+    virtual OFCondition writeXML(STD_NAMESPACE ostream&out,
                                  const size_t flags = 0);
-
-    /** write object in JSON format to a stream
-     *  @param out output stream to which the JSON document is written
-     *  @param format used to format and customize the output
-     *  @return status, EC_Normal if successful, an error code otherwise
-     */
-    virtual OFCondition writeJson(STD_NAMESPACE ostream &out,
-                                  DcmJsonFormat &format);
 
     /** special write method for creation of digital signatures
      *  @param outStream DICOM output stream
@@ -443,8 +423,6 @@ public:
      *  it is created (if possible).
      *  if repParam is zero, a representation is chosen or created that
      *  is equal to the default representation parameters
-     *  @deprecated The direct call of this method by user code is deprecated.
-     *    Use DcmDataset::chooseRepresentation() instead.
      */
     OFCondition chooseRepresentation(
         const E_TransferSyntax repType,
@@ -475,23 +453,13 @@ public:
         const Uint16 * wordValue,
         const unsigned long length);
 
-    /** create an empty Uint8 array of given number of bytes and set it.
-     *  All array elements are initialized with a value of 0 (using 'memset').
-     *  This method is only applicable to certain VRs, e.g. OB.
-     *  @param numBytes number of bytes (8 bit) to be created
-     *  @param bytes stores the pointer to the resulting buffer
-     *  @return status, EC_Normal if successful, an error code otherwise
+    /** create an empty Uint8 array of given number of words and set it
      */
     virtual OFCondition createUint8Array(
         const Uint32 numBytes,
         Uint8 * & bytes);
 
-    /** create an empty Uint16 array of given number of words and set it.
-     *  All array elements are initialized with a value of 0 (using 'memset').
-     *  This method is only applicable to OW data.
-     *  @param numWords number of words (16 bit) to be created
-     *  @param words stores the pointer to the resulting buffer
-     *  @return status, EC_Normal if successful, an error code otherwise
+    /** create an empty Uint16 array of given number of words and set it
      */
     virtual OFCondition createUint16Array(
         const Uint32 numWords,
@@ -513,9 +481,9 @@ public:
       const Uint32 length,
       const E_ByteOrder byteOrder);
 
-    /** get a specific existing Representation, creates no representation
+    /** get a specific exisiting Representation, creates no representation
      *  if repParam is NULL, then the representation conforming to the default
-     *  representationParameters (defined with the codec) is returned.
+     *  presentationParameters (defined with the codec) is returned.
      */
     OFCondition getEncapsulatedRepresentation(
         const E_TransferSyntax repType,
@@ -559,8 +527,8 @@ public:
      */
     void removeAllButOriginalRepresentations();
 
-    /** removes all but the current representation.
-     *  Makes the current representation original.
+    /** removes all but the current representation
+     *  Makes the current representation original
      */
     void removeAllButCurrentRepresentations();
 

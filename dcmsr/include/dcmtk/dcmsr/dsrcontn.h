@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2017, OFFIS e.V.
+ *  Copyright (C) 2000-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,7 +26,7 @@
 
 #include "dcmtk/config/osconfig.h"   /* make sure OS specific configuration is included first */
 
-#include "dcmtk/dcmsr/dsrdoctn.h"
+#include "dcmtk/dcmsr/dsrdoctr.h"
 
 
 /*---------------------*
@@ -42,47 +42,17 @@ class DCMTK_DCMSR_EXPORT DSRContainerTreeNode
   public:
 
     /** constructor
-     ** @param  relationshipType     type of relationship to the parent tree node.  Should
-     *                               not be DSRTypes::RT_invalid or DSRTypes::RT_isRoot.
+     ** @param  relationshipType     type of relationship to the parent tree node.
+     *                               Should not be RT_invalid or RT_isRoot.
      *  @param  continuityOfContent  Continuity of content flag (default: separate).
-     *                               Should be different from DSRTypes::COC_invalid.
+     *                               Should be different from COC_invalid.
      */
     DSRContainerTreeNode(const E_RelationshipType relationshipType,
                          const E_ContinuityOfContent continuityOfContent = COC_Separate);
 
-    /** copy constructor.
-     *  Please note that the comments on the copy constructor of the base class
-     *  DSRDocumentTreeNode apply.
-     ** @param  node  tree node to be copied
-     */
-    DSRContainerTreeNode(const DSRContainerTreeNode &node);
-
     /** destructor
      */
     virtual ~DSRContainerTreeNode();
-
-    /** comparison operator "equal".
-     *  Two tree nodes are equal if the comparison operator of the base class DSRDocumentTreeNode
-     *  regards them as "equal" (same types and concept names) and the stored values are equal.
-     ** @param  node  tree node that should be compared to the current one
-     ** @return OFTrue if both tree nodes are equal, OFFalse otherwise
-     */
-    virtual OFBool operator==(const DSRDocumentTreeNode &node) const;
-
-    /** comparison operator "not equal".
-     *  Two tree nodes are not equal if either the comparison operator of the base class
-     *  DSRDocumentTreeNode regards them as "not equal" (different types or concept names) or
-     *  the stored values are not equal.
-     ** @param  node  tree node that should be compared to the current one
-     ** @return OFTrue if both tree nodes are not equal, OFFalse otherwise
-     */
-    virtual OFBool operator!=(const DSRDocumentTreeNode &node) const;
-
-    /** clone this tree node.
-     *  Internally, the copy constructor is used, so the corresponding comments apply.
-     ** @return copy of this tree node
-     */
-    virtual DSRContainerTreeNode *clone() const;
 
     /** clear all member variables.
      *  Please note that the content item might become invalid afterwards.
@@ -90,16 +60,11 @@ class DCMTK_DCMSR_EXPORT DSRContainerTreeNode
     virtual void clear();
 
     /** check whether the content item is valid.
-     *  The content item is valid if the base class is valid, the value is valid (see hasValidValue()),
-     *  and the concept name is valid or the content item is not the root item.
+     *  The content item is valid if the base class is valid, the continuity of content
+     *  flag is valid, and the concept name is valid or the content item is not the root item.
      ** @return OFTrue if tree node is valid, OFFalse otherwise
      */
     virtual OFBool isValid() const;
-
-    /** check whether the value of the content item, i.e.\ the continuity of content flag, is valid
-     ** @return OFTrue if the value is valid, OFFalse otherwise
-     */
-    virtual OFBool hasValidValue() const;
 
     /** check whether the content is short.
      *  A container content item is defined to be never short (return always OFFalse).
@@ -127,10 +92,10 @@ class DCMTK_DCMSR_EXPORT DSRContainerTreeNode
                                  const size_t flags) const;
 
     /** render content item in HTML/XHTML format.
-     *  After rendering the current content item all child nodes (if any) are also rendered
-     *  (see renderHTMLChildNodes() for details).  This method overwrites the one specified in
-     *  base class DSRDocumentTreeNode since the rendering of the child nodes depends on the
-     *  value of the flag 'ContinuityOfContent'.
+     *  After rendering the current content item all child nodes (if any) are also rendered (see
+     *  renderHTMLChildNodes() for details).  This method overwrites the one specified in base class
+     *  DSRDocumentTree since the rendering of the child nodes depends on the value of the flag
+     *  'ContinuityOfContent'.
      ** @param  docStream     output stream to which the main HTML/XHTML document is written
      *  @param  annexStream   output stream to which the HTML/XHTML document annex is written
      *  @param  nestingLevel  current nesting level.  Used to render section headings.
@@ -147,8 +112,8 @@ class DCMTK_DCMSR_EXPORT DSRContainerTreeNode
 
     /** get continuity of content flag.
      *  This flag specifies whether or not its contained content items (child nodes) are
-     *  logically linked in a continuous textual flow, or are separate items.
-     ** @return continuity of content flag if successful, DSRTypes::COC_invalid otherwise
+     *  logically linked in a continuous textual flow, or are sparate items.
+     ** @return continuity of content flag if successful, COC_invalid otherwise
      */
     inline E_ContinuityOfContent getContinuityOfContent() const
     {
@@ -157,9 +122,8 @@ class DCMTK_DCMSR_EXPORT DSRContainerTreeNode
 
     /** set continuity of content flag.
      *  This flag specifies whether or not its contained content items (child nodes) are
-     *  logically linked in a continuous textual flow, or are separate items.
-     ** @param  continuityOfContent  value to be set
-     *                               (should be different from DSRTypes::COC_invalid)
+     *  logically linked in a continuous textual flow, or are sparate items.
+     ** @param  continuityOfContent  value to be set (should be different from COC_invalid)
      *  @param  check                dummy parameter (currently not used)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
@@ -171,11 +135,9 @@ class DCMTK_DCMSR_EXPORT DSRContainerTreeNode
 
     /** read content item (value) from dataset
      ** @param  dataset  DICOM dataset from which the content item should be read
-     *  @param  flags    flag used to customize the reading process (see DSRTypes::RF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual OFCondition readContentItem(DcmItem &dataset,
-                                        const size_t flags);
+    virtual OFCondition readContentItem(DcmItem &dataset);
 
     /** write content item (value) to dataset
      ** @param  dataset  DICOM dataset to which the content item should be written
@@ -186,12 +148,10 @@ class DCMTK_DCMSR_EXPORT DSRContainerTreeNode
     /** read content item specific XML data
      ** @param  doc     document containing the XML file content
      *  @param  cursor  cursor pointing to the starting node
-     *  @param  flags   flag used to customize the reading process (see DSRTypes::XF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition readXMLContentItem(const DSRXMLDocument &doc,
-                                           DSRXMLCursor cursor,
-                                           const size_t flags);
+                                           DSRXMLCursor cursor);
 
     /** render content item (value) in HTML/XHTML format
      ** @param  docStream     output stream to which the main HTML/XHTML document is written
@@ -215,9 +175,10 @@ class DCMTK_DCMSR_EXPORT DSRContainerTreeNode
     E_ContinuityOfContent ContinuityOfContent;
 
 
- // --- declaration of default constructor and assignment operator
+ // --- declaration of default/copy constructor and assignment operator
 
     DSRContainerTreeNode();
+    DSRContainerTreeNode(const DSRContainerTreeNode &);
     DSRContainerTreeNode &operator=(const DSRContainerTreeNode &);
 };
 

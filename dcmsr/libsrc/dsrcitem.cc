@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2017, OFFIS e.V.
+ *  Copyright (C) 2000-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRContentItem
@@ -55,46 +55,13 @@ const DSRWaveformReferenceValue    DSRContentItem::EmptyWaveformReference;
 
 DSRContentItem::DSRContentItem()
   : TreeNode(NULL),
-    DeleteTreeNode(OFFalse),
     EmptyNumericMeasurement()
 {
-}
-
-
-DSRContentItem::DSRContentItem(const DSRContentItem &item)
-  : TreeNode(NULL),
-    DeleteTreeNode(OFTrue),
-    EmptyNumericMeasurement()
-{
-    if (item.TreeNode != NULL)
-        TreeNode = item.TreeNode->clone();
 }
 
 
 DSRContentItem::~DSRContentItem()
 {
-    if (DeleteTreeNode)
-        delete TreeNode;
-}
-
-
-OFBool DSRContentItem::operator==(const DSRContentItem &item) const
-{
-    OFBool result = (TreeNode == item.TreeNode);
-    /* call comparison operator (if referenced tree nodes are not the same) */
-    if (!result && (TreeNode != NULL) && (item.TreeNode != NULL))
-        result = TreeNode->operator==(*item.TreeNode);
-    return result;
-}
-
-
-OFBool DSRContentItem::operator!=(const DSRContentItem &item) const
-{
-    OFBool result = (TreeNode != item.TreeNode);
-    /* call comparison operator (if referenced tree nodes are not the same) */
-    if (result && (TreeNode != NULL) && (item.TreeNode != NULL))
-        result = TreeNode->operator!=(*item.TreeNode);
-    return result;
 }
 
 
@@ -646,48 +613,6 @@ OFCondition DSRContentItem::setContinuityOfContent(const E_ContinuityOfContent c
 }
 
 
-OFCondition DSRContentItem::getTemplateIdentification(OFString &templateIdentifier,
-                                                      OFString &mappingResource) const
-{
-    OFCondition result = EC_IllegalCall;
-    if (TreeNode != NULL)
-    {
-        if (TreeNode->getValueType() == VT_Container)
-            result = TreeNode->getTemplateIdentification(templateIdentifier, mappingResource);
-    }
-    return result;
-}
-
-
-OFCondition DSRContentItem::getTemplateIdentification(OFString &templateIdentifier,
-                                                      OFString &mappingResource,
-                                                      OFString &mappingResourceUID) const
-{
-    OFCondition result = EC_IllegalCall;
-    if (TreeNode != NULL)
-    {
-        if (TreeNode->getValueType() == VT_Container)
-            result = TreeNode->getTemplateIdentification(templateIdentifier, mappingResource, mappingResourceUID);
-    }
-    return result;
-}
-
-
-OFCondition DSRContentItem::setTemplateIdentification(const OFString &templateIdentifier,
-                                                      const OFString &mappingResource,
-                                                      const OFString &mappingResourceUID,
-                                                      const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (TreeNode != NULL)
-    {
-        if (TreeNode->getValueType() == VT_Container)
-            result = TreeNode->setTemplateIdentification(templateIdentifier, mappingResource, mappingResourceUID, check);
-    }
-    return result;
-}
-
-
 DSRCodedEntryValue *DSRContentItem::getConceptNamePtr()
 {
     DSRCodedEntryValue *pointer = NULL;
@@ -762,31 +687,22 @@ OFCondition DSRContentItem::setObservationUID(const OFString &observationUID,
 }
 
 
-const OFString &DSRContentItem::getAnnotationText() const
-{
-    if (TreeNode != NULL)
-        return TreeNode->getAnnotation();
-    return EmptyString;
-}
-
-
-OFCondition DSRContentItem::setAnnotationText(const OFString &annotationText) const
+OFCondition DSRContentItem::getTemplateIdentification(OFString &templateIdentifier,
+                                                      OFString &mappingResource) const
 {
     OFCondition result = EC_IllegalCall;
     if (TreeNode != NULL)
-    {
-        TreeNode->setAnnotation(annotationText);
-        result = EC_Normal;
-    }
+        result = TreeNode->getTemplateIdentification(templateIdentifier, mappingResource);
     return result;
 }
 
 
-// protected methods
-
-void DSRContentItem::swap(DSRContentItem &item)
+OFCondition DSRContentItem::setTemplateIdentification(const OFString &templateIdentifier,
+                                                      const OFString &mappingResource,
+                                                      const OFBool check)
 {
-    /* swap members */
-    OFswap(TreeNode, item.TreeNode);
-    OFswap(DeleteTreeNode, item.DeleteTreeNode);
+    OFCondition result = EC_IllegalCall;
+    if (TreeNode != NULL)
+        result = TreeNode->setTemplateIdentification(templateIdentifier, mappingResource, check);
+    return result;
 }

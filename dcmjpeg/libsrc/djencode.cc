@@ -1,6 +1,7 @@
+#define TRICE
 /*
  *
- *  Copyright (C) 1997-2018, OFFIS e.V.
+ *  Copyright (C) 1997-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -30,6 +31,7 @@
 #include "dcmtk/dcmjpeg/djencsv1.h"
 #include "dcmtk/dcmjpeg/djenclol.h"
 #include "dcmtk/dcmjpeg/djcparam.h"
+#include "dcmtk/dcmjpeg/djenc2k.h"
 
 // initialization of static members
 OFBool DJEncoderRegistration::registered                  = OFFalse;
@@ -40,6 +42,10 @@ DJEncoderSpectralSelection *DJEncoderRegistration::encsps = NULL;
 DJEncoderProgressive *DJEncoderRegistration::encpro       = NULL;
 DJEncoderP14SV1 *DJEncoderRegistration::encsv1            = NULL;
 DJEncoderLossless *DJEncoderRegistration::enclol          = NULL;
+#ifdef TRICE
+DJEncoder2K *DJEncoderRegistration::enc2K				  = NULL;
+DJEncoder2KLossLess *DJEncoderRegistration::enc2KLoL	  = NULL;
+#endif
 
 void DJEncoderRegistration::registerCodecs(
     E_CompressionColorSpaceConversion pCompressionCSConversion,
@@ -73,8 +79,6 @@ void DJEncoderRegistration::registerCodecs(
       EDC_photometricInterpretation,  // not relevant, used for decompression only
       pCreateSOPInstanceUID,
       EPC_default, // not relevant, used for decompression only
-      OFFalse, // not relevant, used for decompression only
-      OFFalse, // not relevant, used for decompression only
       OFFalse, // not relevant, used for decompression only
       pOptimizeHuffman,
       pSmoothingFactor,
@@ -123,6 +127,16 @@ void DJEncoderRegistration::registerCodecs(
       enclol = new DJEncoderLossless();
       if (enclol) DcmCodecList::registerCodec(enclol, NULL, cp);
 
+#ifdef TRICE
+	   // JPEG 2K
+      enc2K = new DJEncoder2K();
+      if (enc2K) DcmCodecList::registerCodec(enc2K, NULL, cp);
+	  
+	   // JPEG 2K Lossy
+      enc2KLoL = new DJEncoder2KLossLess();
+      if (enc2KLoL) DcmCodecList::registerCodec(enc2KLoL, NULL, cp);
+#endif
+	  
       registered = OFTrue;
     }
   }
@@ -144,6 +158,12 @@ void DJEncoderRegistration::cleanup()
     delete encsv1;
     DcmCodecList::deregisterCodec(enclol);
     delete enclol;
+#ifdef TRICE
+    DcmCodecList::deregisterCodec(enc2K);
+    delete enc2K;
+    DcmCodecList::deregisterCodec(enc2KLoL);
+    delete enc2KLoL;
+#endif
     delete cp;
     registered = OFFalse;
 #ifdef DEBUG
@@ -154,6 +174,10 @@ void DJEncoderRegistration::cleanup()
     encpro = NULL;
     encsv1 = NULL;
     enclol = NULL;
+#ifdef TRICE
+    enc2k = NULL;
+    enc2KLoL = NULL;
+#endif
     cp     = NULL;
 #endif
 

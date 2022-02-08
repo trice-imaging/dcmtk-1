@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2017, OFFIS e.V.
+ *  Copyright (C) 2000-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,6 +27,8 @@
 #include "dcmtk/config/osconfig.h"   /* make sure OS specific configuration is included first */
 
 #include "dcmtk/dcmsr/dsrtypes.h"
+
+#include "dcmtk/ofstd/ofstring.h"
 
 
 /*---------------------*
@@ -67,22 +69,6 @@ class DCMTK_DCMSR_EXPORT DSRStringValue
      */
     DSRStringValue &operator=(const DSRStringValue &stringValue);
 
-    /** comparison operator "equal".
-     *  Please note that padding or other non-significant characters are not removed before
-     *  comparing the two values, i.e. a simple character-by-character comparison is used.
-     ** @param  stringValue  string value that should be compared to the current one
-     ** @return OFTrue if both string values are equal, OFFalse otherwise
-     */
-    OFBool operator==(const DSRStringValue &stringValue) const;
-
-    /** comparison operator "not equal".
-     *  Please note that padding or other non-significant characters are not removed before
-     *  comparing the two values, i.e. a simple character-by-character comparison is used.
-     ** @param  stringValue  string value that should be compared to the current one
-     ** @return OFTrue if both string values are not equal, OFFalse otherwise
-     */
-    OFBool operator!=(const DSRStringValue &stringValue) const;
-
     /** clear all internal variables.
      *  Please note that the string value might become invalid afterwards.
      */
@@ -111,17 +97,15 @@ class DCMTK_DCMSR_EXPORT DSRStringValue
      *  If error/warning output is enabled, a warning message is printed if the string value
      *  does not conform with the type (1), value multiplicity (1) and/or value representation.
      ** @param  dataset  DICOM dataset from which the string value should be read
-     *  @param  tagKey   DICOM tag specifying the attribute that should be read
-     *  @param  flags    flag used to customize the reading process (see DSRTypes::RF_xxx)
+     *  @param  tagKey   DICOM tag specifying the attribute which should be read
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     OFCondition read(DcmItem &dataset,
-                     const DcmTagKey &tagKey,
-                     const size_t flags);
+                     const DcmTagKey &tagKey);
 
     /** write string value to dataset
      ** @param  dataset  DICOM dataset to which the string value should be written
-     *  @param  tagKey   DICOM tag specifying the attribute that should be written
+     *  @param  tagKey   DICOM tag specifying the attribute which should be written
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     OFCondition write(DcmItem &dataset,
@@ -130,13 +114,11 @@ class DCMTK_DCMSR_EXPORT DSRStringValue
     /** read string value from XML document
      ** @param  doc       document containing the XML file content
      *  @param  cursor    cursor pointing to the starting node
-     *  @param  flags     flag used to customize the reading process (see DSRTypes::XF_xxx)
      *  @param  encoding  use encoding handler if OFTrue, ignore character set otherwise
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     OFCondition readXML(const DSRXMLDocument &doc,
                         DSRXMLCursor cursor,
-                        const size_t flags,
                         const OFBool encoding = OFFalse);
 
     /** render string value in HTML/XHTML format
@@ -160,40 +142,11 @@ class DCMTK_DCMSR_EXPORT DSRStringValue
      *  current value is not replaced and remains unchanged.  Use the clear() method to empty
      *  the string value (which becomes invalid afterwards).
      ** @param  stringValue  value to be set (various VRs, mandatory)
-     *  @param  check        if enabled, check value for validity before setting it.  See
-     *                       checkValue() method for details.  An empty value is never accepted.
+     *  @param  check        check 'stringValue' for conformance with VR and VM if enabled.
+     *                       An empty value is never accepted.
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     OFCondition setValue(const OFString &stringValue,
-                         const OFBool check = OFTrue);
-
-    /** set string value from element.
-     *  Before setting the string value, it is usually checked.  If the value is invalid, the
-     *  current value is not replaced and remains unchanged.
-     ** @param  delem  DICOM element from which the string value should be retrieved
-     *  @param  pos    index of the value in case of multi-valued elements (0..vm-1)
-     *  @param  check  if enabled, check string value for validity before setting it.  See
-     *                 checkValue() method for details.  An empty value is never accepted.
-     ** @return status, EC_Normal if successful, an error code otherwise
-     */
-    OFCondition setValue(const DcmElement &delem,
-                         const unsigned long pos = 0,
-                         const OFBool check = OFTrue);
-
-    /** set string value from dataset.
-     *  Before setting the string value, it is usually checked.  If the value is invalid, the
-     *  current value is not replaced and remains unchanged.
-     ** @param  dataset  DICOM dataset from which the string value should be retrieved
-     *  @param  tagKey   DICOM tag specifying the attribute from which the value should be
-     *                   retrieved.  The search is limited to the top-level of the dataset.
-     *  @param  pos      index of the value in case of multi-valued elements (0..vm-1)
-     *  @param  check    if enabled, check string value for validity before setting it.  See
-     *                   checkValue() method for details.  An empty value is never accepted.
-     ** @return status, EC_Normal if successful, an error code otherwise
-     */
-    OFCondition setValue(DcmItem &dataset,
-                         const DcmTagKey &tagKey,
-                         const unsigned long pos = 0,
                          const OFBool check = OFTrue);
 
 

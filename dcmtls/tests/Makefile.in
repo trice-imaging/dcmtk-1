@@ -17,8 +17,6 @@ all:
 
 check:
 
-check-exhaustive:
-
 install:
 
 clean:

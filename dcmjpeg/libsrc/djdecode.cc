@@ -1,6 +1,7 @@
+#define TRICE
 /*
  *
- *  Copyright (C) 1997-2018, OFFIS e.V.
+ *  Copyright (C) 1997-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,14 +24,16 @@
 #include "dcmtk/dcmjpeg/djdecode.h"
 
 #include "dcmtk/dcmdata/dccodec.h"  /* for DcmCodecStruct */
-#include "dcmtk/dcmjpeg/djdecbas.h"
+#include "dcmtk/dcmjpeg/djdecbas.h" 
 #include "dcmtk/dcmjpeg/djdecext.h"
 #include "dcmtk/dcmjpeg/djdecsps.h"
 #include "dcmtk/dcmjpeg/djdecpro.h"
 #include "dcmtk/dcmjpeg/djdecsv1.h"
 #include "dcmtk/dcmjpeg/djdeclol.h"
 #include "dcmtk/dcmjpeg/djcparam.h"
-
+#ifdef TRICE
+#include "dcmtk/dcmjpeg/djdec2k.h"
+#endif
 // initialization of static members
 OFBool DJDecoderRegistration::registered                  = OFFalse;
 DJCodecParameter *DJDecoderRegistration::cp               = NULL;
@@ -40,26 +43,24 @@ DJDecoderSpectralSelection *DJDecoderRegistration::decsps = NULL;
 DJDecoderProgressive *DJDecoderRegistration::decpro       = NULL;
 DJDecoderP14SV1 *DJDecoderRegistration::decsv1            = NULL;
 DJDecoderLossless *DJDecoderRegistration::declol          = NULL;
-
+#ifdef TRICE
+DJDecoderJP2k *DJDecoderRegistration::dec2k				  = NULL;
+DJDecoderJP2kLossLess *DJDecoderRegistration::dec2kLossLess	= NULL;
+#endif
 void DJDecoderRegistration::registerCodecs(
     E_DecompressionColorSpaceConversion pDecompressionCSConversion,
     E_UIDCreation pCreateSOPInstanceUID,
     E_PlanarConfiguration pPlanarConfiguration,
-    OFBool predictor6WorkaroundEnable,
-    OFBool cornellWorkaroundEnable,
-    OFBool pForceSingleFragmentPerFrame)
+    OFBool predictor6WorkaroundEnable)
 {
   if (! registered)
   {
     cp = new DJCodecParameter(
       ECC_lossyYCbCr, // ignored, compression only
-      pDecompressionCSConversion,
-      pCreateSOPInstanceUID,
+      pDecompressionCSConversion, 
+      pCreateSOPInstanceUID, 
       pPlanarConfiguration,
-      predictor6WorkaroundEnable,
-      cornellWorkaroundEnable,
-      pForceSingleFragmentPerFrame);
-
+      predictor6WorkaroundEnable);
     if (cp)
     {
       // baseline JPEG
@@ -86,6 +87,16 @@ void DJDecoderRegistration::registerCodecs(
       declol = new DJDecoderLossless();
       if (declol) DcmCodecList::registerCodec(declol, NULL, cp);
 
+#ifdef TRICE
+	  // JPEG 2K
+      dec2k = new DJDecoderJP2k();
+      if (dec2k) DcmCodecList::registerCodec(dec2k, NULL, cp);
+	  
+	   // JPEG 2K LossLess
+      dec2kLossLess = new DJDecoderJP2kLossLess();
+      if (dec2kLossLess) DcmCodecList::registerCodec(dec2kLossLess, NULL, cp);
+#endif
+	  
       registered = OFTrue;
     }
   }
@@ -107,6 +118,12 @@ void DJDecoderRegistration::cleanup()
     delete decsv1;
     DcmCodecList::deregisterCodec(declol);
     delete declol;
+#ifdef TRICE
+    DcmCodecList::deregisterCodec(dec2k);
+    delete dec2k;
+    DcmCodecList::deregisterCodec(dec2kLossLess);
+    delete dec2kLossLess;
+#endif
     delete cp;
     registered = OFFalse;
 #ifdef DEBUG
@@ -117,6 +134,10 @@ void DJDecoderRegistration::cleanup()
     decpro = NULL;
     decsv1 = NULL;
     declol = NULL;
+#ifdef TRICE
+    dec2k = NULL;
+    dec2kLossLess = NULL;
+#endif
     cp     = NULL;
 #endif
 

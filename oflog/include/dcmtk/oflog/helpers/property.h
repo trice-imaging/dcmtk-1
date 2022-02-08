@@ -51,14 +51,14 @@ namespace log4cplus {
                 fEncodingShift      = 3
                 , fEncodingMask     = 0x3
                 , fUnspecEncoding   = (0 << fEncodingShift)
-#if defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF8_FACET) && defined (DCMTK_OFLOG_UNICODE)
+#if defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF8_FACET) && defined (UNICODE)
                 , fUTF8             = (1 << fEncodingShift)
 #endif
 #if (defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF16_FACET) || defined (_WIN32)) \
-    && defined (DCMTK_OFLOG_UNICODE)
+    && defined (UNICODE)
                 , fUTF16            = (2 << fEncodingShift)
 #endif
-#if defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF32_FACET) && defined (DCMTK_OFLOG_UNICODE)
+#if defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF32_FACET) && defined (UNICODE)
                 , fUTF32            = (3 << fEncodingShift)
 #endif
             };

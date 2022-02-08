@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2017, OFFIS e.V.
+ *  Copyright (C) 1994-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -36,7 +36,7 @@ public:
   /** constructor
    *  @param buf buffer in which data is stored. Must be allocated
    *    by caller and remain valid during the lifetime of this object.
-   *  @param bufLen buffer length, must be even number (0 permitted).
+   *  @param bufLen buffer length, must be even number > 0.
    */
   DcmBufferConsumer(void *buf, offile_off_t bufLen);
 
@@ -74,7 +74,7 @@ public:
   /** processes as many bytes as possible from the given input block.
    *  @param buf pointer to memory block, must not be NULL
    *  @param buflen length of memory block
-   *  @return number of bytes actually processed.
+   *  @return number of bytes actually processed. 
    */
   virtual offile_off_t write(const void *buf, offile_off_t buflen);
 
@@ -93,11 +93,6 @@ public:
    *  @param length number of bytes in buffer returned in this parameter
    */
   virtual void flushBuffer(void *& buffer, offile_off_t& length);
-
-  /** query the number of bytes in buffer without flushing it.
-   *  @return number of bytes in buffer.
-   */
-  virtual offile_off_t filled();
 
 private:
 
@@ -145,11 +140,6 @@ public:
    *  @param length number of bytes in buffer returned in this parameter
    */
   virtual void flushBuffer(void *& buffer, offile_off_t& length);
-
-  /** query the number of bytes in buffer without flushing it.
-   *  @return number of bytes in buffer.
-   */
-  virtual offile_off_t filled();
 
 private:
 

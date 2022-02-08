@@ -1,5 +1,5 @@
 # declare project
-project(config)
+PROJECT(config)
 
 # recurse into subdirectories
-add_subdirectory(docs)
+ADD_SUBDIRECTORY(docs)

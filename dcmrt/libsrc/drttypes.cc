@@ -1,14 +1,13 @@
 /*
  *
- *  Copyright (c) 2008-2021, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2021, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (c) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTTypes
  *
- *  Generated manually based on dsrtypes.cc
+ *  Generated manually based on DRTTypes.cc
  *  File created on 2008-12-05
- *  Last modified on 2016-02-12 by Riesmeier
+ *  Last modified on 2012-01-06 by Riesmeier
  *
  */
 
@@ -18,6 +17,11 @@
 #include "dcmtk/dcmrt/drttypes.h"
 
 #include "dcmtk/ofstd/ofstd.h"
+
+#define INCLUDE_CSTDIO
+#define INCLUDE_CCTYPE
+#include "dcmtk/ofstd/ofstdinc.h"
+
 
 /*------------------------*
  *  constant definitions  *
@@ -31,7 +35,7 @@ makeOFConditionConst(RT_EC_InvalidObject,    OFM_dcmrt, 3, OF_error, "Invalid Ob
 
 
 /*--------------------*
- *  global variables  *
+ *  helper functions  *
  *--------------------*/
 
 OFLogger DCM_dcmrtLogger = OFLog::getLogger("dcmtk.dcmrt");
@@ -160,12 +164,7 @@ OFBool DRTTypes::checkElementValue(DcmElement &element,
         }
     } else {
         const OFCondition checkResult = element.checkValue(vm, OFTrue /*oldFormat*/);
-        if (checkResult == EC_InvalidCharacter)
-        {
-            DCMRT_WARN(tagName << " " << tag << " contains invalid character(s) in " << module);
-            result = OFFalse;
-        }
-        else if (checkResult == EC_ValueRepresentationViolated)
+        if (checkResult == EC_ValueRepresentationViolated)
         {
             DCMRT_WARN(tagName << " " << tag << " violates VR definition in " << module);
             result = OFFalse;

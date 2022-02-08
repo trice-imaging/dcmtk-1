@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -29,25 +29,15 @@
 #include "dcmtk/ofstd/oftypes.h"
 #include "dcmtk/dcmdata/dcdefine.h"
 
+#define INCLUDE_CSTDLIB
+#define INCLUDE_UNISTD
+#include "dcmtk/ofstd/ofstdinc.h"
+
 // include this file in doxygen documentation
 
 /** @file dcuid.h
  *  @brief global definitions and functions for UID handling
  */
-
-
-/// type of Storage SOP Class
-typedef enum {
-    /// patient objects
-    ESSC_Patient    = 0x01,
-    /// non-patient objects
-    ESSC_NonPatient = 0x02,
-    /// image objects (subset of patient objects)
-    ESSC_Image      = 0x04,
-    /// all types (patient and non-patient objects)
-    ESSC_All        = 0x03
-} E_StorageSOPClassType;
-
 
 /** return the name of a UID.
  *  Performs a table lookup and returns a pointer to a read-only string.
@@ -62,22 +52,22 @@ DCMTK_DCMDATA_EXPORT const char* dcmFindNameOfUID(const char* uid, const char* d
  *  @param name name string for which the corresponding UID is to be looked up
  *  @return UID string or NULL if name is unknown
  */
-DCMTK_DCMDATA_EXPORT const char* dcmFindUIDFromName(const char* name);
+DCMTK_DCMDATA_EXPORT const char* dcmFindUIDFromName(const char * name);
 
 /** an array of const strings containing all known Storage SOP Classes
  *  that fit into the conventional PATIENT-STUDY-SERIES-INSTANCE information
  *  model, i.e. everything a Storage SCP might want to store in a PACS.
- *  Special cases such as Hanging Protocol or Color Palette Storage SOP Class
+ *  Special cases such as hanging protocol storage or the Storage SOP Class
  *  are not included in this list.
  *  WARNING: This list contains more than 64 entries, i.e. it is not possible
- *  to use this list to configure the association negotiation behavior of
+ *  to use this list to configure the association negotiation behaviour of
  *  a Storage SCU that always proposes two presentation contexts for each
  *  SOP class.
  */
 extern DCMTK_DCMDATA_EXPORT const char* dcmAllStorageSOPClassUIDs[];
 
 /// number of entries in dcmAllStorageSOPClassUIDs.
-extern DCMTK_DCMDATA_EXPORT const int numberOfDcmAllStorageSOPClassUIDs;
+extern DCMTK_DCMDATA_EXPORT const int numberOfAllDcmStorageSOPClassUIDs;
 
 /** an array of const strings containing all storage SOP classes that
  *  are proposed by default by those Storage SCU components in DCMTK
@@ -102,35 +92,22 @@ extern DCMTK_DCMDATA_EXPORT const char* dcmShortSCUStorageSOPClassUIDs[];
 extern DCMTK_DCMDATA_EXPORT const int numberOfDcmShortSCUStorageSOPClassUIDs;
 
 /** returns true if the uid is one of the Storage SOP Classes.
- *  Performs a table lookup in the dcmAllStorageSOPClassUIDs, dcmImageSOPClassUIDs
- *  and/or other tables depending on the requested type of Storage SOP Class.
- *  Please note that, by default, this function only covers those Storage SOP
- *  Classes that fit into the conventional PATIENT-STUDY-SERIES-INSTANCE
- *  information model, i.e. non-patient DICOM objects are missing. This can
- *  be changed by setting the optional type parameter to ESSC_NonPatient.
+ *  Performs a table lookup in the dcmAllStorageSOPClassUIDs table.
  *  @param uid UID string
- *  @param type type of Storage SOP Class (default: patient objects only)
  *  @return true if UID is a known Storage SOP Class, false otherwise
  */
-DCMTK_DCMDATA_EXPORT OFBool dcmIsaStorageSOPClassUID(const char* uid, const E_StorageSOPClassType type = ESSC_Patient);
+DCMTK_DCMDATA_EXPORT OFBool dcmIsaStorageSOPClassUID(const char* uid);
 
 /** a global constant array of
  *  string pointers containing the UIDs of all known Image SOP
  *  Classes.  The global variable numberOfDcmImageSOPClassUIDs
  *  defines the size of the array.
- *  NOTE: this list represents a subset of the dcmAllStorageSOPClassUIDs list
+ *  NOTE: this list represents a subset of the dcmStorageSOPClassUIDs list
  */
 extern DCMTK_DCMDATA_EXPORT const char* dcmImageSOPClassUIDs[];
 
 /// number of entries in dcmImageSOPClassUIDs
 extern DCMTK_DCMDATA_EXPORT const int numberOfDcmImageSOPClassUIDs;
-
-/** returns true if the uid is one of the Image Storage SOP Classes.
- *  This is just a shortcut for dcmIsaStorageSOPClassUID(uid, ESSC_Image).
- *  @param uid UID string
- *  @return true if UID is a known Image Storage SOP Class, false otherwise
- */
-DCMTK_DCMDATA_EXPORT OFBool dcmIsImageStorageSOPClassUID(const char* uid);
 
 /** creates a Unique Identifier in uid and returns uid.
  *  uid must be at least 65 bytes. Care is taken to make sure
@@ -283,7 +260,7 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_LittleEndianImplicitTransferSyntax  "1.2.840.10008.1.2"
 /// Explicit VR Little Endian
 #define UID_LittleEndianExplicitTransferSyntax  "1.2.840.10008.1.2.1"
-/// Explicit VR Big Endian - RETIRED
+/// Explicit VR Big Endian
 #define UID_BigEndianExplicitTransferSyntax     "1.2.840.10008.1.2.2"
 /// Deflated Explicit VR Little Endian
 #define UID_DeflatedExplicitVRLittleEndianTransferSyntax "1.2.840.10008.1.2.1.99"
@@ -345,56 +322,35 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_JPIPReferencedTransferSyntax        "1.2.840.10008.1.2.4.94"
 /// JPIP Referenced Deflate
 #define UID_JPIPReferencedDeflateTransferSyntax "1.2.840.10008.1.2.4.95"
-/// MPEG2 Main Profile @ Main Level (changed with DICOM 2016e to: MPEG2 Main Profile / Main Level)
+/// MPEG2 Main Profile @ Main Level
 #define UID_MPEG2MainProfileAtMainLevelTransferSyntax "1.2.840.10008.1.2.4.100"
-/// MPEG2 Main Profile @ High Level (changed with DICOM 2016e to: MPEG2 Main Profile / High Level)
+/// MPEG2 Main Profile @ High Level
 #define UID_MPEG2MainProfileAtHighLevelTransferSyntax "1.2.840.10008.1.2.4.101"
 /// MPEG-4 AVC/H.264 High Profile / Level 4.1
 #define UID_MPEG4HighProfileLevel4_1TransferSyntax "1.2.840.10008.1.2.4.102"
 /// MPEG-4 AVC/H.264 BD-compatible High Profile / Level 4.1
 #define UID_MPEG4BDcompatibleHighProfileLevel4_1TransferSyntax "1.2.840.10008.1.2.4.103"
-/// MPEG-4 AVC/H.264 High Profile / Level 4.2 For 2D Video
-#define UID_MPEG4HighProfileLevel4_2_For2DVideoTransferSyntax "1.2.840.10008.1.2.4.104"
-/// MPEG-4 AVC/H.264 High Profile / Level 4.2 For 3D Video
-#define UID_MPEG4HighProfileLevel4_2_For3DVideoTransferSyntax "1.2.840.10008.1.2.4.105"
-/// MPEG-4 AVC/H.264 Stereo High Profile / Level 4.2
-#define UID_MPEG4StereoHighProfileLevel4_2TransferSyntax "1.2.840.10008.1.2.4.106"
-/// HEVC/H.265 Main Profile / Level 5.1
-#define UID_HEVCMainProfileLevel5_1TransferSyntax "1.2.840.10008.1.2.4.107"
-/// HEVC/H.265 Main 10 Profile / Level 5.1
-#define UID_HEVCMain10ProfileLevel5_1TransferSyntax "1.2.840.10008.1.2.4.108"
 /// RLE Lossless
 #define UID_RLELosslessTransferSyntax           "1.2.840.10008.1.2.5"
-/// SMPTE ST 2110-20 Uncompressed Progressive Active Video
-#define UID_SMPTEST2110_20_UncompressedProgressiveActiveVideoTransferSyntax "1.2.840.10008.1.2.7.1"
-/// SMPTE ST 2110-20 Uncompressed Interlaced Active Video
-#define UID_SMPTEST2110_20_UncompressedInterlacedActiveVideoTransferSyntax "1.2.840.10008.1.2.7.2"
-/// SMPTE ST 2110-30 PCM Digital Audio
-#define UID_SMPTEST2110_30_PCMDigitalAudioTransferSyntax "1.2.840.10008.1.2.7.3"
 
-/** RFC 2557 MIME Encapsulation (RETIRED) was only a pseudo transfer syntax used
- *  to refer to MIME encapsulated HL7 CDA documents from a DICOMDIR when stored
- *  on a DICOM storage medium. It was never used for network communication
+/** MIME encapsulation (Supplement 101) is only a pseudo transfer syntax used to
+ *  refer to MIME encapsulated HL7 CDA documents from a DICOMDIR when stored
+ *  on a DICOM storage medium. It is never used for network communication
  *  or encoding of DICOM objects.
  */
 #define UID_RFC2557MIMEEncapsulationTransferSyntax "1.2.840.10008.1.2.6.1"
 
-/** XML Encoding (RETIRED) was only a pseudo transfer syntax used to refer to
+/** XML encoding (Supplement 114) is only a pseudo transfer syntax used to refer to
  *  encapsulated HL7 CDA documents from a DICOMDIR when stored on a DICOM storage
- *  medium. It was never used for network communication or encoding of DICOM objects.
+ *  medium. It is never used for network communication or encoding of DICOM objects.
  */
 #define UID_XMLEncodingTransferSyntax "1.2.840.10008.1.2.6.2"
-
-/** Private transfer syntax defined by GE. This transfer syntax is identical to
- *  Implicit VR Little Endian, except that Pixel Data are encoded in big endian.
- */
-#define UID_PrivateGE_LEI_WithBigEndianPixelDataTransferSyntax "1.2.840.113619.5.2"
 
 /*
 ** Defined SOP Class UIDs according to DICOM standard
 */
 
-// Storage (DICOM)
+// Storage
 #define UID_RETIRED_StoredPrintStorage                             "1.2.840.10008.5.1.1.27"
 #define UID_RETIRED_HardcopyGrayscaleImageStorage                  "1.2.840.10008.5.1.1.29"
 #define UID_RETIRED_HardcopyColorImageStorage                      "1.2.840.10008.5.1.1.30"
@@ -435,12 +391,6 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_GeneralAudioWaveformStorage                            "1.2.840.10008.5.1.4.1.1.9.4.2"
 #define UID_ArterialPulseWaveformStorage                           "1.2.840.10008.5.1.4.1.1.9.5.1"
 #define UID_RespiratoryWaveformStorage                             "1.2.840.10008.5.1.4.1.1.9.6.1"
-#define UID_MultichannelRespiratoryWaveformStorage                 "1.2.840.10008.5.1.4.1.1.9.6.2"
-#define UID_RoutineScalpElectroencephalogramWaveformStorage        "1.2.840.10008.5.1.4.1.1.9.7.1"
-#define UID_ElectromyogramWaveformStorage                          "1.2.840.10008.5.1.4.1.1.9.7.2"
-#define UID_ElectrooculogramWaveformStorage                        "1.2.840.10008.5.1.4.1.1.9.7.3"
-#define UID_SleepElectroencephalogramWaveformStorage               "1.2.840.10008.5.1.4.1.1.9.7.4"
-#define UID_BodyPositionWaveformStorage                            "1.2.840.10008.5.1.4.1.1.9.8.1"
 #define UID_RETIRED_StandaloneModalityLUTStorage                   "1.2.840.10008.5.1.4.1.1.10"
 #define UID_RETIRED_StandaloneVOILUTStorage                        "1.2.840.10008.5.1.4.1.1.11"
 #define UID_GrayscaleSoftcopyPresentationStateStorage              "1.2.840.10008.5.1.4.1.1.11.1"
@@ -448,12 +398,6 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_PseudoColorSoftcopyPresentationStateStorage            "1.2.840.10008.5.1.4.1.1.11.3"
 #define UID_BlendingSoftcopyPresentationStateStorage               "1.2.840.10008.5.1.4.1.1.11.4"
 #define UID_XAXRFGrayscaleSoftcopyPresentationStateStorage         "1.2.840.10008.5.1.4.1.1.11.5"
-#define UID_GrayscalePlanarMPRVolumetricPresentationStateStorage   "1.2.840.10008.5.1.4.1.1.11.6"
-#define UID_CompositingPlanarMPRVolumetricPresentationStateStorage "1.2.840.10008.5.1.4.1.1.11.7"
-#define UID_AdvancedBlendingPresentationStateStorage               "1.2.840.10008.5.1.4.1.1.11.8"
-#define UID_VolumeRenderingVolumetricPresentationStateStorage      "1.2.840.10008.5.1.4.1.1.11.9"
-#define UID_SegmentedVolumeRenderingVolumetricPresentationStateStorage "1.2.840.10008.5.1.4.1.1.11.10"
-#define UID_MultipleVolumeRenderingVolumetricPresentationStateStorage "1.2.840.10008.5.1.4.1.1.11.11"
 #define UID_XRayAngiographicImageStorage                           "1.2.840.10008.5.1.4.1.1.12.1"
 #define UID_EnhancedXAImageStorage                                 "1.2.840.10008.5.1.4.1.1.12.1.1"
 #define UID_XRayRadiofluoroscopicImageStorage                      "1.2.840.10008.5.1.4.1.1.12.2"
@@ -467,14 +411,12 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_IntravascularOpticalCoherenceTomographyImageStorageForPresentation "1.2.840.10008.5.1.4.1.1.14.1"
 #define UID_IntravascularOpticalCoherenceTomographyImageStorageForProcessing "1.2.840.10008.5.1.4.1.1.14.2"
 #define UID_NuclearMedicineImageStorage                            "1.2.840.10008.5.1.4.1.1.20"
-#define UID_ParametricMapStorage                                   "1.2.840.10008.5.1.4.1.1.30"
 #define UID_RawDataStorage                                         "1.2.840.10008.5.1.4.1.1.66"
 #define UID_SpatialRegistrationStorage                             "1.2.840.10008.5.1.4.1.1.66.1"
 #define UID_SpatialFiducialsStorage                                "1.2.840.10008.5.1.4.1.1.66.2"
 #define UID_DeformableSpatialRegistrationStorage                   "1.2.840.10008.5.1.4.1.1.66.3"
 #define UID_SegmentationStorage                                    "1.2.840.10008.5.1.4.1.1.66.4"
 #define UID_SurfaceSegmentationStorage                             "1.2.840.10008.5.1.4.1.1.66.5"
-#define UID_TractographyResultsStorage                             "1.2.840.10008.5.1.4.1.1.66.6"
 #define UID_RealWorldValueMappingStorage                           "1.2.840.10008.5.1.4.1.1.67"
 #define UID_SurfaceScanMeshStorage                                 "1.2.840.10008.5.1.4.1.1.68.1"
 #define UID_SurfaceScanPointCloudStorage                           "1.2.840.10008.5.1.4.1.1.68.2"
@@ -490,13 +432,8 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_OphthalmicPhotography16BitImageStorage                 "1.2.840.10008.5.1.4.1.1.77.1.5.2"
 #define UID_StereometricRelationshipStorage                        "1.2.840.10008.5.1.4.1.1.77.1.5.3"
 #define UID_OphthalmicTomographyImageStorage                       "1.2.840.10008.5.1.4.1.1.77.1.5.4"
-#define UID_WideFieldOphthalmicPhotographyStereographicProjectionImageStorage "1.2.840.10008.5.1.4.1.1.77.1.5.5"
-#define UID_WideFieldOphthalmicPhotography3DCoordinatesImageStorage "1.2.840.10008.5.1.4.1.1.77.1.5.6"
-#define UID_OphthalmicOpticalCoherenceTomographyEnFaceImageStorage "1.2.840.10008.5.1.4.1.1.77.1.5.7"
-#define UID_OphthalmicOpticalCoherenceTomographyBscanVolumeAnalysisStorage "1.2.840.10008.5.1.4.1.1.77.1.5.8"
 #define UID_VLWholeSlideMicroscopyImageStorage                     "1.2.840.10008.5.1.4.1.1.77.1.6"
-#define UID_DermoscopicPhotographyImageStorage                     "1.2.840.10008.5.1.4.1.1.77.1.7"
-#define UID_RETIRED_VLMultiframeImageStorage                       "1.2.840.10008.5.1.4.1.1.77.2"
+#define UID_RETIRED_VLMultiFrameImageStorage                       "1.2.840.10008.5.1.4.1.1.77.2"
 #define UID_LensometryMeasurementsStorage                          "1.2.840.10008.5.1.4.1.1.78.1"
 #define UID_AutorefractionMeasurementsStorage                      "1.2.840.10008.5.1.4.1.1.78.2"
 #define UID_KeratometryMeasurementsStorage                         "1.2.840.10008.5.1.4.1.1.78.3"
@@ -513,7 +450,6 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_EnhancedSRStorage                                      "1.2.840.10008.5.1.4.1.1.88.22"
 #define UID_ComprehensiveSRStorage                                 "1.2.840.10008.5.1.4.1.1.88.33"
 #define UID_Comprehensive3DSRStorage                               "1.2.840.10008.5.1.4.1.1.88.34"
-#define UID_ExtensibleSRStorage                                    "1.2.840.10008.5.1.4.1.1.88.35"
 #define UID_ProcedureLogStorage                                    "1.2.840.10008.5.1.4.1.1.88.40"
 #define UID_MammographyCADSRStorage                                "1.2.840.10008.5.1.4.1.1.88.50"
 #define UID_KeyObjectSelectionDocumentStorage                      "1.2.840.10008.5.1.4.1.1.88.59"
@@ -522,29 +458,13 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_RadiopharmaceuticalRadiationDoseSRStorage              "1.2.840.10008.5.1.4.1.1.88.68"
 #define UID_ColonCADSRStorage                                      "1.2.840.10008.5.1.4.1.1.88.69"
 #define UID_ImplantationPlanSRDocumentStorage                      "1.2.840.10008.5.1.4.1.1.88.70"
-#define UID_AcquisitionContextSRStorage                            "1.2.840.10008.5.1.4.1.1.88.71"
-#define UID_SimplifiedAdultEchoSRStorage                           "1.2.840.10008.5.1.4.1.1.88.72"
-#define UID_PatientRadiationDoseSRStorage                          "1.2.840.10008.5.1.4.1.1.88.73"
-#define UID_PlannedImagingAgentAdministrationSRStorage             "1.2.840.10008.5.1.4.1.1.88.74"
-#define UID_PerformedImagingAgentAdministrationSRStorage           "1.2.840.10008.5.1.4.1.1.88.75"
-#define UID_EnhancedXRayRadiationDoseSRStorage                     "1.2.840.10008.5.1.4.1.1.88.76"
-#define UID_ContentAssessmentResultsStorage                        "1.2.840.10008.5.1.4.1.1.90.1"
-#define UID_MicroscopyBulkSimpleAnnotationsStorage                 "1.2.840.10008.5.1.4.1.1.91.1"
 #define UID_EncapsulatedPDFStorage                                 "1.2.840.10008.5.1.4.1.1.104.1"
 #define UID_EncapsulatedCDAStorage                                 "1.2.840.10008.5.1.4.1.1.104.2"
-#define UID_EncapsulatedSTLStorage                                 "1.2.840.10008.5.1.4.1.1.104.3"
-#define UID_EncapsulatedOBJStorage                                 "1.2.840.10008.5.1.4.1.1.104.4"
-#define UID_EncapsulatedMTLStorage                                 "1.2.840.10008.5.1.4.1.1.104.5"
 #define UID_PositronEmissionTomographyImageStorage                 "1.2.840.10008.5.1.4.1.1.128"
 #define UID_LegacyConvertedEnhancedPETImageStorage                 "1.2.840.10008.5.1.4.1.1.128.1"
 #define UID_RETIRED_StandalonePETCurveStorage                      "1.2.840.10008.5.1.4.1.1.129"
 #define UID_EnhancedPETImageStorage                                "1.2.840.10008.5.1.4.1.1.130"
 #define UID_BasicStructuredDisplayStorage                          "1.2.840.10008.5.1.4.1.1.131"
-#define UID_CTDefinedProcedureProtocolStorage                      "1.2.840.10008.5.1.4.1.1.200.1"
-#define UID_CTPerformedProcedureProtocolStorage                    "1.2.840.10008.5.1.4.1.1.200.2"
-#define UID_ProtocolApprovalStorage                                "1.2.840.10008.5.1.4.1.1.200.3"
-#define UID_XADefinedProcedureProtocolStorage                      "1.2.840.10008.5.1.4.1.1.200.7"
-#define UID_XAPerformedProcedureProtocolStorage                    "1.2.840.10008.5.1.4.1.1.200.8"
 #define UID_RTImageStorage                                         "1.2.840.10008.5.1.4.1.1.481.1"
 #define UID_RTDoseStorage                                          "1.2.840.10008.5.1.4.1.1.481.2"
 #define UID_RTStructureSetStorage                                  "1.2.840.10008.5.1.4.1.1.481.3"
@@ -554,21 +474,6 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_RTTreatmentSummaryRecordStorage                        "1.2.840.10008.5.1.4.1.1.481.7"
 #define UID_RTIonPlanStorage                                       "1.2.840.10008.5.1.4.1.1.481.8"
 #define UID_RTIonBeamsTreatmentRecordStorage                       "1.2.840.10008.5.1.4.1.1.481.9"
-#define UID_RTPhysicianIntentStorage                               "1.2.840.10008.5.1.4.1.1.481.10"
-#define UID_RTSegmentAnnotationStorage                             "1.2.840.10008.5.1.4.1.1.481.11"
-#define UID_RTRadiationSetStorage                                  "1.2.840.10008.5.1.4.1.1.481.12"
-#define UID_CArmPhotonElectronRadiationStorage                     "1.2.840.10008.5.1.4.1.1.481.13"
-#define UID_TomotherapeuticRadiationStorage                        "1.2.840.10008.5.1.4.1.1.481.14"
-#define UID_RoboticArmRadiationStorage                             "1.2.840.10008.5.1.4.1.1.481.15"
-#define UID_RTRadiationRecordSetStorage                            "1.2.840.10008.5.1.4.1.1.481.16"
-#define UID_RTRadiationSalvageRecordStorage                        "1.2.840.10008.5.1.4.1.1.481.17"
-#define UID_TomotherapeuticRadiationRecordStorage                  "1.2.840.10008.5.1.4.1.1.481.18"
-#define UID_CArmPhotonElectronRadiationRecordStorage               "1.2.840.10008.5.1.4.1.1.481.19"
-#define UID_RoboticRadiationRecordStorage                          "1.2.840.10008.5.1.4.1.1.481.20"
-#define UID_RTRadiationSetDeliveryInstructionStorage               "1.2.840.10008.5.1.4.1.1.481.21"
-#define UID_RTTreatmentPreparationStorage                          "1.2.840.10008.5.1.4.1.1.481.22"
-#define UID_RTBeamsDeliveryInstructionStorage                      "1.2.840.10008.5.1.4.34.7"
-#define UID_RTBrachyApplicationSetupDeliveryInstructionStorage     "1.2.840.10008.5.1.4.34.10"
 #define UID_HangingProtocolStorage                                 "1.2.840.10008.5.1.4.38.1"
 #define UID_GenericImplantTemplateStorage                          "1.2.840.10008.5.1.4.43.1"
 #define UID_ImplantAssemblyTemplateStorage                         "1.2.840.10008.5.1.4.44.1"
@@ -582,9 +487,6 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_DICOS_DigitalXRayImageStorageForPresentation           "1.2.840.10008.5.1.4.1.1.501.2.1"
 #define UID_DICOS_DigitalXRayImageStorageForProcessing             "1.2.840.10008.5.1.4.1.1.501.2.2"
 #define UID_DICOS_ThreatDetectionReportStorage                     "1.2.840.10008.5.1.4.1.1.501.3"
-#define UID_DICOS_2DAITStorage                                     "1.2.840.10008.5.1.4.1.1.501.4"
-#define UID_DICOS_3DAITStorage                                     "1.2.840.10008.5.1.4.1.1.501.5"
-#define UID_DICOS_QuadrupoleResonanceStorage                       "1.2.840.10008.5.1.4.1.1.501.6"
 
 // DICONDE Storage
 #define UID_DICONDE_EddyCurrentImageStorage                        "1.2.840.10008.5.1.4.1.1.601.1"
@@ -600,11 +502,11 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_RETIRED_FINDPatientStudyOnlyQueryRetrieveInformationModel "1.2.840.10008.5.1.4.1.2.3.1"
 #define UID_RETIRED_MOVEPatientStudyOnlyQueryRetrieveInformationModel "1.2.840.10008.5.1.4.1.2.3.2"
 #define UID_RETIRED_GETPatientStudyOnlyQueryRetrieveInformationModel  "1.2.840.10008.5.1.4.1.2.3.3"
-#define UID_MOVECompositeInstanceRootRetrieve                      "1.2.840.10008.5.1.4.1.2.4.2"
-#define UID_GETCompositeInstanceRootRetrieve                       "1.2.840.10008.5.1.4.1.2.4.3"
-#define UID_GETCompositeInstanceRetrieveWithoutBulkData            "1.2.840.10008.5.1.4.1.2.5.3"
+#define UID_RETIRED_MOVECompositeInstanceRootRetrieve              "1.2.840.10008.5.1.4.1.2.4.2"
+#define UID_RETIRED_GETCompositeInstanceRootRetrieve               "1.2.840.10008.5.1.4.1.2.4.3"
+#define UID_RETIRED_GETCompositeInstanceRetrieveWithoutBulkData    "1.2.840.10008.5.1.4.1.2.5.3"
 
-// Modality Worklist
+// Worklist
 #define UID_FINDModalityWorklistInformationModel                   "1.2.840.10008.5.1.4.31"
 
 // General Purpose Worklist
@@ -618,7 +520,8 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_ModalityPerformedProcedureStepRetrieveSOPClass         "1.2.840.10008.3.1.2.3.4"
 #define UID_ModalityPerformedProcedureStepNotificationSOPClass     "1.2.840.10008.3.1.2.3.5"
 
-// Radiotherapy
+// Radiotherapy Treatment Delivery
+#define UID_RTBeamsDeliveryInstructionStorage                      "1.2.840.10008.5.1.4.34.7"
 #define UID_RTConventionalMachineVerification                      "1.2.840.10008.5.1.4.34.8"
 #define UID_RTIonMachineVerification                               "1.2.840.10008.5.1.4.34.9"
 
@@ -628,9 +531,7 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_UnifiedProcedureStepWatchSOPClass                      "1.2.840.10008.5.1.4.34.6.2"
 #define UID_UnifiedProcedureStepPullSOPClass                       "1.2.840.10008.5.1.4.34.6.3"
 #define UID_UnifiedProcedureStepEventSOPClass                      "1.2.840.10008.5.1.4.34.6.4"
-#define UID_UnifiedProcedureStepQuerySOPClass                      "1.2.840.10008.5.1.4.34.6.5"
-#define UID_UPSGlobalSubscriptionSOPInstance                       "1.2.840.10008.5.1.4.34.5"
-#define UID_UPSFilteredGlobalSubscriptionSOPInstance               "1.2.840.10008.5.1.4.34.5.1"
+#define UID_UnifiedWorklistAndProcedureStepSOPInstance             "1.2.840.10008.5.1.4.34.5"
 
 // Storage Commitment
 #define UID_StorageCommitmentPushModelSOPClass                     "1.2.840.10008.1.20.1"
@@ -643,7 +544,6 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_MOVEHangingProtocolInformationModel                    "1.2.840.10008.5.1.4.38.3"
 
 // Relevant Patient Information Query
-#define UID_RelevantPatientInformationQuery_Prefix                 "1.2.840.10008.5.1.4.37."
 #define UID_GeneralRelevantPatientInformationQuery                 "1.2.840.10008.5.1.4.37.1"
 #define UID_BreastImagingRelevantPatientInformationQuery           "1.2.840.10008.5.1.4.37.2"
 #define UID_CardiacRelevantPatientInformationQuery                 "1.2.840.10008.5.1.4.37.3"
@@ -664,16 +564,6 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_FINDImplantTemplateGroupInformationModel               "1.2.840.10008.5.1.4.45.2"
 #define UID_MOVEImplantTemplateGroupInformationModel               "1.2.840.10008.5.1.4.45.3"
 #define UID_GETImplantTemplateGroupInformationModel                "1.2.840.10008.5.1.4.45.4"
-
-// Defined Procedure Protocol Query/Retrieve
-#define UID_FINDDefinedProcedureProtocolInformationModel           "1.2.840.10008.5.1.4.20.1"
-#define UID_MOVEDefinedProcedureProtocolInformationModel           "1.2.840.10008.5.1.4.20.2"
-#define UID_GETDefinedProcedureProtocolInformationModel            "1.2.840.10008.5.1.4.20.3"
-
-// Protocol Approval Query/Retrieve
-#define UID_FINDProtocolApprovalInformationModel                   "1.2.840.10008.5.1.4.1.1.200.4"
-#define UID_MOVEProtocolApprovalInformationModel                   "1.2.840.10008.5.1.4.1.1.200.5"
-#define UID_GETProtocolApprovalInformationModel                    "1.2.840.10008.5.1.4.1.1.200.6"
 
 // Print Management
 #define UID_BasicFilmSessionSOPClass                               "1.2.840.10008.5.1.1.1"
@@ -737,23 +627,10 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_DisplaySystemSOPClass                                  "1.2.840.10008.5.1.1.40"
 #define UID_DisplaySystemSOPInstance                               "1.2.840.10008.5.1.1.40.1"
 
-// Real-Time Video
-#define UID_VideoEndoscopicImageRealTimeCommunication              "1.2.840.10008.10.1"
-#define UID_VideoPhotographicImageRealTimeCommunication            "1.2.840.10008.10.2"
-#define UID_AudioWaveformRealTimeCommunication                     "1.2.840.10008.10.3"
-#define UID_RenditionSelectionDocumentRealTimeCommunication        "1.2.840.10008.10.4"
-
 // Other
 #define UID_VerificationSOPClass                                   "1.2.840.10008.1.1"
 #define UID_RETIRED_BasicStudyContentNotificationSOPClass          "1.2.840.10008.1.9"
 #define UID_RETIRED_StudyComponentManagementSOPClass               "1.2.840.10008.3.1.2.3.2"
-
-/*
-** All other UIDs according to DICOM standard
-*/
-
-// Mapping Resources
-#define UID_DICOMContentMappingResource                            "1.2.840.10008.8.1.1"
 
 // Coding Schemes
 #define UID_DICOMControlledTerminologyCodingScheme                 "1.2.840.10008.2.16.4"
@@ -824,27 +701,14 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
 #define UID_SPM2SINGLESUBJT1FrameOfReference                       "1.2.840.10008.1.4.1.18"
 #define UID_ICBM452T1FrameOfReference                              "1.2.840.10008.1.4.2.1"
 #define UID_ICBMSingleSubjectMRIFrameOfReference                   "1.2.840.10008.1.4.2.2"
-#define UID_IEC61217FixedCoordinateSystemFrameOfReference          "1.2.840.10008.1.4.3.1"
-#define UID_StandardRoboticCoordinateSystemFrameOfReference        "1.2.840.10008.1.4.3.2"
-#define UID_SRI24FrameOfReference                                  "1.2.840.10008.1.4.4.1"
-#define UID_Colin27FrameOfReference                                "1.2.840.10008.1.4.5.1"
-#define UID_LPBA40AIRFrameOfReference                              "1.2.840.10008.1.4.6.1"
-#define UID_LPBA40FLIRTFrameOfReference                            "1.2.840.10008.1.4.6.2"
-#define UID_LPBA40SPM5FrameOfReference                             "1.2.840.10008.1.4.6.3"
 
 // Well-known SOP Instances for Color Palettes
 #define UID_HotIronColorPaletteSOPInstance                         "1.2.840.10008.1.5.1"
 #define UID_PETColorPaletteSOPInstance                             "1.2.840.10008.1.5.2"
 #define UID_HotMetalBlueColorPaletteSOPInstance                    "1.2.840.10008.1.5.3"
 #define UID_PET20StepColorPaletteSOPInstance                       "1.2.840.10008.1.5.4"
-#define UID_SpringColorPaletteSOPInstance                          "1.2.840.10008.1.5.5"
-#define UID_SummerColorPaletteSOPInstance                          "1.2.840.10008.1.5.6"
-#define UID_FallColorPaletteSOPInstance                            "1.2.840.10008.1.5.7"
-#define UID_WinterColorPaletteSOPInstance                          "1.2.840.10008.1.5.8"
 
-/*
-** Private DCMTK UIDs
-*/
+// Private DCMTK UIDs
 
 // Private SOP Class UID used to shutdown external network applications
 #define UID_PrivateShutdownSOPClass                                "1.2.276.0.7230010.3.4.1915765545.18030.917282194.0"

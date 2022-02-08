@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -260,7 +260,7 @@ OFBool DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::isValid()
 }
 
 
-size_t DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::getNumberOfItems() const
+unsigned long DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -290,12 +290,12 @@ OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::goto
 }
 
 
-OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -310,12 +310,12 @@ OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::goto
 }
 
 
-OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -330,7 +330,7 @@ OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::goto
 }
 
 
-OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::gotoItem(const size_t num)
+OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -366,7 +366,7 @@ const DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::Item &DRTR
 }
 
 
-OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::getItem(const size_t num, Item *&item)
+OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -376,7 +376,7 @@ OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::getI
 }
 
 
-DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::Item &DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::getItem(const size_t num)
+DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::Item &DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -386,7 +386,7 @@ DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::Item &DRTRangeSh
 }
 
 
-const DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::Item &DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::getItem(const size_t num) const
+const DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::Item &DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -396,13 +396,13 @@ const DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::Item &DRTR
 }
 
 
-DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::Item &DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::operator[](const size_t num)
+DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::Item &DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::Item &DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::operator[](const size_t num) const
+const DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::Item &DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -425,7 +425,7 @@ OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::addI
 }
 
 
-OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::insertItem(const size_t pos, Item *&item)
+OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -448,7 +448,7 @@ OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::inse
 }
 
 
-OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::removeItem(const size_t pos)
+OFCondition DRTRangeShifterSettingsSequenceInRTIonBeamsSessionRecordModule::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

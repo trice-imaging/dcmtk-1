@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,8 +22,11 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #include "dcmtk/dcmdata/dcvris.h"
-#include "dcmtk/dcmdata/dcjson.h"
 #include "dcmtk/ofstd/ofstring.h"
+
+#define INCLUDE_CSTDIO
+#include "dcmtk/ofstd/ofstdinc.h"
+
 
 #define MAX_IS_LENGTH 12
 
@@ -102,9 +105,7 @@ OFCondition DcmIntegerString::getSint32(Sint32 &sintVal,
     if (l_error.good())
     {
         /* convert string to integer value */
-#ifdef SCNd32
-        if (sscanf(str.c_str(), "%" SCNd32, &sintVal) != 1)
-#elif SIZEOF_LONG == 8
+#if SIZEOF_LONG == 8
         if (sscanf(str.c_str(), "%d", &sintVal) != 1)
 #else
         if (sscanf(str.c_str(), "%ld", &sintVal) != 1)
@@ -138,62 +139,4 @@ OFCondition DcmIntegerString::checkStringValue(const OFString &value,
                                                 const OFString &vm)
 {
     return DcmByteString::checkStringValue(value, vm, "is", 8, MAX_IS_LENGTH);
-}
-
-
-// ********************************
-
-
-OFCondition DcmIntegerString::writeJson(STD_NAMESPACE ostream &out,
-                                        DcmJsonFormat &format)
-{
-    /* always write JSON Opener */
-    writeJsonOpener(out, format);
-
-    if (!isEmpty())
-    {
-        /* write element value */
-        OFString bulkDataValue;
-        if (format.asBulkDataURI(getTag(), bulkDataValue))
-        {
-            format.printBulkDataURIPrefix(out);
-            DcmJsonFormat::printString(out, bulkDataValue);
-        }
-        else
-        {
-            const unsigned long vm = getVM();
-            if (vm > 0)
-            {
-                OFString value;
-                OFString vmstring = "1";
-                OFCondition status = getOFString(value, 0L);
-                if (status.bad())
-                    return status;
-                format.printValuePrefix(out);
-                // if the value is a proper number, write as JSON number,
-                // otherwise write as JSON string.
-                if (checkStringValue(value, vmstring).good())
-                    DcmJsonFormat::printNumberInteger(out, value);
-                    else DcmJsonFormat::printValueString(out, value);
-                for (unsigned long valNo = 1; valNo < vm; ++valNo)
-                {
-                    status = getOFString(value, valNo);
-                    if (status.bad())
-                        return status;
-                    format.printNextArrayElementPrefix(out);
-                    // if the value is a proper number, write as JSON number,
-                    // otherwise write as JSON string.
-                    if (checkStringValue(value, vmstring).good())
-                        DcmJsonFormat::printNumberInteger(out, value);
-                        else DcmJsonFormat::printValueString(out, value);
-                }
-                format.printValueSuffix(out);
-            }
-        }
-    }
-
-    /* write JSON Closer  */
-    writeJsonCloser(out, format);
-    /* always report success */
-    return EC_Normal;
 }

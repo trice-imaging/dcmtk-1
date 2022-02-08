@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,22 +22,24 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
+
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofstack.h"
 #include "dcmtk/ofstd/ofstd.h"
 
-#include "dcmtk/dcmdata/dcjson.h"
 #include "dcmtk/dcmdata/dcdatset.h"
 #include "dcmtk/dcmdata/dcxfer.h"
 #include "dcmtk/dcmdata/dcvrus.h"
 #include "dcmtk/dcmdata/dcpixel.h"
 #include "dcmtk/dcmdata/dcdeftag.h"
-#include "dcmtk/dcmdata/dcistrma.h"    /* for class DcmInputStream */
-#include "dcmtk/dcmdata/dcistrmf.h"    /* for class DcmInputFileStream */
-#include "dcmtk/dcmdata/dcistrms.h"    /* for class DcmStdinStream */
 #include "dcmtk/dcmdata/dcostrma.h"    /* for class DcmOutputStream */
 #include "dcmtk/dcmdata/dcostrmf.h"    /* for class DcmOutputFileStream */
-#include "dcmtk/dcmdata/dcostrms.h"    /* for class DcmStdoutStream */
+#include "dcmtk/dcmdata/dcistrma.h"    /* for class DcmInputStream */
+#include "dcmtk/dcmdata/dcistrmf.h"    /* for class DcmInputFileStream */
 #include "dcmtk/dcmdata/dcwcache.h"    /* for class DcmWriteCache */
 
 
@@ -45,7 +47,7 @@
 
 
 DcmDataset::DcmDataset()
-  : DcmItem(DCM_ItemTag, DCM_UndefinedLength),
+  : DcmItem(ItemTag, DCM_UndefinedLength),
     OriginalXfer(EXS_Unknown),
     // the default transfer syntax is explicit VR with local endianness
     CurrentXfer((gLocalByteOrder == EBO_BigEndian) ? EXS_BigEndianExplicit : EXS_LittleEndianExplicit)
@@ -253,7 +255,7 @@ OFBool DcmDataset::canWriteXfer(const E_TransferSyntax newXfer,
 // ********************************
 
 
-void DcmDataset::print(STD_NAMESPACE ostream &out,
+void DcmDataset::print(STD_NAMESPACE ostream&out,
                        const size_t flags,
                        const int level,
                        const char *pixelFileName,
@@ -289,7 +291,6 @@ void DcmDataset::print(STD_NAMESPACE ostream &out,
 OFCondition DcmDataset::writeXML(STD_NAMESPACE ostream &out,
                                  const size_t flags)
 {
-    OFCondition l_error = EC_Normal;
     /* the Native DICOM Model as defined for Application Hosting needs special handling */
     if (flags & DCMTypes::XF_useNativeModel)
     {
@@ -317,30 +318,18 @@ OFCondition DcmDataset::writeXML(STD_NAMESPACE ostream &out,
         elementList->seek(ELP_first);
         do {
             dO = elementList->get();
-            l_error = dO->writeXML(out, flags & ~DCMTypes::XF_useXMLNamespace);
-        } while (l_error.good() && elementList->seek(ELP_next));
+            dO->writeXML(out, flags & ~DCMTypes::XF_useXMLNamespace);
+        } while (elementList->seek(ELP_next));
     }
-    if (l_error.good())
+    /* write XML end tag (depending on output format) */
+    if (flags & DCMTypes::XF_useNativeModel)
     {
-        /* write XML end tag (depending on output format) */
-        if (flags & DCMTypes::XF_useNativeModel)
-        {
-            out << "</NativeDicomModel>" << OFendl;
-        } else {
-            out << "</data-set>" << OFendl;
-        }
+        out << "</NativeDicomModel>" << OFendl;
+    } else {
+        out << "</data-set>" << OFendl;
     }
-    return l_error;
-}
-
-
-// ********************************
-
-
-OFCondition DcmDataset::writeJson(STD_NAMESPACE ostream &out,
-                                  DcmJsonFormat &format)
-{
-    return writeJsonExt(out, format, OFFalse, OFFalse); // omit braces
+    /* always report success */
+    return EC_Normal;
 }
 
 
@@ -351,15 +340,6 @@ OFCondition DcmDataset::read(DcmInputStream &inStream,
                              const E_TransferSyntax xfer,
                              const E_GrpLenEncoding glenc,
                              const Uint32 maxReadLength)
-{
-  return DcmDataset::readUntilTag(inStream, xfer, glenc, maxReadLength, DCM_UndefinedTagKey);
-}
-
-OFCondition DcmDataset::readUntilTag(DcmInputStream &inStream,
-                                     const E_TransferSyntax xfer,
-                                     const E_GrpLenEncoding glenc,
-                                     const Uint32 maxReadLength,
-                                     const DcmTagKey &stopParsingAtElement)
 {
     /* check if the stream variable reported an error */
     errorFlag = inStream.status();
@@ -386,25 +366,25 @@ OFCondition DcmDataset::readUntilTag(DcmInputStream &inStream,
                     case EXS_LittleEndianExplicit:
                     case EXS_BigEndianExplicit:
                     case EXS_BigEndianImplicit:
-                        DCMDATA_DEBUG("DcmDataset::read() trying to detect transfer syntax of uncompressed data set");
+                        DCMDATA_DEBUG("DcmDataset::read() trying to detect transfer syntax of uncompressed dataset");
                         OriginalXfer = checkTransferSyntax(inStream);
                         if ((xfer != EXS_Unknown) && (OriginalXfer != xfer))
-                            DCMDATA_WARN("DcmDataset: Wrong transfer syntax specified, detecting from data set");
+                            DCMDATA_WARN("DcmDataset: Wrong transfer syntax specified, detecting from dataset");
                         break;
                     default:
-                        DCMDATA_DEBUG("DcmDataset::read() data set seems to be compressed, so transfer syntax is not detected");
+                        DCMDATA_DEBUG("DcmDataset::read() dataset seems to be compressed, so transfer syntax is not detected");
                         OriginalXfer = xfer;
                         break;
                 }
             }
-            else /* default behavior */
+            else /* default behaviour */
             {
                 /* If the transfer syntax which was passed equals EXS_Unknown we want to */
                 /* determine the transfer syntax from the information in the stream itself. */
                 /* If the transfer syntax is given, we want to use it. */
                 if (xfer == EXS_Unknown)
                 {
-                    DCMDATA_DEBUG("DcmDataset::read() trying to detect transfer syntax of data set (because it is unknown)");
+                    DCMDATA_DEBUG("DcmDataset::read() trying to detect transfer syntax of dataset (because it is unknown)");
                     OriginalXfer = checkTransferSyntax(inStream);
                 } else
                     OriginalXfer = xfer;
@@ -434,8 +414,7 @@ OFCondition DcmDataset::readUntilTag(DcmInputStream &inStream,
         }
         /* pass processing the task to class DcmItem */
         if (errorFlag.good())
-            errorFlag = DcmItem::readUntilTag(inStream, OriginalXfer, glenc, maxReadLength, stopParsingAtElement);
-
+            errorFlag = DcmItem::read(inStream, OriginalXfer, glenc, maxReadLength);
     }
 
     /* if the error flag shows ok or that the end of the stream was encountered, */
@@ -443,21 +422,15 @@ OFCondition DcmDataset::readUntilTag(DcmInputStream &inStream,
     /* case, we need to do something for the current dataset object */
     if (errorFlag.good() || errorFlag == EC_EndOfStream)
     {
-        /* perform some final checks on dataset level */
-        errorFlag = doPostReadChecks();
+        /* set the error flag to ok */
+        errorFlag = EC_Normal;
 
-        if (errorFlag.good())
-        {
-            /* set the error flag to ok */
-            errorFlag = EC_Normal;
+        /* take care of group length (according to what is specified */
+        /* in glenc) and padding elements (don't change anything) */
+        computeGroupLengthAndPadding(glenc, EPD_noChange, OriginalXfer);
 
-            /* take care of group length (according to what is specified */
-            /* in glenc) and padding elements (don't change anything) */
-            computeGroupLengthAndPadding(glenc, EPD_noChange, OriginalXfer);
-
-            /* and set the transfer state to ERW_ready to indicate that the data set is complete */
-            setTransferState(ERW_ready);
-        }
+        /* and set the transfer state to ERW_ready to indicate that the data set is complete */
+        setTransferState(ERW_ready);
     }
 
     /* dump information if required */
@@ -502,7 +475,7 @@ OFCondition DcmDataset::write(DcmOutputStream &outStream,
     if (errorFlag.good() && getTransferState() != ERW_ready)
     {
       /* Determine the transfer syntax which shall be used. Either we use the one which was passed, */
-      /* or (if it's an unknown transfer syntax) we use the one which is contained in OriginalXfer. */
+      /* or (if it's an unknown tranfer syntax) we use the one which is contained in OriginalXfer. */
       E_TransferSyntax newXfer = oxfer;
       if (newXfer == EXS_Unknown)
         newXfer = OriginalXfer;
@@ -631,63 +604,27 @@ OFCondition DcmDataset::loadFile(const OFFilename &fileName,
                                  const E_GrpLenEncoding groupLength,
                                  const Uint32 maxReadLength)
 {
-  return DcmDataset::loadFileUntilTag(fileName, readXfer, groupLength, maxReadLength, DCM_UndefinedTagKey);
-}
-
-OFCondition DcmDataset::loadFileUntilTag(const OFFilename &fileName,
-                                 const E_TransferSyntax readXfer,
-                                 const E_GrpLenEncoding groupLength,
-                                 const Uint32 maxReadLength,
-                                 const DcmTagKey &stopParsingAtElement)
-{
     OFCondition l_error = EC_InvalidFilename;
     /* check parameters first */
     if (!fileName.isEmpty())
     {
-        if (fileName.isStandardStream())
-        {
-            /* use stdin stream */
-            DcmStdinStream inStream;
+        /* open file for input */
+        DcmInputFileStream fileStream(fileName);
 
+        /* check stream status */
+        l_error = fileStream.status();
+
+        if (l_error.good())
+        {
             /* clear this object */
             l_error = clear();
             if (l_error.good())
             {
-                /* initialize transfer */
+                /* read data from file */
                 transferInit();
-
-                do
-                {
-                  /* fill the buffer from stdin */
-                  inStream.fillBuffer();
-                  /* and read the buffer content into the DICOM dataset */
-                  l_error = readUntilTag(inStream, readXfer, groupLength, maxReadLength, stopParsingAtElement);
-                } while (l_error == EC_StreamNotifyClient); /* repeat until we're at the end of the stream, or an error occurs */
-
-                /* end transfer */
+                l_error = read(fileStream, readXfer, groupLength, maxReadLength);
                 transferEnd();
             }
-
-        } else {
-            /* open file for input */
-            DcmInputFileStream fileStream(fileName);
-
-            /* check stream status */
-            l_error = fileStream.status();
-
-            if (l_error.good())
-            {
-                /* clear this object */
-                l_error = clear();
-                if (l_error.good())
-                {
-                    /* read data from file */
-                    transferInit();
-                    l_error = readUntilTag(fileStream, readXfer, groupLength, maxReadLength, stopParsingAtElement);
-                    transferEnd();
-                }
-            }
-
         }
     }
     return l_error;
@@ -707,27 +644,18 @@ OFCondition DcmDataset::saveFile(const OFFilename &fileName,
     if (!fileName.isEmpty())
     {
         DcmWriteCache wcache;
-        DcmOutputStream *fileStream;
-
-        if (fileName.isStandardStream())
-        {
-            /* use stdout stream */
-            fileStream = new DcmStdoutStream(fileName);
-        } else {
-            /* open file for output */
-            fileStream = new DcmOutputFileStream(fileName);
-        }
+        /* open file for output */
+        DcmOutputFileStream fileStream(fileName);
 
         /* check stream status */
-        l_error = fileStream->status();
+        l_error = fileStream.status();
         if (l_error.good())
         {
             /* write data to file */
             transferInit();
-            l_error = write(*fileStream, writeXfer, encodingType, &wcache, groupLength, padEncoding, padLength, subPadLength);
+            l_error = write(fileStream, writeXfer, encodingType, &wcache, groupLength, padEncoding, padLength, subPadLength);
             transferEnd();
         }
-        delete fileStream;
     }
     return l_error;
 }
@@ -740,68 +668,25 @@ OFCondition DcmDataset::chooseRepresentation(const E_TransferSyntax repType,
                                              const DcmRepresentationParameter *repParam)
 {
     OFCondition l_error = EC_Normal;
-    OFBool pixelDataEncountered = OFFalse;
     OFStack<DcmStack> pixelStack;
-    DcmXfer torep(repType);
-    DcmXfer fromrep(CurrentXfer);
 
     DcmStack resultStack;
     resultStack.push(this);
-
-    // check if we are attempting to compress but the image contains
-    // floating point or double floating point pixel data, which our codecs don't support.
-    if ((tagExists(DCM_FloatPixelData, OFTrue) || tagExists(DCM_DoubleFloatPixelData, OFTrue)) &&
-         (fromrep.isEncapsulated() || torep.isEncapsulated()))
-    {
-        DCMDATA_ERROR("DcmDataset: Unable to compress/decompress floating point pixel data, cannot change representation");
-        l_error = EC_CannotChangeRepresentation;
-        return l_error;
-    }
-
-    // check if we are attempting to convert a dataset containing
-    // a pixel data URL. In that case we only continue if the target
-    // transfer syntax also uses a pixel data URL.
-    if (tagExists(DCM_PixelDataProviderURL, OFTrue))
-    {
-      if (! torep.isReferenced())
-      {
-        DCMDATA_ERROR("DcmDataset: Unable to compress image containing a pixel data provider URL, cannot change representation");
-        l_error = EC_CannotChangeRepresentation;
-        return l_error;
-      }
-    }
-
-    // Now search for all PixelData elements in this dataset
+    // in a first step, search for all PixelData elements in this dataset
     while (search(DCM_PixelData, resultStack, ESM_afterStackTop, OFTrue).good() && l_error.good())
     {
-        pixelDataEncountered = OFTrue;
+
         if (resultStack.top()->ident() == EVR_PixelData)
         {
             DcmPixelData *pixelData = OFstatic_cast(DcmPixelData *, resultStack.top());
             if (!pixelData->canChooseRepresentation(repType, repParam))
                 l_error = EC_CannotChangeRepresentation;
             pixelStack.push(resultStack);
-        } else {
-            /* something is fishy with the pixel data element (wrong class) */
-            DCMDATA_ERROR("DcmDataset: Wrong class for pixel data element, cannot change representation");
-            l_error = EC_CannotChangeRepresentation;
         }
+        else
+            l_error = EC_CannotChangeRepresentation;
     }
-
-    // If there are no pixel data elements in the dataset, issue a warning
-    if (! pixelDataEncountered)
-    {
-      if (torep.isEncapsulated() && ! fromrep.isEncapsulated())
-      {
-        DCMDATA_WARN("DcmDataset: No pixel data present, nothing to compress");
-      }
-      if (! torep.isEncapsulated() && fromrep.isEncapsulated())
-      {
-        DCMDATA_WARN("DcmDataset: No pixel data present, nothing to decompress");
-      }
-    }
-
-    // then call the method doing the real work for all pixel data elements found
+    // then call the method doing the real work for all these elements
     while (l_error.good() && (pixelStack.size() > 0))
     {
         l_error = OFstatic_cast(DcmPixelData *, pixelStack.top().top())->
@@ -817,8 +702,7 @@ OFCondition DcmDataset::chooseRepresentation(const E_TransferSyntax repType,
 
         pixelStack.pop();
     }
-
-    // store current transfer syntax (if conversion was successful)
+    // store current transfer syntax (if conversion was successfuly)
     if (l_error.good())
         CurrentXfer = repType;
     return l_error;
@@ -872,47 +756,4 @@ void DcmDataset::removeAllButOriginalRepresentations()
             pixelData->removeAllButOriginalRepresentations();
         }
     }
-}
-
-
-// ********************************
-
-
-OFCondition DcmDataset::doPostReadChecks()
-{
-  DcmElement* pixData = NULL;
-  DcmXfer xf(OriginalXfer);
-  OFCondition result = EC_Normal;
-  if (findAndGetElement(DCM_PixelData, pixData).good())
-  {
-      Uint32 valueLength = pixData->getLengthField();
-      if (xf.isEncapsulated())
-      {
-          if (valueLength != DCM_UndefinedLength)
-          {
-              if (dcmUseExplLengthPixDataForEncTS.get() == OFFalse /* default case */)
-              {
-                  /* length of top level dataset's Pixel Data is explicitly */
-                  /* defined but we have a transfer syntax requiring */
-                  /* encapsulated pixel data (always encoded with undefined */
-                  /* length). Print and return an error. */
-                  DCMDATA_ERROR("Found explicit length Pixel Data in top level "
-                  << "dataset with transfer syntax " << xf.getXferName()
-                  << ": Only undefined length permitted");
-                  result = EC_PixelDataExplLengthIllegal;
-              }
-              else
-              {
-                  /* Only print warning if requested by related OFGlobal, */
-                  /* and behave like as we have the same case as for an */
-                  /* icon image, which is always uncompressed (see above). */
-                  DCMDATA_WARN("Found explicit length Pixel Data in top level "
-                  << "dataset with transfer syntax " << xf.getXferName()
-                  << ": Only undefined length permitted (ignored on explicit request)");
-              }
-          }
-      }
-  }
-
-  return result;
 }

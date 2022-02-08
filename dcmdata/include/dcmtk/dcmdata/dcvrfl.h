@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2020, OFFIS e.V.
+ *  Copyright (C) 1994-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,8 +27,6 @@
 
 #include "dcmtk/dcmdata/dcelem.h"
 
-// forward declarations
-class DcmJsonFormat;
 
 /** a class representing the DICOM value representation 'Floating Point Single' (FL)
  */
@@ -38,15 +36,13 @@ class DCMTK_DCMDATA_EXPORT DcmFloatingPointSingle
 
   public:
 
-    // Make friend with DcmItem which requires access to protected
-    // constructor allowing construction using an explicit value length.
-    friend class DcmItem;
-
     /** constructor.
-     *  Create new element from given tag.
+     *  Create new element from given tag and length.
      *  @param tag DICOM tag for the new element
+     *  @param len value length for the new element
      */
-    DcmFloatingPointSingle(const DcmTag &tag);
+    DcmFloatingPointSingle(const DcmTag &tag,
+                           const Uint32 len = 0);
 
     /** copy constructor
      *  @param old element to be copied
@@ -62,26 +58,6 @@ class DCMTK_DCMDATA_EXPORT DcmFloatingPointSingle
      *  @return reference to this object
      */
     DcmFloatingPointSingle &operator=(const DcmFloatingPointSingle &obj);
-
-    /** comparison operator that compares the normalized value of this object
-     *  with a given object of the same type. The tag of the element is also
-     *  considered as the first component that is compared, followed by the
-     *  object types (VR, i.e. DCMTK'S EVR) and the comparison of all value
-     *  components of the object, preferably in the order declared in the
-     *  object (if applicable).
-     *  @param  rhs the right hand side of the comparison
-     *  @return 0 if the object values are equal.
-     *    -1 if this element has fewer components than the rhs element.
-     *    Also -1 if either the value of the first component that does not match
-     *    is lower in this object than in rhs. Also returned if rhs
-     *    cannot be casted to this object type or both objects are of
-     *    different VR (i.e. the DcmEVR returned by the element's ident()
-     *    call are different).
-     *    1 if either this element has more components than the rhs element, or
-     *    if the first component that does not match is greater in this object
-     *    than in rhs object.
-     */
-    virtual int compare(const DcmElement& rhs) const;
 
     /** clone method
      *  @return deep copy of this object
@@ -120,14 +96,9 @@ class DCMTK_DCMDATA_EXPORT DcmFloatingPointSingle
                                    const OFBool oldFormat = OFFalse);
 
     /** get value multiplicity
-     *  @return number of values in this element
+     *  @return number of currently stored values
      */
     virtual unsigned long getVM();
-
-    /** get number of values stored in this element
-     *  @return number of values in this element
-     */
-    virtual unsigned long getNumberOfValues();
 
     /** print element to a stream.
      *  The output format of the value is a backslash separated sequence of numbers.
@@ -139,7 +110,7 @@ class DCMTK_DCMDATA_EXPORT DcmFloatingPointSingle
      *  @param pixelFileName not used
      *  @param pixelCounter not used
      */
-    virtual void print(STD_NAMESPACE ostream &out,
+    virtual void print(STD_NAMESPACE ostream&out,
                        const size_t flags = 0,
                        const int level = 0,
                        const char *pixelFileName = NULL,
@@ -213,35 +184,6 @@ class DCMTK_DCMDATA_EXPORT DcmFloatingPointSingle
      *  @return status, EC_Normal if value length is correct, an error code otherwise
      */
     virtual OFCondition verify(const OFBool autocorrect = OFFalse);
-
-    /// @copydoc DcmElement::matches()
-    virtual OFBool matches(const DcmElement& candidate,
-                           const OFBool enableWildCardMatching = OFTrue) const;
-
-    /** write object in JSON format
-     *  @param out output stream to which the JSON document is written
-     *  @param format used to format and customize the output
-     *  @return status, EC_Normal if successful, an error code otherwise
-     */
-    virtual OFCondition writeJson(STD_NAMESPACE ostream &out,
-                                  DcmJsonFormat &format);
-
-  protected:
-
-    /** constructor. Create new element from given tag and length.
-     *  Only reachable from friend classes since construction with
-     *  length different from 0 leads to a state with length being set but
-     *  the element's value still being uninitialized. This can lead to crashes
-     *  when the value is read or written. Thus the method calling this
-     *  constructor with length > 0 must ensure that the element's value is
-     *  explicitly initialized, too.
-     *  Create new element from given tag and length.
-     *  @param tag DICOM tag for the new element
-     *  @param len value length for the new element
-     */
-    DcmFloatingPointSingle(const DcmTag &tag,
-                           const Uint32 len);
-
 };
 
 

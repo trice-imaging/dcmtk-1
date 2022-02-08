@@ -1,6 +1,7 @@
+#define TRICE
 /*
  *
- *  Copyright (C) 2003-2020, OFFIS e.V.
+ *  Copyright (C) 2003-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -15,7 +16,7 @@
  *
  *  Author:  Michael Onken
  *
- *  Purpose: Class for modifying DICOM files from commandline
+ *  Purpose: Class for modifying DICOM files from comandline
  *
  */
 
@@ -24,7 +25,6 @@
 #include "mdfconen.h"
 #include "mdfdsman.h"
 #include "dcmtk/ofstd/ofstd.h"
-#include "dcmtk/ofstd/ofconapp.h"
 #include "dcmtk/dcmdata/dctk.h"
 #include "dcmtk/dcmdata/dcistrmz.h"    /* for dcmZlibExpectRFC1950Encoding */
 
@@ -38,6 +38,9 @@ END_EXTERN_C
 #endif
 
 static OFLogger dcmodifyLogger = OFLog::getLogger("dcmtk.apps.dcmodify");
+#ifdef TRICE
+static OFBool convertToUTF8 = false;
+#endif
 
 MdfJob::MdfJob(const MdfJob& other)
 : option(other.option), path(other.path), value(other.value)
@@ -135,6 +138,10 @@ MdfConsoleEngine::MdfConsoleEngine(int argc, char *argv[],
             cmd->addOption("--erase-all",           "-ea",  1, "\"[t]ag\"",
                                                                "erase ALL matching tags t in file", OFCommandLine::AF_NoWarning);
             cmd->addOption("--erase-private",       "-ep",     "erase ALL private data from file", OFCommandLine::AF_NoWarning);
+#ifdef TRICE
+            cmd->addOption("--erase-private-group", "-eg",  1, "\"[g]group-privateReservationString\"", 
+                                                                "Erase all private tags in a group matching the reservation string", OFCommandLine::AF_NoWarning);
+#endif
         cmd->addSubGroup("unique identifier:");
             cmd->addOption("--gen-stud-uid",        "-gst",    "generate new Study Instance UID", OFCommandLine::AF_NoWarning);
             cmd->addOption("--gen-ser-uid",         "-gse",    "generate new Series Instance UID", OFCommandLine::AF_NoWarning);
@@ -168,6 +175,12 @@ MdfConsoleEngine::MdfConsoleEngine(int argc, char *argv[],
             cmd->addOption("--padding-off",         "-p",      "no padding (implicit if --write-dataset)");
             cmd->addOption("--padding-create",      "+p",   2, "[f]ile-pad [i]tem-pad: integer",
                                                                "align file on multiple of f bytes\nand items on multiple of i bytes");
+#ifdef TRICE
+#ifdef WITH_LIBICONV
+        cmd->addSubGroup("specific character set:");
+            cmd->addOption("--convert-to-utf8",     "+U8",    "convert all element values that are affected\nby Specific Character Set (0008,0005) to UTF-8");
+#endif
+#endif
 
     // evaluate commandline
     prepareCmdLineArgs(argc, argv, application_name);
@@ -332,9 +345,19 @@ void MdfConsoleEngine::parseNonJobOptions()
 
     cmd->beginOptionBlock();
     if (cmd->findOption("--enable-new-vr"))
-        dcmEnableGenerationOfNewVRs();
+    {
+        dcmEnableUnknownVRGeneration.set(OFTrue);
+        dcmEnableUnlimitedTextVRGeneration.set(OFTrue);
+        dcmEnableOtherFloatStringVRGeneration.set(OFTrue);
+        dcmEnableOtherDoubleStringVRGeneration.set(OFTrue);
+    }
     if (cmd->findOption("--disable-new-vr"))
-        dcmDisableGenerationOfNewVRs();
+    {
+        dcmEnableUnknownVRGeneration.set(OFFalse);
+        dcmEnableUnlimitedTextVRGeneration.set(OFFalse);
+        dcmEnableOtherFloatStringVRGeneration.set(OFFalse);
+        dcmEnableOtherDoubleStringVRGeneration.set(OFFalse);
+    }
     cmd->endOptionBlock();
 
     cmd->beginOptionBlock();
@@ -369,6 +392,11 @@ void MdfConsoleEngine::parseNonJobOptions()
         padenc_option = EPD_withPadding;
     }
     cmd->endOptionBlock();
+#ifdef TRICE
+#ifdef WITH_LIBICONV
+    if (cmd->findOption("--convert-to-utf8")) convertToUTF8 = OFTrue;
+#endif
+#endif
 }
 
 
@@ -402,6 +430,10 @@ void MdfConsoleEngine::parseCommandLine()
                 aJob.option = "ea";
             else if (option_string == "--erase-private")
                 aJob.option = "ep";
+#ifdef TRICE
+            else if (option_string == "--erase-private-group")
+                aJob.option = "eg";
+#endif
             else if (option_string == "--gen-stud-uid")
                 aJob.option = "gst";
             else if (option_string == "--gen-ser-uid")
@@ -464,13 +496,17 @@ int MdfConsoleEngine::executeJob(const MdfJob &job,
     else if (job.option == "mf")
         result = ds_man->modifyOrInsertFromFile(job.path, job.value /*filename*/, OFTrue, update_metaheader_uids_option, ignore_missing_tags_option, no_reservation_checks);
     else if (job.option == "ma")
-        result = ds_man->modifyAllTags(job.path, job.value, update_metaheader_uids_option, count, ignore_missing_tags_option);
+        result = ds_man->modifyAllTags(job.path, job.value, update_metaheader_uids_option, count);
     else if (job.option == "e")
         result = ds_man->deleteTag(job.path, OFFalse, ignore_missing_tags_option);
     else if (job.option == "ea")
         result = ds_man->deleteTag(job.path, OFTrue, ignore_missing_tags_option);
     else if (job.option == "ep")
         result = ds_man->deletePrivateData();
+#ifdef TRICE
+    else if (job.option == "eg")
+        result = ds_man->deletePrivateGroup(job.path);
+#endif
     else if (job.option == "gst")
         result = ds_man->generateAndInsertUID(DCM_StudyInstanceUID);
     else if (job.option == "gse")
@@ -541,7 +577,7 @@ int MdfConsoleEngine::startProvidingService()
                 {
                     OFLOG_ERROR(dcmodifyLogger, "couldn't save file: " << result.text());
                     errors++;
-                    if (!no_backup_option && !was_created && strcmp(filename, "-"))
+                    if (!no_backup_option && !was_created)
                     {
                         result = restoreFile(filename);
                         if (result.bad())
@@ -552,8 +588,8 @@ int MdfConsoleEngine::startProvidingService()
                     }
                 }
             }
-            // errors occurred and user doesn't want to ignore them:
-            else if (!no_backup_option && !was_created && strcmp(filename, "-"))
+            // errors occured and user doesn't want to ignore them:
+            else if (!no_backup_option && !was_created)
             {
                 result = restoreFile(filename);
                 if (result.bad())
@@ -588,8 +624,12 @@ OFCondition MdfConsoleEngine::loadFile(const char *filename)
     OFLOG_INFO(dcmodifyLogger, "Processing file: " << filename);
     // load file into dataset manager
     was_created = !OFStandard::fileExists(filename);
+#ifdef TRICE
+    result = ds_man->loadFile(filename, read_mode_option, input_xfer_option, create_if_necessary, convertToUTF8);
+#else
     result = ds_man->loadFile(filename, read_mode_option, input_xfer_option, create_if_necessary);
-    if (result.good() && !no_backup_option && !was_created && strcmp(filename, "-"))
+#endif
+    if (result.good() && !no_backup_option && !was_created)
         result = backupFile(filename);
     return result;
 }

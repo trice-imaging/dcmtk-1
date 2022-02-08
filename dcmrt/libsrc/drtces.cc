@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTContributingEquipmentSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -30,8 +30,6 @@ DRTContributingEquipmentSequence::Item::Item(const OFBool emptyDefaultItem)
     InstitutionalDepartmentName(DCM_InstitutionalDepartmentName),
     Manufacturer(DCM_Manufacturer),
     ManufacturerModelName(DCM_ManufacturerModelName),
-    OperatorIdentificationSequence(emptyDefaultItem /*emptyDefaultSequence*/),
-    OperatorsName(DCM_OperatorsName),
     PurposeOfReferenceCodeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     SoftwareVersions(DCM_SoftwareVersions),
     SpatialResolution(DCM_SpatialResolution),
@@ -52,8 +50,6 @@ DRTContributingEquipmentSequence::Item::Item(const Item &copy)
     InstitutionalDepartmentName(copy.InstitutionalDepartmentName),
     Manufacturer(copy.Manufacturer),
     ManufacturerModelName(copy.ManufacturerModelName),
-    OperatorIdentificationSequence(copy.OperatorIdentificationSequence),
-    OperatorsName(copy.OperatorsName),
     PurposeOfReferenceCodeSequence(copy.PurposeOfReferenceCodeSequence),
     SoftwareVersions(copy.SoftwareVersions),
     SpatialResolution(copy.SpatialResolution),
@@ -82,8 +78,6 @@ DRTContributingEquipmentSequence::Item &DRTContributingEquipmentSequence::Item::
         InstitutionalDepartmentName = copy.InstitutionalDepartmentName;
         Manufacturer = copy.Manufacturer;
         ManufacturerModelName = copy.ManufacturerModelName;
-        OperatorIdentificationSequence = copy.OperatorIdentificationSequence;
-        OperatorsName = copy.OperatorsName;
         PurposeOfReferenceCodeSequence = copy.PurposeOfReferenceCodeSequence;
         SoftwareVersions = copy.SoftwareVersions;
         SpatialResolution = copy.SpatialResolution;
@@ -105,8 +99,6 @@ void DRTContributingEquipmentSequence::Item::clear()
         InstitutionAddress.clear();
         StationName.clear();
         InstitutionalDepartmentName.clear();
-        OperatorsName.clear();
-        OperatorIdentificationSequence.clear();
         ManufacturerModelName.clear();
         DeviceSerialNumber.clear();
         SoftwareVersions.clear();
@@ -127,8 +119,6 @@ OFBool DRTContributingEquipmentSequence::Item::isEmpty()
            InstitutionAddress.isEmpty() &&
            StationName.isEmpty() &&
            InstitutionalDepartmentName.isEmpty() &&
-           OperatorsName.isEmpty() &&
-           OperatorIdentificationSequence.isEmpty() &&
            ManufacturerModelName.isEmpty() &&
            DeviceSerialNumber.isEmpty() &&
            SoftwareVersions.isEmpty() &&
@@ -159,8 +149,6 @@ OFCondition DRTContributingEquipmentSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, InstitutionAddress, "1", "3", "ContributingEquipmentSequence");
         getAndCheckElementFromDataset(item, StationName, "1", "3", "ContributingEquipmentSequence");
         getAndCheckElementFromDataset(item, InstitutionalDepartmentName, "1", "3", "ContributingEquipmentSequence");
-        getAndCheckElementFromDataset(item, OperatorsName, "1-n", "3", "ContributingEquipmentSequence");
-        OperatorIdentificationSequence.read(item, "1-n", "3", "ContributingEquipmentSequence");
         getAndCheckElementFromDataset(item, ManufacturerModelName, "1", "3", "ContributingEquipmentSequence");
         getAndCheckElementFromDataset(item, DeviceSerialNumber, "1", "3", "ContributingEquipmentSequence");
         getAndCheckElementFromDataset(item, SoftwareVersions, "1-n", "3", "ContributingEquipmentSequence");
@@ -187,8 +175,6 @@ OFCondition DRTContributingEquipmentSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmShortText(InstitutionAddress), "1", "3", "ContributingEquipmentSequence");
         addElementToDataset(result, item, new DcmShortString(StationName), "1", "3", "ContributingEquipmentSequence");
         addElementToDataset(result, item, new DcmLongString(InstitutionalDepartmentName), "1", "3", "ContributingEquipmentSequence");
-        addElementToDataset(result, item, new DcmPersonName(OperatorsName), "1-n", "3", "ContributingEquipmentSequence");
-        if (result.good()) result = OperatorIdentificationSequence.write(item, "1-n", "3", "ContributingEquipmentSequence");
         addElementToDataset(result, item, new DcmLongString(ManufacturerModelName), "1", "3", "ContributingEquipmentSequence");
         addElementToDataset(result, item, new DcmLongString(DeviceSerialNumber), "1", "3", "ContributingEquipmentSequence");
         addElementToDataset(result, item, new DcmLongString(SoftwareVersions), "1-n", "3", "ContributingEquipmentSequence");
@@ -280,15 +266,6 @@ OFCondition DRTContributingEquipmentSequence::Item::getManufacturerModelName(OFS
         return EC_IllegalCall;
     else
         return getStringValueFromElement(ManufacturerModelName, value, pos);
-}
-
-
-OFCondition DRTContributingEquipmentSequence::Item::getOperatorsName(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(OperatorsName, value, pos);
 }
 
 
@@ -454,19 +431,6 @@ OFCondition DRTContributingEquipmentSequence::Item::setManufacturerModelName(con
 }
 
 
-OFCondition DRTContributingEquipmentSequence::Item::setOperatorsName(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmPersonName::checkStringValue(value, "1-n") : EC_Normal;
-        if (result.good())
-            result = OperatorsName.putOFStringArray(value);
-    }
-    return result;
-}
-
-
 OFCondition DRTContributingEquipmentSequence::Item::setSoftwareVersions(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -622,7 +586,7 @@ OFBool DRTContributingEquipmentSequence::isValid() const
 }
 
 
-size_t DRTContributingEquipmentSequence::getNumberOfItems() const
+unsigned long DRTContributingEquipmentSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -652,12 +616,12 @@ OFCondition DRTContributingEquipmentSequence::gotoNextItem()
 }
 
 
-OFCondition DRTContributingEquipmentSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTContributingEquipmentSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -672,12 +636,12 @@ OFCondition DRTContributingEquipmentSequence::gotoItem(const size_t num, OFListI
 }
 
 
-OFCondition DRTContributingEquipmentSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTContributingEquipmentSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -692,7 +656,7 @@ OFCondition DRTContributingEquipmentSequence::gotoItem(const size_t num, OFListC
 }
 
 
-OFCondition DRTContributingEquipmentSequence::gotoItem(const size_t num)
+OFCondition DRTContributingEquipmentSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -728,7 +692,7 @@ const DRTContributingEquipmentSequence::Item &DRTContributingEquipmentSequence::
 }
 
 
-OFCondition DRTContributingEquipmentSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTContributingEquipmentSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -738,7 +702,7 @@ OFCondition DRTContributingEquipmentSequence::getItem(const size_t num, Item *&i
 }
 
 
-DRTContributingEquipmentSequence::Item &DRTContributingEquipmentSequence::getItem(const size_t num)
+DRTContributingEquipmentSequence::Item &DRTContributingEquipmentSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -748,7 +712,7 @@ DRTContributingEquipmentSequence::Item &DRTContributingEquipmentSequence::getIte
 }
 
 
-const DRTContributingEquipmentSequence::Item &DRTContributingEquipmentSequence::getItem(const size_t num) const
+const DRTContributingEquipmentSequence::Item &DRTContributingEquipmentSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -758,13 +722,13 @@ const DRTContributingEquipmentSequence::Item &DRTContributingEquipmentSequence::
 }
 
 
-DRTContributingEquipmentSequence::Item &DRTContributingEquipmentSequence::operator[](const size_t num)
+DRTContributingEquipmentSequence::Item &DRTContributingEquipmentSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTContributingEquipmentSequence::Item &DRTContributingEquipmentSequence::operator[](const size_t num) const
+const DRTContributingEquipmentSequence::Item &DRTContributingEquipmentSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -787,7 +751,7 @@ OFCondition DRTContributingEquipmentSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTContributingEquipmentSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTContributingEquipmentSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -810,7 +774,7 @@ OFCondition DRTContributingEquipmentSequence::insertItem(const size_t pos, Item 
 }
 
 
-OFCondition DRTContributingEquipmentSequence::removeItem(const size_t pos)
+OFCondition DRTContributingEquipmentSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

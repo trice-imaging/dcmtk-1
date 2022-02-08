@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2021, OFFIS e.V.
+ *  Copyright (C) 2002-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -30,6 +30,10 @@
 #include "dcmtk/dcmdata/dcswap.h"    /* for swapIfNecessary */
 #include "dcmtk/dcmdata/dcitem.h"
 #include "dcmtk/ofstd/ofstd.h"
+
+#define INCLUDE_CSTDIO
+#include "dcmtk/ofstd/ofstdinc.h"
+
 
 typedef OFList<DcmRLEEncoder *> DcmRLEEncoderList;
 typedef OFListIterator(DcmRLEEncoder *) DcmRLEEncoderListIterator;
@@ -67,8 +71,7 @@ OFCondition DcmRLECodecEncoder::decode(
     DcmPixelSequence * /* pixSeq */,
     DcmPolymorphOBOW& /* uncompressedPixelData */,
     const DcmCodecParameter * /* cp */,
-    const DcmStack& /* objStack */,
-    OFBool& /* removeOldRep */ ) const
+    const DcmStack& /* objStack */) const
 {
   // we are an encoder only
   return EC_IllegalCall;
@@ -88,7 +91,7 @@ OFCondition DcmRLECodecEncoder::decodeFrame(
 {
   // we are an encoder only
   return EC_IllegalCall;
-}
+}    
 
 
 OFCondition DcmRLECodecEncoder::encode(
@@ -98,8 +101,7 @@ OFCondition DcmRLECodecEncoder::encode(
     const DcmRepresentationParameter * /* toRepParam */,
     DcmPixelSequence * & /* toPixSeq */,
     const DcmCodecParameter * /* cp */,
-    DcmStack& /* objStack */,
-    OFBool& /* removeOldRep */ ) const
+    DcmStack & /* objStack */) const
 {
   // we don't support re-coding for now.
   return EC_IllegalCall;
@@ -112,8 +114,7 @@ OFCondition DcmRLECodecEncoder::encode(
     const DcmRepresentationParameter * /* toRepParam */ ,
     DcmPixelSequence * & pixSeq,
     const DcmCodecParameter *cp,
-    DcmStack& objStack,
-    OFBool& /* removeOldRep */ ) const
+    DcmStack & objStack) const
 {
   OFCondition result = EC_Normal;
 
@@ -184,12 +185,12 @@ OFCondition DcmRLECodecEncoder::encode(
     // create initial pixel sequence
     if (result.good())
     {
-      pixelSequence = new DcmPixelSequence(DCM_PixelSequenceTag);
+      pixelSequence = new DcmPixelSequence(DcmTag(DCM_PixelData,EVR_OB));
       if (pixelSequence == NULL) result = EC_MemoryExhausted;
       else
       {
         // create empty offset table
-        offsetTable = new DcmPixelItem(DCM_PixelItemTag);
+        offsetTable = new DcmPixelItem(DcmTag(DCM_Item,EVR_OB));
         if (offsetTable == NULL) result = EC_MemoryExhausted;
         else pixelSequence->insert(offsetTable);
       }
@@ -198,7 +199,7 @@ OFCondition DcmRLECodecEncoder::encode(
     // byte swap pixel data to little endian
     if (gLocalByteOrder == EBO_BigEndian)
     {
-      swapIfNecessary(EBO_LittleEndian, gLocalByteOrder, OFstatic_cast(void *, OFconst_cast(Uint16 *, pixelData)), length, sizeof(Uint16));
+       swapIfNecessary(EBO_LittleEndian, gLocalByteOrder, OFstatic_cast(void *, OFconst_cast(Uint16 *, pixelData)), length, sizeof(Uint16));
     }
 
     // create RLE stripe sets
@@ -211,17 +212,13 @@ OFCondition DcmRLECodecEncoder::encode(
       Uint32 offsetBetweenSamples = 0;
       Uint32 sample = 0;
       Uint32 byte = 0;
-      Uint32 pixel = 0;
-      Uint32 columnCounter = 0;
+      register Uint32 pixel = 0;
+      register Uint32 columnCounter = 0;
 
       DcmRLEEncoder *rleEncoder = NULL;
       Uint32 rleSize = 0;
       Uint8 *rleData = NULL;
       Uint8 *rleData2 = NULL;
-
-      // warn about (possibly) non-standard fragmentation
-      if (djcp->getFragmentSize() > 0)
-         DCMDATA_WARN("DcmRLECodecEncoder: limiting the fragment size may result in non-standard conformant encoding");
 
       // compute byte offset between samples
       if (planarConfiguration == 0)
@@ -363,7 +360,7 @@ OFCondition DcmRLECodecEncoder::encode(
             if (djcp->getConvertToSC() || djcp->getUIDCreation())
             {
                 result = DcmCodec::newInstance(OFstatic_cast(DcmItem *, dataset), "DCM", "121320", "Uncompressed predecessor");
-
+                
                 // set image type to DERIVED
                 if (result.good()) result = updateImageType(OFstatic_cast(DcmItem *, dataset));
 

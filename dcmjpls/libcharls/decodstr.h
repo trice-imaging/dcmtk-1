@@ -19,13 +19,10 @@ class DecoderStrategy
 public:
 	DecoderStrategy(const JlsParameters& info) :
 		  _info(info),
-		  _processLine(OFnullptr),
+	      _processLine(0),
 		  _readCache(0),
 		  _validBits(0),
-		  _position(0),
-		  _size(0),
-		  _current_offset(0),
-		  _nextFFPosition(0)
+		  _position(0)
 	  {
 	  }
 
@@ -34,15 +31,14 @@ public:
 	  }
 
 	  virtual void SetPresets(const JlsCustomParameters& presets) = 0;
-	  virtual size_t DecodeScan(void* outputData, const JlsRect& size, BYTE **buf, size_t *buf_size, size_t offset, bool bCheck) = 0;
+	  virtual size_t DecodeScan(void* outputData, const JlsRect& size, const void* compressedData, size_t byteCount, bool bCheck) = 0;
 
-	  void Init(BYTE **ptr, size_t *size, size_t offset)
+	  void Init(BYTE* compressedBytes, size_t byteCount)
 	  {
 		  _validBits = 0;
 		  _readCache = 0;
-		  _position = ptr;
-		  _size = size;
-		  _current_offset = offset;
+		  _position = compressedBytes;
+		  _endPosition = compressedBytes + byteCount;
 		  _nextFFPosition = FindNextFF();
 		  MakeValid();
 	  }
@@ -65,11 +61,11 @@ public:
 
 	  void EndScan()
 	  {
-		  if (current_value() != 0xFF)
+		  if ((*_position) != 0xFF)
 		  {
 			  ReadBit();
 
-			  if (current_value() != 0xFF)
+			  if ((*_position) != 0xFF)
 				throw JlsException(TooMuchCompressedData);
 		  }
 
@@ -81,11 +77,11 @@ public:
 	  inlinehint bool OptimizedRead()
 	  {
 		  // Easy & fast: if there is no 0xFF byte in sight, we can read without bitstuffing
-		  if (_current_offset < _nextFFPosition - (sizeof(bufType)-1))
+		  if (_position < _nextFFPosition - (sizeof(bufType)-1))
 		  {
-			  _readCache		 |= FromBigEndian<sizeof(bufType)>::Read(*_position + _current_offset) >> _validBits;
+			  _readCache		 |= FromBigEndian<sizeof(bufType)>::Read(_position) >> _validBits;
 			  int bytesToRead = (bufferbits - _validBits) >> 3;
-			  _current_offset += bytesToRead;
+			  _position += bytesToRead;
 			  _validBits += bytesToRead * 8;
 			  ASSERT(_validBits >= bufferbits - 8);
 			  return true;
@@ -108,7 +104,7 @@ public:
 
 		  do
 		  {
-			  if (_current_offset >= *_size)
+			  if (_position >= _endPosition)
 			  {
 				  if (_validBits <= 0)
 					  throw JlsException(InvalidCompressedData);
@@ -116,12 +112,12 @@ public:
 				  return;
 			  }
 
-			  bufType valnew	  = current_value();
+			  bufType valnew	  = _position[0];
 			  
 			  if (valnew == 0xFF)		
 			  {
 				  // JPEG bitstream rule: no FF may be followed by 0x80 or higher	    			 
-				 if (_current_offset == *_size - 1 || ((*_position)[_current_offset + 1] & 0x80) != 0)
+				 if (_position == _endPosition - 1 || (_position[1] & 0x80) != 0)
 				 {
 					 if (_validBits <= 0)
 					 	throw JlsException(InvalidCompressedData);
@@ -131,7 +127,7 @@ public:
 			  }
 
 			  _readCache		 |= valnew << (bufferbits - 8  - _validBits);
-			  _current_offset   += 1;
+			  _position   += 1;				
 			  _validBits		 += 8; 
 
 			  if (valnew == 0xFF)		
@@ -147,39 +143,39 @@ public:
 	  }
 
 
-	  size_t FindNextFF()
+	  BYTE* FindNextFF()
 	  {
-		  size_t off = _current_offset;
+		  BYTE* pbyteNextFF = _position;
 
-		  while (off < *_size)
+		  while (pbyteNextFF < _endPosition)
 	      {
-			  if ((*_position)[off] == 0xFF)
+			  if (*pbyteNextFF == 0xFF) 
 			  {				  
 				  break;
 			  }
-		  off++;
+    		  pbyteNextFF++;
 		  }
 		  
 
-		  return off;
+		  return pbyteNextFF;
 	  }
 
 
-	  BYTE *GetCurBytePos() const
+	  BYTE* GetCurBytePos() const
 	  {
 		  LONG  validBits = _validBits;
-		  size_t off = _current_offset;
+		  BYTE* compressedBytes = _position;
 
 		  for (;;)
 		  {
-			  LONG cbitLast = (*_position)[off - 1] == 0xFF ? 7 : 8;
+			  LONG cbitLast = compressedBytes[-1] == 0xFF ? 7 : 8;
 
 			  if (validBits < cbitLast )
-				  return (*_position) + off;
+				  return compressedBytes;
 
 			  validBits -= cbitLast; 
-			  off--;
-		  }
+			  compressedBytes--;
+		  }	
 	  }
 
 
@@ -274,21 +270,15 @@ public:
 
 protected:
 	JlsParameters _info;
-	OFunique_ptr<ProcessLine> _processLine;
+	OFauto_ptr<ProcessLine> _processLine;
 
 private:
-	BYTE current_value() const
-	{
-		return (*_position)[_current_offset];
-	}
-
 	// decoding
 	bufType _readCache;
 	LONG _validBits;
-	BYTE **_position;
-	size_t *_size;
-	size_t _current_offset;
-	size_t _nextFFPosition;
+	BYTE* _position;
+	BYTE* _nextFFPosition;
+	BYTE* _endPosition;
 };
 
 

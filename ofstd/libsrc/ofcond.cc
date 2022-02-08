@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2001-2015, OFFIS e.V.
+ *  Copyright (C) 2001-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -35,11 +35,10 @@ makeOFConditionConst(EC_CouldNotCreateTemporaryFile,   0,  9, OF_error,   "Could
 makeOFConditionConst(EC_InvalidFilename,               0, 10, OF_error,   "Invalid filename");
 makeOFConditionConst(EC_DirectoryDoesNotExist,         0, 11, OF_error,   "Directory does not exist");
 makeOFConditionConst(EC_DirectoryNotWritable,          0, 12, OF_error,   "Directory is not writable");
-// code 13 is for dynamically created error messages (see constant below)
+// codes 13 is for dynamically created error messages (see constants below)
 makeOFConditionConst(EC_CouldNotGenerateFilename,      0, 14, OF_error,   "Could not generate filename");
 makeOFConditionConst(EC_CouldNotGenerateDirectoryName, 0, 15, OF_error,   "Could not generate directory name");
 makeOFConditionConst(EC_setuidFailed,                  0, 16, OF_error,   "Call to setuid() failed");
-makeOFConditionConst(EC_NotYetImplemented,             0, 17, OF_error,   "Not yet implemented");
 
 // NOTE:
 // error codes 1024..2047 are reserved for inter-process communication

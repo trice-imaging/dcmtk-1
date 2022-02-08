@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2021, OFFIS e.V.
+ *  Copyright (C) 2000-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -112,20 +112,6 @@ class DCMTK_DCMSR_EXPORT DSRImageReferenceValue
      */
     DSRImageReferenceValue &operator=(const DSRImageReferenceValue &referenceValue);
 
-    /** comparison operator "equal".
-     *  Please note that the optional icon image is not used for comparing the two values.
-     ** @param  referenceValue  image reference value that should be compared to the current one
-     ** @return OFTrue if both image reference values are equal, OFFalse otherwise
-     */
-    OFBool operator==(const DSRImageReferenceValue &referenceValue) const;
-
-    /** comparison operator "not equal".
-     *  Please note that the optional icon image is not used for comparing the two values.
-     ** @param  referenceValue  image reference value that should be compared to the current one
-     ** @return OFTrue if both image reference values are not equal, OFFalse otherwise
-     */
-    OFBool operator!=(const DSRImageReferenceValue &referenceValue) const;
-
     /** clear all internal variables.
      *  Since an empty image reference is invalid the reference becomes invalid afterwards.
      */
@@ -149,11 +135,6 @@ class DCMTK_DCMSR_EXPORT DSRImageReferenceValue
      */
     virtual OFBool isShort(const size_t flags) const;
 
-    /** check whether the current image reference points to a DICOM segmentation object
-     ** @return OFTrue if a segmentation object is referenced, OFFalse otherwise
-     */
-    virtual OFBool isSegmentation() const;
-
     /** print image reference.
      *  The output of a typical image reference value looks like this: (CT image,"1.2.3") or
      *  (CT image,"1.2.3"),(GSPS,"1.2.3.4") if a presentation state is present.
@@ -170,12 +151,10 @@ class DCMTK_DCMSR_EXPORT DSRImageReferenceValue
     /** read image reference from XML document
      ** @param  doc     document containing the XML file content
      *  @param  cursor  cursor pointing to the starting node
-     *  @param  flags   flag used to customize the reading process (see DSRTypes::XF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition readXML(const DSRXMLDocument &doc,
-                                DSRXMLCursor cursor,
-                                const size_t flags);
+                                DSRXMLCursor cursor);
 
     /** write image reference in XML format
      ** @param  stream  output stream to which the XML document is written
@@ -364,14 +343,6 @@ class DCMTK_DCMSR_EXPORT DSRImageReferenceValue
         return FrameList;
     }
 
-    /** get read-only access to list of referenced frame numbers
-     ** @return constant reference to frame list
-     */
-    inline const DSRImageFrameList &getFrameList() const
-    {
-        return FrameList;
-    }
-
     /** get reference to list of referenced segment numbers.
      *  According to the DICOM standard, this list is required if the referenced image is
      *  a segmentation object, and the reference does not apply to all segments and the list
@@ -379,14 +350,6 @@ class DCMTK_DCMSR_EXPORT DSRImageReferenceValue
      ** @return reference to segment list
      */
     inline DSRImageSegmentList &getSegmentList()
-    {
-        return SegmentList;
-    }
-
-    /** get read-only access to list of referenced segment numbers
-     ** @return constant reference to segment list
-     */
-    inline const DSRImageSegmentList &getSegmentList() const
     {
         return SegmentList;
     }
@@ -420,11 +383,9 @@ class DCMTK_DCMSR_EXPORT DSRImageReferenceValue
 
     /** read image reference value from dataset
      ** @param  dataset  DICOM dataset from which the value should be read
-     *  @param  flags    flag used to customize the reading process (see DSRTypes::RF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual OFCondition readItem(DcmItem &dataset,
-                                 const size_t flags);
+    virtual OFCondition readItem(DcmItem &dataset);
 
     /** write image reference value to dataset
      ** @param  dataset  DICOM dataset to which the value should be written
@@ -432,68 +393,51 @@ class DCMTK_DCMSR_EXPORT DSRImageReferenceValue
      */
     virtual OFCondition writeItem(DcmItem &dataset) const;
 
-    /** check whether the given SOP class UID refers to a DICOM segmentation object
-     ** @param  sopClassUID  SOP class UID to be checked
-     ** @return OFTrue if the UID refers to a segmentation object, OFFalse otherwise
-     */
-    virtual OFBool isSegmentationObject(const OFString &sopClassUID) const;
-
     /** check the specified SOP class UID for validity.
-     *  This method further specializes the checks performed in the base class
-     *  DSRCompositeReferenceValue.  All image and segmentation SOP classes that
-     *  are defined in DICOM PS 3.6-2020c are allowed.
-     ** @param  sopClassUID     SOP class UID to be checked
-     *  @param  reportWarnings  if enabled, report warning messages to the logger
+     *  Currently, this method does not further specialize the checks performed in the base
+     *  class DSRCompositeReferenceValue.  Later on, this method might be extended to also
+     *  check whether the specified SOP class is really an image storage SOP class.
+     ** @param  sopClassUID  SOP class UID to be checked
      ** @return status, EC_Normal if value is valid, an error code otherwise
      */
-    virtual OFCondition checkSOPClassUID(const OFString &sopClassUID,
-                                         const OFBool reportWarnings = OFFalse) const;
+    virtual OFCondition checkSOPClassUID(const OFString &sopClassUID) const;
 
     /** check the given reference to a presentation state object for validity.
      *  The reference is "valid" if both UIDs are empty or both are not empty and
      *  SOP class UID refers to a softcopy presentation state object (see
      *  DSRTypes::E_PresentationStateType for a list of supported SOP classes).
      ** @param  referenceValue  value to be checked
-     *  @param  reportWarnings  if enabled, report warning messages to the logger
      ** @return status, EC_Normal if value is valid, an error code otherwise
      */
-    virtual OFCondition checkPresentationState(const DSRCompositeReferenceValue &referenceValue,
-                                               const OFBool reportWarnings = OFFalse) const;
+    virtual OFCondition checkPresentationState(const DSRCompositeReferenceValue &referenceValue) const;
 
     /** check the given reference to a real world value mapping object for validity.
      *  The reference is "valid" if both UIDs are empty or both are not empty and
      *  SOP class UID refers to the "Real World Value Mapping Storage SOP Class".
      ** @param  referenceValue  value to be checked
-     *  @param  reportWarnings  if enabled, report warning messages to the logger
      ** @return status, EC_Normal if value is valid, an error code otherwise
      */
-    virtual OFCondition checkRealWorldValueMapping(const DSRCompositeReferenceValue &referenceValue,
-                                                   const OFBool reportWarnings = OFFalse) const;
+    virtual OFCondition checkRealWorldValueMapping(const DSRCompositeReferenceValue &referenceValue) const;
 
     /** check the given list of frame and segment numbers for validity.
-     *  Either both lists have to be empty or only one of them has to be non-empty,
-     *  because otherwise the "type 1C" condition would be violated.  Also the list
-     *  of segment numbers should only be non-empty for one of the DICOM segmentation
-     *  objects (see isSegmentationObject()).
-     ** @param  sopClassUID     SOP class UID of the image object to be checked
-     *  @param  frameList       list of referenced frame numbers to be checked
+     *  The only check that is currently performed is that either both lists are empty or only
+     *  one of them is non-empty, because otherwise the "type 1C" condition would be violated.
+     ** @param  frameList       list of referenced frame numbers to be checked
      *  @param  segmentList     list of referenced segment numbers to be checked
-     *  @param  reportWarnings  if enabled, report a warning message to the logger
+     *  @param  reportWarnings  if enabled, report a warning message on each deviation from an
+     *                          expected value to the logger
      ** @return status, EC_Normal if checked data is valid, an error code otherwise
      */
-    OFCondition checkListData(const OFString &sopClassUID,
-                              const DSRImageFrameList &frameList,
+    OFCondition checkListData(const DSRImageFrameList &frameList,
                               const DSRImageSegmentList &segmentList,
                               const OFBool reportWarnings = OFFalse) const;
 
     /** check the currently stored image reference value for validity.
      *  See above checkXXX() methods and DSRCompositeReferenceValue::checkCurrentValue()
      *  for details.
-     ** @param  reportWarnings  if enabled, report a warning message on each deviation
-     *                          from an expected value to the logger
      ** @return status, EC_Normal if current value is valid, an error code otherwise
      */
-    OFCondition checkCurrentValue(const OFBool reportWarnings = OFFalse) const;
+    OFCondition checkCurrentValue() const;
 
 
   private:

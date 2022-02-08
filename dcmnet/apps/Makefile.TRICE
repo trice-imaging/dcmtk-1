@@ -1,0 +1,152 @@
+#
+#	Makefile for dcmnet/apps
+#
+
+
+
+SHELL = /bin/sh
+VPATH = ../include:../../config/include
+srcdir = .
+top_srcdir = ..
+configdir = ../../config
+
+include $(configdir)/Makefile.def
+
+ofstddir = $(top_srcdir)/../ofstd
+oflogdir = $(top_srcdir)/../oflog
+dcmdatadir = $(top_srcdir)/../dcmdata
+dcmtlsdir = $(top_srcdir)/../dcmtls
+
+# these defines are used when compression support is needed for one of the tools
+compr_includes = -I$(top_srcdir)/../dcmimgle/include -I$(top_srcdir)/../dcmimage/include \
+	-I$(top_srcdir)/../dcmjpeg/include -I$(top_srcdir)/../dcmjpls/include
+compr_libdirs = -L$(top_srcdir)/../dcmimgle/libsrc -L$(top_srcdir)/../dcmimage/libsrc \
+	-L$(top_srcdir)/../dcmjpeg/libsrc -L$(top_srcdir)/../dcmjpeg/libijg8 \
+	-L$(top_srcdir)/../dcmjpeg/libijg12 -L$(top_srcdir)/../dcmjpeg/libijg16 \
+	-L$(top_srcdir)/../dcmjpls/libsrc -L$(top_srcdir)/../dcmjpls/libcharls
+
+ICONVLIBS = -liconv -lcharset
+LOCALINCLUDES = -I$(ofstddir)/include -I$(oflogdir)/include \
+	-I$(dcmdatadir)/include -I$(dcmtlsdir)/include $(compr_includes) -g
+LIBDIRS = -L$(top_srcdir)/libsrc -L$(ofstddir)/libsrc -L$(oflogdir)/libsrc \
+	-L$(dcmdatadir)/libsrc -L$(dcmtlsdir)/libsrc $(compr_libdirs) 
+DCMTLSLIBS = -ldcmtls
+COMPR_LIBS = -ldcmjpls -lcharls -ldcmjpeg -lijg8 -lijg12 -lijg16 -ldcmimage -ldcmimgle
+ifneq ($(STORESCP_LIBDIR),$(NOTHING))
+  libdir=$(STORESCP_LIBDIR)
+endif
+ifneq ($(WSYSROOT),$(NOTHING))
+   libdir = $(WSYSROOT)
+   LOCALLIBS = -ldcmnet -ldcmdata -loflog -lofstd $(ZLIBLIBS) $(TCPWRAPPERLIBS) $(ICONVLIBS) ${libdir}/libwsock32.a ${libdir}/libws2_32.a ${libdir}/libmswsock.a
+   LOCALLIBS_TRICE = -ldcmnet -ldcmdata_trice -loflog -lofstd $(ZLIBLIBS) $(TCPWRAPPERLIBS) $(ICONVLIBS) ${libdir}/libwsock32.a ${libdir}/libws2_32.a ${libdir}/libmswsock.a
+   STORESCP_LIBS = ${libdir}/libsend.a ${libdir}/libtrice.a  ${libdir}/libmbedtls.a ${libdir}/libmbedx509.a ${libdir}/libmbedcrypto.a ${libdir}/libpthreadGC2.a ${libdir}/libcrypt32.a 
+else
+   LOCALLIBS = -ldcmnet -ldcmdata -loflog -lofstd $(ZLIBLIBS) $(TCPWRAPPERLIBS) $(ICONVLIBS)
+   LOCALLIBS_TRICE = -ldcmnet -ldcmdata_trice -loflog -lofstd $(ZLIBLIBS) $(TCPWRAPPERLIBS) $(ICONVLIBS)
+   STORESCP_LIBS = ${libdir}/libsend.a ${libdir}/libtrice.a  ${libdir}/libmbedtls.a ${libdir}/libmbedx509.a ${libdir}/libmbedcrypto.a
+endif
+ifneq ($(SYSROOT),$(NOTHING))
+   LIBDIRS1 = -L $(SYSROOT)/usr/lib
+   STORESCP_LIBS = -lsend -ltrice -lmbedtls -lmbedx509 -lmbedcrypto
+endif
+
+objs = echoscu.o storescu.o storescp.o findscu.o movescu.o termscu.o getscu.o dcmsend.o \
+	dcmrecv.o
+progs = echoscu storescu storescp findscu movescu termscu getscu dcmsend dcmrecv
+progs-aud = echoscu storescp dcmsend
+
+
+all: $(progs)
+ifneq ($(SYSROOT),$(NOTHING))
+aud:  storescp dcmsend
+else
+aud:  echoscu storescp dcmsend
+endif
+
+echoscu: echoscu.o
+ifneq ($(SYSROOT),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LIBDIRS1} $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(DCMTLSLIBS) $(OPENSSLLIBS) $(MATHLIBS) $(LIBS) -lz
+	$(STRIPX) echoscu
+else
+	$(CXX) -g $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(DCMTLSLIBS) $(OPENSSLLIBS) $(MATHLIBS) $(LIBS)
+endif
+ifneq ($(WSYSROOT),$(NOTHING))
+	cp -f echoscu echoscu.exe
+	$(STRIPX) echoscu.exe
+	cp -f echoscu.exe /tmp
+endif
+
+# add $(COMPR_LIBS) to the linking instructions if "storescu" is compiled
+# with ON_THE_FLY_COMPRESSION defined (see "config/docs/macros.txt")
+storescu: storescu.o
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(DCMTLSLIBS) $(OPENSSLLIBS) $(MATHLIBS) $(LIBS) 
+
+storescp: storescp.o
+ifneq ($(SYSROOT),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LIBDIRS1) $(LDFLAGS) -static -o $@ $@.o $(STORESCP_LIBS) $(LOCALLIBS_TRICE) $(DCMTLSLIBS) $(MATHLIBS) 
+	${STRIPX} storescp
+	cp storescp /tmp
+else ifneq ($(WSYSROOT),$(NOTHING))
+	$(WINDRES) storescp-res.rc storescp-res.o
+	$(CXX) -g $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o storescp-res.o $(STORESCP_LIBS) $(LOCALLIBS_TRICE) $(DCMTLSLIBS) $(OPENSSLLIBS) $(MATHLIBS) $(LIBS) #-lmcheck
+	cp -f storescp storescp.exe
+	${STRIPX} storescp.exe
+	cp -f storescp.exe /tmp
+else
+	$(CXX) -g $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(STORESCP_LIBS) $(LOCALLIBS_TRICE) $(DCMTLSLIBS) $(OPENSSLLIBS) $(MATHLIBS) $(LIBS) #-lmcheck
+endif
+
+
+findscu: findscu.o
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(DCMTLSLIBS) $(OPENSSLLIBS) $(MATHLIBS) $(LIBS)
+
+movescu: movescu.o
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+
+termscu: termscu.o
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+
+getscu: getscu.o
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+
+dcmsend: dcmsend.o
+ifneq ($(SYSROOT),$(NOTHING))
+	$(CXX) -g $(CXXFLAGS) $(LIBDIRS) $(LIBDIRS1) $(LDFLAGS) -static -o $@ $@.o $(COMPR_LIBS) $(LOCALLIBS) $(TIFFLIBS) $(PNGLIBS) $(MATHLIBS) $(LIBS)
+	${STRIPX} dcmsend
+	cp dcmsend /tmp
+else
+	$(CXX) -g $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(COMPR_LIBS) $(LOCALLIBS) $(TIFFLIBS) $(PNGLIBS) $(MATHLIBS) $(LIBS)
+endif
+ifneq ($(WSYSROOT),$(NOTHING))
+	cp -f dcmsend dcmsend.exe
+	$(STRIPX) dcmsend.exe
+	cp -f dcmsend.exe /tmp
+endif
+
+dcmrecv: dcmrecv.o
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+
+install-aud: aud
+	$(configdir)/mkinstalldirs $(DESTDIR)$(bindir)
+	for prog in $(progs-aud); do \
+		$(INSTALL_PROGRAM) $$prog$(BINEXT) $(DESTDIR)$(bindir) && $(STRIP) $(DESTDIR)$(bindir)/$$prog$(BINEXT) ;\
+	done
+
+install: all
+	$(configdir)/mkinstalldirs $(DESTDIR)$(bindir)
+	for prog in $(progs); do \
+		$(INSTALL_PROGRAM) $$prog$(BINEXT) $(DESTDIR)$(bindir) && $(STRIP) $(DESTDIR)$(bindir)/$$prog$(BINEXT) ;\
+	done
+
+
+clean:
+	rm -f $(objs) $(progs) $(TRASH)
+
+distclean:
+	rm -f $(objs) $(progs) $(DISTTRASH)
+
+
+dependencies:
+	$(CXX) -MM $(defines) $(includes) $(CPPFLAGS) $(CXXFLAGS) *.cc  > $(DEP)
+
+include $(DEP)

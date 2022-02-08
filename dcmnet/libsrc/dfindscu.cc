@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,17 +20,21 @@
  */
 
 #include "dcmtk/config/osconfig.h" /* make sure OS specific configuration is included first */
-
 #include "dcmtk/dcmnet/dfindscu.h"
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CSTDARG
+#define INCLUDE_CERRNO
+#include "dcmtk/ofstd/ofstdinc.h"
 
 #include "dcmtk/dcmnet/diutil.h"
 #include "dcmtk/dcmdata/dcfilefo.h"
 #include "dcmtk/dcmdata/dcdicent.h"
 #include "dcmtk/dcmdata/dcdict.h"
 #include "dcmtk/dcmdata/dcpath.h"
-#include "dcmtk/dcmdata/dcdeftag.h"
 #include "dcmtk/ofstd/ofconapp.h"
-#include "dcmtk/ofstd/ofstream.h"
 
 /* ---------------- static functions ---------------- */
 
@@ -68,30 +72,25 @@ void DcmFindSCUCallback::setPresentationContextID(T_ASC_PresentationContextID pr
 /* ---------------- class DcmFindSCUCallback ---------------- */
 
 DcmFindSCUDefaultCallback::DcmFindSCUDefaultCallback(
-    DcmFindSCUExtractMode extractResponses,
+    OFBool extractResponsesToFile,
     int cancelAfterNResponses,
-    const char *outputDirectory,
-    STD_NAMESPACE ofstream *outputStream,
-    const unsigned int limitOutput)
+    const char *outputDirectory)
 : DcmFindSCUCallback()
-, extractResponses_(extractResponses)
+, extractResponsesToFile_(extractResponsesToFile)
 , cancelAfterNResponses_(cancelAfterNResponses)
-, limitOutput_(limitOutput)
 , outputDirectory_(OFSTRING_GUARD(outputDirectory))
-, outputStream_(outputStream)
 {
 }
 
 void DcmFindSCUDefaultCallback::callback(
     T_DIMSE_C_FindRQ *request,
-    int &responseCount,
+    int responseCount,
     T_DIMSE_C_FindRSP *rsp,
     DcmDataset *responseIdentifiers)
-{
+ {
     OFLogger rspLogger = OFLog::getLogger(DCMNET_LOGGER_NAME ".responses");
     /* check whether debug mode is enabled */
-    if (DCM_dcmnetLogger.isEnabledFor(OFLogger::DEBUG_LOG_LEVEL))
-    {
+    if (DCM_dcmnetLogger.isEnabledFor(OFLogger::DEBUG_LOG_LEVEL)) {
         OFString temp_str;
         DCMNET_INFO("Received Find Response " << responseCount);
         DCMNET_DEBUG(DIMSE_dumpMessage(temp_str, *rsp, DIMSE_INCOMING));
@@ -100,84 +99,22 @@ void DcmFindSCUDefaultCallback::callback(
         }
     }
     /* otherwise check whether special response logger is enabled */
-    else if (rspLogger.isEnabledFor(OFLogger::INFO_LOG_LEVEL))
-    {
+    else if (rspLogger.isEnabledFor(OFLogger::INFO_LOG_LEVEL)) {
         OFLOG_INFO(rspLogger, "---------------------------");
         OFLOG_INFO(rspLogger, "Find Response: " << responseCount << " (" << DU_cfindStatusString(rsp->DimseStatus) << ")");
         OFLOG_INFO(rspLogger, DcmObject::PrintHelper(*responseIdentifiers));
     } else {
         DCMNET_INFO("Received Find Response " << responseCount << " (" << DU_cfindStatusString(rsp->DimseStatus) << ")");
     }
-    /* should we extract the response dataset to file? */
-    if (extractResponses_ != FEM_none)
-    {
-        /* check for upper limit of extracted responses */
-        if ((limitOutput_ > 0) && (OFstatic_cast(unsigned int, responseCount) > limitOutput_))
-        {
-            /* output warning message on first response after limit has been reached */
-            if (OFstatic_cast(unsigned int, responseCount) == limitOutput_ + 1)
-                DCMNET_INFO("Maximum number of responses already written to file ... not writing this and all following responses to file");
-            else
-                DCMNET_DEBUG("Maximum number of responses already written to file ... not writing this response to file");
-        } else {
-            /* should we extract the response dataset to a DICOM file? */
-            if (extractResponses_ == FEM_dicomFile)
-            {
-                OFString outputFilename;
-                char rspIdsFileName[32];
-                sprintf(rspIdsFileName, "rsp%04d.dcm", responseCount);
-                OFStandard::combineDirAndFilename(outputFilename, outputDirectory_, rspIdsFileName, OFTrue /*allowEmptyDirName*/);
-                DCMNET_INFO("Writing response dataset to file: " << outputFilename);
-                DcmFindSCU::writeToFile(outputFilename.c_str(), responseIdentifiers);
-            }
-            /* ... or to an XML file? */
-            else if (extractResponses_ == FEM_xmlFile)
-            {
-                OFString outputFilename;
-                char rspIdsFileName[32];
-                sprintf(rspIdsFileName, "rsp%04d.xml", responseCount);
-                OFStandard::combineDirAndFilename(outputFilename, outputDirectory_, rspIdsFileName, OFTrue /*allowEmptyDirName*/);
-                DCMNET_INFO("Writing response dataset to file: " << outputFilename);
-                DcmFindSCU::writeToXMLFile(outputFilename.c_str(), responseIdentifiers);
-            }
-            /* ... or all responses to a single XML file? */
-            else if (extractResponses_ == FEM_singleXMLFile)
-            {
-                if (outputStream_ != NULL)
-                {
-                    OFCondition cond = EC_Normal;
-                    size_t writeFlags = 0;
-                    OFString csetString;
-                    DCMNET_DEBUG("Writing response dataset to XML file");
-                    /* expect that (0008,0005) is set if extended characters are used */
-                    if (responseIdentifiers->findAndGetOFStringArray(DCM_SpecificCharacterSet, csetString).good())
-                    {
-                        /* for ASCII and UTF-8, there is no need to convert the character strings */
-                        if (!csetString.empty() && (csetString != "ISO_IR 192"))
-                        {
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
-                            DCMNET_DEBUG("Converting all element values that are affected by SpecificCharacterSet (0008,0005) to UTF-8");
-                            cond = responseIdentifiers->convertToUTF8();
-#else
-                            if (responseIdentifiers->containsExtendedCharacters(OFFalse /*checkAllStrings*/))
-                            {
-                                DCMNET_WARN("No support for character set conversion available ... quoting non-ASCII characters");
-                                /* make sure that non-ASCII characters are quoted appropriately */
-                                writeFlags |= DCMTypes::XF_convertNonASCII;
-                            } else {
-                                DCMNET_DEBUG("No support for character set conversion available");
-                            }
-#endif
-                        }
-                    }
-                    /* write response dataset to XML file */
-                    if (cond.good())
-                        cond = responseIdentifiers->writeXML(*outputStream_, writeFlags);
-                    if (cond.bad())
-                        DCMNET_ERROR("Writing XML file: " << cond.text());
-                }
-            }
-        }
+
+    /* in case extractResponsesToFile is set the responses shall be extracted to a certain file */
+    if (extractResponsesToFile_) {
+        OFString outputFilename;
+        char rspIdsFileName[1024];
+        sprintf(rspIdsFileName, "rsp%04d.dcm", responseCount);
+        OFStandard::combineDirAndFilename(outputFilename, outputDirectory_, rspIdsFileName, OFTrue /*allowEmptyDirName*/);
+        DCMNET_INFO("Writing response message to file: " << outputFilename);
+        DcmFindSCU::writeToFile(outputFilename.c_str(), responseIdentifiers);
     }
 
     /* should we send a cancel back ?? */
@@ -198,20 +135,13 @@ void DcmFindSCUDefaultCallback::callback(
 
 
 DcmFindSCU::DcmFindSCU()
-: net_(NULL),
-  outputResponseLimit_(0)
+: net_(NULL)
 {
 }
 
 DcmFindSCU::~DcmFindSCU()
 {
     dropNetwork();
-}
-
-OFCondition DcmFindSCU::setOutputResponseLimit(const unsigned int limit)
-{
-    outputResponseLimit_ = limit;
-    return EC_Normal;
 }
 
 OFCondition DcmFindSCU::initializeNetwork(int acse_timeout)
@@ -242,70 +172,44 @@ OFCondition DcmFindSCU::performQuery(
     OFBool secureConnection,
     OFBool abortAssociation,
     unsigned int repeatCount,
-    DcmFindSCUExtractMode extractResponses,
+    OFBool extractResponsesToFile,
     int cancelAfterNResponses,
     OFList<OFString> *overrideKeys,
     DcmFindSCUCallback *callback,
     OFList<OFString> *fileNameList,
-    const char *outputDirectory,
-    const char *extractFilename)
+    const char *outputDirectory)
 {
     T_ASC_Association *assoc = NULL;
     T_ASC_Parameters *params = NULL;
+    DIC_NODENAME localHost;
     DIC_NODENAME peerHost;
     OFString temp_str;
-    OFString outputFilename;
-    STD_NAMESPACE ofstream outputStream;
-    int responseCount = 0;
 
-    /* check input parameters first */
-    if (extractResponses == FEM_singleXMLFile)
-    {
-        OFStandard::combineDirAndFilename(outputFilename, OFSTRING_GUARD(outputDirectory), OFSTRING_GUARD(extractFilename), OFTrue /*allowEmptyDirName*/);
-        if (outputFilename.empty())
-        {
-            DCMNET_ERROR("Cannot create response file with empty filename");
-            return EC_InvalidFilename;
-        }
-    }
-
-    /* initialize association parameters, i.e. create an instance of T_ASC_Parameters*. */
+    /* initialize asscociation parameters, i.e. create an instance of T_ASC_Parameters*. */
     OFCondition cond = ASC_createAssociationParameters(&params, maxReceivePDULength);
-    if (cond.bad())
-    {
-        DCMNET_ERROR("Creating Association Parameters Failed: " << DimseCondition::dump(temp_str, cond));
-        return cond;
-    }
+    if (cond.bad()) return cond;
 
     /* sets this application's title and the called application's title in the params */
-    /* structure. The default values to be set here are "FINDSCU" and "ANY-SCP". */
+    /* structure. The default values to be set here are "STORESCU" and "ANY-SCP". */
     ASC_setAPTitles(params, ourTitle, peerTitle, NULL);
 
     /* Set the transport layer type (type of network connection) in the params */
     /* structure. The default is an insecure connection; where OpenSSL is  */
     /* available the user is able to request an encrypted,secure connection. */
     cond = ASC_setTransportLayerType(params, secureConnection);
-    if (cond.bad())
-    {
-        DCMNET_ERROR("Setting Transport Layer Type Failed: " << DimseCondition::dump(temp_str, cond));
-        (void) ASC_destroyAssociationParameters(&params);
-        return cond;
-    }
+    if (cond.bad()) return cond;
 
     /* Figure out the presentation addresses and copy the */
     /* corresponding values into the association parameters.*/
+    gethostname(localHost, sizeof(localHost) - 1);
     sprintf(peerHost, "%s:%d", peer, OFstatic_cast(int, port));
-    ASC_setPresentationAddresses(params, OFStandard::getHostName().c_str(), peerHost);
+    ASC_setPresentationAddresses(params, localHost, peerHost);
 
     /* Set the presentation contexts which will be negotiated */
     /* when the network connection will be established */
     cond = addPresentationContext(params, abstractSyntax, preferredTransferSyntax);
-    if (cond.bad())
-    {
-        DCMNET_ERROR("Adding Presentation Contexts Failed: " << DimseCondition::dump(temp_str, cond));
-        (void) ASC_destroyAssociationParameters(&params);
-        return cond;
-    }
+
+    if (cond.bad()) return cond;
 
     /* dump presentation contexts if required */
     DCMNET_DEBUG("Request Parameters:" << OFendl << ASC_dumpParameters(temp_str, params, ASC_ASSOC_RQ));
@@ -316,19 +220,15 @@ OFCondition DcmFindSCU::performQuery(
 
     cond = ASC_requestAssociation(net_, params, &assoc);
 
-    if (cond.bad())
-    {
-        if (cond == DUL_ASSOCIATIONREJECTED)
-        {
+    if (cond.bad()) {
+        if (cond == DUL_ASSOCIATIONREJECTED) {
             T_ASC_RejectParameters rej;
             ASC_getRejectParameters(params, &rej);
 
             DCMNET_ERROR("Association Rejected:" << OFendl << ASC_printRejectParameters(temp_str, &rej));
-            (void) ASC_destroyAssociation(&assoc); // this also destroys the T_ASC_Parameters structure
             return cond;
         } else {
             DCMNET_ERROR("Association Request Failed: " << DimseCondition::dump(temp_str, cond));
-            (void) ASC_destroyAssociation(&assoc); // this also destroys the T_ASC_Parameters structure
             return cond;
         }
     }
@@ -338,36 +238,13 @@ OFCondition DcmFindSCU::performQuery(
 
     /* count the presentation contexts which have been accepted by the SCP */
     /* If there are none, finish the execution */
-    if (ASC_countAcceptedPresentationContexts(params) == 0)
-    {
+    if (ASC_countAcceptedPresentationContexts(params) == 0) {
         DCMNET_ERROR("No Acceptable Presentation Contexts");
-        (void) ASC_destroyAssociation(&assoc); // this also destroys the T_ASC_Parameters structure
         return NET_EC_NoAcceptablePresentationContexts;
     }
 
     /* dump general information concerning the establishment of the network connection if required */
     DCMNET_INFO("Association Accepted (Max Send PDV: " << assoc->sendPDVLength << ")");
-
-    /* extract all responses to a single XML file? */
-    if (extractResponses == FEM_singleXMLFile)
-    {
-        DCMNET_INFO("Writing all response datasets to file: " << outputFilename);
-        /* create output file */
-        outputStream.open(outputFilename.c_str());
-        if (outputStream.good())
-        {
-            /* write XML header and top-level element */
-            outputStream << "<?xml version=\"1.0\"";
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
-            outputStream << " encoding=\"UTF-8\"";
-#endif
-            outputStream << "?>" << OFendl;
-            outputStream << "<responses type=\"C-FIND\">" << OFendl;
-        } else {
-            /* report details on file i/o error */
-            DCMNET_ERROR("Writing file: " << outputFilename << ": " << OFStandard::getLastSystemErrorCode().message());
-        }
-    }
 
     /* do the real work, i.e. for all files which were specified in the command line, send a */
     /* C-FIND-RQ to the other DICOM application and receive corresponding response messages. */
@@ -375,23 +252,15 @@ OFCondition DcmFindSCU::performQuery(
     if ((fileNameList == NULL) || fileNameList->empty())
     {
         /* no files provided on command line */
-        cond = findSCU(assoc, NULL, repeatCount, responseCount, abstractSyntax, blockMode, dimse_timeout, extractResponses, cancelAfterNResponses, overrideKeys, callback, outputDirectory, &outputStream);
+        cond = findSCU(assoc, NULL, repeatCount, abstractSyntax, blockMode, dimse_timeout, extractResponsesToFile, cancelAfterNResponses, overrideKeys, callback, outputDirectory);
     } else {
-        OFListIterator(OFString) iter = fileNameList->begin();
-        OFListIterator(OFString) enditer = fileNameList->end();
-        while ((iter != enditer) && cond.good())
-        {
-            cond = findSCU(assoc, (*iter).c_str(), repeatCount, responseCount, abstractSyntax, blockMode, dimse_timeout, extractResponses, cancelAfterNResponses, overrideKeys, callback, outputDirectory, &outputStream);
-            ++iter;
-        }
-    }
-
-    /* close XML file with responses */
-    if (extractResponses == FEM_singleXMLFile)
-    {
-        if (outputStream.good())
-            outputStream << "</responses>" << OFendl;
-        outputStream.close();
+      OFListIterator(OFString) iter = fileNameList->begin();
+      OFListIterator(OFString) enditer = fileNameList->end();
+      while ((iter != enditer) && cond.good())
+      {
+          cond = findSCU(assoc, (*iter).c_str(), repeatCount, abstractSyntax, blockMode, dimse_timeout, extractResponsesToFile, cancelAfterNResponses, overrideKeys, callback, outputDirectory);
+          ++iter;
+      }
     }
 
     /* tear down association, i.e. terminate network connection to SCP */
@@ -402,7 +271,6 @@ OFCondition DcmFindSCU::performQuery(
             cond = ASC_abortAssociation(assoc);
             if (cond.bad()) {
                 DCMNET_ERROR("Association Abort Failed: " << DimseCondition::dump(temp_str, cond));
-                (void) ASC_destroyAssociation(&assoc); // this also destroys the T_ASC_Parameters structure
                 return cond;
             }
         } else {
@@ -412,7 +280,6 @@ OFCondition DcmFindSCU::performQuery(
             if (cond.bad())
             {
                 DCMNET_ERROR("Association Release Failed: " << DimseCondition::dump(temp_str, cond));
-                (void) ASC_destroyAssociation(&assoc); // this also destroys the T_ASC_Parameters structure
                 return cond;
             }
         }
@@ -424,20 +291,20 @@ OFCondition DcmFindSCU::performQuery(
         cond = ASC_abortAssociation(assoc);
         if (cond.bad()) {
             DCMNET_ERROR("Association Abort Failed: " << DimseCondition::dump(temp_str, cond));
-            (void) ASC_destroyAssociation(&assoc); // this also destroys the T_ASC_Parameters structure
             return cond;
         }
     }
     else if (cond == DUL_PEERABORTEDASSOCIATION)
     {
         DCMNET_INFO("Peer Aborted Association");
-    } else {
+    }
+    else
+    {
         DCMNET_ERROR("Find SCU Failed: " << DimseCondition::dump(temp_str, cond));
         DCMNET_INFO("Aborting Association");
         cond = ASC_abortAssociation(assoc);
         if (cond.bad()) {
             DCMNET_ERROR("Association Abort Failed: " << DimseCondition::dump(temp_str, cond));
-            (void) ASC_destroyAssociation(&assoc); // this also destroys the T_ASC_Parameters structure
             return cond;
         }
     }
@@ -446,9 +313,7 @@ OFCondition DcmFindSCU::performQuery(
     /* call is the counterpart of ASC_requestAssociation(...) which was called above. */
     cond = ASC_destroyAssociation(&assoc);
     if (cond.bad())
-    {
-        DCMNET_ERROR("Destroying Association Failed: " << DimseCondition::dump(temp_str, cond));
-    }
+        DCMNET_ERROR(DimseCondition::dump(temp_str, cond));
     return cond;
 }
 
@@ -463,8 +328,8 @@ OFCondition DcmFindSCU::addPresentationContext(
     ** LittleEndianExplicitTransferSyntax to BigEndianTransferSyntax.
     ** Some SCP implementations will just select the first transfer
     ** syntax they support (this is not part of the standard) so
-    ** organize the proposed transfer syntaxes to take advantage
-    ** of such behavior.
+    ** organise the proposed transfer syntaxes to take advantage
+    ** of such behaviour.
     **
     ** The presentation contexts proposed here are only used for
     ** C-FIND and C-MOVE, so there is no need to support compressed
@@ -530,7 +395,7 @@ OFCondition DcmFindSCU::addPresentationContext(
 
 OFBool DcmFindSCU::writeToFile(const char* ofname, DcmDataset *dataset)
 {
-    /* write out as a DICOM file format */
+    /* write out as a file format */
 
     DcmFileFormat fileformat(dataset); // copies dataset
     OFCondition ec = fileformat.error();
@@ -549,97 +414,18 @@ OFBool DcmFindSCU::writeToFile(const char* ofname, DcmDataset *dataset)
 }
 
 
-OFBool DcmFindSCU::writeToXMLFile(const char* ofname, DcmDataset *dataset)
-{
-    if (dataset == NULL) return OFFalse;
-
-    /* write out as an XML file (dataset only) */
-
-    STD_NAMESPACE ofstream stream(ofname);
-    if (stream.good())
-    {
-        size_t writeFlags = 0;
-
-        /* try to determine character set of the dataset */
-        OFString encString;
-        OFString csetString;
-        if (dataset->findAndGetOFStringArray(DCM_SpecificCharacterSet, csetString).good())
-        {
-            if (csetString == "ISO_IR 6")   // should never be present in a dataset, but ...
-                encString = "UTF-8";
-            else if (csetString == "ISO_IR 192")
-                encString = "UTF-8";
-            else if (csetString == "ISO_IR 100")
-                encString = "ISO-8859-1";
-            else if (csetString == "ISO_IR 101")
-                encString = "ISO-8859-2";
-            else if (csetString == "ISO_IR 109")
-                encString = "ISO-8859-3";
-            else if (csetString == "ISO_IR 110")
-                encString = "ISO-8859-4";
-            else if (csetString == "ISO_IR 148")
-                encString = "ISO-8859-9";
-            else if (csetString == "ISO_IR 144")
-                encString = "ISO-8859-5";
-            else if (csetString == "ISO_IR 127")
-                encString = "ISO-8859-6";
-            else if (csetString == "ISO_IR 126")
-                encString = "ISO-8859-7";
-            else if (csetString == "ISO_IR 138")
-                encString = "ISO-8859-8";
-            else {
-                if (!csetString.empty())
-                {
-                    if (dataset->containsExtendedCharacters(OFFalse /*checkAllStrings*/))
-                    {
-                        DCMNET_WARN("SpecificCharacterSet (0008,0005) value '" << csetString
-                            << "' not supported ... quoting non-ASCII characters");
-                    } else {
-                        DCMNET_WARN("SpecificCharacterSet (0008,0005) value '" << csetString << "' not supported");
-                    }
-                }
-                /* make sure that non-ASCII characters are quoted appropriately */
-                writeFlags |= DCMTypes::XF_convertNonASCII;
-            }
-        }
-        /* we expect that the DICOM encoding is correct, so there is no "else" block */
-
-        /* write XML document header */
-        stream << "<?xml version=\"1.0\"";
-        /* optional character encoding */
-        if (!encString.empty())
-            stream << " encoding=\"" << encString << "\"";
-        stream << "?>" << OFendl;
-
-        /* write response dataset to XML file */
-        OFCondition ec = dataset->writeXML(stream, writeFlags);
-        if (ec.bad()) {
-            DCMNET_ERROR("Writing file: " << ofname << ": " << ec.text());
-            return OFFalse;
-        }
-    } else {
-        DCMNET_ERROR("Writing file: " << ofname << ": " << OFStandard::getLastSystemErrorCode().message());
-        return OFFalse;
-    }
-
-    return OFTrue;
-}
-
-
 OFCondition DcmFindSCU::findSCU(
     T_ASC_Association * assoc,
     const char *fname,
     int repeatCount,
-    int &responseCount,
     const char *abstractSyntax,
     T_DIMSE_BlockingMode blockMode,
     int dimse_timeout,
-    DcmFindSCUExtractMode extractResponses,
+    OFBool extractResponsesToFile,
     int cancelAfterNResponses,
     OFList<OFString> *overrideKeys,
     DcmFindSCUCallback *callback,
-    const char *outputDirectory,
-    STD_NAMESPACE ofstream *outputStream) const
+    const char *outputDirectory) const
     /*
      * This function will read all the information from the given file
      * (this information specifies a search mask), figure out a corresponding
@@ -669,7 +455,7 @@ OFCondition DcmFindSCU::findSCU(
         /* DcmFileFormat::getDataset() (for data set information). */
         cond = dcmff.loadFile(fname);
 
-        /* figure out if an error occurred while the file was read*/
+        /* figure out if an error occured while the file was read*/
         if (cond.bad()) {
             DCMNET_ERROR("Bad DICOM file: " << fname << ": " << cond.text());
             return cond;
@@ -692,7 +478,7 @@ OFCondition DcmFindSCU::findSCU(
         cond = proc.applyPathWithValue(dset, *path);
         if (cond.bad())
         {
-            DCMNET_ERROR("Bad override key/path: " << *path);
+            DCMNET_ERROR("Bad override key/path: " << *path << ": " << cond.text());
             return cond;
         }
         path++;
@@ -702,7 +488,7 @@ OFCondition DcmFindSCU::findSCU(
     presId = ASC_findAcceptedPresentationContextID(assoc, abstractSyntax);
 
     if (presId == 0) {
-        DCMNET_ERROR("No Presentation Context");
+        DCMNET_ERROR("No presentation context");
         return DIMSE_NOVALIDPRESENTATIONCONTEXTID;
     }
 
@@ -710,18 +496,18 @@ OFCondition DcmFindSCU::findSCU(
     int n = repeatCount;
 
     /* prepare C-FIND-RQ message */
-    memset(OFreinterpret_cast(char*, &req), 0, sizeof(req));
-    OFStandard::strlcpy(req.AffectedSOPClassUID, abstractSyntax, sizeof(req.AffectedSOPClassUID));
+    bzero(OFreinterpret_cast(char*, &req), sizeof(req));
+    strcpy(req.AffectedSOPClassUID, abstractSyntax);
     req.DataSetType = DIMSE_DATASET_PRESENT;
-    req.Priority = DIMSE_PRIORITY_MEDIUM;
+    req.Priority = DIMSE_PRIORITY_LOW;
 
     /* prepare the callback data */
-    DcmFindSCUDefaultCallback defaultCallback(extractResponses, cancelAfterNResponses, outputDirectory, outputStream, outputResponseLimit_);
+    DcmFindSCUDefaultCallback defaultCallback(extractResponsesToFile, cancelAfterNResponses, outputDirectory);
     if (callback == NULL) callback = &defaultCallback;
     callback->setAssociation(assoc);
     callback->setPresentationContextID(presId);
 
-    /* as long as no error occurred and the counter does not equal 0 */
+    /* as long as no error occured and the counter does not equal 0 */
     cond = EC_Normal;
     while (cond.good() && n--)
     {
@@ -741,7 +527,7 @@ OFCondition DcmFindSCU::findSCU(
         DCMNET_INFO("Request Identifiers:" << OFendl << DcmObject::PrintHelper(*dset));
 
         /* finally conduct transmission of data */
-        cond = DIMSE_findUser(assoc, presId, &req, dset, responseCount,
+        cond = DIMSE_findUser(assoc, presId, &req, dset,
             progressCallback, callback, blockMode, dimse_timeout,
             &rsp, &statusDetail);
 

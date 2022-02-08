@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2016, OFFIS e.V.
+ *  Copyright (C) 1996-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -86,11 +86,11 @@ class DiRGBPixelTemplate
             // attribute), but not more than the size of the intermediate buffer
             const unsigned long count = (this->InputCount < this->Count) ? this->InputCount : this->Count;
             const T1 offset = OFstatic_cast(T1, DicomImageClass::maxval(bits - 1));
-            const T1 *p = pixel;
+            register const T1 *p = pixel;
             if (this->PlanarConfiguration)
             {
 /*
-                T2 *q;
+                register T2 *q;
                 // number of pixels to be skipped (only applicable if 'PixelData' contains more
                 // pixels than expected)
                 const unsigned long skip = (this->InputCount > this->Count) ? (this->InputCount - this->Count) : 0;
@@ -103,8 +103,8 @@ class DiRGBPixelTemplate
                     p += skip;
                 }
 */
-                unsigned long l;
-                unsigned long i = 0;
+                register unsigned long l;
+                register unsigned long i = 0;
                 while (i < count)
                 {
                     /* store current pixel index */
@@ -120,8 +120,8 @@ class DiRGBPixelTemplate
             }
             else
             {
-                int j;
-                unsigned long i;
+                register int j;
+                register unsigned long i;
                 for (i = 0; i < count; ++i)                             /* for all pixel ... */
                     for (j = 0; j < 3; ++j)
                         this->Data[j][i] = removeSign(*(p++), offset);  /* ... copy planes */

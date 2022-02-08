@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class DRTIonControlPointSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -61,7 +61,6 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
 
         /** assigment operator
          *  @param copy item object to be copied
-         *  @return reference to this object
          */
         Item &operator=(const Item &copy);
 
@@ -118,20 +117,6 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
          */
         OFCondition getBeamLimitingDeviceRotationDirection(OFString &value, const signed long pos = 0) const;
 
-        /** get ChairHeadFramePosition (300a,0151)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getChairHeadFramePosition(OFString &value, const signed long pos = 0) const;
-
-        /** get ChairHeadFramePosition (300a,0151)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getChairHeadFramePosition(Float64 &value, const unsigned long pos = 0) const;
-
         /** get ControlPointIndex (300a,0112)
          *  @param  value  reference to variable in which the value should be stored
          *  @param  pos    index of the value to get (0..vm-1), -1 for all components
@@ -159,13 +144,6 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
          *  @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition getCumulativeMetersetWeight(Float64 &value, const unsigned long pos = 0) const;
-
-        /** get ExternalContourEntryPoint (300a,0133)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getExternalContourEntryPoint(Float32 &value, const unsigned long pos = 0) const;
 
         /** get GantryAngle (300a,011e)
          *  @param  value  reference to variable in which the value should be stored
@@ -326,13 +304,6 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
          *  @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition getScanSpotPositionMap(Float32 &value, const unsigned long pos = 0) const;
-
-        /** get ScanSpotReorderingAllowed (300a,0395)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getScanSpotReorderingAllowed(OFString &value, const signed long pos = 0) const;
 
         /** get ScanSpotTuneID (300a,0390)
          *  @param  value  reference to variable in which the value should be stored
@@ -535,13 +506,6 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
          */
         OFCondition setBeamLimitingDeviceRotationDirection(const OFString &value, const OFBool check = OFTrue);
 
-        /** set ChairHeadFramePosition (300a,0151)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (DS) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setChairHeadFramePosition(const OFString &value, const OFBool check = OFTrue);
-
         /** set ControlPointIndex (300a,0112)
          *  @param  value  value to be set (single value only) or "" for no value
          *  @param  check  check 'value' for conformance with VR (IS) and VM (1) if enabled
@@ -555,13 +519,6 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
          *  @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition setCumulativeMetersetWeight(const OFString &value, const OFBool check = OFTrue);
-
-        /** set ExternalContourEntryPoint (300a,0133)
-         *  @param  value  value to be set (should be valid for this VR)
-         *  @param  pos    index of the value to be set (0..vm-1), vm=3
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setExternalContourEntryPoint(const Float32 value, const unsigned long pos = 0);
 
         /** set GantryAngle (300a,011e)
          *  @param  value  value to be set (single value only) or "" for no value
@@ -668,13 +625,6 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
          */
         OFCondition setScanSpotPositionMap(const Float32 value, const unsigned long pos = 0);
 
-        /** set ScanSpotReorderingAllowed (300a,0395)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (CS) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setScanSpotReorderingAllowed(const OFString &value, const OFBool check = OFTrue);
-
         /** set ScanSpotTuneID (300a,0390)
          *  @param  value  value to be set (single value only) or "" for no value
          *  @param  check  check 'value' for conformance with VR (SH) and VM (1) if enabled
@@ -763,14 +713,10 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
         DRTBeamLimitingDevicePositionSequence BeamLimitingDevicePositionSequence;
         /// BeamLimitingDeviceRotationDirection (300a,0121) vr=CS, vm=1, type=1C
         DcmCodeString BeamLimitingDeviceRotationDirection;
-        /// ChairHeadFramePosition (300a,0151) vr=DS, vm=1, type=3
-        DcmDecimalString ChairHeadFramePosition;
         /// ControlPointIndex (300a,0112) vr=IS, vm=1, type=1
         DcmIntegerString ControlPointIndex;
         /// CumulativeMetersetWeight (300a,0134) vr=DS, vm=1, type=2
         DcmDecimalString CumulativeMetersetWeight;
-        /// ExternalContourEntryPoint (300a,0133) vr=FL, vm=3, type=3
-        DcmFloatingPointSingle ExternalContourEntryPoint;
         /// GantryAngle (300a,011e) vr=DS, vm=1, type=1C
         DcmDecimalString GantryAngle;
         /// GantryPitchAngle (300a,014a) vr=FL, vm=1, type=2C
@@ -811,8 +757,6 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
         DcmFloatingPointSingle ScanSpotMetersetWeights;
         /// ScanSpotPositionMap (300a,0394) vr=FL, vm=1-n, type=1C
         DcmFloatingPointSingle ScanSpotPositionMap;
-        /// ScanSpotReorderingAllowed (300a,0395) vr=CS, vm=1, type=3
-        DcmCodeString ScanSpotReorderingAllowed;
         /// ScanSpotTuneID (300a,0390) vr=SH, vm=1, type=1C
         DcmShortString ScanSpotTuneID;
         /// ScanningSpotSize (300a,0398) vr=FL, vm=2, type=3
@@ -856,7 +800,6 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
 
     /** assigment operator
      *  @param copy sequence object to be copied
-     *  @return reference to this object
      */
     DRTIonControlPointSequence &operator=(const DRTIonControlPointSequence &copy);
 
@@ -879,7 +822,7 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
     /** get number of items in the sequence
      *  @return number of items
      */
-    size_t getNumberOfItems() const;
+    unsigned long getNumberOfItems() const;
 
     /** goto first item in the sequence
      *  @return status, EC_Normal if successful, an error code otherwise
@@ -895,7 +838,7 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
      *  @param  num  number of the item to be selected (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num);
+    OFCondition gotoItem(const unsigned long num);
 
     /** get current item in the sequence
      *  @param  item  reference to item pointer (result variable)
@@ -918,31 +861,31 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
      *  @param  item  reference to item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition getItem(const size_t num, Item *&item);
+    OFCondition getItem(const unsigned long num, Item *&item);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &getItem(const size_t num);
+    Item &getItem(const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &getItem(const size_t num) const;
+    const Item &getItem(const unsigned long num) const;
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &operator[](const size_t num);
+    Item &operator[](const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &operator[](const size_t num) const;
+    const Item &operator[](const unsigned long num) const;
 
     /** add new item to the end of this sequence
      *  @param  item  reference to new item pointer (result variable)
@@ -955,13 +898,13 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
      *  @param  item  reference to new item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition insertItem(const size_t pos, Item *&item);
+    OFCondition insertItem(const unsigned long pos, Item *&item);
 
     /** remove particular item from the sequence
      *  @param  pos  position of the item to be removed (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition removeItem(const size_t pos);
+    OFCondition removeItem(const unsigned long pos);
 
   // --- input/output methods ---
 
@@ -996,7 +939,7 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListIterator(Item *) &iterator);
 
     /** goto particular item in the sequence
@@ -1004,7 +947,7 @@ class DCMTK_DCMRT_EXPORT DRTIonControlPointSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListConstIterator(Item *) &iterator) const;
 
   private:

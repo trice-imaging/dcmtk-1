@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2017, OFFIS e.V.
+ *  Copyright (C) 2000-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRStringValue
@@ -62,18 +62,6 @@ DSRStringValue &DSRStringValue::operator=(const DSRStringValue &stringValue)
 }
 
 
-OFBool DSRStringValue::operator==(const DSRStringValue &stringValue) const
-{
-    return (Value == stringValue.Value);
-}
-
-
-OFBool DSRStringValue::operator!=(const DSRStringValue &stringValue) const
-{
-    return (Value != stringValue.Value);
-}
-
-
 void DSRStringValue::clear()
 {
     Value.clear();
@@ -98,12 +86,10 @@ void DSRStringValue::print(STD_NAMESPACE ostream &stream,
 
 
 OFCondition DSRStringValue::read(DcmItem &dataset,
-                                 const DcmTagKey &tagKey,
-                                 const size_t flags)
+                                 const DcmTagKey &tagKey)
 {
-    const OFBool acceptViolation = (flags & DSRTypes::RF_acceptInvalidContentItemValue) > 0;
     /* read value */
-    return DSRTypes::getAndCheckStringValueFromDataset(dataset, tagKey, Value, "1", "1", "content item", acceptViolation);
+    return DSRTypes::getAndCheckStringValueFromDataset(dataset, tagKey, Value, "1", "1", "content item");
 }
 
 
@@ -117,7 +103,6 @@ OFCondition DSRStringValue::write(DcmItem &dataset,
 
 OFCondition DSRStringValue::readXML(const DSRXMLDocument &doc,
                                     DSRXMLCursor cursor,
-                                    const size_t /*flags*/,
                                     const OFBool encoding)
 {
     OFCondition result = SR_EC_CorruptedXMLStructure;
@@ -171,39 +156,6 @@ OFCondition DSRStringValue::setValue(const OFString &stringValue,
     }
     if (result.good())
         Value = stringValue;
-    return result;
-}
-
-
-OFCondition DSRStringValue::setValue(const DcmElement &delem,
-                                     const unsigned long pos,
-                                     const OFBool check)
-{
-    OFString stringValue;
-    /* first, get the value from the element (need to cast away "const") */
-    OFCondition result = OFconst_cast(DcmElement &, delem).getOFString(stringValue, pos);
-    if (result.good())
-    {
-        /* then, check and set the value */
-        result = setValue(stringValue, check);
-    }
-    return result;
-}
-
-
-OFCondition DSRStringValue::setValue(DcmItem &dataset,
-                                     const DcmTagKey &tagKey,
-                                     const unsigned long pos,
-                                     const OFBool check)
-{
-    OFString stringValue;
-    /* first, get the element value from the dataset */
-    OFCondition result = DSRTypes::getStringValueFromDataset(dataset, tagKey, stringValue, pos);
-    if (result.good())
-    {
-        /* then, check and set the value */
-        result = setValue(stringValue, check);
-    }
     return result;
 }
 

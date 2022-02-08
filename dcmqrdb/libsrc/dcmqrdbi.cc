@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1993-2021, OFFIS e.V.
+ *  Copyright (C) 1993-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -34,19 +34,19 @@ BEGIN_EXTERN_C
 #endif
 END_EXTERN_C
 
-#include "dcmtk/ofstd/ofstd.h"
+#define INCLUDE_CCTYPE
+#define INCLUDE_CSTDARG
+#include "dcmtk/ofstd/ofstdinc.h"
 
 #include "dcmtk/dcmqrdb/dcmqrdbs.h"
 #include "dcmtk/dcmqrdb/dcmqrdbi.h"
 #include "dcmtk/dcmqrdb/dcmqrcnf.h"
 #include "dcmtk/dcmqrdb/dcmqropt.h"
-#include "dcmtk/ofstd/ofstdinc.h"
+
 #include "dcmtk/dcmqrdb/dcmqridx.h"
 #include "dcmtk/dcmnet/diutil.h"
 #include "dcmtk/dcmdata/dcfilefo.h"
-#include "dcmtk/dcmdata/dcmatch.h"
-#include <ctime>
-
+#include "dcmtk/ofstd/ofstd.h"
 
 /* ========================= static data ========================= */
 
@@ -59,42 +59,49 @@ END_EXTERN_C
  ****           The tag value
  ****           The level of this tag (from patient to image)
  ****           The Key Type (only UNIQUE_KEY values is used)
+ ****           The key matching type, specifying which type of
+ ****                   matching should be performed. The OTHER_CLASS
+ ****                   value specifies that only strict comparison is applied.
  ****
  **** This table and the IndexRecord structure should contain at least
  **** all Unique and Required keys.
  ***/
 
 static const DB_FindAttr TbFindAttr [] = {
-        DB_FindAttr( DCM_PatientBirthDate,                      PATIENT_LEVEL,  OPTIONAL_KEY ),
-        DB_FindAttr( DCM_PatientSex,                            PATIENT_LEVEL,  OPTIONAL_KEY ),
-        DB_FindAttr( DCM_PatientName,                           PATIENT_LEVEL,  REQUIRED_KEY ),
-        DB_FindAttr( DCM_PatientID,                             PATIENT_LEVEL,  UNIQUE_KEY   ),
-        DB_FindAttr( DCM_PatientBirthTime,                      PATIENT_LEVEL,  OPTIONAL_KEY ),
-        DB_FindAttr( DCM_RETIRED_OtherPatientIDs,               PATIENT_LEVEL,  OPTIONAL_KEY ),
-        DB_FindAttr( DCM_OtherPatientNames,                     PATIENT_LEVEL,  OPTIONAL_KEY ),
-        DB_FindAttr( DCM_EthnicGroup,                           PATIENT_LEVEL,  OPTIONAL_KEY ),
-        DB_FindAttr( DCM_PatientComments,                       PATIENT_LEVEL,  OPTIONAL_KEY ),
-        DB_FindAttr( DCM_IssuerOfPatientID,                     PATIENT_LEVEL,  OPTIONAL_KEY ),
-        DB_FindAttr( DCM_StudyDate,                             STUDY_LEVEL,    REQUIRED_KEY ),
-        DB_FindAttr( DCM_StudyTime,                             STUDY_LEVEL,    REQUIRED_KEY ),
-        DB_FindAttr( DCM_StudyID,                               STUDY_LEVEL,    REQUIRED_KEY ),
-        DB_FindAttr( DCM_AccessionNumber,                       STUDY_LEVEL,    REQUIRED_KEY ),
-        DB_FindAttr( DCM_ReferringPhysicianName,                STUDY_LEVEL,    OPTIONAL_KEY ),
-        DB_FindAttr( DCM_StudyDescription,                      STUDY_LEVEL,    OPTIONAL_KEY ),
-        DB_FindAttr( DCM_NameOfPhysiciansReadingStudy,          STUDY_LEVEL,    OPTIONAL_KEY ),
-        DB_FindAttr( DCM_StudyInstanceUID,                      STUDY_LEVEL,    UNIQUE_KEY   ),
-        DB_FindAttr( DCM_RETIRED_OtherStudyNumbers,             STUDY_LEVEL,    OPTIONAL_KEY ),
-        DB_FindAttr( DCM_AdmittingDiagnosesDescription,         STUDY_LEVEL,    OPTIONAL_KEY ),
-        DB_FindAttr( DCM_PatientAge,                            STUDY_LEVEL,    OPTIONAL_KEY ),
-        DB_FindAttr( DCM_PatientSize,                           STUDY_LEVEL,    OPTIONAL_KEY ),
-        DB_FindAttr( DCM_PatientWeight,                         STUDY_LEVEL,    OPTIONAL_KEY ),
-        DB_FindAttr( DCM_Occupation,                            STUDY_LEVEL,    OPTIONAL_KEY ),
-        DB_FindAttr( DCM_AdditionalPatientHistory,              STUDY_LEVEL,    OPTIONAL_KEY ),
-        DB_FindAttr( DCM_SeriesNumber,                          SERIE_LEVEL,    REQUIRED_KEY ),
-        DB_FindAttr( DCM_SeriesInstanceUID,                     SERIE_LEVEL,    UNIQUE_KEY   ),
-        DB_FindAttr( DCM_Modality,                              SERIE_LEVEL,    OPTIONAL_KEY ),
-        DB_FindAttr( DCM_InstanceNumber,                        IMAGE_LEVEL,    REQUIRED_KEY ),
-        DB_FindAttr( DCM_SOPInstanceUID,                        IMAGE_LEVEL,    UNIQUE_KEY   )
+        DB_FindAttr( DCM_PatientBirthDate,                      PATIENT_LEVEL,  OPTIONAL_KEY,   DATE_CLASS      ),
+        DB_FindAttr( DCM_PatientSex,                            PATIENT_LEVEL,  OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_PatientName,                           PATIENT_LEVEL,  REQUIRED_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_PatientID,                             PATIENT_LEVEL,  UNIQUE_KEY,     STRING_CLASS    ),
+        DB_FindAttr( DCM_PatientBirthTime,                      PATIENT_LEVEL,  OPTIONAL_KEY,   TIME_CLASS      ),
+        DB_FindAttr( DCM_OtherPatientIDs,                       PATIENT_LEVEL,  OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_OtherPatientNames,                     PATIENT_LEVEL,  OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_EthnicGroup,                           PATIENT_LEVEL,  OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_PatientComments,                       PATIENT_LEVEL,  OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_NumberOfPatientRelatedStudies,         PATIENT_LEVEL,  OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_NumberOfPatientRelatedSeries,          PATIENT_LEVEL,  OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_NumberOfPatientRelatedInstances,       PATIENT_LEVEL,  OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_StudyDate,                             STUDY_LEVEL,    REQUIRED_KEY,   DATE_CLASS      ),
+        DB_FindAttr( DCM_StudyTime,                             STUDY_LEVEL,    REQUIRED_KEY,   TIME_CLASS      ),
+        DB_FindAttr( DCM_StudyID,                               STUDY_LEVEL,    REQUIRED_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_AccessionNumber,                       STUDY_LEVEL,    REQUIRED_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_ReferringPhysicianName,                STUDY_LEVEL,    OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_StudyDescription,                      STUDY_LEVEL,    OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_NameOfPhysiciansReadingStudy,          STUDY_LEVEL,    OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_StudyInstanceUID,                      STUDY_LEVEL,    UNIQUE_KEY,     UID_CLASS       ),
+        DB_FindAttr( DCM_RETIRED_OtherStudyNumbers,             STUDY_LEVEL,    OPTIONAL_KEY,   OTHER_CLASS     ),
+        DB_FindAttr( DCM_AdmittingDiagnosesDescription,         STUDY_LEVEL,    OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_PatientAge,                            STUDY_LEVEL,    OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_PatientSize,                           STUDY_LEVEL,    OPTIONAL_KEY,   OTHER_CLASS     ),
+        DB_FindAttr( DCM_PatientWeight,                         STUDY_LEVEL,    OPTIONAL_KEY,   OTHER_CLASS     ),
+        DB_FindAttr( DCM_Occupation,                            STUDY_LEVEL,    OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_AdditionalPatientHistory,              STUDY_LEVEL,    OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_NumberOfStudyRelatedSeries,            STUDY_LEVEL,    OPTIONAL_KEY,   OTHER_CLASS     ),
+        DB_FindAttr( DCM_NumberOfStudyRelatedInstances,         STUDY_LEVEL,    OPTIONAL_KEY,   OTHER_CLASS     ),
+        DB_FindAttr( DCM_SeriesNumber,                          SERIE_LEVEL,    REQUIRED_KEY,   OTHER_CLASS     ),
+        DB_FindAttr( DCM_SeriesInstanceUID,                     SERIE_LEVEL,    UNIQUE_KEY,     UID_CLASS       ),
+        DB_FindAttr( DCM_Modality,                              SERIE_LEVEL,    OPTIONAL_KEY,   STRING_CLASS    ),
+        DB_FindAttr( DCM_InstanceNumber,                        IMAGE_LEVEL,    REQUIRED_KEY,   OTHER_CLASS     ),
+        DB_FindAttr( DCM_SOPInstanceUID,                        IMAGE_LEVEL,    UNIQUE_KEY,     UID_CLASS       )
   };
 
 /**** The NbFindAttr variable contains the length of the TbFindAttr table
@@ -107,9 +114,8 @@ static int NbFindAttr = ((sizeof (TbFindAttr)) / (sizeof (TbFindAttr [0])));
 static char *DB_strdup(const char* str)
 {
     if (str == NULL) return NULL;
-    size_t buflen = strlen(str)+1;
-    char* s = (char*)malloc(buflen);
-    OFStandard::strlcpy(s, str, buflen);
+    char* s = (char*)malloc(strlen(str)+1);
+    strcpy(s, str);
     return s;
 }
 
@@ -204,7 +210,7 @@ static void DB_IdxInitRecord (IdxRecord *idx, int linksOnly)
         idx -> param[RECORDIDX_PatientBirthTime]. XTag = DCM_PatientBirthTime ;
         idx -> param[RECORDIDX_PatientBirthTime]. ValueLength = TM_MAX_LENGTH ;
         idx -> PatientBirthTime[0] = '\0' ;
-        idx -> param[RECORDIDX_OtherPatientIDs]. XTag = DCM_RETIRED_OtherPatientIDs ;
+        idx -> param[RECORDIDX_OtherPatientIDs]. XTag = DCM_OtherPatientIDs ;
         idx -> param[RECORDIDX_OtherPatientIDs]. ValueLength = LO_MAX_LENGTH ;
         idx -> OtherPatientIDs[0] = '\0' ;
         idx -> param[RECORDIDX_OtherPatientNames]. XTag = DCM_OtherPatientNames ;
@@ -213,6 +219,15 @@ static void DB_IdxInitRecord (IdxRecord *idx, int linksOnly)
         idx -> param[RECORDIDX_EthnicGroup]. XTag = DCM_EthnicGroup ;
         idx -> param[RECORDIDX_EthnicGroup]. ValueLength = SH_MAX_LENGTH ;
         idx -> EthnicGroup[0] = '\0' ;
+        idx -> param[RECORDIDX_NumberofPatientRelatedStudies]. XTag = DCM_NumberOfPatientRelatedStudies ;
+        idx -> param[RECORDIDX_NumberofPatientRelatedStudies]. ValueLength = IS_MAX_LENGTH ;
+        idx -> NumberofPatientRelatedStudies[0] = '\0' ;
+        idx -> param[RECORDIDX_NumberofPatientRelatedSeries]. XTag = DCM_NumberOfPatientRelatedSeries ;
+        idx -> param[RECORDIDX_NumberofPatientRelatedSeries]. ValueLength = IS_MAX_LENGTH ;
+        idx -> NumberofPatientRelatedSeries[0] = '\0' ;
+        idx -> param[RECORDIDX_NumberofPatientRelatedInstances]. XTag = DCM_NumberOfPatientRelatedInstances ;
+        idx -> param[RECORDIDX_NumberofPatientRelatedInstances]. ValueLength = IS_MAX_LENGTH ;
+        idx -> NumberofPatientRelatedInstances[0] = '\0' ;
         idx -> param[RECORDIDX_StudyDate]. XTag = DCM_StudyDate ;
         idx -> param[RECORDIDX_StudyDate]. ValueLength = DA_MAX_LENGTH ;
         idx -> StudyDate[0] = '\0' ;
@@ -261,6 +276,12 @@ static void DB_IdxInitRecord (IdxRecord *idx, int linksOnly)
         idx -> param[RECORDIDX_Occupation]. XTag = DCM_Occupation ;
         idx -> param[RECORDIDX_Occupation]. ValueLength = SH_MAX_LENGTH ;
         idx -> Occupation[0] = '\0' ;
+        idx -> param[RECORDIDX_NumberofStudyRelatedSeries]. XTag = DCM_NumberOfStudyRelatedSeries ;
+        idx -> param[RECORDIDX_NumberofStudyRelatedSeries]. ValueLength = IS_MAX_LENGTH ;
+        idx -> NumberofStudyRelatedSeries[0] = '\0' ;
+        idx -> param[RECORDIDX_NumberofStudyRelatedInstances]. XTag = DCM_NumberOfStudyRelatedInstances ;
+        idx -> param[RECORDIDX_NumberofStudyRelatedInstances]. ValueLength = IS_MAX_LENGTH ;
+        idx -> NumberofStudyRelatedInstances[0] = '\0' ;
         idx -> param[RECORDIDX_SeriesNumber]. XTag = DCM_SeriesNumber ;
         idx -> param[RECORDIDX_SeriesNumber]. ValueLength = IS_MAX_LENGTH ;
         idx -> SeriesNumber[0] = '\0' ;
@@ -297,12 +318,6 @@ static void DB_IdxInitRecord (IdxRecord *idx, int linksOnly)
         idx -> param[RECORDIDX_PresentationLabel]. XTag = DCM_ContentLabel ;
         idx -> param[RECORDIDX_PresentationLabel]. ValueLength = CS_LABEL_MAX_LENGTH ;
         idx -> PresentationLabel[0] = '\0' ;
-        idx -> param[RECORDIDX_IssuerOfPatientID]. XTag = DCM_IssuerOfPatientID ;
-        idx -> param[RECORDIDX_IssuerOfPatientID]. ValueLength =  LO_MAX_LENGTH ;
-        idx -> IssuerOfPatientID[0] = '\0' ;
-        idx -> param[RECORDIDX_SpecificCharacterSet]. XTag = DCM_SpecificCharacterSet ;
-        idx -> param[RECORDIDX_SpecificCharacterSet]. ValueLength = CS_MAX_LENGTH*8 ;
-        idx -> SpecificCharacterSet[0] = '\0' ;
     }
     idx -> param[RECORDIDX_PatientBirthDate]. PValueField = (char *)idx -> PatientBirthDate ;
     idx -> param[RECORDIDX_PatientSex]. PValueField = (char *)idx -> PatientSex ;
@@ -312,6 +327,9 @@ static void DB_IdxInitRecord (IdxRecord *idx, int linksOnly)
     idx -> param[RECORDIDX_OtherPatientIDs]. PValueField = (char *)idx -> OtherPatientIDs ;
     idx -> param[RECORDIDX_OtherPatientNames]. PValueField = (char *)idx -> OtherPatientNames ;
     idx -> param[RECORDIDX_EthnicGroup]. PValueField = (char *)idx -> EthnicGroup ;
+    idx -> param[RECORDIDX_NumberofPatientRelatedStudies]. PValueField = (char *)idx -> NumberofPatientRelatedStudies ;
+    idx -> param[RECORDIDX_NumberofPatientRelatedSeries]. PValueField = (char *) idx -> NumberofPatientRelatedSeries ;
+    idx -> param[RECORDIDX_NumberofPatientRelatedInstances]. PValueField = (char *) idx -> NumberofPatientRelatedInstances ;
     idx -> param[RECORDIDX_StudyDate]. PValueField = (char *) idx -> StudyDate ;
     idx -> param[RECORDIDX_StudyTime]. PValueField = (char *) idx -> StudyTime ;
     idx -> param[RECORDIDX_StudyID]. PValueField = (char *) idx -> StudyID ;
@@ -328,6 +346,8 @@ static void DB_IdxInitRecord (IdxRecord *idx, int linksOnly)
     idx -> param[RECORDIDX_PatientSize]. PValueField = (char *) idx -> PatientSize ;
     idx -> param[RECORDIDX_PatientWeight]. PValueField = (char *) idx -> PatientWeight ;
     idx -> param[RECORDIDX_Occupation]. PValueField = (char *) idx -> Occupation ;
+    idx -> param[RECORDIDX_NumberofStudyRelatedSeries]. PValueField = (char *) idx -> NumberofStudyRelatedSeries ;
+    idx -> param[RECORDIDX_NumberofStudyRelatedInstances]. PValueField = (char *) idx -> NumberofStudyRelatedInstances ;
     idx -> param[RECORDIDX_SeriesNumber]. PValueField = (char *) idx -> SeriesNumber ;
     idx -> param[RECORDIDX_SeriesInstanceUID]. PValueField = (char *) idx -> SeriesInstanceUID ;
     idx -> param[RECORDIDX_Modality]. PValueField = (char *) idx -> Modality ;
@@ -340,8 +360,6 @@ static void DB_IdxInitRecord (IdxRecord *idx, int linksOnly)
     idx -> param[RECORDIDX_OperatorsName ]. PValueField = (char *) idx -> OperatorsName ;
     idx -> param[RECORDIDX_PerformingPhysicianName]. PValueField = (char *) idx -> PerformingPhysicianName ;
     idx -> param[RECORDIDX_PresentationLabel]. PValueField = (char *) idx -> PresentationLabel ;
-    idx -> param[RECORDIDX_IssuerOfPatientID]. PValueField = (char *) idx -> IssuerOfPatientID ;
-    idx -> param[RECORDIDX_SpecificCharacterSet]. PValueField = (char *) idx -> SpecificCharacterSet ;
 }
 
 /******************************
@@ -359,6 +377,7 @@ static long DB_lseek(int fildes, long offset, int whence)
     long pos;
     long curpos;
     long endpos;
+    char buf[256];
 
     /*
     ** we should not be seeking to an offset < 0
@@ -370,27 +389,27 @@ static long DB_lseek(int fildes, long offset, int whence)
     /* get the current position */
     curpos = lseek(fildes, 0, SEEK_CUR);
     if (curpos < 0) {
-        DCMQRDB_ERROR("DB_lseek: cannot get current position: " << OFStandard::getLastSystemErrorCode().message());
+        DCMQRDB_ERROR("DB_lseek: cannot get current position: " << OFStandard::strerror(errno, buf, sizeof(buf)));
         return curpos;
     }
     /* get the end of file position */
     endpos = lseek(fildes, 0, SEEK_END);
     if (endpos < 0) {
-        DCMQRDB_ERROR("DB_lseek: cannot get end of file position: " << OFStandard::getLastSystemErrorCode().message());
+        DCMQRDB_ERROR("DB_lseek: cannot get end of file position: " << OFStandard::strerror(errno, buf, sizeof(buf)));
         return endpos;
     }
 
     /* return to current position */
     curpos = lseek(fildes, curpos, SEEK_SET);
     if (curpos < 0) {
-        DCMQRDB_ERROR("DB_lseek: cannot reset current position: " << OFStandard::getLastSystemErrorCode().message());
+        DCMQRDB_ERROR("DB_lseek: cannot reset current position: " << OFStandard::strerror(errno, buf, sizeof(buf)));
         return curpos;
     }
 
     /* do the requested seek */
     pos = lseek(fildes, offset, whence);
     if (pos < 0) {
-        DCMQRDB_ERROR("DB_lseek: cannot seek to " << offset << ": " << OFStandard::getLastSystemErrorCode().message());
+        DCMQRDB_ERROR("DB_lseek: cannot seek to " << offset << ": " << OFStandard::strerror(errno, buf, sizeof(buf)));
         return pos;
     }
 
@@ -405,9 +424,9 @@ static long DB_lseek(int fildes, long offset, int whence)
     }
 
     /* print an alert if we are seeking beyond the end of file.
-     * ignore when file is empty or contains only the version information.
+     * ignore when file is empty
      */
-    if ((endpos > DBHEADERSIZE) && (pos > endpos)) {
+    if ((endpos > 0) && (pos > endpos)) {
         DCMQRDB_ERROR("*** DB ALERT: attempt to seek beyond end of file" << OFendl
             << "              offset=" << offset << " filesize=" << endpos);
     }
@@ -425,7 +444,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::DB_IdxRead (int idx, IdxRecord 
     /*** Goto the right index in file
     **/
 
-    DB_lseek (handle_ -> pidx, OFstatic_cast(long, DBHEADERSIZE + SIZEOF_STUDYDESC + idx * SIZEOF_IDXRECORD), SEEK_SET) ;
+    DB_lseek (handle_ -> pidx, (long) (SIZEOF_STUDYDESC + idx * SIZEOF_IDXRECORD), SEEK_SET) ;
 
     /*** Read the record
     **/
@@ -433,7 +452,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::DB_IdxRead (int idx, IdxRecord 
     if (read (handle_ -> pidx, (char *) idxRec, SIZEOF_IDXRECORD) != SIZEOF_IDXRECORD)
         return (QR_EC_IndexDatabaseError) ;
 
-    DB_lseek (handle_ -> pidx, OFstatic_cast(long, DBHEADERSIZE), SEEK_SET) ;
+    DB_lseek (handle_ -> pidx, 0L, SEEK_SET) ;
 
     /*** Initialize record links
     **/
@@ -459,7 +478,7 @@ static OFCondition DB_IdxAdd (DB_Private_Handle *phandle, int *idx, IdxRecord *i
 
     *idx = 0 ;
 
-    DB_lseek (phandle -> pidx, OFstatic_cast(long, DBHEADERSIZE + SIZEOF_STUDYDESC), SEEK_SET) ;
+    DB_lseek (phandle -> pidx, (long) SIZEOF_STUDYDESC, SEEK_SET) ;
     while (read (phandle -> pidx, (char *) &rec, SIZEOF_IDXRECORD) == SIZEOF_IDXRECORD) {
         if (rec. filename [0] == '\0')
             break ;
@@ -469,14 +488,14 @@ static OFCondition DB_IdxAdd (DB_Private_Handle *phandle, int *idx, IdxRecord *i
     /*** We have either found a free place or we are at the end of file. **/
 
 
-    DB_lseek (phandle -> pidx, OFstatic_cast(long, DBHEADERSIZE + SIZEOF_STUDYDESC + (*idx) * SIZEOF_IDXRECORD), SEEK_SET) ;
+    DB_lseek (phandle -> pidx, (long) (SIZEOF_STUDYDESC + (*idx) * SIZEOF_IDXRECORD), SEEK_SET) ;
 
     if (write (phandle -> pidx, (char *) idxRec, SIZEOF_IDXRECORD) != SIZEOF_IDXRECORD)
         cond = QR_EC_IndexDatabaseError ;
     else
         cond = EC_Normal ;
 
-    DB_lseek (phandle -> pidx, OFstatic_cast(long, DBHEADERSIZE), SEEK_SET) ;
+    DB_lseek (phandle -> pidx, 0L, SEEK_SET) ;
 
     return cond ;
 }
@@ -489,10 +508,10 @@ static OFCondition DB_IdxAdd (DB_Private_Handle *phandle, int *idx, IdxRecord *i
 OFCondition DcmQueryRetrieveIndexDatabaseHandle::DB_StudyDescChange(StudyDescRecord *pStudyDesc)
 {
     OFCondition cond = EC_Normal;
-    DB_lseek (handle_ -> pidx, OFstatic_cast(long, DBHEADERSIZE), SEEK_SET) ;
+    DB_lseek (handle_ -> pidx, 0L, SEEK_SET) ;
     if (write (handle_ -> pidx, (char *) pStudyDesc, SIZEOF_STUDYDESC) != SIZEOF_STUDYDESC)
         cond = QR_EC_IndexDatabaseError;
-    DB_lseek (handle_ -> pidx, OFstatic_cast(long, DBHEADERSIZE), SEEK_SET) ;
+    DB_lseek (handle_ -> pidx, 0L, SEEK_SET) ;
     return cond ;
 }
 
@@ -502,7 +521,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::DB_StudyDescChange(StudyDescRec
 
 OFCondition DcmQueryRetrieveIndexDatabaseHandle::DB_IdxInitLoop(int *idx)
 {
-    DB_lseek (handle_ -> pidx, OFstatic_cast(long, DBHEADERSIZE + SIZEOF_STUDYDESC), SEEK_SET) ;
+    DB_lseek (handle_ -> pidx, SIZEOF_STUDYDESC, SEEK_SET) ;
     *idx = -1 ;
     return EC_Normal ;
 }
@@ -516,7 +535,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::DB_IdxGetNext(int *idx, IdxReco
 {
 
     (*idx)++ ;
-    DB_lseek (handle_ -> pidx, OFstatic_cast(long, DBHEADERSIZE + SIZEOF_STUDYDESC + OFstatic_cast(long, *idx) * SIZEOF_IDXRECORD), SEEK_SET) ;
+    DB_lseek (handle_ -> pidx, SIZEOF_STUDYDESC + (long)(*idx) * SIZEOF_IDXRECORD, SEEK_SET) ;
     while (read (handle_ -> pidx, (char *) idxRec, SIZEOF_IDXRECORD) == SIZEOF_IDXRECORD) {
         if (idxRec -> filename [0] != '\0') {
             DB_IdxInitRecord (idxRec, 1) ;
@@ -526,7 +545,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::DB_IdxGetNext(int *idx, IdxReco
         (*idx)++ ;
     }
 
-    DB_lseek (handle_ -> pidx, OFstatic_cast(long, DBHEADERSIZE), SEEK_SET) ;
+    DB_lseek (handle_ -> pidx, 0L, SEEK_SET) ;
 
     return QR_EC_IndexDatabaseError ;
 }
@@ -540,11 +559,11 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::DB_IdxGetNext(int *idx, IdxReco
 OFCondition DcmQueryRetrieveIndexDatabaseHandle::DB_GetStudyDesc (StudyDescRecord *pStudyDesc)
 {
 
-    DB_lseek (handle_ -> pidx, OFstatic_cast(long, DBHEADERSIZE), SEEK_SET) ;
+    DB_lseek (handle_ -> pidx, 0L, SEEK_SET) ;
     if ( read (handle_ -> pidx, (char *) pStudyDesc, SIZEOF_STUDYDESC) == SIZEOF_STUDYDESC )
         return EC_Normal ;
 
-    DB_lseek (handle_ -> pidx, OFstatic_cast(long, DBHEADERSIZE), SEEK_SET) ;
+    DB_lseek (handle_ -> pidx, 0L, SEEK_SET) ;
 
     return QR_EC_IndexDatabaseError ;
 }
@@ -560,7 +579,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::DB_IdxRemove(int idx)
     IdxRecord   rec ;
     OFCondition cond = EC_Normal;
 
-    DB_lseek (handle_ -> pidx, OFstatic_cast(long, DBHEADERSIZE + SIZEOF_STUDYDESC + OFstatic_cast(long, idx) * SIZEOF_IDXRECORD), SEEK_SET) ;
+    DB_lseek (handle_ -> pidx, SIZEOF_STUDYDESC + (long)idx * SIZEOF_IDXRECORD, SEEK_SET) ;
     DB_IdxInitRecord (&rec, 0) ;
 
     rec. filename [0] = '\0' ;
@@ -569,7 +588,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::DB_IdxRemove(int idx)
     else
         cond = QR_EC_IndexDatabaseError ;
 
-    DB_lseek (handle_ -> pidx, OFstatic_cast(long, DBHEADERSIZE), SEEK_SET) ;
+    DB_lseek (handle_ -> pidx, 0L, SEEK_SET) ;
 
     return cond ;
 }
@@ -605,20 +624,19 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::DB_unlock()
 
 static OFCondition DB_FreeUidList (DB_UidList *lst)
 {
-    while (lst != NULL) {
-        if (lst -> patient)
-            free (lst -> patient);
-        if (lst -> study)
-            free (lst -> study);
-        if (lst -> serie)
-            free (lst -> serie);
-        if (lst -> image)
-            free (lst -> image);
-        DB_UidList *curlst = lst;
-        lst = lst->next;
-        free (curlst);
-    }
-    return EC_Normal;
+    if (lst == NULL) return EC_Normal;
+
+    OFCondition cond = DB_FreeUidList (lst -> next);
+    if (lst -> patient)
+        free (lst -> patient);
+    if (lst -> study)
+        free (lst -> study);
+    if (lst -> serie)
+        free (lst -> serie);
+    if (lst -> image)
+        free (lst -> image);
+    free (lst);
+    return (cond);
 }
 
 
@@ -634,8 +652,39 @@ static OFCondition DB_FreeElementList (DB_ElementList *lst)
     if (lst->elem.PValueField != NULL) {
         free ((char *) lst -> elem. PValueField);
     }
-    delete lst;
+    free (lst);
     return (cond);
+}
+
+
+/*******************
+ *    Matches two strings
+ */
+
+static int DB_StringUnify  (char *pmod, char *pstr)
+{
+    int uni;
+
+    if (*pmod == '\0')
+    return (*pstr == '\0');
+
+    if (  *pmod == *pstr
+      || (*pmod == '?' && *pstr != '\0')
+    )
+    return (DB_StringUnify (pmod + 1, pstr + 1));
+
+    if (*pmod == '*') {
+    if ( *(pmod + 1) == '\0' )
+        return (OFTrue);
+    while (  ( (uni = DB_StringUnify (pmod + 1, pstr)) == OFFalse )
+         && (*pstr != '\0')
+        )
+        pstr++;
+    return (uni);
+    }
+    else if (*pmod != *pstr)
+    return (OFFalse);
+    return OFFalse;
 }
 
 /*******************
@@ -653,6 +702,7 @@ static int DB_TagSupported (DcmTagKey tag)
     return (OFFalse);
 
 }
+
 
 /*******************
  *    Get UID tag of a specified level
@@ -715,6 +765,153 @@ static OFCondition DB_GetTagKeyAttr (DcmTagKey tag, DB_KEY_TYPE *keyAttr)
     return (QR_EC_IndexDatabaseError);
 }
 
+/*******************
+ *    Get tag key attribute of a specified tag
+ */
+
+static OFCondition DB_GetTagKeyClass (DcmTagKey tag, DB_KEY_CLASS *keyAttr)
+{
+    int i;
+
+    for (i = 0; i < NbFindAttr; i++)
+        if (TbFindAttr[i]. tag == tag)
+            break;
+
+    if (i < NbFindAttr) {
+        *keyAttr = TbFindAttr[i]. keyClass;
+        return (EC_Normal);
+    }
+    else
+    return (QR_EC_IndexDatabaseError);
+}
+
+
+/*******************
+ *    Remove spaces in a string
+ */
+
+static void DB_RemoveSpaces (char *string)
+{
+    char *pc1, *pc2;
+
+    for (pc1 = pc2 = string; *pc2; pc2++) {
+        if (*pc2 != ' ') {
+            *pc1 = *pc2;
+            pc1++;
+        }
+    }
+    *pc1 = '\0';
+}
+
+/*******************
+ *    Remove leading and trailing spaces in a string
+ */
+
+static void DB_RemoveEnclosingSpaces (char *string)
+{
+    char *pc1, *pc2;
+
+    /** Find in pc2 the first non space character
+    ** If not found, string is empty
+    */
+
+    for (pc2 = string; (*pc2 != '\0') && (*pc2 == ' '); pc2++)  /* loop with empty body */;
+    if (*pc2 == '\0') {
+        string [0] = '\0';
+        return;
+    }
+
+    /** Shift the string if necessary
+     */
+
+    if (pc2 != string) {
+        for (pc1 = string; *pc2; pc1++, pc2++)
+            *pc1 = *pc2;
+        *pc1 = '\0';
+    }
+
+    /** Skip trailing spaces
+     */
+
+    for (pc2 = string + strlen (string) - 1; *pc2 == ' '; pc2--)  /* loop with empty body */;
+    pc2++;
+    *pc2 = '\0';
+}
+
+
+/*******************
+ *    Convert a date YYYYMMDD in a long
+ */
+
+static long DB_DateToLong (char *date)
+{
+    char year [5];
+    char month[3];
+    char day  [3];
+
+    strncpy (year, date, 4);
+    year [4] = '\0';
+    strncpy (month, date + 4, 2);
+    month [2] = '\0';
+    strncpy (day, date + 6, 2);
+    day [2] = '\0';
+
+    return ((atol(year) * 10000) + (atol(month) * 100) + atol(day));
+}
+
+
+/*******************
+ *    Convert a time in a double
+ */
+
+static double DB_TimeToDouble (char *thetime)
+{
+    char t [20];
+    char tmp [4];
+
+    double result = 0.;
+    char *pc;
+
+    /*** Get fractional part if exists
+    **/
+
+    strcpy (t, thetime);
+    if ((pc = strchr (t, '.')) != NULL) {
+        double f;
+
+        *pc = '\0';
+        for (pc++, f = 1.; (*pc) && (isdigit (OFstatic_cast(unsigned char, *pc))); pc++) {
+            f /= 10.;
+            result += (*pc - '0') * f;
+        }
+    }
+
+    /*** Add default values (mm ss) if necessary
+    **/
+
+    strcat (t, "0000");
+    t [6] = '\0';
+
+    /*** Get Hours, Minutes and Seconds
+    **/
+
+    strncpy (tmp, t, 2);
+    tmp [3] = '\0';
+    result += 3600. * OFStandard::atof(tmp);
+
+    strncpy (tmp, t + 2, 2);
+    tmp [3] = '\0';
+    result += 60. * OFStandard::atof(tmp);
+
+    strncpy (tmp, t + 4, 2);
+    tmp [3] = '\0';
+    result += OFStandard::atof(tmp);
+
+    return result;
+}
+
+
+
 /***********************
  *    Duplicate a DICOM element
  *    dst space is supposed provided by the caller
@@ -722,7 +919,7 @@ static OFCondition DB_GetTagKeyAttr (DcmTagKey tag, DB_KEY_TYPE *keyAttr)
 
 static void DB_DuplicateElement (DB_SmallDcmElmt *src, DB_SmallDcmElmt *dst)
 {
-    memset( (char*)dst, 0, sizeof (DB_SmallDcmElmt));
+    bzero( (char*)dst, sizeof (DB_SmallDcmElmt));
     dst -> XTag = src -> XTag;
     dst -> ValueLength = src -> ValueLength;
 
@@ -730,7 +927,7 @@ static void DB_DuplicateElement (DB_SmallDcmElmt *src, DB_SmallDcmElmt *dst)
         dst -> PValueField = NULL;
     else {
         dst -> PValueField = (char *)malloc ((int) src -> ValueLength+1);
-        memset(dst->PValueField, 0, (size_t)(src->ValueLength+1));
+        bzero(dst->PValueField, (size_t)(src->ValueLength+1));
         if (dst->PValueField != NULL) {
             memcpy (dst -> PValueField,  src -> PValueField,
                 (size_t) src -> ValueLength);
@@ -768,198 +965,318 @@ DcmQueryRetrieveDatabaseHandle::~DcmQueryRetrieveDatabaseHandle()
 
 /* ========================= FIND ========================= */
 
-// helper function to print 'ASCII' instead of an empty string for the value of
-// Specific Character Set
-static const char* characterSetName( const OFString& charset )
+/************
+**      Try to match Two Dates
+**      The first one is the "model", the second one an element
+**      Returns OFTrue if matching is OK, else returns OFFalse
+ */
+
+int DcmQueryRetrieveIndexDatabaseHandle::matchDate (DB_SmallDcmElmt *mod, DB_SmallDcmElmt *elt)
 {
-    if (charset.empty())
-        return "ASCII";
-    return charset.c_str();
+    char date [DBC_MAXSTRING] ;
+    char modl [DBC_MAXSTRING] ;
+
+    /*** Get elt and model data in strings
+    **/
+
+    memcpy (date, elt->PValueField, (size_t)(elt->ValueLength)) ;
+    date [elt->ValueLength] = '\0' ;
+    DB_RemoveSpaces (date) ;
+
+    memcpy (modl, mod->PValueField, (size_t)(mod->ValueLength)) ;
+    modl [mod->ValueLength] = '\0' ;
+    DB_RemoveSpaces (modl) ;
+
+    /*** If no '-' in date
+    *** return strict comparison result
+    **/
+
+    if (strchr (modl, '-') == NULL)
+        return (strcmp (modl, date) == 0) ;
+
+    /*** If first char is -
+    **/
+
+    if (modl [0] == '-') {
+        return DB_DateToLong (date) <= DB_DateToLong (modl+1) ;
+    }
+
+    /*** If last char is -
+    **/
+
+    else if (modl [strlen (modl) - 1] == '-') {
+        modl [strlen (modl) - 1] = '\0' ;
+        return DB_DateToLong (date) >= DB_DateToLong (modl) ;
+    }
+    else {
+        char *pc ;
+        long d ;
+
+        d = DB_DateToLong (date) ;
+        pc = strchr (modl, '-') ;
+        *pc = '\0' ;
+
+        return (d >= DB_DateToLong (modl)) && (d <= DB_DateToLong (pc+1)) ;
+
+    }
 }
 
-class DcmQueryRetrieveIndexDatabaseHandle::CharsetConsideringMatcher
+/************
+**      Try to match Two Times
+**      The first one is the "model", the second one an element
+**      Returns OFTrue if matching is OK, else returns OFFalse
+ */
+
+int DcmQueryRetrieveIndexDatabaseHandle::matchTime (DB_SmallDcmElmt *mod, DB_SmallDcmElmt *elt)
 {
-public:
+    char aTime [DBC_MAXSTRING] ;
+    char modl [DBC_MAXSTRING] ;
 
-    // Constructor, remember references to the find request character set and converter
-    CharsetConsideringMatcher(DB_Private_Handle& handle)
-    : findRequestCharacterSet(handle.findRequestCharacterSet)
-    , findRequestConverter(handle.findRequestConverter)
-    , candidateCharacterSet()
-    , candidateConverter()
-    , isFindRequestConversionNecessary(isConversionToUTF8Necessary(findRequestCharacterSet))
-    , isCandidateConversionNecessary()
-    , isConversionNecessary()
-    {
+    /*** Get elt and model data in strings
+    **/
 
+    memcpy (aTime, elt->PValueField, (size_t)(elt->ValueLength)) ;
+    aTime [elt->ValueLength] = '\0' ;
+    DB_RemoveSpaces (aTime) ;
+
+    memcpy (modl, mod->PValueField, (size_t)(mod->ValueLength)) ;
+    modl [mod->ValueLength] = '\0' ;
+    DB_RemoveSpaces (modl) ;
+
+    /*** If no '-' in time
+    *** return strict comparison result
+    **/
+
+    if (strchr (modl, '-') == NULL)
+        return (strcmp (modl, aTime) == 0) ;
+
+    /*** If first char is -
+    **/
+
+    if (modl [0] == '-') {
+        return DB_TimeToDouble (aTime) <= DB_TimeToDouble (modl+1) ;
     }
 
-    // read access to the candidate's character set value
-    const OFString& getCandidateCharacterSet() const
-    {
-        return candidateCharacterSet;
+    /*** If last char is -
+    **/
+
+    else if (modl [strlen (modl) - 1] == '-') {
+        modl [strlen (modl) - 1] = '\0' ;
+        return DB_TimeToDouble (aTime) >= DB_TimeToDouble (modl) ;
     }
+    else {
+        char *pc ;
+        double t ;
 
-    // prepare character set conversion for specific index record
-    void setRecord(IdxRecord& idxRec)
-    {
-        // copy value of specific character set of the entry, since the converter
-        // would need it as an OFString anyway.
-        candidateCharacterSet.assign(idxRec.param[RECORDIDX_SpecificCharacterSet].PValueField,
-                                     idxRec.param[RECORDIDX_SpecificCharacterSet].ValueLength);
-        // test if conversion is potentially necessary since the character sets differ
-        if (findRequestCharacterSet != candidateCharacterSet) {
-            // determine if the candidate is compatible to UTF-8 or must be converted
-            isCandidateConversionNecessary = isConversionToUTF8Necessary(candidateCharacterSet);
-            // if it must be converted, clear the converter if it was previously initialized,
-            // but for a different character set
-            if (isCandidateConversionNecessary && candidateConverter &&
-                candidateConverter.getSourceCharacterSet() != candidateCharacterSet) {
-                candidateConverter.clear();
-            }
-            // even if the character sets differ, they may both be compatible to UTF-8,
-            // in which case conversion is still not necessary
-            isConversionNecessary = isCandidateConversionNecessary || isFindRequestConversionNecessary;
-        } else {
-            // conversion is not necessary
-            isConversionNecessary = OFFalse;
-        }
+        t = DB_TimeToDouble (aTime) ;
+        pc = strchr (modl, '-') ;
+        *pc = '\0' ;
+
+        return (t >= DB_TimeToDouble (modl)) && (t <= DB_TimeToDouble (pc+1)) ;
+
     }
+}
 
-    // Try to match Two DB_ElementList elements
-    // The first one is the query key, the second one the candidate
-    // from the database entry.
-    // Returns OFTrue if both values match, OFFalse otherwise
-    OFBool operator()(DB_ElementList* query, DB_SmallDcmElmt* candidate)
-    {
-        // Universal matching is applied if the query value is empty:
-        // always return OFTrue
-        if (!query->elem.ValueLength)
-            return OFTrue;
+/************
+**      Try to match Two UID
+**      The first one is the "model", the second one an element
+**      Returns OFTrue if matching is OK, else returns OFFalse
+ */
 
-        (void)findRequestConverter;
-        OFString buffer;
-        const char* pQuery = query->elem.PValueField;
-        const char* pQueryEnd = pQuery + query->elem.ValueLength;
-        const char* pCandidate = candidate->PValueField;
-        const char* pCandidateEnd = pCandidate + candidate->ValueLength;
+int DcmQueryRetrieveIndexDatabaseHandle::matchUID (DB_SmallDcmElmt *mod, DB_SmallDcmElmt *elt)
+{
+    int match ;
+    char *uid ;
+    char *modl ;
+    char *pc ;
+    unsigned int length ;
 
-        DcmVR vr = DcmTag(query->elem.XTag).getVR();
-        if (isConversionNecessary && vr.isAffectedBySpecificCharacterSet()) {
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
-            // convert query, if it isn't UTF-8 or ASCII already
-            if (isFindRequestConversionNecessary) {
-                // does a value already exist in the cache?
-                if (!query->utf8Value) {
-                    // fill the cache if it doesn't
-                    query->utf8Value = OFString();
-                    // initialize the converter, if this is the first
-                    // time we need it
-                    OFCondition cond = EC_Normal;
-                    if (!findRequestConverter)
-                        cond = findRequestConverter.selectCharacterSet(findRequestCharacterSet);
-                    if (cond.good()) {
-                        // covert the string and cache the result, using the
-                        // specific delimitation characters for this VR
-                        cond = findRequestConverter.convertString(
-                            query->elem.PValueField,
-                            query->elem.ValueLength,
-                            *query->utf8Value,
-                            vr.getDelimiterChars()
-                        );
-                    }
-                    if (cond.bad()) {
-                        DCMQRDB_WARN("Character set conversion of the query key failed with the following error: '" << cond.text()
-                            << "', will compare values that use different (incompatible) character sets: \""
-                            << characterSetName(findRequestCharacterSet) << "\" and \"" << characterSetName(candidateCharacterSet) << '"');
-                        // put the original value in the cache, since retrying the conversion on the next encounter does not make sense
-                        // (it would only fail again).
-                        query->utf8Value = OFString(query->elem.PValueField, query->elem.ValueLength);
-                    }
-                }
-                // use the value from the cache for the following match
-                // operations
-                pQuery = query->utf8Value->c_str();
-                pQueryEnd = pQuery + query->utf8Value->size();
-            }
-            // convert the candidate, if it isn't already UTF-8 or ASCII
-            if (isCandidateConversionNecessary) {
-                // initialize the converter, if this is the first time
-                // we need it for this entry
-                OFCondition cond = EC_Normal;
-                if (!candidateConverter)
-                    cond = candidateConverter.selectCharacterSet(candidateCharacterSet);
-                if (cond.good()) {
-                    // convert the string using the local buffer and the
-                    // specific delimitation characters for this VR
-                    cond = candidateConverter.convertString(
-                        candidate->PValueField,
-                        candidate->ValueLength,
-                        buffer,
-                        vr.getDelimiterChars()
-                    );
-                }
-                if (cond.good()) {
-                    // assign the buffer contents to the value being used
-                    // in the following match operations
-                    pCandidate = buffer.c_str();
-                    pCandidateEnd = pCandidate + buffer.size();
-                } else {
-                    DCMQRDB_WARN("Character set conversion of the candidate failed with the following error: '" << cond.text()
-                        << "', will compare values that use different (incompatible) character sets: \""
-                        << characterSetName(findRequestCharacterSet) << "\" and \"" << characterSetName(candidateCharacterSet) << '"');
-                }
-            }
+    /*** Get elt and model data in strings
+    **/
+
+    uid = (char *) malloc ((size_t)(elt->ValueLength + 1)) ;
+    if (uid == NULL) {
+        return 0 ;
+    }
+    memcpy (uid, elt->PValueField, (size_t)(elt->ValueLength)) ;
+    uid [elt->ValueLength] = '\0' ;
+
+    modl = (char *) malloc ((size_t)(mod->ValueLength + 1)) ;
+    if (modl == NULL) {
+        free (uid) ;
+        return 0 ;
+    }
+    memcpy (modl, mod->PValueField, (size_t)(mod->ValueLength)) ;
+    modl [mod->ValueLength] = '\0' ;
+
+    /*** If no '\' in model
+    *** return strict comparison result
+    **/
+
+#ifdef STRICT_COMPARE
 #else
-            DCMQRDB_WARN("Character set conversion is not available, comparing values that use different (incompatible) character sets: \""
-                << characterSetName(findRequestCharacterSet) << "\" and \"" << characterSetName(candidateCharacterSet) << '"');
+    /*** Suppress Leading and Trailing spaces in
+    *** model and string
+    **/
+
+    DB_RemoveEnclosingSpaces (uid) ;
+    DB_RemoveEnclosingSpaces (modl) ;
 #endif
-        }
 
-        // remove leading and trailing spaces before matching
-        if (vr.isaString()) {
-            OFStandard::trimString(pQuery, pQueryEnd);
-            OFStandard::trimString(pCandidate, pCandidateEnd);
-        }
-
-        // use DcmAttributeMatching to perform the appropriate matching function
-        // for the given VR
-        return DcmAttributeMatching( vr )( pQuery, pQueryEnd - pQuery,
-                                           pCandidate, pCandidateEnd - pCandidate );
+    if (strchr (modl, '\\') == NULL) {
+        match = (strcmp (modl, uid) == 0) ;
+        free (uid) ;
+        free (modl) ;
+        return (match) ;
     }
 
-private:
-    const OFString& findRequestCharacterSet;
-    DcmSpecificCharacterSet& findRequestConverter;
-    OFString candidateCharacterSet;
-    DcmSpecificCharacterSet candidateConverter;
-    const OFBool isFindRequestConversionNecessary;
-    OFBool isCandidateConversionNecessary;
-    OFBool isConversionNecessary;
-};
+    /*** UID List comparison.
+    *** Match is successful if uid is found in model
+    **/
 
-OFBool DcmQueryRetrieveIndexDatabaseHandle::isConversionToUTF8Necessary(const OFString& characterSet)
-{
-    // empty      -> ASCII, subset of UTF-8
-    // ISO_IR 6   -> ASCII, subset of UTF-8
-    // ISO_IR 192 -> UTF-8
-    return !characterSet.empty() &&
-           characterSet != "ISO_IR 192" &&
-           characterSet != "ISO_IR 6"
-    ;
+    match = OFFalse ;
+    for (pc = modl ; *pc ; ) {
+
+        /*** Calculate the length to the next '\' sign (if any).
+        *** Otherwise the length of pc is returned.
+        **/
+        length = strcspn(pc, "\\") ;
+
+        if ((length == strlen(uid)) && (strncmp (pc, uid, length) == 0)) {
+            match = OFTrue ;
+            break ;
+        }
+        else {
+            pc = strchr (pc, '\\') ;
+            if (pc == NULL)
+                break ;
+            else
+                pc++ ;
+        }
+    }
+
+    free (uid) ;
+    free (modl) ;
+    return (match) ;
+
 }
 
-OFBool DcmQueryRetrieveIndexDatabaseHandle::isConversionNecessary(const OFString& sourceCharacterSet,
-                                                                  const OFString& destinationCharacterSet)
+/************
+**      Try to match Two Strings
+**      The first one is the "model", the second one an element
+**      Returns OFTrue if matching is OK, else returns OFFalse
+ */
+
+int DcmQueryRetrieveIndexDatabaseHandle::matchStrings (DB_SmallDcmElmt *mod, DB_SmallDcmElmt *elt)
 {
-    // conversion is unnecessary if both are the same character set or if
-    // the destination is UTF-8 and the source is compatible to UTF-8
-    // (i.e. ASCII).
-    return sourceCharacterSet != destinationCharacterSet &&
-    (
-        destinationCharacterSet != "ISO_IR 192" ||
-        isConversionToUTF8Necessary(sourceCharacterSet)
-    );
+    int match ;
+    char *string ;
+    char *modl ;
+
+    /*** Get elt and model data in strings
+    **/
+
+    string = (char *) malloc ((size_t)(elt->ValueLength + 1)) ;
+    if (string == NULL) {
+        return 0 ;
+    }
+    memcpy (string, elt->PValueField, (size_t)(elt->ValueLength)) ;
+    string [elt->ValueLength] = '\0' ;
+
+    modl = (char *) malloc ((size_t)(mod->ValueLength + 1)) ;
+    if (modl == NULL) {
+        free (string) ;
+        return 0 ;
+    }
+    memcpy (modl, mod->PValueField, (size_t)(mod->ValueLength)) ;
+    modl [mod->ValueLength] = '\0' ;
+
+#ifdef STRICT_COMPARE
+#else
+    /*** Suppress Leading and Trailing spaces in
+    *** model and string
+    **/
+
+    DB_RemoveEnclosingSpaces (string) ;
+    DB_RemoveEnclosingSpaces (modl) ;
+#endif
+
+    /*** If no '*' and no '?' in model
+    *** return strict comparison result
+    **/
+
+    if ((strchr (modl, '*') == NULL) && (strchr (modl, '?') == NULL))
+    {
+        int res = strcmp (modl, string);
+        free(string);
+        free(modl);
+        return res == 0;
+    }
+
+    match = DB_StringUnify (modl, string) ;
+
+    free (string) ;
+    free (modl) ;
+    return (match) ;
+
+}
+
+/************
+**      Try to match Two Unknown elements
+**      Strict comparison is applied
+**      The first one is the "model", the second one an element
+**      Returns OFTrue if matching is OK, else returns OFFalse
+ */
+
+int DcmQueryRetrieveIndexDatabaseHandle::matchOther (DB_SmallDcmElmt *mod, DB_SmallDcmElmt *elt)
+{
+    if (mod->ValueLength != elt->ValueLength)
+        return OFFalse ;
+
+    return (memcmp (mod->PValueField, elt->PValueField, (size_t)(elt->ValueLength)) == 0) ;
+}
+
+/************
+**      Try to match Two DB_SmallDcmElmts
+**      The first one is the "model", the second one an element
+**      Returns OFTrue if matching is OK, else returns OFFalse
+ */
+
+int DcmQueryRetrieveIndexDatabaseHandle::dbmatch (DB_SmallDcmElmt *mod, DB_SmallDcmElmt *elt)
+{
+    DB_KEY_CLASS keyClass = OTHER_CLASS;
+
+    /*** If model length is 0
+    *** Universal matching is applied : return always OFTrue
+    **/
+
+    if (mod->ValueLength == 0)
+        return (OFTrue) ;
+
+    /*** Get the key class of the element
+    **/
+
+    DB_GetTagKeyClass (elt->XTag, &keyClass) ;
+
+    switch (keyClass) {
+
+    case DATE_CLASS :
+        return matchDate (mod, elt) ;
+
+    case TIME_CLASS :
+        return matchTime (mod, elt) ;
+
+    case UID_CLASS :
+        return matchUID  (mod, elt) ;
+
+    case STRING_CLASS :
+        return matchStrings (mod, elt) ;
+
+    case OTHER_CLASS :
+        return matchOther (mod, elt) ;
+
+    }
+    return OFFalse;
 }
 
 /************
@@ -1001,11 +1318,12 @@ void DcmQueryRetrieveIndexDatabaseHandle::makeResponseList (
         /*** Append index record element to response list
         **/
 
-        plist = new DB_ElementList ;
+        plist = (DB_ElementList *) malloc (sizeof (DB_ElementList)) ;
         if (plist == NULL) {
             DCMQRDB_ERROR("makeResponseList: out of memory");
             return;
         }
+        plist->next = NULL ;
 
         DB_DuplicateElement(&idxRec->param[i], &plist->elem);
 
@@ -1017,27 +1335,6 @@ void DcmQueryRetrieveIndexDatabaseHandle::makeResponseList (
             last = plist ;
         }
 
-    }
-
-    /** Specific Character Set stuff
-    **/
-
-    if (idxRec->param[RECORDIDX_SpecificCharacterSet].ValueLength) {
-        plist = new DB_ElementList ;
-        if (plist == NULL) {
-            DCMQRDB_ERROR("makeResponseList: out of memory");
-            return;
-        }
-
-        DB_DuplicateElement(&idxRec->param[RECORDIDX_SpecificCharacterSet], &plist->elem);
-
-        if (phandle->findResponseList == NULL) {
-            phandle->findResponseList = last = plist ;
-        }
-        else {
-            last->next = plist ;
-            last = plist ;
-        }
     }
 }
 
@@ -1191,8 +1488,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::hierarchicalCompare (
                 IdxRecord               *idxRec,
                 DB_LEVEL                level,
                 DB_LEVEL                infLevel,
-                int                     *match,
-                CharsetConsideringMatcher& dbmatch)
+                int                     *match)
 {
     int                 i ;
     DcmTagKey   XTag ;
@@ -1236,7 +1532,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::hierarchicalCompare (
         ** If Match fails, return OFFalse
         */
 
-        if (!dbmatch(plist, &idxRec->param[i])) {
+        if (! dbmatch (&(plist->elem), &idxRec->param[i])) {
             *match = OFFalse ;
             return EC_Normal ;
         }
@@ -1245,7 +1541,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::hierarchicalCompare (
         ** Try at next level
         */
 
-        return hierarchicalCompare (phandle, idxRec, (DB_LEVEL)(level + 1), infLevel, match, dbmatch) ;
+        return hierarchicalCompare (phandle, idxRec, (DB_LEVEL)(level + 1), infLevel, match) ;
     }
 
     /**** If current level is the QueryLevel
@@ -1291,7 +1587,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::hierarchicalCompare (
             */
 
 
-            if (!dbmatch(plist, &idxRec->param[i])) {
+            if (! dbmatch (&(plist->elem), &idxRec->param[i])) {
                 *match = OFFalse ;
                 return EC_Normal ;
             }
@@ -1344,19 +1640,15 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::startFindRequest(
         return (QR_EC_IndexDatabaseError) ;
     }
 
+
     /**** Parse Identifiers in the Dicom Object
     **** Find Query Level and construct a list
     **** of query identifiers
     ***/
 
-    if (findRequestIdentifiers->findAndGetOFStringArray(DCM_SpecificCharacterSet, handle_->findRequestCharacterSet).bad())
-        handle_->findRequestCharacterSet.clear();
-    if (handle_->findRequestConverter && handle_->findRequestConverter.getSourceCharacterSet() != handle_->findRequestCharacterSet)
-        handle_->findRequestConverter.clear();
-
     handle_->findRequestList = NULL ;
 
-    int elemCount = OFstatic_cast(int, findRequestIdentifiers->card());
+    int elemCount = (int)(findRequestIdentifiers->card());
     for (int elemIndex=0; elemIndex<elemCount; elemIndex++) {
 
         DcmElement* dcelem = findRequestIdentifiers->getElement(elemIndex);
@@ -1366,15 +1658,14 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::startFindRequest(
             elem.ValueLength = dcelem->getLength();
             if (elem.ValueLength == 0) {
                 elem.PValueField = NULL ;
-            } else if ((elem.PValueField = OFstatic_cast(char*, malloc(OFstatic_cast(size_t, elem.ValueLength+1)))) == NULL) {
+            } else if ((elem.PValueField = (char*)malloc((size_t)(elem.ValueLength+1))) == NULL) {
                 status->setStatus(STATUS_FIND_Refused_OutOfResources);
                 return (QR_EC_IndexDatabaseError) ;
             } else {
                 /* only char string type tags are supported at the moment */
                 char *s = NULL;
                 dcelem->getString(s);
-                /* the available space is always elem.ValueLength+1 */
-                OFStandard::strlcpy(elem.PValueField, s, elem.ValueLength+1);
+                strcpy(elem.PValueField, s);
             }
             /** If element is the Query Level, store it in handle
              */
@@ -1420,11 +1711,12 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::startFindRequest(
                 */
                 if (DB_TagSupported (elem. XTag)) {
 
-                    plist = new DB_ElementList ;
+                    plist = (DB_ElementList *) malloc (sizeof (DB_ElementList)) ;
                     if (plist == NULL) {
                         status->setStatus(STATUS_FIND_Refused_OutOfResources);
                         return (QR_EC_IndexDatabaseError) ;
                     }
+                    plist->next = NULL ;
                     DB_DuplicateElement (&elem, &(plist->elem)) ;
                     if (handle_->findRequestList == NULL) {
                         handle_->findRequestList = last = plist ;
@@ -1494,7 +1786,6 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::startFindRequest(
     MatchFound = OFFalse ;
     cond = EC_Normal ;
 
-    CharsetConsideringMatcher dbmatch(*handle_);
     while (1) {
 
         /*** Exit loop if read error (or end of file)
@@ -1506,8 +1797,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::startFindRequest(
         /*** Exit loop if error or matching OK
         **/
 
-        dbmatch.setRecord(idxRec);
-        cond = hierarchicalCompare (handle_, &idxRec, qLevel, qLevel, &MatchFound, dbmatch) ;
+        cond = hierarchicalCompare (handle_, &idxRec, qLevel, qLevel, &MatchFound) ;
         if (cond != EC_Normal)
             break ;
         if (MatchFound)
@@ -1576,12 +1866,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::startFindRequest(
 
 OFCondition DcmQueryRetrieveIndexDatabaseHandle::nextFindResponse (
                 DcmDataset      **findResponseIdentifiers,
-                DcmQueryRetrieveDatabaseStatus  *status,
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
-                const DcmQueryRetrieveCharacterSetOptions& characterSetOptions)
-#else
-                const DcmQueryRetrieveCharacterSetOptions& /* characterSetOptions */)
-#endif
+                DcmQueryRetrieveDatabaseStatus  *status)
 {
 
     DB_ElementList      *plist = NULL;
@@ -1615,7 +1900,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::nextFindResponse (
 
         for ( plist = handle_->findResponseList ; plist != NULL ; plist = plist->next ) {
             DcmTag t(plist->elem.XTag);
-            DcmElement *dce = DcmItem::newDicomElement(t);
+            DcmElement *dce = newDicomElement(t);
             if (dce == NULL) {
                 status->setStatus(STATUS_FIND_Refused_OutOfResources);
                 return QR_EC_IndexDatabaseError;
@@ -1656,87 +1941,12 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::nextFindResponse (
         }
         DU_putStringDOElement(*findResponseIdentifiers,
                               DCM_QueryRetrieveLevel, queryLevelString);
-
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
-        OFString specificCharacterSet;
-        if ((*findResponseIdentifiers)->findAndGetOFStringArray(DCM_SpecificCharacterSet, specificCharacterSet).bad())
-            specificCharacterSet.clear();
-
-        const OFString* destinationCharacterSet = NULL;
-        const OFString* fallbackCharacterSet = NULL;
-
-        if (characterSetOptions.flags & DcmQueryRetrieveCharacterSetOptions::Override) {
-            destinationCharacterSet = &characterSetOptions.characterSet;
-            if (
-                (characterSetOptions.flags & DcmQueryRetrieveCharacterSetOptions::Fallback) &&
-                characterSetOptions.characterSet != handle_->findRequestCharacterSet
-            ) {
-                fallbackCharacterSet = &handle_->findRequestCharacterSet;
-            }
-        } else {
-            destinationCharacterSet = &handle_->findRequestCharacterSet;
-            if (
-                (characterSetOptions.flags & DcmQueryRetrieveCharacterSetOptions::Fallback) &&
-                characterSetOptions.characterSet != handle_->findRequestCharacterSet
-            ) {
-                fallbackCharacterSet = &characterSetOptions.characterSet;
-            }
-        }
-
-        if (isConversionNecessary(specificCharacterSet, *destinationCharacterSet)) {
-            OFCondition charset_status = (*findResponseIdentifiers)->convertCharacterSet(
-                specificCharacterSet,
-                *destinationCharacterSet,
-                characterSetOptions.conversionFlags,
-                OFTrue);
-            if (charset_status.bad()) {
-                DCMQRDB_WARN("Converting response from character set \""
-                    << characterSetName(specificCharacterSet)
-                    << "\" to character set \""
-                    << characterSetName(*destinationCharacterSet)
-                    << "\" failed, (error message: " << charset_status.text() << ')');
-                if (fallbackCharacterSet && isConversionNecessary(specificCharacterSet, *fallbackCharacterSet)) {
-                    DCMQRDB_INFO("Trying to convert response from character set \""
-                        << characterSetName(specificCharacterSet)
-                        << "\" to fall-back character set \""
-                        << characterSetName(*fallbackCharacterSet) << "\" instead");
-                    charset_status = (*findResponseIdentifiers)->convertCharacterSet(
-                        specificCharacterSet,
-                        *fallbackCharacterSet,
-                        characterSetOptions.conversionFlags,
-                        OFTrue);
-                    if (charset_status.bad()) {
-                        DCMQRDB_WARN("Converting response from character set \""
-                            << characterSetName(specificCharacterSet)
-                            << "\" to character set \""
-                            << characterSetName(*fallbackCharacterSet)
-                            << "\" failed, (error message: " << charset_status.text() << ')');
-                    } else {
-                        DCMQRDB_INFO("Successfully converted response from character set \""
-                            << characterSetName(specificCharacterSet)
-                            << "\" to character set \""
-                            << characterSetName(*fallbackCharacterSet) << "\"");
-                    }
-                } else if (fallbackCharacterSet) {
-                    DCMQRDB_INFO("Conversion to fall-back character set \""
-                        << characterSetName(*fallbackCharacterSet)
-                        << "\" is not necessary, since the original character set is compatible");
-                }
-            } else {
-                DCMQRDB_INFO("Successfully converted response from character set \""
-                    << characterSetName(specificCharacterSet)
-                    << "\" to character set \""
-                    << characterSetName(*destinationCharacterSet)
-                    << "\"");
-            }
-        }
-#endif
-
 #ifdef DEBUG
         DCMQRDB_DEBUG("DB: findResponseIdentifiers:" << OFendl
             << DcmObject::PrintHelper(**findResponseIdentifiers));
 #endif
-    } else {
+    }
+    else {
 
         DB_unlock();
 
@@ -1761,7 +1971,6 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::nextFindResponse (
     MatchFound = OFFalse ;
     cond = EC_Normal ;
 
-    CharsetConsideringMatcher dbmatch(*handle_);
     while (1) {
 
         /*** Exit loop if read error (or end of file)
@@ -1779,8 +1988,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::nextFindResponse (
         /*** Exit loop if error or matching OK
         **/
 
-        dbmatch.setRecord(idxRec);
-        cond = hierarchicalCompare (handle_, &idxRec, qLevel, qLevel, &MatchFound, dbmatch) ;
+        cond = hierarchicalCompare (handle_, &idxRec, qLevel, qLevel, &MatchFound) ;
         if (cond != EC_Normal)
             break ;
         if (MatchFound)
@@ -1788,7 +1996,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::nextFindResponse (
 
     }
 
-    /**** If an error occurred in Matching function
+    /**** If an error occured in Matching function
     ****    return status is pending
     ***/
 
@@ -2054,8 +2262,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::startMoveRequest(
                 /* only char string type tags are supported at the moment */
                 char *s = NULL;
                 dcelem->getString(s);
-                /* the available space is always elem.ValueLength+1 */
-                OFStandard::strlcpy(elem.PValueField, s, elem.ValueLength+1);
+                strcpy(elem.PValueField, s);
             }
 
             /** If element is the Query Level, store it in handle
@@ -2100,11 +2307,12 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::startMoveRequest(
                 if (! DB_TagSupported (elem. XTag))
                     continue ;
 
-                plist = new DB_ElementList ;
+                plist = (DB_ElementList *) malloc (sizeof( DB_ElementList ) ) ;
                 if (plist == NULL) {
                     status->setStatus(STATUS_FIND_Refused_OutOfResources);
                     return (QR_EC_IndexDatabaseError) ;
                 }
+                plist->next = NULL ;
                 DB_DuplicateElement (&elem, & (plist->elem)) ;
                 if (handle_->findRequestList == NULL) {
                     handle_->findRequestList = last = plist ;
@@ -2177,7 +2385,6 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::startMoveRequest(
 
     DB_lock(OFFalse);
 
-    CharsetConsideringMatcher dbmatch(*handle_);
     DB_IdxInitLoop (&(handle_->idxCounter)) ;
     while (1) {
 
@@ -2190,8 +2397,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::startMoveRequest(
         /*** If matching found
         **/
 
-        dbmatch.setRecord(idxRec);
-        cond = hierarchicalCompare (handle_, &idxRec, qLevel, qLevel, &MatchFound, dbmatch) ;
+        cond = hierarchicalCompare (handle_, &idxRec, qLevel, qLevel, &MatchFound) ;
         if (MatchFound) {
             pidxlist = (DB_CounterList *) malloc (sizeof( DB_CounterList ) ) ;
             if (pidxlist == NULL) {
@@ -2247,14 +2453,11 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::startMoveRequest(
 }
 
 OFCondition DcmQueryRetrieveIndexDatabaseHandle::nextMoveResponse(
-    char *SOPClassUID,
-    size_t SOPClassUIDSize,
-    char *SOPInstanceUID,
-    size_t SOPInstanceUIDSize,
-    char *imageFileName,
-    size_t imageFileNameSize,
-    unsigned short *numberOfRemainingSubOperations,
-    DcmQueryRetrieveDatabaseStatus *status)
+                char            *SOPClassUID,
+                char            *SOPInstanceUID,
+                char            *imageFileName,
+                unsigned short  *numberOfRemainingSubOperations,
+                DcmQueryRetrieveDatabaseStatus  *status)
 {
     IdxRecord           idxRec ;
     DB_CounterList              *nextlist ;
@@ -2285,11 +2488,11 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::nextMoveResponse(
         return (QR_EC_IndexDatabaseError) ;
     }
 
-    OFStandard::strlcpy(SOPClassUID, (char *) idxRec. SOPClassUID, SOPClassUIDSize) ;
-    OFStandard::strlcpy(SOPInstanceUID, (char *) idxRec. SOPInstanceUID, SOPInstanceUIDSize) ;
-    OFStandard::strlcpy(imageFileName, (char *) idxRec. filename, imageFileNameSize) ;
+    strcpy (SOPClassUID, (char *) idxRec. SOPClassUID) ;
+    strcpy (SOPInstanceUID, (char *) idxRec. SOPInstanceUID) ;
+    strcpy (imageFileName, (char *) idxRec. filename) ;
 
-    *numberOfRemainingSubOperations = OFstatic_cast(unsigned short, (--handle_->NumberRemainOperations));
+    *numberOfRemainingSubOperations = --handle_->NumberRemainOperations ;
 
     nextlist = handle_->moveCounterList->next ;
     free (handle_->moveCounterList) ;
@@ -2356,20 +2559,21 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::deleteImageFile(char* imgFile)
       return QR_EC_IndexDatabaseError;
     }
     if (dcmtk_flock(lockfd, LOCK_EX) < 0) { /* exclusive lock (blocking) */
-      DCMQRDB_WARN("DB ERROR: cannot lock image file for deleting: " << imgFile);
+      DCMQRDB_WARN("DB ERROR: cannot lock image file  for deleting: " << imgFile);
       dcmtk_plockerr("DB ERROR");
     }
 #endif
 
     if (unlink(imgFile) < 0) {
+        char buf[256];
         /* delete file */
         DCMQRDB_ERROR("DB ERROR: cannot delete image file: " << imgFile << OFendl
-            << "QR_EC_IndexDatabaseError: " << OFStandard::getLastSystemErrorCode().message());
+            << "QR_EC_IndexDatabaseError: " << OFStandard::strerror(errno, buf, sizeof(buf)));
     }
 
 #ifdef LOCK_IMAGE_FILES
     if (dcmtk_flock(lockfd, LOCK_UN) < 0) { /* unlock */
-        DCMQRDB_WARN("DB ERROR: cannot unlock image file for deleting: " << imgFile);
+        DCMQRDB_WARN("DB ERROR: cannot unlock image file  for deleting: " << imgFile);
         dcmtk_plockerr("DB ERROR");
      }
     close(lockfd);              /* release file descriptor */
@@ -2389,7 +2593,7 @@ int DcmQueryRetrieveIndexDatabaseHandle::deleteOldestStudy(StudyDescRecord *pStu
     int oldestStudy ;
     double OldestDate ;
     int s ;
-    size_t n ;
+    int n ;
     int idx = 0 ;
     IdxRecord idxRec ;
 
@@ -2439,8 +2643,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::deleteOldestImages(StudyDescRec
 
     ImagesofStudyArray *StudyArray ;
     IdxRecord idxRec ;
-    int nbimages = 0 , s = 0;
-    size_t n ;
+    int nbimages = 0 , s = 0 , n ;
     long DeletedSize ;
 
 #ifdef DEBUG
@@ -2559,9 +2762,8 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::checkupinStudyDesc(StudyDescRec
 #ifdef DEBUG
     DCMQRDB_DEBUG("checkupinStudyDesc: study already exists : " << s) ;
 #endif
-    if ( OFstatic_cast(size_t, pStudyDesc[s]. StudySize) + imageSize  >
-         OFstatic_cast(size_t, handle_ -> maxBytesPerStudy) )
-    {
+    if ( ( pStudyDesc[s]. StudySize + imageSize )
+         > handle_ -> maxBytesPerStudy ) {
         if ( imageSize > handle_ -> maxBytesPerStudy ) {
 #ifdef DEBUG
             DCMQRDB_DEBUG("checkupinStudyDesc: imageSize = " << imageSize << " too large");
@@ -2600,7 +2802,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::checkupinStudyDesc(StudyDescRec
     pStudyDesc[s]. LastRecordedDate =  (double) time(NULL);
 
     pStudyDesc[s]. NumberofRegistratedImages++ ;
-    OFStandard::strlcpy(pStudyDesc[s].StudyInstanceUID, StudyUID, UI_MAX_LENGTH+1) ;
+    strcpy(pStudyDesc[s].StudyInstanceUID,StudyUID) ;
 
     if ( DB_StudyDescChange (pStudyDesc) == EC_Normal)
         return ( EC_Normal ) ;
@@ -2674,7 +2876,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::storeRequest (
     /**** Initialize an IdxRecord
     ***/
 
-    memset((char*)&idxRec, 0, sizeof(idxRec));
+    bzero((char*)&idxRec, sizeof(idxRec));
 
     DB_IdxInitRecord (&idxRec, 0) ;
 
@@ -2690,19 +2892,17 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::storeRequest (
     DcmFileFormat dcmff;
     if (dcmff.loadFile(imageFileName).bad())
     {
+      char buf[256];
       DCMQRDB_WARN("DB: Cannot open file: " << imageFileName << ": "
-          << OFStandard::getLastSystemErrorCode().message());
+          << OFStandard::strerror(errno, buf, sizeof(buf)));
       status->setStatus(STATUS_STORE_Error_CannotUnderstand);
       return (QR_EC_IndexDatabaseError) ;
     }
 
     DcmDataset *dset = dcmff.getDataset();
 
-    assert(dset);
-
-    OFCondition ec;
-
     for (i = 0 ; i < NBPARAMETERS ; i++ ) {
+        OFCondition ec = EC_Normal;
         DB_SmallDcmElmt *se = idxRec.param + i;
 
         const char *strPtr = NULL;
@@ -2715,12 +2915,12 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::storeRequest (
             /* found and non-empty */
             strncpy(se->PValueField, strPtr, (size_t)(se->ValueLength));
             /* important: do not change the ValueLength field before the string is copied! */
-            se->ValueLength = OFstatic_cast(int, strlen(se->PValueField));
+            se->ValueLength = strlen(se->PValueField);
         }
     }
 
     /* InstanceStatus */
-    idxRec.hstat = OFstatic_cast(char, ((isNew) ? DVIF_objectIsNew : DVIF_objectIsNotNew));
+    idxRec.hstat = (isNew) ? DVIF_objectIsNew : DVIF_objectIsNotNew;
 
     /* InstanceDescription */
     OFBool useDescrTag = OFTrue;
@@ -2733,29 +2933,22 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::storeRequest (
             descrTag = DCM_ContentDescription;
         } else if (strcmp(SOPClassUID, UID_RETIRED_HardcopyGrayscaleImageStorage) == 0)
         {
-            OFStandard::strlcpy(idxRec.InstanceDescription, "Hardcopy Grayscale Image", DESCRIPTION_MAX_LENGTH+1);
+            strcpy(idxRec.InstanceDescription, "Hardcopy Grayscale Image");
             useDescrTag = OFFalse;
         } else if ((strcmp(SOPClassUID, UID_BasicTextSRStorage) == 0) ||
                    (strcmp(SOPClassUID, UID_EnhancedSRStorage) == 0) ||
                    (strcmp(SOPClassUID, UID_ComprehensiveSRStorage) == 0) ||
                    (strcmp(SOPClassUID, UID_Comprehensive3DSRStorage) == 0) ||
-                   (strcmp(SOPClassUID, UID_ExtensibleSRStorage) == 0) ||
                    (strcmp(SOPClassUID, UID_ProcedureLogStorage) == 0) ||
                    (strcmp(SOPClassUID, UID_MammographyCADSRStorage) == 0) ||
                    (strcmp(SOPClassUID, UID_KeyObjectSelectionDocumentStorage) == 0) ||
                    (strcmp(SOPClassUID, UID_ChestCADSRStorage) == 0) ||
                    (strcmp(SOPClassUID, UID_ColonCADSRStorage) == 0) ||
                    (strcmp(SOPClassUID, UID_XRayRadiationDoseSRStorage) == 0) ||
-                   (strcmp(SOPClassUID, UID_EnhancedXRayRadiationDoseSRStorage) == 0) ||
                    (strcmp(SOPClassUID, UID_SpectaclePrescriptionReportStorage) == 0) ||
                    (strcmp(SOPClassUID, UID_MacularGridThicknessAndVolumeReportStorage) == 0) ||
                    (strcmp(SOPClassUID, UID_ImplantationPlanSRDocumentStorage) == 0) ||
-                   (strcmp(SOPClassUID, UID_RadiopharmaceuticalRadiationDoseSRStorage) == 0) ||
-                   (strcmp(SOPClassUID, UID_AcquisitionContextSRStorage) == 0) ||
-                   (strcmp(SOPClassUID, UID_SimplifiedAdultEchoSRStorage) == 0) ||
-                   (strcmp(SOPClassUID, UID_PatientRadiationDoseSRStorage) == 0) ||
-                   (strcmp(SOPClassUID, UID_PerformedImagingAgentAdministrationSRStorage) == 0) ||
-                   (strcmp(SOPClassUID, UID_PlannedImagingAgentAdministrationSRStorage) == 0))
+                   (strcmp(SOPClassUID, UID_RadiopharmaceuticalRadiationDoseSRStorage) == 0))
         {
             OFString string;
             OFString description = "unknown SR";
@@ -2777,11 +2970,11 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::storeRequest (
                 description += ", ";
                 description += string;
             }
-            OFStandard::strlcpy(idxRec.InstanceDescription, description.c_str(), DESCRIPTION_MAX_LENGTH+1);
+            strncpy(idxRec.InstanceDescription, description.c_str(), DESCRIPTION_MAX_LENGTH);
             useDescrTag = OFFalse;
         } else if (strcmp(SOPClassUID, UID_RETIRED_StoredPrintStorage) == 0)
         {
-            OFStandard::strlcpy(idxRec.InstanceDescription, "Stored Print", DESCRIPTION_MAX_LENGTH+1);
+            strcpy(idxRec.InstanceDescription, "Stored Print");
             useDescrTag = OFFalse;
         }
     }
@@ -2803,9 +2996,9 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::storeRequest (
             if (((DcmSequenceOfItems *)stack.top())->card() > 0)
             {
                 if (strlen(idxRec.InstanceDescription) > 0)
-                    OFStandard::strlcat(idxRec.InstanceDescription, " (Signed)", DESCRIPTION_MAX_LENGTH+1);
+                    strcat(idxRec.InstanceDescription, " (Signed)");
                 else
-                    OFStandard::strlcpy(idxRec.InstanceDescription, "Signed Instance", DESCRIPTION_MAX_LENGTH+1);
+                    strcpy(idxRec.InstanceDescription, "Signed Instance");
             }
         }
     }
@@ -2838,7 +3031,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::storeRequest (
       return (QR_EC_IndexDatabaseError) ;
     }
 
-    memset((char *)pStudyDesc, 0, SIZEOF_STUDYDESC);
+    bzero((char *)pStudyDesc, SIZEOF_STUDYDESC);
     DB_GetStudyDesc(pStudyDesc) ;
 
     stat(imageFileName, &stat_buf) ;
@@ -3117,7 +3310,8 @@ DcmQueryRetrieveIndexDatabaseHandle::DcmQueryRetrieveIndexDatabaseHandle(
         /* create index file if it does not already exist */
         FILE* f = fopen(handle_->indexFilename, "ab");
         if (f == NULL) {
-            DCMQRDB_ERROR(handle_->indexFilename << ": " << OFStandard::getLastSystemErrorCode().message());
+            char buf[256];
+            DCMQRDB_ERROR(handle_->indexFilename << ": " << OFStandard::strerror(errno, buf, sizeof(buf)));
             result = QR_EC_IndexDatabaseError;
             return;
         }
@@ -3134,55 +3328,7 @@ DcmQueryRetrieveIndexDatabaseHandle::DcmQueryRetrieveIndexDatabaseHandle(
            result = QR_EC_IndexDatabaseError;
            return;
         }
-        else
-        {
-            result = DB_lock(OFTrue);
-            if ( result.bad() )
-                return;
-
-            // test whether the file contains more than zero bytes
-            if ( DB_lseek( handle_ -> pidx, 0L, SEEK_END ) > 0 )
-            {
-                DB_lseek( handle_ -> pidx, 0L, SEEK_SET );
-                // allocate HEADERSIZE + 1 bytes and fill it with zeros,
-                // ensuring whatever is read is terminated with a NUL byte
-                char header[DBHEADERSIZE+1] = {};
-                // 0 is an invalid version, no matter what
-                unsigned int version = 0;
-                if
-                (
-                    read( handle_ -> pidx, header, DBHEADERSIZE ) != DBHEADERSIZE ||
-                    strncmp( header, DBMAGIC, strlen(DBMAGIC) ) != 0              ||
-                    sscanf( header + strlen(DBMAGIC), "%x", &version ) != 1       ||
-                    version != DBVERSION
-                )
-                {
-                    DB_unlock();
-                    if ( version )
-                        DCMQRDB_ERROR(handle_->indexFilename << ": invalid/unsupported QRDB database version " << version);
-                    else
-                        DCMQRDB_ERROR(handle_->indexFilename << ": unknown/legacy QRDB database file format");
-                    result = QR_EC_IndexDatabaseError;
-                    return;
-                }
-            }
-            else
-            {
-                // write magic word and version number to the buffer
-                // then write it to the file
-                char header[DBHEADERSIZE + 1];
-                sprintf( header, DBMAGIC "%.2X", DBVERSION );
-                if ( write( handle_ -> pidx, header, DBHEADERSIZE ) != DBHEADERSIZE )
-                {
-                    DCMQRDB_ERROR(handle_->indexFilename << ": " << OFStandard::getLastSystemErrorCode().message());
-                    DB_unlock();
-                    result = QR_EC_IndexDatabaseError;
-                    return;
-                }
-            }
-
-            DB_unlock();
-
+        else {
             handle_ -> idxCounter = -1;
             handle_ -> findRequestList = NULL;
             handle_ -> findResponseList = NULL;
@@ -3234,8 +3380,7 @@ DcmQueryRetrieveIndexDatabaseHandle::~DcmQueryRetrieveIndexDatabaseHandle()
 OFCondition DcmQueryRetrieveIndexDatabaseHandle::makeNewStoreFileName(
                 const char      *SOPClassUID,
                 const char      * /* SOPInstanceUID */ ,
-                char            *newImageFileName,
-                size_t          newImageFileNameLen)
+                char            *newImageFileName)
 {
 
     OFString filename;
@@ -3250,7 +3395,7 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::makeNewStoreFileName(
     if (! fnamecreator.makeFilename(seed, handle_->storageArea, prefix, ".dcm", filename))
         return QR_EC_IndexDatabaseError;
 
-    OFStandard::strlcpy(newImageFileName, filename.c_str(), newImageFileNameLen);
+    strcpy(newImageFileName, filename.c_str());
     return EC_Normal;
 }
 
@@ -3271,10 +3416,9 @@ OFCondition DcmQueryRetrieveIndexDatabaseHandle::instanceReviewed(int idx)
       if (result.bad()) return result;
 
       record.hstat = DVIF_objectIsNotNew;
-      DB_lseek(handle_->pidx, OFstatic_cast(long, DBHEADERSIZE + SIZEOF_STUDYDESC + idx * SIZEOF_IDXRECORD), SEEK_SET);
-      if (write(handle_->pidx, OFreinterpret_cast(char *, &record), SIZEOF_IDXRECORD) != SIZEOF_IDXRECORD)
-          result = QR_EC_IndexDatabaseError;
-      DB_lseek(handle_->pidx, OFstatic_cast(long, DBHEADERSIZE), SEEK_SET);
+      DB_lseek(handle_->pidx, OFstatic_cast(long, SIZEOF_STUDYDESC + idx * SIZEOF_IDXRECORD), SEEK_SET);
+      write(handle_->pidx, OFreinterpret_cast(char *, &record), SIZEOF_IDXRECORD);
+      DB_lseek(handle_->pidx, 0L, SEEK_SET);
       DB_unlock();
     }
 

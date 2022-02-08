@@ -1,0 +1,163 @@
+#
+#	Makefile for dcmpstat/apps
+#
+
+
+
+SHELL = /bin/sh
+VPATH = ../include:../../config/include
+srcdir = .
+top_srcdir = ..
+configdir = ../../config
+
+include $(configdir)/Makefile.def
+
+ofstddir = $(top_srcdir)/../ofstd
+ofstdinc = -I$(ofstddir)/include
+ofstdlibdir = -L$(ofstddir)/libsrc
+ofstdlib = -lofstd
+
+oflogdir = $(top_srcdir)/../oflog
+ofloginc = -I$(oflogdir)/include
+ofloglibdir = -L$(oflogdir)/libsrc
+ofloglib = -loflog
+
+dcmdatadir = $(top_srcdir)/../dcmdata
+dcmdatainc = -I$(dcmdatadir)/include
+dcmdatalibdir = -L$(dcmdatadir)/libsrc
+dcmdatalib = -ldcmdata
+
+dcmnetdir = $(top_srcdir)/../dcmnet
+dcmnetinc = -I$(dcmnetdir)/include
+dcmnetlibdir = -L$(dcmnetdir)/libsrc
+dcmnetlib = -ldcmnet
+
+dcmimgledir = $(top_srcdir)/../dcmimgle
+dcmimgleinc = -I$(dcmimgledir)/include
+dcmimglelibdir = -L$(dcmimgledir)/libsrc
+dcmimglelib = -ldcmimgle
+
+dcmimagedir = $(top_srcdir)/../dcmimage
+dcmimageinc = -I$(dcmimagedir)/include
+dcmimagelibdir = -L$(dcmimagedir)/libsrc
+dcmimagelib = -ldcmimage
+
+dcmpstatdir = $(top_srcdir)/../dcmpstat
+dcmpstatinc = -I$(dcmpstatdir)/include
+dcmpstatlibdir = -L$(dcmpstatdir)/libsrc
+dcmpstatlib = -ldcmpstat
+
+dcmqrdbdir = $(top_srcdir)/../dcmqrdb
+dcmqrdbinc = -I$(dcmqrdbdir)/include
+dcmqrdblibdir = -L$(dcmqrdbdir)/libsrc
+dcmqrdblib = -ldcmqrdb
+
+dcmtlsdir = $(top_srcdir)/../dcmtls
+dcmtlsinc = -I$(dcmtlsdir)/include
+dcmtlslibdir = -L$(dcmtlsdir)/libsrc
+dcmtlslib = -ldcmtls
+
+dcmsigndir = $(top_srcdir)/../dcmsign
+dcmsigninc = -I$(dcmsigndir)/include
+dcmsignlibdir = -L$(dcmsigndir)/libsrc
+dcmsignlib = -ldcmdsig
+
+dcmsrdir = $(top_srcdir)/../dcmsr
+dcmsrinc = -I$(dcmsrdir)/include
+dcmsrlibdir = -L$(dcmsrdir)/libsrc
+dcmsrlib = -ldcmsr
+
+ICONVLIBS = -liconv -lcharset
+LOCALINCLUDES = $(dcmpstatinc) $(ofstdinc) $(ofloginc) $(dcmnetinc) $(dcmdatainc) \
+	$(dcmimgleinc) $(dcmqrdbinc) $(dcmtlsinc) $(dcmsigninc) $(dcmsrinc)
+LIBDIRS = -L$(top_srcdir)/libsrc $(dcmpstatlibdir) $(dcmqrdblibdir) $(dcmnetlibdir) \
+	$(dcmtlslibdir) $(dcmsignlibdir) $(dcmsrlibdir) $(dcmdatalibdir) $(ofstdlibdir) \
+	$(ofloglibdir) $(dcmimglelibdir) $(dcmimagelibdir)
+LOCALLIBS = $(dcmpstatlib) $(dcmsignlib) $(dcmsrlib) $(dcmimagelib) $(dcmimglelib) \
+	$(dcmqrdblib) $(dcmnetlib) $(dcmtlslib) $(dcmdatalib) $(ofloglib) $(ofstdlib) \
+	$(TIFFLIBS) $(PNGLIBS) $(XMLLIBS) $(ZLIBLIBS) $(TCPWRAPPERLIBS) $(OPENSSLLIBS) \
+	$(ICONVLIBS)
+DCMMKLUT_LIBS = $(dcmimglelib) $(dcmdatalib) $(ofloglib) $(ofstdlib) $(XMLLIBS) $(ZLIBLIBS) \
+	$(ICONVLIBS)
+DCMMKCRV_LIBS = $(dcmdatalib) $(ofloglib) $(ofstdlib) $(XMLLIBS) $(ZLIBLIBS) $(ICONVLIBS)
+
+objs = dcmpsmk.o dcmp2pgm.o dcmmklut.o dcmmkcrv.o dcmpssnd.o dcmpsrcv.o dcmpsprt.o dcmprscu.o \
+	dcmprscp.o dcmpschk.o
+progs = dcmpsmk dcmp2pgm dcmmklut dcmmkcrv dcmpssnd dcmpsrcv dcmpsprt dcmprscu dcmprscp dcmpschk
+
+
+all: $(progs)
+
+dcmpsmk: dcmpsmk.o
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ dcmpsmk.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+
+dcmp2pgm: dcmp2pgm.o
+ifneq ($(OSX),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) ${libdir}/libxml2.a ${libdir}/libiconv.a -lcharset -lpthread
+else ifneq ($(WSYSROOT),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+else
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) -liconv -lcharset -ltcmalloc_minimal -lpthread
+endif
+
+dcmmklut: dcmmklut.o
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ dcmmklut.o $(DCMMKLUT_LIBS) $(MATHLIBS) $(LIBS)
+
+dcmmkcrv: dcmmkcrv.o
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ dcmmkcrv.o $(DCMMKCRV_LIBS) $(MATHLIBS) $(LIBS)
+
+dcmpssnd: dcmpssnd.o
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ dcmpssnd.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+
+dcmpsrcv: dcmpsrcv.o
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ dcmpsrcv.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+
+dcmpsprt: dcmpsprt.o
+ifneq ($(OSX),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) ${libdir}/libxml2.a ${libdir}/libiconv.a -lcharset -lpthread
+else ifneq ($(WSYSROOT),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+else
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) -liconv -lcharset -ltcmalloc_minimal -lpthread
+endif
+
+dcmprscu: dcmprscu.o
+ifneq ($(OSX),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) ${libdir}/libxml2.a ${libdir}/libiconv.a -lcharset -lpthread
+else ifneq ($(WSYSROOT),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+else
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) -liconv -lcharset -ltcmalloc_minimal -lpthread
+endif
+
+dcmprscp: dcmprscp.o
+ifneq ($(OSX),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) ${libdir}/libxml2.a ${libdir}/libiconv.a -lcharset -lpthread
+else ifneq ($(WSYSROOT),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+else
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) -liconv -lcharset -ltcmalloc_minimal -lpthread
+endif
+
+dcmpschk: dcmpschk.o
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ dcmpschk.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+
+
+install: all
+	$(configdir)/mkinstalldirs $(DESTDIR)$(bindir)
+	for prog in $(progs); do \
+		$(INSTALL_PROGRAM) $$prog$(BINEXT) $(DESTDIR)$(bindir) && $(STRIP) $(DESTDIR)$(bindir)/$$prog$(BINEXT) ;\
+	done
+
+
+clean:
+	rm -f $(objs) $(progs) $(TRASH)
+
+distclean:
+	rm -f $(objs) $(progs) $(DISTTRASH)
+
+
+dependencies:
+	$(CXX) -MM $(defines) $(includes) $(CPPFLAGS) $(CXXFLAGS) *.cc  > $(DEP)
+
+include $(DEP)

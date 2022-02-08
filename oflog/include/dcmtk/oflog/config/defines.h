@@ -350,13 +350,12 @@
 #endif
 
 /* Define to 1 if you have Linux style syscall(SYS_gettid). */
-#if defined(HAVE_SYS_SYSCALL_H) && defined(HAVE_SYS_GETTID)
+#ifdef HAVE_SYS_SYSCALL_H
 #define DCMTK_LOG4CPLUS_HAVE_GETTID
 #endif
 
 /* Define when iconv() is available. */
-#if DCMTK_ENABLE_CHARSET_CONVERSION == DCMTK_CHARSET_CONVERSION_ICONV ||\
- DCMTK_ENABLE_CHARSET_CONVERSION == DCMTK_CHARSET_CONVERSION_STDLIBC_ICONV
+#ifdef WITH_LIBICONV
 #define DCMTK_LOG4CPLUS_WITH_ICONV
 #define DCMTK_LOG4CPLUS_HAVE_ICONV_H
 #endif

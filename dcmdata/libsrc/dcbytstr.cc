@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,10 +24,15 @@
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofstring.h"
 #include "dcmtk/ofstd/ofstd.h"
-#include "dcmtk/dcmdata/dcjson.h"
 #include "dcmtk/dcmdata/dcbytstr.h"
 #include "dcmtk/dcmdata/dcvr.h"
-#include "dcmtk/dcmdata/dcmatch.h"
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_NEW
+#include "dcmtk/ofstd/ofstdinc.h"
+
 
 // global flags
 
@@ -76,16 +81,6 @@ OFCondition getStringPart(OFString &result,
 
 // ********************************
 
-DcmByteString::DcmByteString(const DcmTag &tag)
-  : DcmElement(tag, 0),
-    paddingChar(' '),
-    maxLength(DCM_UndefinedLength),
-    realLength(0),
-    fStringMode(DCM_UnknownString),
-    nonSignificantChars()
-{
-}
-
 
 DcmByteString::DcmByteString(const DcmTag &tag,
                              const Uint32 len)
@@ -132,56 +127,6 @@ DcmByteString &DcmByteString::operator=(const DcmByteString &obj)
 }
 
 
-int DcmByteString::compare(const DcmElement& rhs) const
-{
-    int result = DcmElement::compare(rhs);
-    if (result != 0)
-    {
-        return result;
-    }
-
-    /* cast away constness (dcmdata is not const correct...) */
-    DcmByteString* myThis = NULL;
-    DcmByteString* myRhs = NULL;
-    myThis = OFconst_cast(DcmByteString*, this);
-    myRhs = OFstatic_cast(DcmByteString*, OFconst_cast(DcmElement*, &rhs));
-
-    /* compare number of values */
-    unsigned long rhsNumValues = myRhs->getNumberOfValues();
-    unsigned long thisNumValues = myThis->getNumberOfValues();
-    if (thisNumValues < rhsNumValues)
-    {
-        return -1;
-    }
-    else if (thisNumValues > rhsNumValues)
-    {
-        return 1;
-    }
-
-    /* iterate over all components and test equality */
-    for (unsigned long count = 0; count < thisNumValues; count++)
-    {
-        OFString val;
-        if (myThis->getOFString(val, count).good())
-        {
-            OFString rhsVal;
-            if (myRhs->getOFString(rhsVal, count).good())
-            {
-                result = val.compare(rhsVal);
-                if (result != 0)
-                {
-                    return result;
-                }
-            }
-        }
-    }
-    /* all values equal */
-    return 0;
-}
-
-
-
-
 OFCondition DcmByteString::copyFrom(const DcmObject& rhs)
 {
     if (this != &rhs)
@@ -211,13 +156,6 @@ unsigned long DcmByteString::getVM()
     getString(str, len);
     /* and determine the VM */
     return DcmElement::determineVM(str, len);
-}
-
-
-unsigned long DcmByteString::getNumberOfValues()
-{
-    /* same as value multiplicity unless overwritten in a derived class */
-    return getVM();
 }
 
 
@@ -468,91 +406,6 @@ OFCondition DcmByteString::putString(const char *stringVal,
 }
 
 
-OFCondition DcmByteString::putOFStringAtPos(const OFString& stringVal,
-                                            const unsigned long pos)
-{
-    OFCondition result;
-    // Get old value
-    OFString str;
-    result = getOFStringArray( str );
-    if (result.good())
-    {
-        size_t currentVM = getNumberOfValues();
-        // Trivial case: No values are set and new value should go to first position
-        if ( (currentVM == 0) && (pos == 0))
-            return putOFStringArray(stringVal);
-
-        // 1st case: Insert at the end
-        // If we insert at a position that does not yet exist, append missing number of components by
-        // adding the corresponding number of backspace chars, append new float value and return.
-        size_t futureVM = pos + 1;
-        if (futureVM > currentVM)
-        {
-            str = str.append(currentVM == 0 ? futureVM - currentVM - 1 : futureVM - currentVM, '\\');
-            str = str.append(stringVal);
-            return putOFStringArray(str);
-        }
-
-        // 2nd case: New value should be at position 0
-        size_t rightPos = 0;
-        if (pos == 0)
-        {
-            // First value is empty: Insert new value
-            if (str[0] == '\\')
-            {
-                str = str.insert(0, stringVal);
-            }
-            // First value is set: Replace old value with new value
-            else
-            {
-                rightPos = str.find_first_of('\\', 0);
-                str = str.replace(0, rightPos, stringVal);
-            }
-            return putOFStringArray(str);
-        }
-
-        // 3rd case: New value should be inserted somewhere in the middle
-        size_t leftPos = 0;
-        size_t vmPos = 0;
-        // First, find the correct position, and then insert / replace new value
-        do
-        {
-            // Step from value to value by looking for delimiters.
-            // Special handling first search (start looking at position 0 instead of 1)
-            if (vmPos == 0) leftPos = str.find('\\', 0);
-            else leftPos = str.find('\\', leftPos + 1 );
-            // leftPos = str.find('\\', leftPos == 0 ? 0 : leftPos +1);
-            if (leftPos != OFString_npos)
-            {
-                vmPos++;
-            }
-        }
-        while ( (leftPos != OFString_npos) && (vmPos != pos) );
-        rightPos = str.find_first_of('\\', leftPos+1);
-        if (rightPos == OFString_npos) rightPos = str.length();
-
-        // If we do not have an old value of size 1 or we have an empty value
-        if (rightPos - leftPos == 1)
-        {
-            // Empty value
-            if (str.at(leftPos) == '\\')
-                str = str.insert(rightPos, stringVal);
-            // Old value (length 1)
-            else
-                str = str.replace(leftPos, 1, stringVal);
-        }
-        // Otherwise replace existing old value (length > 1)
-        else
-        {
-            str = str.replace(leftPos+1, rightPos - leftPos, stringVal);
-        }
-        // Finally re-insert all values include new value
-        result = putOFStringArray( str );
-    }
-    return result;
-}
-
-
 // ********************************
 
 
@@ -645,15 +498,7 @@ Uint8 *DcmByteString::newValueField()
         // back to the caller.
         value = new (std::nothrow) Uint8[lengthField + 2];
 #else
-        /* make sure that the pointer is set to NULL in case of error */
-        try
-        {
-            value = new Uint8[lengthField + 2];
-        }
-        catch (STD_NAMESPACE bad_alloc const &)
-        {
-            value = NULL;
-        }
+        value = new Uint8[lengthField + 2];
 #endif
 
         /* terminate string after real length */
@@ -674,15 +519,7 @@ Uint8 *DcmByteString::newValueField()
         // back to the caller.
         value = new (std::nothrow) Uint8[lengthField + 1];
 #else
-        /* make sure that the pointer is set to NULL in case of error */
-        try
-        {
-            value = new Uint8[lengthField + 1];
-        }
-        catch (STD_NAMESPACE bad_alloc const &)
-        {
-            value = NULL;
-        }
+        value = new Uint8[lengthField + 1];
 #endif
     }
     /* make sure that the string is properly terminated by a 0 byte */
@@ -730,7 +567,6 @@ OFCondition DcmByteString::verify(const OFBool autocorrect)
         /* check whether there is anything to verify at all */
         if (maxLength != DCM_UndefinedLength)
         {
-            const unsigned long vm = getVM();
             /* TODO: is it really a good idea to create a copy of the string? */
             OFString value(str, len);
             size_t posStart = 0;
@@ -740,7 +576,7 @@ OFCondition DcmByteString::verify(const OFBool autocorrect)
             {
                 ++vmNum;
                 /* search for next component separator */
-                size_t posEnd = (vm > 1) ? value.find('\\', posStart) : OFString_npos;
+                size_t posEnd = value.find('\\', posStart);
                 const size_t fieldLen = (posEnd == OFString_npos) ? value.length() - posStart : posEnd - posStart;
                 /* check size limit for each string component */
                 if (fieldLen > maxLength)
@@ -783,7 +619,6 @@ OFCondition DcmByteString::verify(const OFBool autocorrect)
 
 OFBool DcmByteString::containsExtendedCharacters(const OFBool checkAllStrings)
 {
-    OFBool result = OFFalse;
     /* only check if parameter is true since derived VRs are not affected
        by the attribute SpecificCharacterSet (0008,0005) */
     if (checkAllStrings)
@@ -791,10 +626,18 @@ OFBool DcmByteString::containsExtendedCharacters(const OFBool checkAllStrings)
         char *str = NULL;
         Uint32 len = 0;
         /* determine length in order to support possibly embedded NULL bytes */
-        if (getString(str, len).good())
-            result = containsExtendedCharacters(str, len);
+        if (getString(str, len).good() && (str != NULL))
+        {
+            const char *p = str;
+            for (Uint32 i = 0; i < len; i++)
+            {
+                /* check for 8 bit characters */
+                if (OFstatic_cast(unsigned char, *p++) > 127)
+                    return OFTrue;
+            }
+        }
     }
-    return result;
+    return OFFalse;
 }
 
 
@@ -887,25 +730,6 @@ void normalizeString(OFString &string,
 // ********************************
 
 
-OFBool DcmByteString::containsExtendedCharacters(const char *stringVal,
-                                                 const size_t stringLen)
-{
-    if (stringVal != NULL)
-    {
-        for (size_t i = stringLen; i != 0; --i)
-        {
-            /* check for 8 bit characters */
-            if (OFstatic_cast(unsigned char, *stringVal++) > 127)
-                return OFTrue;
-        }
-    }
-    return OFFalse;
-}
-
-
-// ********************************
-
-
 OFCondition DcmByteString::checkStringValue(const OFString &value,
                                             const OFString &vm,
                                             const OFString &vr,
@@ -925,21 +749,12 @@ OFCondition DcmByteString::checkStringValue(const OFString &value,
                 result = EC_MaximumLengthViolated;
             else if (dcmEnableVRCheckerForStringValues.get())
             {
-                /* check for non-ASCII characters (if default character set used) */
-                if (charset.empty() || (charset == "ISO_IR 6"))
+                /* currently, the VR checker only supports ASCII and Latin-1 */
+                if (charset.empty() || (charset == "ISO_IR 6") || (charset == "ISO_IR 100"))
                 {
-                    if (containsExtendedCharacters(value.c_str(), value.length()))
-                        result = EC_InvalidCharacter;
-                }
-                if (result.good())
-                {
-                    /* currently, the VR checker only supports ASCII and Latin-1 */
-                    if (charset.empty() || (charset == "ISO_IR 6") || (charset == "ISO_IR 100"))
-                    {
-                        /* check value representation (VR) */
-                        if (DcmElement::scanValue(value, vr) != vrID)
-                            result = EC_ValueRepresentationViolated;
-                    }
+                    /* check value representation */
+                    if (DcmElement::scanValue(value, vr) != vrID)
+                        result = EC_ValueRepresentationViolated;
                 }
             }
         } else {
@@ -960,19 +775,10 @@ OFCondition DcmByteString::checkStringValue(const OFString &value,
                 }
                 else if (dcmEnableVRCheckerForStringValues.get())
                 {
-                    /* check for non-ASCII characters (if default character set used) */
-                    if (charset.empty() || (charset == "ISO_IR 6"))
-                    {
-                        if (containsExtendedCharacters(value.c_str() + posStart, length))
-                        {
-                            result = EC_InvalidCharacter;
-                            break;
-                        }
-                    }
                     /* currently, the VR checker only supports ASCII and Latin-1 */
                     if (charset.empty() || (charset == "ISO_IR 6") || (charset == "ISO_IR 100"))
                     {
-                        /* check value representation (VR) */
+                        /* check value representation */
                         if (DcmElement::scanValue(value, vr, posStart, length) != vrID)
                         {
                             result = EC_ValueRepresentationViolated;
@@ -984,74 +790,10 @@ OFCondition DcmByteString::checkStringValue(const OFString &value,
             }
             if (result.good())
             {
-                /* check value multiplicity (VM) */
+                /* check value multiplicity */
                 result = DcmElement::checkVM(vmNum, vm);
             }
         }
     }
     return result;
-}
-
-
-// ********************************
-
-
-OFCondition DcmByteString::writeJson(STD_NAMESPACE ostream &out,
-                                     DcmJsonFormat &format)
-{
-    /* always write JSON Opener */
-    DcmElement::writeJsonOpener(out, format);
-    /* write element value (if non-empty) */
-    if (!isEmpty())
-    {
-        OFString value;
-        OFCondition status = getOFString(value, 0L);
-        if (status.bad())
-            return status;
-        format.printValuePrefix(out);
-        DcmJsonFormat::printValueString(out, value);
-        const unsigned long vm = getVM();
-        for (unsigned long valNo = 1; valNo < vm; ++valNo)
-        {
-            status = getOFString(value, valNo);
-            if (status.bad())
-                return status;
-            format.printNextArrayElementPrefix(out);
-            DcmJsonFormat::printValueString(out, value);
-        }
-        format.printValueSuffix(out);
-    }
-    /* write JSON Closer  */
-    DcmElement::writeJsonCloser(out, format);
-    /* always report success */
-    return EC_Normal;
-}
-
-
-OFBool DcmByteString::matches(const DcmElement& candidate,
-                              const OFBool enableWildCardMatching) const
-{
-  if (ident() == candidate.ident())
-  {
-    // some const casts to call the getter functions, I do not modify the values, I promise!
-    DcmByteString& key = OFconst_cast(DcmByteString&,*this);
-    DcmElement& can = OFconst_cast(DcmElement&,candidate);
-    OFString a, b;
-    for (unsigned long ui = 0; ui < key.getVM(); ++ui)
-      for (unsigned long uj = 0; uj < can.getVM(); ++uj)
-        if( key.getOFString( a, ui, OFTrue ).good() && can.getOFString( b, uj, OFTrue ).good() && matches( a, b, enableWildCardMatching ) )
-          return OFTrue;
-    return key.getVM() == 0;
-  }
-  return OFFalse;
-}
-
-
-OFBool DcmByteString::matches(const OFString& key,
-                              const OFString& candidate,
-                              const OFBool enableWildCardMatching) const
-{
-  OFstatic_cast(void,enableWildCardMatching);
-  // Universal Matching || Single Value Matching
-  return key.empty() || key == candidate;
 }

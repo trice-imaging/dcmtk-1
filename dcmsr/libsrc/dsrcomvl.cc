@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2021, OFFIS e.V.
+ *  Copyright (C) 2000-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRCompositeReferenceValue
@@ -26,10 +26,6 @@
 #include "dcmtk/dcmsr/dsrtypes.h"
 #include "dcmtk/dcmsr/dsrcomvl.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
-
-#include "dcmtk/dcmdata/dcdeftag.h"
-#include "dcmtk/dcmdata/dcuid.h"
-#include "dcmtk/dcmdata/dcvrui.h"
 
 
 DSRCompositeReferenceValue::DSRCompositeReferenceValue()
@@ -72,20 +68,6 @@ DSRCompositeReferenceValue &DSRCompositeReferenceValue::operator=(const DSRCompo
 }
 
 
-OFBool DSRCompositeReferenceValue::operator==(const DSRCompositeReferenceValue &referenceValue) const
-{
-    return (SOPClassUID == referenceValue.SOPClassUID) &&
-           (SOPInstanceUID == referenceValue.SOPInstanceUID);
-}
-
-
-OFBool DSRCompositeReferenceValue::operator!=(const DSRCompositeReferenceValue &referenceValue) const
-{
-    return (SOPClassUID != referenceValue.SOPClassUID) ||
-           (SOPInstanceUID != referenceValue.SOPInstanceUID);
-}
-
-
 void DSRCompositeReferenceValue::clear()
 {
     SOPClassUID.clear();
@@ -102,12 +84,6 @@ OFBool DSRCompositeReferenceValue::isValid() const
 OFBool DSRCompositeReferenceValue::isEmpty() const
 {
     return SOPClassUID.empty() && SOPInstanceUID.empty();
-}
-
-
-OFBool DSRCompositeReferenceValue::isComplete() const
-{
-    return !SOPClassUID.empty() && !SOPInstanceUID.empty();
 }
 
 
@@ -134,8 +110,7 @@ OFCondition DSRCompositeReferenceValue::print(STD_NAMESPACE ostream &stream,
 
 
 OFCondition DSRCompositeReferenceValue::readXML(const DSRXMLDocument &doc,
-                                                DSRXMLCursor cursor,
-                                                const size_t /*flags*/)
+                                                DSRXMLCursor cursor)
 {
     OFCondition result = SR_EC_CorruptedXMLStructure;
     /* go one node level down */
@@ -166,15 +141,13 @@ OFCondition DSRCompositeReferenceValue::writeXML(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRCompositeReferenceValue::readItem(DcmItem &dataset,
-                                                 const size_t flags)
+OFCondition DSRCompositeReferenceValue::readItem(DcmItem &dataset)
 {
-    const OFBool acceptViolation = (flags & DSRTypes::RF_acceptInvalidContentItemValue) > 0;
     /* read ReferencedSOPClassUID */
-    OFCondition result = DSRTypes::getAndCheckStringValueFromDataset(dataset, DCM_ReferencedSOPClassUID, SOPClassUID, "1", "1", "ReferencedSOPSequence", acceptViolation);
+    OFCondition result = DSRTypes::getAndCheckStringValueFromDataset(dataset, DCM_ReferencedSOPClassUID, SOPClassUID, "1", "1", "ReferencedSOPSequence");
     /* read ReferencedSOPInstanceUID */
     if (result.good())
-        result = DSRTypes::getAndCheckStringValueFromDataset(dataset, DCM_ReferencedSOPInstanceUID, SOPInstanceUID, "1", "1", "ReferencedSOPSequence", acceptViolation);
+        result = DSRTypes::getAndCheckStringValueFromDataset(dataset, DCM_ReferencedSOPInstanceUID, SOPInstanceUID, "1", "1", "ReferencedSOPSequence");
     return result;
 }
 
@@ -192,8 +165,7 @@ OFCondition DSRCompositeReferenceValue::writeItem(DcmItem &dataset) const
 
 OFCondition DSRCompositeReferenceValue::readSequence(DcmItem &dataset,
                                                      const DcmTagKey &tagKey,
-                                                     const OFString &type,
-                                                     const size_t flags)
+                                                     const OFString &type)
 {
     /* read specified sequence with its item */
     DcmSequenceOfItems *dseq = NULL;
@@ -204,7 +176,7 @@ OFCondition DSRCompositeReferenceValue::readSequence(DcmItem &dataset,
         /* read first item */
         DcmItem *ditem = dseq->getItem(0);
         if (ditem != NULL)
-            result = readItem(*ditem, flags);
+            result = readItem(*ditem);
         else
             result = SR_EC_InvalidDocumentTree;
     }
@@ -256,13 +228,6 @@ OFCondition DSRCompositeReferenceValue::renderHTML(STD_NAMESPACE ostream &docStr
 }
 
 
-const OFString DSRCompositeReferenceValue::getSOPClassName(const OFString &defaultName) const
-{
-    /* lookup name associated with the SOP class UID */
-    return SOPClassUID.empty() ? "" : dcmFindNameOfUID(SOPClassUID.c_str(), defaultName.c_str());
-}
-
-
 OFCondition DSRCompositeReferenceValue::getValue(DSRCompositeReferenceValue &referenceValue) const
 {
     referenceValue = *this;
@@ -301,16 +266,6 @@ OFCondition DSRCompositeReferenceValue::setReference(const OFString &sopClassUID
 }
 
 
-OFCondition DSRCompositeReferenceValue::setReference(DcmItem &dataset,
-                                                     const OFBool check)
-{
-    OFCondition result = setSOPClassUID(dataset, DCM_SOPClassUID, 0 /*pos*/, check);
-    if (result.good())
-        result = setSOPInstanceUID(dataset, DCM_SOPInstanceUID, 0 /*pos*/, check);
-    return result;
-}
-
-
 OFCondition DSRCompositeReferenceValue::setSOPClassUID(const OFString &sopClassUID,
                                                        const OFBool check)
 {
@@ -325,39 +280,6 @@ OFCondition DSRCompositeReferenceValue::setSOPClassUID(const OFString &sopClassU
     }
     if (result.good())
         SOPClassUID = sopClassUID;
-    return result;
-}
-
-
-OFCondition DSRCompositeReferenceValue::setSOPClassUID(const DcmElement &delem,
-                                                       const unsigned long pos,
-                                                       const OFBool check)
-{
-    OFString sopClassUID;
-    /* first, get the value from the element (need to cast away "const") */
-    OFCondition result = OFconst_cast(DcmElement &, delem).getOFString(sopClassUID, pos);
-    if (result.good())
-    {
-        /* then, check and set the value */
-        result = setSOPClassUID(sopClassUID, check);
-    }
-    return result;
-}
-
-
-OFCondition DSRCompositeReferenceValue::setSOPClassUID(DcmItem &dataset,
-                                                       const DcmTagKey &tagKey,
-                                                       const unsigned long pos,
-                                                       const OFBool check)
-{
-    OFString sopClassUID;
-    /* first, get the element value from the dataset */
-    OFCondition result = DSRTypes::getStringValueFromDataset(dataset, tagKey, sopClassUID, pos);
-    if (result.good())
-    {
-        /* then, check and set the value */
-        result = setSOPClassUID(sopClassUID, check);
-    }
     return result;
 }
 
@@ -380,41 +302,7 @@ OFCondition DSRCompositeReferenceValue::setSOPInstanceUID(const OFString &sopIns
 }
 
 
-OFCondition DSRCompositeReferenceValue::setSOPInstanceUID(const DcmElement &delem,
-                                                          const unsigned long pos,
-                                                          const OFBool check)
-{
-    OFString sopInstanceUID;
-    /* first, get the value from the element (need to cast away "const") */
-    OFCondition result = OFconst_cast(DcmElement &, delem).getOFString(sopInstanceUID, pos);
-    if (result.good())
-    {
-        /* then, check and set the value */
-        result = setSOPInstanceUID(sopInstanceUID, check);
-    }
-    return result;
-}
-
-
-OFCondition DSRCompositeReferenceValue::setSOPInstanceUID(DcmItem &dataset,
-                                                          const DcmTagKey &tagKey,
-                                                          const unsigned long pos,
-                                                          const OFBool check)
-{
-    OFString sopInstanceUID;
-    /* first, get the element value from the dataset */
-    OFCondition result = DSRTypes::getStringValueFromDataset(dataset, tagKey, sopInstanceUID, pos);
-    if (result.good())
-    {
-        /* then, check and set the value */
-        result = setSOPInstanceUID(sopInstanceUID, check);
-    }
-    return result;
-}
-
-
-OFCondition DSRCompositeReferenceValue::checkSOPClassUID(const OFString &sopClassUID,
-                                                         const OFBool /*reportWarnings*/) const
+OFCondition DSRCompositeReferenceValue::checkSOPClassUID(const OFString &sopClassUID) const
 {
     OFCondition result = sopClassUID.empty() ? SR_EC_InvalidValue : EC_Normal;
     if (result.good())
@@ -423,8 +311,7 @@ OFCondition DSRCompositeReferenceValue::checkSOPClassUID(const OFString &sopClas
 }
 
 
-OFCondition DSRCompositeReferenceValue::checkSOPInstanceUID(const OFString &sopInstanceUID,
-                                                            const OFBool /*reportWarnings*/) const
+OFCondition DSRCompositeReferenceValue::checkSOPInstanceUID(const OFString &sopInstanceUID) const
 {
     OFCondition result = sopInstanceUID.empty() ? SR_EC_InvalidValue : EC_Normal;
     if (result.good())
@@ -433,10 +320,10 @@ OFCondition DSRCompositeReferenceValue::checkSOPInstanceUID(const OFString &sopI
 }
 
 
-OFCondition DSRCompositeReferenceValue::checkCurrentValue(const OFBool reportWarnings) const
+OFCondition DSRCompositeReferenceValue::checkCurrentValue() const
 {
-    OFCondition result = checkSOPClassUID(SOPClassUID, reportWarnings);
+    OFCondition result = checkSOPClassUID(SOPClassUID);
     if (result.good())
-        result = checkSOPInstanceUID(SOPInstanceUID, reportWarnings);
+        result = checkSOPInstanceUID(SOPInstanceUID);
     return result;
 }

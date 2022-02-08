@@ -1,6 +1,7 @@
+#define TRICE1
 /*
  *
- *  Copyright (C) 2009-2019, OFFIS e.V.
+ *  Copyright (C) 2009-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,6 +28,9 @@
 
 #include "dcmtk/oflog/logger.h"
 #include "dcmtk/oflog/logmacro.h"
+#include "dcmtk/ofstd/oftypes.h"
+#include "dcmtk/ofstd/ofaptr.h"
+#include "dcmtk/ofstd/ofconapp.h"
 
 #define OFLOG_TRACE(logger, msg) DCMTK_LOG4CPLUS_TRACE(logger, msg)
 #define OFLOG_DEBUG(logger, msg) DCMTK_LOG4CPLUS_DEBUG(logger, msg)
@@ -34,9 +38,6 @@
 #define OFLOG_WARN(logger, msg)  DCMTK_LOG4CPLUS_WARN(logger, msg)
 #define OFLOG_ERROR(logger, msg) DCMTK_LOG4CPLUS_ERROR(logger, msg)
 #define OFLOG_FATAL(logger, msg) DCMTK_LOG4CPLUS_FATAL(logger, msg)
-
-class OFCommandLine;
-class OFConsoleApplication;
 
 /** simple wrapper around the "low-level" Logger object to make it easier to
  *  switch to a different system
@@ -63,7 +64,7 @@ public:
         ERROR_LOG_LEVEL = dcmtk::log4cplus::ERROR_LOG_LEVEL,
         /// fatal: very severe error events that will presumably lead the application to abort
         FATAL_LOG_LEVEL = dcmtk::log4cplus::FATAL_LOG_LEVEL,
-        /// internal: turn off logging completely
+        /// internal: turn off logging competely
         OFF_LOG_LEVEL = dcmtk::log4cplus::OFF_LOG_LEVEL
     };
 
@@ -95,26 +96,31 @@ class DCMTK_LOG4CPLUS_EXPORT OFLog
 
  public:
 
-    /** create a new logger object.
-     *  Logger objects have a reference counting copy-constructor, so returning by-value is cheap.
+    /** create a new Logger object
      *  @param name the name of the logger
-     *  @return requested logger object
      */
     static OFLogger getLogger(const char *name);
 
     /** set up the logging and enable it
      *  @param level the verbosity that you want
      */
+#ifndef TRICE1
     static void configure(OFLogger::LogLevel level = OFLogger::WARN_LOG_LEVEL);
+#else
+    static void configure(OFLogger::LogLevel level = OFLogger::ERROR_LOG_LEVEL);
+#endif
 
     /** handle the command line options used for logging
      *  @param cmd the command line whose options are handled
      *  @param app the console application which is used for console output and error checking
-     *  @param defaultLevel default log level that is used if not specified on the command line
      */
     static void configureFromCommandLine(OFCommandLine &cmd,
                                          OFConsoleApplication &app,
+#ifndef TRICE1
                                          OFLogger::LogLevel defaultLevel = OFLogger::WARN_LOG_LEVEL);
+#else
+                                         OFLogger::LogLevel defaultLevel = OFLogger::ERROR_LOG_LEVEL);
+#endif
 
     /** add the command line options which configureFromCommandLine() checks for
      *  @param cmd the command line to which these options should be added
@@ -131,7 +137,7 @@ class DCMTK_LOG4CPLUS_EXPORT OFLog
  private:
 
     /// If we loaded a config file in configureFromCommandLine(), this is it
-    static OFunique_ptr<dcmtk::log4cplus::helpers::Properties> configProperties_;
+    static OFauto_ptr<dcmtk::log4cplus::helpers::Properties> configProperties_;
 };
 
 #endif

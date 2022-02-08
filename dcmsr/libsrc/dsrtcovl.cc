@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2019, OFFIS e.V.
+ *  Copyright (C) 2000-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRTemporalCoordinatesValue
@@ -25,8 +25,6 @@
 
 #include "dcmtk/dcmsr/dsrtcovl.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
-
-#include "dcmtk/dcmdata/dcdeftag.h"
 
 
 DSRTemporalCoordinatesValue::DSRTemporalCoordinatesValue()
@@ -68,24 +66,6 @@ DSRTemporalCoordinatesValue &DSRTemporalCoordinatesValue::operator=(const DSRTem
     TimeOffsetList = coordinatesValue.TimeOffsetList;
     DateTimeList = coordinatesValue.DateTimeList;
     return *this;
-}
-
-
-OFBool DSRTemporalCoordinatesValue::operator==(const DSRTemporalCoordinatesValue &coordinatesValue) const
-{
-    return (TemporalRangeType == coordinatesValue.TemporalRangeType) &&
-           (SamplePositionList == coordinatesValue.SamplePositionList) &&
-           (TimeOffsetList == coordinatesValue.TimeOffsetList) &&
-           (DateTimeList == coordinatesValue.DateTimeList);
-}
-
-
-OFBool DSRTemporalCoordinatesValue::operator!=(const DSRTemporalCoordinatesValue &coordinatesValue) const
-{
-    return (TemporalRangeType != coordinatesValue.TemporalRangeType) ||
-           (SamplePositionList != coordinatesValue.SamplePositionList) ||
-           (TimeOffsetList != coordinatesValue.TimeOffsetList) ||
-           (DateTimeList != coordinatesValue.DateTimeList);
 }
 
 
@@ -131,14 +111,13 @@ OFCondition DSRTemporalCoordinatesValue::print(STD_NAMESPACE ostream &stream,
 
 
 OFCondition DSRTemporalCoordinatesValue::readXML(const DSRXMLDocument &doc,
-                                                 DSRXMLCursor cursor,
-                                                 const size_t /*flags*/)
+                                                 DSRXMLCursor cursor)
 {
     OFCondition result = SR_EC_CorruptedXMLStructure;
     if (cursor.valid())
     {
         /* graphic data (required) */
-        cursor = doc.getNamedChildNode(cursor, "data");
+        cursor = doc.getNamedNode(cursor.getChild(), "data");
         if (cursor.valid())
         {
             OFString tmpString, typeString;
@@ -197,8 +176,7 @@ OFCondition DSRTemporalCoordinatesValue::writeXML(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRTemporalCoordinatesValue::read(DcmItem &dataset,
-                                              const size_t flags)
+OFCondition DSRTemporalCoordinatesValue::read(DcmItem &dataset)
 {
     /* read TemporalRangeType */
     OFString tmpString;
@@ -210,9 +188,9 @@ OFCondition DSRTemporalCoordinatesValue::read(DcmItem &dataset,
         if (TemporalRangeType == DSRTypes::TRT_invalid)
             DSRTypes::printUnknownValueWarningMessage("TemporalRangeType", tmpString.c_str());
         /* first read data (all three lists) */
-        SamplePositionList.read(dataset, flags);
-        TimeOffsetList.read(dataset, flags);
-        DateTimeList.read(dataset, flags);
+        SamplePositionList.read(dataset);
+        TimeOffsetList.read(dataset);
+        DateTimeList.read(dataset);
         /* then check data and report warnings if any */
         checkData(TemporalRangeType, SamplePositionList, TimeOffsetList, DateTimeList, OFTrue /*reportWarnings*/);
     }
@@ -356,21 +334,21 @@ OFCondition DSRTemporalCoordinatesValue::checkData(const DSRTypes::E_TemporalRan
 {
     OFCondition result = EC_Normal;
     if (temporalRangeType == DSRTypes::TRT_invalid)
-        REPORT_WARNING("Invalid Temporal Range Type for TCOORD content item")
+        REPORT_WARNING("Invalid TemporalRangeType for TCOORD content item")
     const OFBool list1 = !samplePositionList.isEmpty();
     const OFBool list2 = !timeOffsetList.isEmpty();
     const OFBool list3 = !dateTimeList.isEmpty();
     if (list1 && list2 && list3)
-        REPORT_WARNING("Referenced Sample Positions/Time Offsets/DateTime present in TCOORD content item")
+        REPORT_WARNING("ReferencedSamplePositions/TimeOffsets/DateTime present in TCOORD content item")
     else if (list1 && list2)
-        REPORT_WARNING("Referenced Sample Positions/Time Offsets present in TCOORD content item")
+        REPORT_WARNING("ReferencedSamplePositions/TimeOffsets present in TCOORD content item")
     else if (list1 && list3)
-        REPORT_WARNING("Referenced Sample Positions/DateTime present in TCOORD content item")
+        REPORT_WARNING("ReferencedSamplePositions/DateTime present in TCOORD content item")
     else if (list2 && list3)
-        REPORT_WARNING("Referenced Time Offsets/DateTime present in TCOORD content item")
+        REPORT_WARNING("ReferencedTimeOffsets/DateTime present in TCOORD content item")
     else if (!list1 && !list2 && !list3)
     {
-        REPORT_WARNING("Referenced Sample Positions/Time Offsets/DateTime empty in TCOORD content item")
+        REPORT_WARNING("ReferencedSamplePositions/TimeOffsets/DateTime empty in TCOORD content item")
         /* invalid: all lists are empty (type 1C condition violated) */
         result = SR_EC_InvalidValue;
     }

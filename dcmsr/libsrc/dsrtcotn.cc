@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2018, OFFIS e.V.
+ *  Copyright (C) 2000-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRTCoordTreeNode
@@ -29,53 +29,14 @@
 
 
 DSRTCoordTreeNode::DSRTCoordTreeNode(const E_RelationshipType relationshipType)
-  : DSRDocumentTreeNode(relationshipType, VT_TCoord),
-    DSRTemporalCoordinatesValue()
-{
-}
-
-
-DSRTCoordTreeNode::DSRTCoordTreeNode(const DSRTCoordTreeNode &node)
-  : DSRDocumentTreeNode(node),
-    DSRTemporalCoordinatesValue(node)
+ : DSRDocumentTreeNode(relationshipType, VT_TCoord),
+   DSRTemporalCoordinatesValue()
 {
 }
 
 
 DSRTCoordTreeNode::~DSRTCoordTreeNode()
 {
-}
-
-
-OFBool DSRTCoordTreeNode::operator==(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator==(node);
-    if (result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRTemporalCoordinatesValue::operator==(OFstatic_cast(const DSRTCoordTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-OFBool DSRTCoordTreeNode::operator!=(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator!=(node);
-    if (!result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRTemporalCoordinatesValue::operator!=(OFstatic_cast(const DSRTCoordTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-DSRTCoordTreeNode *DSRTCoordTreeNode::clone() const
-{
-    return new DSRTCoordTreeNode(*this);
 }
 
 
@@ -88,13 +49,7 @@ void DSRTCoordTreeNode::clear()
 
 OFBool DSRTCoordTreeNode::isValid() const
 {
-    return DSRDocumentTreeNode::isValid() && hasValidValue();
-}
-
-
-OFBool DSRTCoordTreeNode::hasValidValue() const
-{
-    return DSRTemporalCoordinatesValue::isValid();
+    return DSRDocumentTreeNode::isValid() && DSRTemporalCoordinatesValue::isValid();
 }
 
 
@@ -133,11 +88,10 @@ OFCondition DSRTCoordTreeNode::writeXML(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRTCoordTreeNode::readContentItem(DcmItem &dataset,
-                                               const size_t flags)
+OFCondition DSRTCoordTreeNode::readContentItem(DcmItem &dataset)
 {
     /* read TemporalCoordinates */
-    return DSRTemporalCoordinatesValue::read(dataset, flags);
+    return DSRTemporalCoordinatesValue::read(dataset);
 }
 
 
@@ -149,8 +103,7 @@ OFCondition DSRTCoordTreeNode::writeContentItem(DcmItem &dataset) const
 
 
 OFCondition DSRTCoordTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
-                                                  DSRXMLCursor cursor,
-                                                  const size_t flags)
+                                                  DSRXMLCursor cursor)
 {
     OFCondition result = SR_EC_CorruptedXMLStructure;
     if (cursor.valid())
@@ -161,7 +114,7 @@ OFCondition DSRTCoordTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
         if (result.good())
         {
             /* proceed reading the temporal coordinates */
-            result = DSRTemporalCoordinatesValue::readXML(doc, cursor, flags);
+            result = DSRTemporalCoordinatesValue::readXML(doc, cursor);
         } else
             printUnknownValueWarningMessage("TCOORD type", tmpString.c_str());
     }

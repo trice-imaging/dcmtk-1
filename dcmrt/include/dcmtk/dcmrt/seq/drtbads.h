@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class DRTBrachyAccessoryDeviceSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -55,7 +55,6 @@ class DCMTK_DCMRT_EXPORT DRTBrachyAccessoryDeviceSequence
 
         /** assigment operator
          *  @param copy item object to be copied
-         *  @return reference to this object
          */
         Item &operator=(const Item &copy);
 
@@ -238,7 +237,7 @@ class DCMTK_DCMRT_EXPORT DRTBrachyAccessoryDeviceSequence
         /// internal flag used to mark the empty default item
         /*const*/ OFBool EmptyDefaultItem;
 
-        /// BrachyAccessoryDeviceID (300a,0263) vr=SH, vm=1, type=2
+        /// BrachyAccessoryDeviceID (300a,0263) vr=SH, vm=1, type=2C
         DcmShortString BrachyAccessoryDeviceID;
         /// BrachyAccessoryDeviceName (300a,0266) vr=LO, vm=1, type=3
         DcmLongString BrachyAccessoryDeviceName;
@@ -246,13 +245,13 @@ class DCMTK_DCMRT_EXPORT DRTBrachyAccessoryDeviceSequence
         DcmDecimalString BrachyAccessoryDeviceNominalThickness;
         /// BrachyAccessoryDeviceNominalTransmission (300a,026c) vr=DS, vm=1, type=3
         DcmDecimalString BrachyAccessoryDeviceNominalTransmission;
-        /// BrachyAccessoryDeviceNumber (300a,0262) vr=IS, vm=1, type=2
+        /// BrachyAccessoryDeviceNumber (300a,0262) vr=IS, vm=1, type=2C
         DcmIntegerString BrachyAccessoryDeviceNumber;
-        /// BrachyAccessoryDeviceType (300a,0264) vr=CS, vm=1, type=1
+        /// BrachyAccessoryDeviceType (300a,0264) vr=CS, vm=1, type=1C
         DcmCodeString BrachyAccessoryDeviceType;
         /// MaterialID (300a,00e1) vr=SH, vm=1, type=3
         DcmShortString MaterialID;
-        /// ReferencedROINumber (3006,0084) vr=IS, vm=1, type=2
+        /// ReferencedROINumber (3006,0084) vr=IS, vm=1, type=2C
         DcmIntegerString ReferencedROINumber;
 
     };
@@ -275,7 +274,6 @@ class DCMTK_DCMRT_EXPORT DRTBrachyAccessoryDeviceSequence
 
     /** assigment operator
      *  @param copy sequence object to be copied
-     *  @return reference to this object
      */
     DRTBrachyAccessoryDeviceSequence &operator=(const DRTBrachyAccessoryDeviceSequence &copy);
 
@@ -298,7 +296,7 @@ class DCMTK_DCMRT_EXPORT DRTBrachyAccessoryDeviceSequence
     /** get number of items in the sequence
      *  @return number of items
      */
-    size_t getNumberOfItems() const;
+    unsigned long getNumberOfItems() const;
 
     /** goto first item in the sequence
      *  @return status, EC_Normal if successful, an error code otherwise
@@ -314,7 +312,7 @@ class DCMTK_DCMRT_EXPORT DRTBrachyAccessoryDeviceSequence
      *  @param  num  number of the item to be selected (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num);
+    OFCondition gotoItem(const unsigned long num);
 
     /** get current item in the sequence
      *  @param  item  reference to item pointer (result variable)
@@ -337,31 +335,31 @@ class DCMTK_DCMRT_EXPORT DRTBrachyAccessoryDeviceSequence
      *  @param  item  reference to item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition getItem(const size_t num, Item *&item);
+    OFCondition getItem(const unsigned long num, Item *&item);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &getItem(const size_t num);
+    Item &getItem(const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &getItem(const size_t num) const;
+    const Item &getItem(const unsigned long num) const;
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &operator[](const size_t num);
+    Item &operator[](const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &operator[](const size_t num) const;
+    const Item &operator[](const unsigned long num) const;
 
     /** add new item to the end of this sequence
      *  @param  item  reference to new item pointer (result variable)
@@ -374,13 +372,13 @@ class DCMTK_DCMRT_EXPORT DRTBrachyAccessoryDeviceSequence
      *  @param  item  reference to new item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition insertItem(const size_t pos, Item *&item);
+    OFCondition insertItem(const unsigned long pos, Item *&item);
 
     /** remove particular item from the sequence
      *  @param  pos  position of the item to be removed (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition removeItem(const size_t pos);
+    OFCondition removeItem(const unsigned long pos);
 
   // --- input/output methods ---
 
@@ -415,7 +413,7 @@ class DCMTK_DCMRT_EXPORT DRTBrachyAccessoryDeviceSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListIterator(Item *) &iterator);
 
     /** goto particular item in the sequence
@@ -423,7 +421,7 @@ class DCMTK_DCMRT_EXPORT DRTBrachyAccessoryDeviceSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListConstIterator(Item *) &iterator) const;
 
   private:

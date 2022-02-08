@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -48,16 +48,6 @@
 #ifndef ENVIRONMENT_PATH_SEPARATOR
 #define ENVIRONMENT_PATH_SEPARATOR '\n' /* at least define something unlikely */
 #endif
-
-/*
-** Loading of default dictionary:
-**  DCM_DICT_DEFAULT_USE_NONE: Do not load any default dictionary on startup
-**  DCM_DICT_DEFAULT_USE_BUILTIN: Load builtin dictionary on startup
-**  DCM_DICT_DEFAULT_USE_EXTERNAL: Load external (i.e. file-based) dictionary on startup
-*/
-#define DCM_DICT_DEFAULT_USE_NONE     0
-#define DCM_DICT_DEFAULT_USE_BUILTIN  1
-#define DCM_DICT_DEFAULT_USE_EXTERNAL 2
 
 
 /** this class implements a loadable DICOM Data Dictionary
@@ -217,11 +207,11 @@ private:
 };
 
 
-/** global singleton dicom dictionary that is used by DCMTK in order to lookup
- *  attribute VR, tag names and so on.  The dictionary is internally populated
- *  on first use, if the user accesses it via rdlock() or wrlock().  The
- *  dictionary allows safe read (shared) and write (exclusive) access from
- *  multiple threads in parallel.
+/** encapsulates a data dictionary with access methods which allow safe
+ *  read and write access from multiple threads in parallel.
+ *  A read/write lock is used to protect threads from each other.
+ *  This allows parallel read-only access by multiple threads, which is
+ *  the most common case.
  */
 class DCMTK_DCMDATA_EXPORT GlobalDcmDataDictionary
 {
@@ -246,13 +236,9 @@ public:
    */
   DcmDataDictionary& wrlock();
 
-  /** unlocks the read lock which must have been acquired previously.
+  /** unlocks the read or write lock which must have been acquired previously.
    */
-  void rdunlock();
-
-  /** unlocks the write lock which must have been acquired previously.
-   */
-  void wrunlock();
+  void unlock();
 
   /** checks if a data dictionary has been loaded. This method acquires and
    *  releases a read lock. It must not be called with another lock on the
@@ -277,8 +263,8 @@ private:
    */
   GlobalDcmDataDictionary(const GlobalDcmDataDictionary &);
 
-  /** create the data dictionary instance for this class. Used for first
-   * intialization.  The caller must not have dataDictLock locked.
+  /** create the data dictionary instance for this class.
+   * The caller must not have dataDictLock locked.
    */
   void createDataDict();
 
@@ -288,8 +274,6 @@ private:
 
 #ifdef WITH_THREADS
   /** the read/write lock used to protect access from multiple threads
-   *  @remark this member is only available if DCMTK is compiled with thread
-   *  support enabled.
    */
   OFReadWriteLock dataDictLock;
 #endif
@@ -297,7 +281,7 @@ private:
 
 
 /** The Global DICOM Data Dictionary.
- *  Will be created before main() starts and gets populated on its first use.
+ *  Will be created before main() starts.
  *  Tries to load a builtin data dictionary (if compiled in).
  *  Tries to load data dictionaries from files specified by
  *  the DCMDICTPATH environment variable.  If this environment

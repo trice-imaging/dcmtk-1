@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2021, OFFIS e.V.
+ *  Copyright (C) 1996-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -59,7 +59,7 @@ DiOverlay::DiOverlay(const DiDocument *docu,
     Data = new DiOverlayData(MaxOverlayCount);                                         // can't determine number of overlays :-(
     if ((docu != NULL) && (Data != NULL) && (Data->Planes != NULL))
     {
-        unsigned int i;
+        register unsigned int i;
         for (i = 0; i < MaxOverlayCount; ++i)
         {
             Data->Planes[Data->Count] = new DiOverlayPlane(docu, convertToGroupNumber(i), alloc, stored, high);
@@ -95,7 +95,7 @@ DiOverlay::DiOverlay(const DiOverlay *overlay,
     Uint16 *temp = Init(overlay);
     if (temp != NULL)
     {
-        unsigned int i;
+        register unsigned int i;
         for (i = 0; i < Data->ArrayEntries; ++i)
         {
             if (Data->Planes[i] != NULL)
@@ -131,7 +131,7 @@ DiOverlay::DiOverlay(const DiOverlay *overlay,
         flip.flipData(OFconst_cast(const Uint16 **, &temp), &(Data->DataBuffer), horz, vert);
         if (temp != overlay->Data->DataBuffer)
             delete[] temp;
-        unsigned int i;
+        register unsigned int i;
         for (i = 0; i < Data->ArrayEntries; ++i)
         {
             if (Data->Planes[i] != NULL)
@@ -165,7 +165,7 @@ DiOverlay::DiOverlay(const DiOverlay *overlay,
         rotate.rotateData(OFconst_cast(const Uint16 **, &temp), &(Data->DataBuffer), degree);
         if (temp != overlay->Data->DataBuffer)
             delete[] temp;
-        unsigned int i;
+        register unsigned int i;
         for (i = 0; i < Data->ArrayEntries; ++i)
         {
             if (Data->Planes[i] != NULL)
@@ -201,40 +201,33 @@ Uint16 *DiOverlay::Init(const DiOverlay *overlay)
             OFstatic_cast(unsigned long, overlay->Height) * overlay->Frames;
         if ((Data != NULL) && (Data->Planes != NULL) && (count > 0))
         {
-            const unsigned long bufSize = OFstatic_cast(unsigned long, Width) *
-                OFstatic_cast(unsigned long, Height) * Frames;
-            if (bufSize > 0)                                            // avoid invalid buffer
+            register unsigned int i;
+            Data->DataBuffer = new Uint16[OFstatic_cast(unsigned long, Width) * OFstatic_cast(unsigned long, Height) * Frames];
+            if (Data->DataBuffer != NULL)
             {
-                Data->DataBuffer = new Uint16[bufSize];
-                if (Data->DataBuffer != NULL)
+                Uint16 *temp = NULL;
+                if (overlay->Data->DataBuffer == NULL)              // no data buffer
                 {
-                    unsigned int i;
-                    Uint16 *temp = NULL;
-                    if (overlay->Data->DataBuffer == NULL)              // no data buffer
-                    {
-                        temp = new Uint16[count];                       // create temporary buffer
-                        if (temp != NULL)
-                            OFBitmanipTemplate<Uint16>::zeroMem(temp, count);
-                    }
-                    for (i = 0; i < Data->ArrayEntries; ++i)
-                    {
-                        if ((overlay->Data->Planes[i] != NULL) /*&& (overlay->Data->Planes[i]->isValid())*/)
-                        {
-                            Data->Planes[i] = new DiOverlayPlane(overlay->Data->Planes[i], i, Data->DataBuffer, temp,
-                                overlay->Width, overlay->Height, Width, Height);
-                            ++(Data->Count);                            // increase number of valid planes
-                        }
-                    }
-                    if (Data->Count != overlay->Data->Count)            // assertion!
-                    {
-                        DCMIMGLE_WARN("different number of overlay planes for converted and original image");
-                    }
-                    if (overlay->Data->DataBuffer != NULL)              // existing data buffer
-                        temp = overlay->Data->DataBuffer;               // point to input buffer
-                    return temp;
+                    temp = new Uint16[count];                       // create temporary buffer
+                    if (temp != NULL)
+                        OFBitmanipTemplate<Uint16>::zeroMem(temp, count);
                 }
-            } else {
-                DCMIMGLE_DEBUG("skipping overlay planes for converted image ... calculated buffer size is 0");
+                for (i = 0; i < Data->ArrayEntries; ++i)
+                {
+                    if ((overlay->Data->Planes[i] != NULL) /*&& (overlay->Data->Planes[i]->isValid())*/)
+                    {
+                        Data->Planes[i] = new DiOverlayPlane(overlay->Data->Planes[i], i, Data->DataBuffer, temp,
+                            overlay->Width, overlay->Height, Width, Height);
+                        ++(Data->Count);
+                    }
+                }
+                if (Data->Count != overlay->Data->Count)            // assertion!
+                {
+                    DCMIMGLE_WARN("different number of overlay planes for scaled and unscaled image");
+                }
+                if (overlay->Data->DataBuffer != NULL)              // existing data buffer
+                    temp = overlay->Data->DataBuffer;               // point to input buffer
+                return temp;
             }
         }
     }
@@ -253,10 +246,10 @@ int DiOverlay::convertToPlaneNumber(unsigned int &plane,
             {
                 plane = (plane - FirstOverlayGroup) >> 1;                               // plane = (group - 0x6000) / 2
                 if (Data->Planes[plane] != NULL)
-                    return 2;                                                           // plane already exists
+                    return 2;                                                           // plane alreay exists
                 return 1;                                                               // ... is new
             } else {
-                unsigned int i;
+                register unsigned int i;
                 for (i = 0; i < Data->Count; ++i)
                 {
                     if ((Data->Planes[i] != NULL) && (Data->Planes[i]->getGroupNumber() == plane))
@@ -347,7 +340,7 @@ int DiOverlay::showAllPlanes()
 {
     if ((Data != NULL) && (Data->Planes != NULL))
     {
-        unsigned int i;
+        register unsigned int i;
         for (i = 0; i < Data->ArrayEntries; ++i)
         {
             if (Data->Planes[i] != NULL)
@@ -367,7 +360,7 @@ int DiOverlay::showAllPlanes(const double fore,
 {
     if ((Data != NULL) && (Data->Planes != NULL))
     {
-        unsigned int i;
+        register unsigned int i;
         for (i = 0; i < Data->ArrayEntries; ++i)
         {
             if ((Data->Planes[i] != NULL))
@@ -398,7 +391,7 @@ int DiOverlay::hideAllPlanes()
 {
     if ((Data != NULL) && (Data->Planes != NULL))
     {
-        unsigned int i;
+        register unsigned int i;
         for (i = 0; i < Data->ArrayEntries; ++i)
         {
             if (Data->Planes[i] != NULL)
@@ -463,7 +456,7 @@ int DiOverlay::hasEmbeddedData() const
 {
     if ((Data != NULL) && (Data->Planes != NULL))
     {
-        unsigned int i;
+        register unsigned int i;
         for (i = 0; i < Data->ArrayEntries; ++i)
         {
             if ((Data->Planes[i] != NULL) && (Data->Planes[i]->isEmbedded()))
@@ -495,9 +488,7 @@ int DiOverlay::addPlane(const unsigned int group,
                 ++(Data->Count);
             else if (status == 2)                                              // group number already exists
                 delete Data->Planes[plane];
-            Data->Planes[plane] = new DiOverlayPlane(group, OFstatic_cast(const Sint16, left_pos), 
-                OFstatic_cast(const Sint16, top_pos), OFstatic_cast(const Uint16, columns), 
-                OFstatic_cast(const Uint16, rows), data, label, description, mode);
+            Data->Planes[plane] = new DiOverlayPlane(group, left_pos, top_pos, columns, rows, data, label, description, mode);
             if (checkPlane(plane, 0))
             {
                 if (Data->Planes[plane]->getNumberOfFrames() > Frames)         // set maximum number of frames
@@ -578,7 +569,7 @@ void *DiOverlay::getFullPlaneData(const unsigned long frame,
         {
             width = op->getWidth();
             height = op->getHeight();
-            return op->getData(frame, 0, 0, OFstatic_cast(Uint16, width), OFstatic_cast(Uint16, height), bits, fore, back, OFFalse /*useOrigin*/);
+            return op->getData(frame, 0, 0, width, height, bits, fore, back);
         }
     }
     return NULL;

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2016, OFFIS e.V.
+ *  Copyright (C) 1996-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -179,9 +179,9 @@ class DiColorOutputPixelTemplate
     {
         if (Data != NULL)
         {
-            T2 *p = Data;
-            unsigned long i;
-            int j;
+            register T2 *p = Data;
+            register unsigned long i;
+            register int j;
             for (i = FrameSize; i != 0; --i)
                 for (j = 3; j != 0; --j)
                     stream << OFstatic_cast(unsigned long, *(p++)) << " ";     // typecast to resolve problems with 'char'
@@ -200,9 +200,9 @@ class DiColorOutputPixelTemplate
     {
         if (Data != NULL)
         {
-            T2 *p = Data;
-            unsigned long i;
-            int j;
+            register T2 *p = Data;
+            register unsigned long i;
+            register int j;
             for (i = FrameSize; i != 0; --i)
                 for (j = 3; j != 0; --j)
                     fprintf(stream, "%lu ", OFstatic_cast(unsigned long, *(p++)));
@@ -243,12 +243,12 @@ class DiColorOutputPixelTemplate
             if (Data != NULL)
             {
                 DCMIMAGE_DEBUG("converting color pixel data to output format");
-                T2 *q = Data;
-                unsigned long i;
+                register T2 *q = Data;
+                register unsigned long i;
                 const T2 max2 = OFstatic_cast(T2, DicomImageClass::maxval(bits2));
                 if (planar)
                 {
-                    const T1 *p;
+                    register const T1 *p;
                     if (bits1 == bits2)
                     {
                         for (int j = 0; j < 3; ++j)
@@ -332,7 +332,7 @@ class DiColorOutputPixelTemplate
                 }
                 else /* not planar */
                 {
-                    int j;
+                    register int j;
                     if (bits1 == bits2)
                     {
                         /* invert output data */

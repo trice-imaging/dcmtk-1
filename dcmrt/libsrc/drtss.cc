@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTSourceSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -25,15 +25,12 @@ DRTSourceSequence::Item::Item(const OFBool emptyDefaultItem)
     ActiveSourceLength(DCM_ActiveSourceLength),
     MaterialID(DCM_MaterialID),
     ReferenceAirKermaRate(DCM_ReferenceAirKermaRate),
-    SourceDescription(DCM_SourceDescription),
     SourceEncapsulationNominalThickness(DCM_SourceEncapsulationNominalThickness),
     SourceEncapsulationNominalTransmission(DCM_SourceEncapsulationNominalTransmission),
     SourceIsotopeHalfLife(DCM_SourceIsotopeHalfLife),
     SourceIsotopeName(DCM_SourceIsotopeName),
     SourceManufacturer(DCM_SourceManufacturer),
-    SourceModelID(DCM_SourceModelID),
     SourceNumber(DCM_SourceNumber),
-    SourceSerialNumber(DCM_SourceSerialNumber),
     SourceStrength(DCM_SourceStrength),
     SourceStrengthReferenceDate(DCM_SourceStrengthReferenceDate),
     SourceStrengthReferenceTime(DCM_SourceStrengthReferenceTime),
@@ -49,15 +46,12 @@ DRTSourceSequence::Item::Item(const Item &copy)
     ActiveSourceLength(copy.ActiveSourceLength),
     MaterialID(copy.MaterialID),
     ReferenceAirKermaRate(copy.ReferenceAirKermaRate),
-    SourceDescription(copy.SourceDescription),
     SourceEncapsulationNominalThickness(copy.SourceEncapsulationNominalThickness),
     SourceEncapsulationNominalTransmission(copy.SourceEncapsulationNominalTransmission),
     SourceIsotopeHalfLife(copy.SourceIsotopeHalfLife),
     SourceIsotopeName(copy.SourceIsotopeName),
     SourceManufacturer(copy.SourceManufacturer),
-    SourceModelID(copy.SourceModelID),
     SourceNumber(copy.SourceNumber),
-    SourceSerialNumber(copy.SourceSerialNumber),
     SourceStrength(copy.SourceStrength),
     SourceStrengthReferenceDate(copy.SourceStrengthReferenceDate),
     SourceStrengthReferenceTime(copy.SourceStrengthReferenceTime),
@@ -81,15 +75,12 @@ DRTSourceSequence::Item &DRTSourceSequence::Item::operator=(const Item &copy)
         ActiveSourceLength = copy.ActiveSourceLength;
         MaterialID = copy.MaterialID;
         ReferenceAirKermaRate = copy.ReferenceAirKermaRate;
-        SourceDescription = copy.SourceDescription;
         SourceEncapsulationNominalThickness = copy.SourceEncapsulationNominalThickness;
         SourceEncapsulationNominalTransmission = copy.SourceEncapsulationNominalTransmission;
         SourceIsotopeHalfLife = copy.SourceIsotopeHalfLife;
         SourceIsotopeName = copy.SourceIsotopeName;
         SourceManufacturer = copy.SourceManufacturer;
-        SourceModelID = copy.SourceModelID;
         SourceNumber = copy.SourceNumber;
-        SourceSerialNumber = copy.SourceSerialNumber;
         SourceStrength = copy.SourceStrength;
         SourceStrengthReferenceDate = copy.SourceStrengthReferenceDate;
         SourceStrengthReferenceTime = copy.SourceStrengthReferenceTime;
@@ -106,9 +97,6 @@ void DRTSourceSequence::Item::clear()
     {
         /* clear all DICOM attributes */
         SourceNumber.clear();
-        SourceSerialNumber.clear();
-        SourceModelID.clear();
-        SourceDescription.clear();
         SourceType.clear();
         SourceManufacturer.clear();
         ActiveSourceDiameter.clear();
@@ -130,9 +118,6 @@ void DRTSourceSequence::Item::clear()
 OFBool DRTSourceSequence::Item::isEmpty()
 {
     return SourceNumber.isEmpty() &&
-           SourceSerialNumber.isEmpty() &&
-           SourceModelID.isEmpty() &&
-           SourceDescription.isEmpty() &&
            SourceType.isEmpty() &&
            SourceManufacturer.isEmpty() &&
            ActiveSourceDiameter.isEmpty() &&
@@ -164,9 +149,6 @@ OFCondition DRTSourceSequence::Item::read(DcmItem &item)
         /* re-initialize object */
         clear();
         getAndCheckElementFromDataset(item, SourceNumber, "1", "1", "SourceSequence");
-        getAndCheckElementFromDataset(item, SourceSerialNumber, "1", "3", "SourceSequence");
-        getAndCheckElementFromDataset(item, SourceModelID, "1", "3", "SourceSequence");
-        getAndCheckElementFromDataset(item, SourceDescription, "1", "3", "SourceSequence");
         getAndCheckElementFromDataset(item, SourceType, "1", "1", "SourceSequence");
         getAndCheckElementFromDataset(item, SourceManufacturer, "1", "3", "SourceSequence");
         getAndCheckElementFromDataset(item, ActiveSourceDiameter, "1", "3", "SourceSequence");
@@ -194,9 +176,6 @@ OFCondition DRTSourceSequence::Item::write(DcmItem &item)
     {
         result = EC_Normal;
         addElementToDataset(result, item, new DcmIntegerString(SourceNumber), "1", "1", "SourceSequence");
-        addElementToDataset(result, item, new DcmLongString(SourceSerialNumber), "1", "3", "SourceSequence");
-        addElementToDataset(result, item, new DcmShortString(SourceModelID), "1", "3", "SourceSequence");
-        addElementToDataset(result, item, new DcmLongString(SourceDescription), "1", "3", "SourceSequence");
         addElementToDataset(result, item, new DcmCodeString(SourceType), "1", "1", "SourceSequence");
         addElementToDataset(result, item, new DcmLongString(SourceManufacturer), "1", "3", "SourceSequence");
         addElementToDataset(result, item, new DcmDecimalString(ActiveSourceDiameter), "1", "3", "SourceSequence");
@@ -279,15 +258,6 @@ OFCondition DRTSourceSequence::Item::getReferenceAirKermaRate(Float64 &value, co
 }
 
 
-OFCondition DRTSourceSequence::Item::getSourceDescription(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(SourceDescription, value, pos);
-}
-
-
 OFCondition DRTSourceSequence::Item::getSourceEncapsulationNominalThickness(OFString &value, const signed long pos) const
 {
     if (EmptyDefaultItem)
@@ -360,15 +330,6 @@ OFCondition DRTSourceSequence::Item::getSourceManufacturer(OFString &value, cons
 }
 
 
-OFCondition DRTSourceSequence::Item::getSourceModelID(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(SourceModelID, value, pos);
-}
-
-
 OFCondition DRTSourceSequence::Item::getSourceNumber(OFString &value, const signed long pos) const
 {
     if (EmptyDefaultItem)
@@ -384,15 +345,6 @@ OFCondition DRTSourceSequence::Item::getSourceNumber(Sint32 &value, const unsign
         return EC_IllegalCall;
     else
         return OFconst_cast(DcmIntegerString &, SourceNumber).getSint32(value, pos);
-}
-
-
-OFCondition DRTSourceSequence::Item::getSourceSerialNumber(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(SourceSerialNumber, value, pos);
 }
 
 
@@ -502,19 +454,6 @@ OFCondition DRTSourceSequence::Item::setReferenceAirKermaRate(const OFString &va
 }
 
 
-OFCondition DRTSourceSequence::Item::setSourceDescription(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = SourceDescription.putOFStringArray(value);
-    }
-    return result;
-}
-
-
 OFCondition DRTSourceSequence::Item::setSourceEncapsulationNominalThickness(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -580,19 +519,6 @@ OFCondition DRTSourceSequence::Item::setSourceManufacturer(const OFString &value
 }
 
 
-OFCondition DRTSourceSequence::Item::setSourceModelID(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmShortString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = SourceModelID.putOFStringArray(value);
-    }
-    return result;
-}
-
-
 OFCondition DRTSourceSequence::Item::setSourceNumber(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -601,19 +527,6 @@ OFCondition DRTSourceSequence::Item::setSourceNumber(const OFString &value, cons
         result = (check) ? DcmIntegerString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
             result = SourceNumber.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTSourceSequence::Item::setSourceSerialNumber(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = SourceSerialNumber.putOFStringArray(value);
     }
     return result;
 }
@@ -787,7 +700,7 @@ OFBool DRTSourceSequence::isValid() const
 }
 
 
-size_t DRTSourceSequence::getNumberOfItems() const
+unsigned long DRTSourceSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -817,12 +730,12 @@ OFCondition DRTSourceSequence::gotoNextItem()
 }
 
 
-OFCondition DRTSourceSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTSourceSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -837,12 +750,12 @@ OFCondition DRTSourceSequence::gotoItem(const size_t num, OFListIterator(Item *)
 }
 
 
-OFCondition DRTSourceSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTSourceSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -857,7 +770,7 @@ OFCondition DRTSourceSequence::gotoItem(const size_t num, OFListConstIterator(It
 }
 
 
-OFCondition DRTSourceSequence::gotoItem(const size_t num)
+OFCondition DRTSourceSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -893,7 +806,7 @@ const DRTSourceSequence::Item &DRTSourceSequence::getCurrentItem() const
 }
 
 
-OFCondition DRTSourceSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTSourceSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -903,7 +816,7 @@ OFCondition DRTSourceSequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTSourceSequence::Item &DRTSourceSequence::getItem(const size_t num)
+DRTSourceSequence::Item &DRTSourceSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -913,7 +826,7 @@ DRTSourceSequence::Item &DRTSourceSequence::getItem(const size_t num)
 }
 
 
-const DRTSourceSequence::Item &DRTSourceSequence::getItem(const size_t num) const
+const DRTSourceSequence::Item &DRTSourceSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -923,13 +836,13 @@ const DRTSourceSequence::Item &DRTSourceSequence::getItem(const size_t num) cons
 }
 
 
-DRTSourceSequence::Item &DRTSourceSequence::operator[](const size_t num)
+DRTSourceSequence::Item &DRTSourceSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTSourceSequence::Item &DRTSourceSequence::operator[](const size_t num) const
+const DRTSourceSequence::Item &DRTSourceSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -952,7 +865,7 @@ OFCondition DRTSourceSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTSourceSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTSourceSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -975,7 +888,7 @@ OFCondition DRTSourceSequence::insertItem(const size_t pos, Item *&item)
 }
 
 
-OFCondition DRTSourceSequence::removeItem(const size_t pos)
+OFCondition DRTSourceSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

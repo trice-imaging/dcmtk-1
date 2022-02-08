@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were partly developed by
@@ -81,6 +81,12 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CSTDARG
+#include "dcmtk/ofstd/ofstdinc.h"
+
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -99,7 +105,6 @@ DIMSE_findUser(
         T_ASC_Association *assoc,
         T_ASC_PresentationContextID presID,
         T_DIMSE_C_FindRQ *request, DcmDataset *requestIdentifiers,
-        int &responseCount,
         DIMSE_FindUserCallback callback, void *callbackData,
         T_DIMSE_BlockingMode blockMode, int timeout,
         T_DIMSE_C_FindRSP *response, DcmDataset **statusDetail)
@@ -137,15 +142,16 @@ DIMSE_findUser(
 {
     T_DIMSE_Message req, rsp;
     DIC_US msgId;
+    int responseCount = 0;
     DcmDataset *rspIds = NULL;
-    DIC_US status = STATUS_FIND_Pending_MatchesAreContinuing;
+    DIC_US status = STATUS_Pending;
 
     /* if there is no search mask, nothing can be searched for */
     if (requestIdentifiers == NULL) return DIMSE_NULLKEY;
 
     /* initialize the variables which represent DIMSE C-FIND-RQ and DIMSE C-FIND-RSP messages */
-    memset((char*)&req, 0, sizeof(req));
-    memset((char*)&rsp, 0, sizeof(rsp));
+    bzero((char*)&req, sizeof(req));
+    bzero((char*)&rsp, sizeof(rsp));
 
     /* set corresponding values in the request message variable */
     req.CommandField = DIMSE_C_FIND_RQ;
@@ -162,11 +168,11 @@ DIMSE_findUser(
     if (cond.bad()) return cond;
 
     /* try to receive (one or more) C-STORE-RSP messages, continue loop as long */
-    /* as no error occurred and not all result information has been received. */
+    /* as no error occured and not all result information has been received. */
     while (cond == EC_Normal && DICOM_PENDING_STATUS(status))
     {
 	/* initialize the response to collect */
-        memset((char*)&rsp, 0, sizeof(rsp));
+        bzero((char*)&rsp, sizeof(rsp));
         if (rspIds != NULL) {
             delete rspIds;
             rspIds = NULL;
@@ -205,7 +211,7 @@ DIMSE_findUser(
 
         /* depending on the status which was returned in the current C-FIND-RSP, we need to do something */
         switch (status) {
-        case STATUS_FIND_Pending_MatchesAreContinuing:
+        case STATUS_Pending:
         case STATUS_FIND_Pending_WarningUnsupportedOptionalKeys:
             /* in these cases we received a C-FIND-RSP which indicates that a result data set was */
             /* found and will be sent over the network. We need to receive this result data set. */
@@ -237,7 +243,7 @@ DIMSE_findUser(
                     response, rspIds);
             }
             break;
-        case STATUS_FIND_Success:
+        case STATUS_Success:
             /* in this case the current C-FIND-RSP indicates that */
             /* there are no more records that match the search mask */
 
@@ -268,7 +274,7 @@ DIMSE_findUser(
 OFCondition
 DIMSE_sendFindResponse(T_ASC_Association * assoc,
         T_ASC_PresentationContextID presID,
-        const T_DIMSE_C_FindRQ *request,
+        T_DIMSE_C_FindRQ *request,
         T_DIMSE_C_FindRSP *response, DcmDataset *rspIds,
         DcmDataset *statusDetail)
     /*
@@ -291,12 +297,12 @@ DIMSE_sendFindResponse(T_ASC_Association * assoc,
     T_DIMSE_Message rsp;
 
     /* create response message */
-    memset((char*)&rsp, 0, sizeof(rsp));
+    bzero((char*)&rsp, sizeof(rsp));
     rsp.CommandField = DIMSE_C_FIND_RSP;
     rsp.msg.CFindRSP = *response;
     rsp.msg.CFindRSP.MessageIDBeingRespondedTo = request->MessageID;
-    OFStandard::strlcpy(rsp.msg.CFindRSP.AffectedSOPClassUID,
-            request->AffectedSOPClassUID, sizeof(rsp.msg.CFindRSP.AffectedSOPClassUID));
+    strcpy(rsp.msg.CFindRSP.AffectedSOPClassUID,
+            request->AffectedSOPClassUID);
     rsp.msg.CFindRSP.opts = O_FIND_AFFECTEDSOPCLASSUID;
 
     /* specify if the response message will contain a search result or if it will not contain one, */
@@ -327,7 +333,7 @@ DIMSE_findProvider(
     /*
      * This function receives a data set which represents the search mask over the network and
      * stores this data in memory. Then, it tries to select corresponding records which match the
-     * search mask from some database (done within the callback function) and sends corresponding
+     * search mask from some database (done whithin the callback function) and sends corresponding
      * C-FIND-RSP messages to the other DICOM application this application is connected with.
      * The selection of each matching record and the sending of a corresponding C-FIND-RSP message
      * is conducted in a loop since there can be more than one search result. In the end, also the
@@ -356,7 +362,7 @@ DIMSE_findProvider(
     /* receive data (i.e. the search mask) and store it in memory */
     OFCondition cond = DIMSE_receiveDataSetInMemory(assoc, blockMode, timeout, &presIdData, &reqIds, NULL, NULL);
 
-    /* if no error occurred while receiving data */
+    /* if no error occured while receiving data */
     if (cond.good())
     {
         /* check if the presentation context IDs of the C-FIND-RQ and */
@@ -369,12 +375,12 @@ DIMSE_findProvider(
         {
             /* if the IDs are the same go ahead */
             /* initialize the C-FIND-RSP message variable */
-            memset((char*)&rsp, 0, sizeof(rsp));
-            rsp.DimseStatus = STATUS_FIND_Pending_MatchesAreContinuing;
+            bzero((char*)&rsp, sizeof(rsp));
+            rsp.DimseStatus = STATUS_Pending;
 
-            /* as long as no error occurred and the status of the C-FIND-RSP message which will */
+            /* as long as no error occured and the status of the C-FIND-RSP message which will */
             /* be/was sent is pending, perform this loop in which records that match the search */
-            /* mask are selected (within the execution of the callback function) and sent over */
+            /* mask are selected (whithin the execution of the callback function) and sent over */
             /* the network to the other DICOM application using C-FIND-RSP messages. */
             while (cond.good() && DICOM_PENDING_STATUS(rsp.DimseStatus) && normal)
             {
@@ -394,7 +400,7 @@ DIMSE_findProvider(
                 }
                 else
                 {
-                    /* some exception condition occurred, bail out */
+                    /* some execption condition occured, bail out */
                     normal = OFFalse;
                 }
 

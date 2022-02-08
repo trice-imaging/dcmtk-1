@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2001-2021, OFFIS e.V.
+ *  Copyright (C) 2001-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,6 +20,15 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
+
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>
+#endif
 
 #include "dcmtk/dcmdata/dctk.h"
 #include "dcmtk/dcmdata/cmdlnarg.h"
@@ -48,11 +57,16 @@ static char rcsid[] = "$dcmtk: " OFFIS_CONSOLE_APPLICATION " v"
 int main(int argc, char *argv[])
 {
 
+#ifdef HAVE_GUSI_H
+  GUSISetup(GUSIwithSIOUXSockets);
+  GUSISetup(GUSIwithInternetSockets);
+#endif
+
   const char *opt_ifname = NULL;
   const char *opt_ofname = NULL;
 
   E_FileReadMode opt_readMode = ERM_autoDetect;
-  E_FileWriteMode opt_writeMode = EWM_createNewMeta;
+  E_FileWriteMode opt_writeMode = EWM_fileformat;
   E_TransferSyntax opt_oxfer = EXS_LittleEndianExplicit;
   E_GrpLenEncoding opt_oglenc = EGL_recalcGL;
   E_EncodingType opt_oenctype = EET_ExplicitLength;
@@ -66,8 +80,6 @@ int main(int argc, char *argv[])
   E_UIDCreation opt_uidcreation = EUC_default;
   E_PlanarConfiguration opt_planarconfig = EPC_default;
   OFBool opt_predictor6WorkaroundEnable = OFFalse;
-  OFBool opt_cornellWorkaroundEnable = OFFalse;
-  OFBool opt_forceSingleFragmentPerFrame = OFFalse;
 
   OFConsoleApplication app(OFFIS_CONSOLE_APPLICATION, "Decode JPEG-compressed DICOM file", rcsid);
   OFCommandLine cmd;
@@ -95,7 +107,7 @@ int main(int argc, char *argv[])
       cmd.addOption("--conv-guess",          "+cg",    "convert to RGB if YCbCr is guessed by library");
       cmd.addOption("--conv-guess-lossy",    "+cgl",   "convert to RGB if lossy JPEG and YCbCr is\nguessed by the underlying JPEG library");
       cmd.addOption("--conv-always",         "+ca",    "always convert YCbCr to RGB");
-      cmd.addOption("--conv-never",          "+cn",    "never convert YCbCr to RGB");
+      cmd.addOption("--conv-never",          "+cn",    "never convert color space");
 
     cmd.addSubGroup("planar configuration:");
       cmd.addOption("--planar-auto",         "+pa",    "automatically determine planar configuration\nfrom SOP class and color space (default)");
@@ -108,8 +120,6 @@ int main(int argc, char *argv[])
 
     cmd.addSubGroup("workaround options for incorrect JPEG encodings:");
       cmd.addOption("--workaround-pred6",    "+w6",    "enable workaround for JPEG lossless images\nwith overflow in predictor 6");
-      cmd.addOption("--workaround-incpl",    "+wi",    "enable workaround for incomplete JPEG data");
-      cmd.addOption("--workaround-cornell",  "+wc",    "enable workaround for 16-bit JPEG lossless\nCornell images with Huffman table overflow");
 
   cmd.addGroup("output options:");
     cmd.addSubGroup("output file format:");
@@ -184,8 +194,6 @@ int main(int argc, char *argv[])
       cmd.endOptionBlock();
 
       if (cmd.findOption("--workaround-pred6")) opt_predictor6WorkaroundEnable = OFTrue;
-      if (cmd.findOption("--workaround-incpl")) opt_forceSingleFragmentPerFrame = OFTrue;
-      if (cmd.findOption("--workaround-cornell")) opt_cornellWorkaroundEnable = OFTrue;
 
       cmd.beginOptionBlock();
       if (cmd.findOption("--read-file"))
@@ -212,7 +220,7 @@ int main(int argc, char *argv[])
       cmd.endOptionBlock();
 
       cmd.beginOptionBlock();
-      if (cmd.findOption("--write-file")) opt_writeMode = EWM_createNewMeta;
+      if (cmd.findOption("--write-file")) opt_writeMode = EWM_fileformat;
       if (cmd.findOption("--write-dataset")) opt_writeMode = EWM_dataset;
       cmd.endOptionBlock();
 
@@ -223,8 +231,20 @@ int main(int argc, char *argv[])
       cmd.endOptionBlock();
 
       cmd.beginOptionBlock();
-      if (cmd.findOption("--enable-new-vr")) dcmEnableGenerationOfNewVRs();
-      if (cmd.findOption("--disable-new-vr")) dcmDisableGenerationOfNewVRs();
+      if (cmd.findOption("--enable-new-vr"))
+      {
+        dcmEnableUnknownVRGeneration.set(OFTrue);
+        dcmEnableUnlimitedTextVRGeneration.set(OFTrue);
+        dcmEnableOtherFloatStringVRGeneration.set(OFTrue);
+        dcmEnableOtherDoubleStringVRGeneration.set(OFTrue);
+      }
+      if (cmd.findOption("--disable-new-vr"))
+      {
+        dcmEnableUnknownVRGeneration.set(OFFalse);
+        dcmEnableUnlimitedTextVRGeneration.set(OFFalse);
+        dcmEnableOtherFloatStringVRGeneration.set(OFFalse);
+        dcmEnableOtherDoubleStringVRGeneration.set(OFFalse);
+      }
       cmd.endOptionBlock();
 
       cmd.beginOptionBlock();
@@ -264,9 +284,7 @@ int main(int argc, char *argv[])
       opt_decompCSconversion,
       opt_uidcreation,
       opt_planarconfig,
-      opt_predictor6WorkaroundEnable,
-      opt_cornellWorkaroundEnable,
-      opt_forceSingleFragmentPerFrame);
+      opt_predictor6WorkaroundEnable);
 
     /* make sure data dictionary is loaded */
     if (!dcmDataDict.isDictionaryLoaded())
@@ -320,6 +338,10 @@ int main(int argc, char *argv[])
     }
 
     OFLOG_INFO(dcmdjpegLogger, "creating output file " << opt_ofname);
+
+    // update file meta information with new SOP Instance UID
+    if ((opt_uidcreation == EUC_always) && (opt_writeMode == EWM_fileformat))
+        opt_writeMode = EWM_updateMeta;
 
     fileformat.loadAllDataIntoMemory();
     error = fileformat.saveFile(opt_ofname, opt_oxfer, opt_oenctype, opt_oglenc,

@@ -1,3 +1,4 @@
+#define TRICE
 /*
  *
  *  Copyright (C) 1997-2011, OFFIS e.V.
@@ -62,7 +63,11 @@ public:
     Uint16 samplesPerPixel,
     Uint16 *image_buffer,
     Uint8 *&to,
+#ifndef TRICE
     Uint32 &length) = 0;
+#else
+    Uint32 &length, EP_Representation pixelRepresentation) = 0;
+#endif
 
   /** single frame compression routine for 8-bit raw pixel data.
    *  May only be called if bytesPerSample() == 1.
@@ -83,7 +88,11 @@ public:
     Uint16 samplesPerPixel,
     Uint8 *image_buffer,
     Uint8 *&to,
+#ifndef TRICE
     Uint32 &length) = 0;
+#else
+    Uint32 &length, EP_Representation pixelRepresentation) = 0;
+#endif
 
   /** returns the number of bytes per sample that will be expected when encoding.
    */

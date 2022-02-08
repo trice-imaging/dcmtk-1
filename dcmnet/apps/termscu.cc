@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2005-2021, OFFIS e.V.
+ *  Copyright (C) 2005-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,6 +23,12 @@
 // ----------------------------------------------------------------------------
 
 #include "dcmtk/config/osconfig.h"
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CSTDARG
+#include "dcmtk/ofstd/ofstdinc.h"
 
 #include "dcmtk/ofstd/ofcmdln.h"
 #include "dcmtk/ofstd/ofconapp.h"
@@ -62,12 +68,24 @@ int main( int argc, char *argv[] )
   T_ASC_Network *net;
   T_ASC_Parameters *params;
   T_ASC_Association *assoc;
+  DIC_NODENAME localHost;
   DIC_NODENAME peerHost;
   char rcsid[] = "$dcmtk: " OFFIS_CONSOLE_APPLICATION " v"  OFFIS_DCMTK_VERSION " " OFFIS_DCMTK_RELEASEDATE " $";
   const char* transferSyntaxes[] = { UID_LittleEndianImplicitTransferSyntax, UID_LittleEndianExplicitTransferSyntax, UID_BigEndianExplicitTransferSyntax };
   int transferSyntaxCount = 3;
 
-  OFStandard::initializeNetwork();
+#ifdef HAVE_GUSI_H
+    // needed for Macintosh
+    GUSISetup(GUSIwithSIOUXSockets);
+    GUSISetup(GUSIwithInternetSockets);
+#endif
+
+#ifdef HAVE_WINSOCK_H
+    WSAData winSockData;
+    // we need at least version 1.1
+    WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
+    WSAStartup(winSockVersionNeeded, &winSockData);
+#endif
 
   char tempstr[20];
   OFString temp_str;
@@ -179,8 +197,9 @@ int main( int argc, char *argv[] )
 
   // figure out the presentation addresses and copy the
   // corresponding values into the association parameters.
+  gethostname( localHost, sizeof( localHost ) - 1 );
   sprintf( peerHost, "%s:%d", opt_peer, OFstatic_cast(int, opt_port));
-  ASC_setPresentationAddresses( params, OFStandard::getHostName().c_str(), peerHost );
+  ASC_setPresentationAddresses( params, localHost, peerHost );
 
   // set the presentation context which will be negotiated
   // when the network connection will be established
@@ -268,7 +287,9 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  OFStandard::shutdownNetwork();
+#ifdef HAVE_WINSOCK_H
+  WSACleanup();
+#endif
 
   return( 0 );
 }

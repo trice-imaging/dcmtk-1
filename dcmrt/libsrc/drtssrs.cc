@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTStructureSetROISequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -21,7 +21,6 @@
 
 DRTStructureSetROISequence::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
-    DerivationCodeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     ROIDescription(DCM_ROIDescription),
     ROIGenerationAlgorithm(DCM_ROIGenerationAlgorithm),
     ROIGenerationDescription(DCM_ROIGenerationDescription),
@@ -35,7 +34,6 @@ DRTStructureSetROISequence::Item::Item(const OFBool emptyDefaultItem)
 
 DRTStructureSetROISequence::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
-    DerivationCodeSequence(copy.DerivationCodeSequence),
     ROIDescription(copy.ROIDescription),
     ROIGenerationAlgorithm(copy.ROIGenerationAlgorithm),
     ROIGenerationDescription(copy.ROIGenerationDescription),
@@ -57,7 +55,6 @@ DRTStructureSetROISequence::Item &DRTStructureSetROISequence::Item::operator=(co
     if (this != &copy)
     {
         EmptyDefaultItem = copy.EmptyDefaultItem;
-        DerivationCodeSequence = copy.DerivationCodeSequence;
         ROIDescription = copy.ROIDescription;
         ROIGenerationAlgorithm = copy.ROIGenerationAlgorithm;
         ROIGenerationDescription = copy.ROIGenerationDescription;
@@ -82,7 +79,6 @@ void DRTStructureSetROISequence::Item::clear()
         ROIVolume.clear();
         ROIGenerationAlgorithm.clear();
         ROIGenerationDescription.clear();
-        DerivationCodeSequence.clear();
     }
 }
 
@@ -95,8 +91,7 @@ OFBool DRTStructureSetROISequence::Item::isEmpty()
            ROIDescription.isEmpty() &&
            ROIVolume.isEmpty() &&
            ROIGenerationAlgorithm.isEmpty() &&
-           ROIGenerationDescription.isEmpty() &&
-           DerivationCodeSequence.isEmpty();
+           ROIGenerationDescription.isEmpty();
 }
 
 
@@ -113,14 +108,13 @@ OFCondition DRTStructureSetROISequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, ROINumber, "1", "1", "StructureSetROISequence");
-        getAndCheckElementFromDataset(item, ReferencedFrameOfReferenceUID, "1", "1", "StructureSetROISequence");
-        getAndCheckElementFromDataset(item, ROIName, "1", "2", "StructureSetROISequence");
+        getAndCheckElementFromDataset(item, ROINumber, "1", "1C", "StructureSetROISequence");
+        getAndCheckElementFromDataset(item, ReferencedFrameOfReferenceUID, "1", "1C", "StructureSetROISequence");
+        getAndCheckElementFromDataset(item, ROIName, "1", "2C", "StructureSetROISequence");
         getAndCheckElementFromDataset(item, ROIDescription, "1", "3", "StructureSetROISequence");
         getAndCheckElementFromDataset(item, ROIVolume, "1", "3", "StructureSetROISequence");
-        getAndCheckElementFromDataset(item, ROIGenerationAlgorithm, "1", "2", "StructureSetROISequence");
+        getAndCheckElementFromDataset(item, ROIGenerationAlgorithm, "1", "2C", "StructureSetROISequence");
         getAndCheckElementFromDataset(item, ROIGenerationDescription, "1", "3", "StructureSetROISequence");
-        DerivationCodeSequence.read(item, "1-n", "3", "StructureSetROISequence");
         result = EC_Normal;
     }
     return result;
@@ -133,14 +127,13 @@ OFCondition DRTStructureSetROISequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmIntegerString(ROINumber), "1", "1", "StructureSetROISequence");
-        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedFrameOfReferenceUID), "1", "1", "StructureSetROISequence");
-        addElementToDataset(result, item, new DcmLongString(ROIName), "1", "2", "StructureSetROISequence");
+        addElementToDataset(result, item, new DcmIntegerString(ROINumber), "1", "1C", "StructureSetROISequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedFrameOfReferenceUID), "1", "1C", "StructureSetROISequence");
+        addElementToDataset(result, item, new DcmLongString(ROIName), "1", "2C", "StructureSetROISequence");
         addElementToDataset(result, item, new DcmShortText(ROIDescription), "1", "3", "StructureSetROISequence");
         addElementToDataset(result, item, new DcmDecimalString(ROIVolume), "1", "3", "StructureSetROISequence");
-        addElementToDataset(result, item, new DcmCodeString(ROIGenerationAlgorithm), "1", "2", "StructureSetROISequence");
+        addElementToDataset(result, item, new DcmCodeString(ROIGenerationAlgorithm), "1", "2C", "StructureSetROISequence");
         addElementToDataset(result, item, new DcmLongString(ROIGenerationDescription), "1", "3", "StructureSetROISequence");
-        if (result.good()) result = DerivationCodeSequence.write(item, "1-n", "3", "StructureSetROISequence");
     }
     return result;
 }
@@ -421,7 +414,7 @@ OFBool DRTStructureSetROISequence::isValid() const
 }
 
 
-size_t DRTStructureSetROISequence::getNumberOfItems() const
+unsigned long DRTStructureSetROISequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -451,12 +444,12 @@ OFCondition DRTStructureSetROISequence::gotoNextItem()
 }
 
 
-OFCondition DRTStructureSetROISequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTStructureSetROISequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -471,12 +464,12 @@ OFCondition DRTStructureSetROISequence::gotoItem(const size_t num, OFListIterato
 }
 
 
-OFCondition DRTStructureSetROISequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTStructureSetROISequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -491,7 +484,7 @@ OFCondition DRTStructureSetROISequence::gotoItem(const size_t num, OFListConstIt
 }
 
 
-OFCondition DRTStructureSetROISequence::gotoItem(const size_t num)
+OFCondition DRTStructureSetROISequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -527,7 +520,7 @@ const DRTStructureSetROISequence::Item &DRTStructureSetROISequence::getCurrentIt
 }
 
 
-OFCondition DRTStructureSetROISequence::getItem(const size_t num, Item *&item)
+OFCondition DRTStructureSetROISequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -537,7 +530,7 @@ OFCondition DRTStructureSetROISequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTStructureSetROISequence::Item &DRTStructureSetROISequence::getItem(const size_t num)
+DRTStructureSetROISequence::Item &DRTStructureSetROISequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -547,7 +540,7 @@ DRTStructureSetROISequence::Item &DRTStructureSetROISequence::getItem(const size
 }
 
 
-const DRTStructureSetROISequence::Item &DRTStructureSetROISequence::getItem(const size_t num) const
+const DRTStructureSetROISequence::Item &DRTStructureSetROISequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -557,13 +550,13 @@ const DRTStructureSetROISequence::Item &DRTStructureSetROISequence::getItem(cons
 }
 
 
-DRTStructureSetROISequence::Item &DRTStructureSetROISequence::operator[](const size_t num)
+DRTStructureSetROISequence::Item &DRTStructureSetROISequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTStructureSetROISequence::Item &DRTStructureSetROISequence::operator[](const size_t num) const
+const DRTStructureSetROISequence::Item &DRTStructureSetROISequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -586,7 +579,7 @@ OFCondition DRTStructureSetROISequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTStructureSetROISequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTStructureSetROISequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -609,7 +602,7 @@ OFCondition DRTStructureSetROISequence::insertItem(const size_t pos, Item *&item
 }
 
 
-OFCondition DRTStructureSetROISequence::removeItem(const size_t pos)
+OFCondition DRTStructureSetROISequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

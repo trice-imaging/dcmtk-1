@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2003-2018, OFFIS e.V.
+ *  Copyright (C) 2003-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -67,17 +67,6 @@ DcmTransferSyntaxMap& DcmTransferSyntaxMap::operator=(const DcmTransferSyntaxMap
   return *this;
 }
 
-OFMap<OFString, DcmTransferSyntaxList*>::const_iterator DcmTransferSyntaxMap::begin()
-{
-  return map_.begin();
-}
-
-OFMap<OFString, DcmTransferSyntaxList*>::const_iterator DcmTransferSyntaxMap::end()
-{
-  return map_.end();
-}
-
-
 void DcmTransferSyntaxMap::clear()
 {
   while (map_.size () != 0)
@@ -86,11 +75,6 @@ void DcmTransferSyntaxMap::clear()
     delete (*first).second;
     map_.erase(first);
   }
-}
-
-size_t DcmTransferSyntaxMap::size() const
-{
-  return map_.size();
 }
 
 OFCondition DcmTransferSyntaxMap::add(
@@ -108,6 +92,7 @@ OFCondition DcmTransferSyntaxMap::add(
     return makeOFCondition(OFM_dcmnet, 1024, OF_error, s.c_str());
   }
 
+  DcmTransferSyntaxList * const *value = NULL;
   OFString skey(key);
   OFMap<OFString, DcmTransferSyntaxList*>::iterator it = map_.find(skey);
 
@@ -115,11 +100,13 @@ OFCondition DcmTransferSyntaxMap::add(
   {
     DcmTransferSyntaxList *newentry = new DcmTransferSyntaxList();
     map_.insert(OFPair<OFString, DcmTransferSyntaxList*>(skey, newentry));
-    newentry->push_back(uid);
+    value = &newentry;
   }
   else
-    (*it).second->push_back(uid);
+    value = & ((*it).second);
 
+  // insert UID into list.
+  (*value)->push_back(uid);
   return EC_Normal;
 }
 

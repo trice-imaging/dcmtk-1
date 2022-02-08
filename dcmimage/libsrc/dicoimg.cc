@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2021, OFFIS e.V.
+ *  Copyright (C) 1996-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -36,6 +36,7 @@
 #include "dcmtk/dcmimage/dicoopxt.h"
 #include "dcmtk/dcmimage/dilogger.h"
 #include "dcmtk/dcmimgle/diutils.h"
+
 
 /*----------------*
  *  constructors  *
@@ -573,16 +574,14 @@ int DiColorImage::writeImageToDataset(DcmItem &dataset,
                 /* set image resolution */
                 dataset.putAndInsertUint16(DCM_Columns, Columns);
                 dataset.putAndInsertUint16(DCM_Rows, Rows);
-#ifdef PRId32
-                sprintf(numBuf, "%" PRId32, NumberOfFrames);
-#elif SIZEOF_LONG == 8
+#if SIZEOF_LONG == 8
                 sprintf(numBuf, "%d", NumberOfFrames);
 #else
                 sprintf(numBuf, "%ld", NumberOfFrames);
 #endif
                 dataset.putAndInsertString(DCM_NumberOfFrames, numBuf);
                 dataset.putAndInsertUint16(DCM_SamplesPerPixel, 3);
-                dataset.putAndInsertUint16(DCM_PlanarConfiguration, OFstatic_cast(const Uint16, planarConfig));
+                dataset.putAndInsertUint16(DCM_PlanarConfiguration, planarConfig);
                 /* set pixel encoding and data */
                 switch (InterData->getRepresentation())
                 {
@@ -611,8 +610,8 @@ int DiColorImage::writeImageToDataset(DcmItem &dataset,
                         dataset.putAndInsertUint16(DCM_PixelRepresentation, 1);
                         break;
                 }
-                dataset.putAndInsertUint16(DCM_BitsStored, OFstatic_cast(Uint16, BitsPerSample));
-                dataset.putAndInsertUint16(DCM_HighBit, OFstatic_cast(Uint16, (BitsPerSample - 1)));
+                dataset.putAndInsertUint16(DCM_BitsStored, BitsPerSample);
+                dataset.putAndInsertUint16(DCM_HighBit, BitsPerSample - 1);
                 /* update other DICOM attributes */
                 updateImagePixelModuleAttributes(dataset);
                 result = 1;
@@ -681,9 +680,8 @@ int DiColorImage::writeRawPPM(FILE *stream,
             if ((OutputData != NULL) && (OutputData->getData() != NULL))
             {
                 fprintf(stream, "P6\n%u %u\n%lu\n", Columns, Rows, DicomImageClass::maxval(bits));
-                const size_t count = OFstatic_cast(size_t, OutputData->getCount());
-                if (fwrite(OutputData->getData(), OutputData->getItemSize(), count, stream) == count)
-                    return 1;
+                fwrite(OutputData->getData(), OFstatic_cast(size_t, OutputData->getCount()), OutputData->getItemSize(), stream);
+                return 1;
             }
         }
     }

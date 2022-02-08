@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTFixationDeviceSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -108,8 +108,8 @@ OFCondition DRTFixationDeviceSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, FixationDeviceType, "1", "1", "FixationDeviceSequence");
-        getAndCheckElementFromDataset(item, FixationDeviceLabel, "1", "2", "FixationDeviceSequence");
+        getAndCheckElementFromDataset(item, FixationDeviceType, "1", "1C", "FixationDeviceSequence");
+        getAndCheckElementFromDataset(item, FixationDeviceLabel, "1", "2C", "FixationDeviceSequence");
         getAndCheckElementFromDataset(item, FixationDeviceDescription, "1", "3", "FixationDeviceSequence");
         getAndCheckElementFromDataset(item, FixationDevicePosition, "1", "3", "FixationDeviceSequence");
         getAndCheckElementFromDataset(item, FixationDevicePitchAngle, "1", "3", "FixationDeviceSequence");
@@ -127,8 +127,8 @@ OFCondition DRTFixationDeviceSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmCodeString(FixationDeviceType), "1", "1", "FixationDeviceSequence");
-        addElementToDataset(result, item, new DcmShortString(FixationDeviceLabel), "1", "2", "FixationDeviceSequence");
+        addElementToDataset(result, item, new DcmCodeString(FixationDeviceType), "1", "1C", "FixationDeviceSequence");
+        addElementToDataset(result, item, new DcmShortString(FixationDeviceLabel), "1", "2C", "FixationDeviceSequence");
         addElementToDataset(result, item, new DcmShortText(FixationDeviceDescription), "1", "3", "FixationDeviceSequence");
         addElementToDataset(result, item, new DcmShortString(FixationDevicePosition), "1", "3", "FixationDeviceSequence");
         addElementToDataset(result, item, new DcmFloatingPointSingle(FixationDevicePitchAngle), "1", "3", "FixationDeviceSequence");
@@ -388,7 +388,7 @@ OFBool DRTFixationDeviceSequence::isValid() const
 }
 
 
-size_t DRTFixationDeviceSequence::getNumberOfItems() const
+unsigned long DRTFixationDeviceSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -418,12 +418,12 @@ OFCondition DRTFixationDeviceSequence::gotoNextItem()
 }
 
 
-OFCondition DRTFixationDeviceSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTFixationDeviceSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -438,12 +438,12 @@ OFCondition DRTFixationDeviceSequence::gotoItem(const size_t num, OFListIterator
 }
 
 
-OFCondition DRTFixationDeviceSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTFixationDeviceSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -458,7 +458,7 @@ OFCondition DRTFixationDeviceSequence::gotoItem(const size_t num, OFListConstIte
 }
 
 
-OFCondition DRTFixationDeviceSequence::gotoItem(const size_t num)
+OFCondition DRTFixationDeviceSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -494,7 +494,7 @@ const DRTFixationDeviceSequence::Item &DRTFixationDeviceSequence::getCurrentItem
 }
 
 
-OFCondition DRTFixationDeviceSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTFixationDeviceSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -504,7 +504,7 @@ OFCondition DRTFixationDeviceSequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTFixationDeviceSequence::Item &DRTFixationDeviceSequence::getItem(const size_t num)
+DRTFixationDeviceSequence::Item &DRTFixationDeviceSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -514,7 +514,7 @@ DRTFixationDeviceSequence::Item &DRTFixationDeviceSequence::getItem(const size_t
 }
 
 
-const DRTFixationDeviceSequence::Item &DRTFixationDeviceSequence::getItem(const size_t num) const
+const DRTFixationDeviceSequence::Item &DRTFixationDeviceSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -524,13 +524,13 @@ const DRTFixationDeviceSequence::Item &DRTFixationDeviceSequence::getItem(const 
 }
 
 
-DRTFixationDeviceSequence::Item &DRTFixationDeviceSequence::operator[](const size_t num)
+DRTFixationDeviceSequence::Item &DRTFixationDeviceSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTFixationDeviceSequence::Item &DRTFixationDeviceSequence::operator[](const size_t num) const
+const DRTFixationDeviceSequence::Item &DRTFixationDeviceSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -553,7 +553,7 @@ OFCondition DRTFixationDeviceSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTFixationDeviceSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTFixationDeviceSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -576,7 +576,7 @@ OFCondition DRTFixationDeviceSequence::insertItem(const size_t pos, Item *&item)
 }
 
 
-OFCondition DRTFixationDeviceSequence::removeItem(const size_t pos)
+OFCondition DRTFixationDeviceSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

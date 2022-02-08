@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTIonToleranceTableSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -23,11 +23,7 @@ DRTIonToleranceTableSequence::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
     BeamLimitingDeviceAngleTolerance(DCM_BeamLimitingDeviceAngleTolerance),
     BeamLimitingDeviceToleranceSequence(emptyDefaultItem /*emptyDefaultSequence*/),
-    ChairHeadFramePositionTolerance(DCM_ChairHeadFramePositionTolerance),
-    FixationLightAzimuthalAngleTolerance(DCM_FixationLightAzimuthalAngleTolerance),
-    FixationLightPolarAngleTolerance(DCM_FixationLightPolarAngleTolerance),
     GantryAngleTolerance(DCM_GantryAngleTolerance),
-    HeadFixationAngleTolerance(DCM_HeadFixationAngleTolerance),
     PatientSupportAngleTolerance(DCM_PatientSupportAngleTolerance),
     SnoutPositionTolerance(DCM_SnoutPositionTolerance),
     TableTopLateralPositionTolerance(DCM_TableTopLateralPositionTolerance),
@@ -45,11 +41,7 @@ DRTIonToleranceTableSequence::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
     BeamLimitingDeviceAngleTolerance(copy.BeamLimitingDeviceAngleTolerance),
     BeamLimitingDeviceToleranceSequence(copy.BeamLimitingDeviceToleranceSequence),
-    ChairHeadFramePositionTolerance(copy.ChairHeadFramePositionTolerance),
-    FixationLightAzimuthalAngleTolerance(copy.FixationLightAzimuthalAngleTolerance),
-    FixationLightPolarAngleTolerance(copy.FixationLightPolarAngleTolerance),
     GantryAngleTolerance(copy.GantryAngleTolerance),
-    HeadFixationAngleTolerance(copy.HeadFixationAngleTolerance),
     PatientSupportAngleTolerance(copy.PatientSupportAngleTolerance),
     SnoutPositionTolerance(copy.SnoutPositionTolerance),
     TableTopLateralPositionTolerance(copy.TableTopLateralPositionTolerance),
@@ -75,11 +67,7 @@ DRTIonToleranceTableSequence::Item &DRTIonToleranceTableSequence::Item::operator
         EmptyDefaultItem = copy.EmptyDefaultItem;
         BeamLimitingDeviceAngleTolerance = copy.BeamLimitingDeviceAngleTolerance;
         BeamLimitingDeviceToleranceSequence = copy.BeamLimitingDeviceToleranceSequence;
-        ChairHeadFramePositionTolerance = copy.ChairHeadFramePositionTolerance;
-        FixationLightAzimuthalAngleTolerance = copy.FixationLightAzimuthalAngleTolerance;
-        FixationLightPolarAngleTolerance = copy.FixationLightPolarAngleTolerance;
         GantryAngleTolerance = copy.GantryAngleTolerance;
-        HeadFixationAngleTolerance = copy.HeadFixationAngleTolerance;
         PatientSupportAngleTolerance = copy.PatientSupportAngleTolerance;
         SnoutPositionTolerance = copy.SnoutPositionTolerance;
         TableTopLateralPositionTolerance = copy.TableTopLateralPositionTolerance;
@@ -111,10 +99,6 @@ void DRTIonToleranceTableSequence::Item::clear()
         TableTopPitchAngleTolerance.clear();
         TableTopRollAngleTolerance.clear();
         SnoutPositionTolerance.clear();
-        HeadFixationAngleTolerance.clear();
-        ChairHeadFramePositionTolerance.clear();
-        FixationLightAzimuthalAngleTolerance.clear();
-        FixationLightPolarAngleTolerance.clear();
     }
 }
 
@@ -132,11 +116,7 @@ OFBool DRTIonToleranceTableSequence::Item::isEmpty()
            TableTopLateralPositionTolerance.isEmpty() &&
            TableTopPitchAngleTolerance.isEmpty() &&
            TableTopRollAngleTolerance.isEmpty() &&
-           SnoutPositionTolerance.isEmpty() &&
-           HeadFixationAngleTolerance.isEmpty() &&
-           ChairHeadFramePositionTolerance.isEmpty() &&
-           FixationLightAzimuthalAngleTolerance.isEmpty() &&
-           FixationLightPolarAngleTolerance.isEmpty();
+           SnoutPositionTolerance.isEmpty();
 }
 
 
@@ -165,10 +145,6 @@ OFCondition DRTIonToleranceTableSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, TableTopPitchAngleTolerance, "1", "3", "IonToleranceTableSequence");
         getAndCheckElementFromDataset(item, TableTopRollAngleTolerance, "1", "3", "IonToleranceTableSequence");
         getAndCheckElementFromDataset(item, SnoutPositionTolerance, "1", "3", "IonToleranceTableSequence");
-        getAndCheckElementFromDataset(item, HeadFixationAngleTolerance, "1", "3", "IonToleranceTableSequence");
-        getAndCheckElementFromDataset(item, ChairHeadFramePositionTolerance, "1", "3", "IonToleranceTableSequence");
-        getAndCheckElementFromDataset(item, FixationLightAzimuthalAngleTolerance, "1", "3", "IonToleranceTableSequence");
-        getAndCheckElementFromDataset(item, FixationLightPolarAngleTolerance, "1", "3", "IonToleranceTableSequence");
         result = EC_Normal;
     }
     return result;
@@ -193,10 +169,6 @@ OFCondition DRTIonToleranceTableSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmFloatingPointSingle(TableTopPitchAngleTolerance), "1", "3", "IonToleranceTableSequence");
         addElementToDataset(result, item, new DcmFloatingPointSingle(TableTopRollAngleTolerance), "1", "3", "IonToleranceTableSequence");
         addElementToDataset(result, item, new DcmFloatingPointSingle(SnoutPositionTolerance), "1", "3", "IonToleranceTableSequence");
-        addElementToDataset(result, item, new DcmDecimalString(HeadFixationAngleTolerance), "1", "3", "IonToleranceTableSequence");
-        addElementToDataset(result, item, new DcmDecimalString(ChairHeadFramePositionTolerance), "1", "3", "IonToleranceTableSequence");
-        addElementToDataset(result, item, new DcmDecimalString(FixationLightAzimuthalAngleTolerance), "1", "3", "IonToleranceTableSequence");
-        addElementToDataset(result, item, new DcmDecimalString(FixationLightPolarAngleTolerance), "1", "3", "IonToleranceTableSequence");
     }
     return result;
 }
@@ -220,60 +192,6 @@ OFCondition DRTIonToleranceTableSequence::Item::getBeamLimitingDeviceAngleTolera
 }
 
 
-OFCondition DRTIonToleranceTableSequence::Item::getChairHeadFramePositionTolerance(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(ChairHeadFramePositionTolerance, value, pos);
-}
-
-
-OFCondition DRTIonToleranceTableSequence::Item::getChairHeadFramePositionTolerance(Float64 &value, const unsigned long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return OFconst_cast(DcmDecimalString &, ChairHeadFramePositionTolerance).getFloat64(value, pos);
-}
-
-
-OFCondition DRTIonToleranceTableSequence::Item::getFixationLightAzimuthalAngleTolerance(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(FixationLightAzimuthalAngleTolerance, value, pos);
-}
-
-
-OFCondition DRTIonToleranceTableSequence::Item::getFixationLightAzimuthalAngleTolerance(Float64 &value, const unsigned long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return OFconst_cast(DcmDecimalString &, FixationLightAzimuthalAngleTolerance).getFloat64(value, pos);
-}
-
-
-OFCondition DRTIonToleranceTableSequence::Item::getFixationLightPolarAngleTolerance(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(FixationLightPolarAngleTolerance, value, pos);
-}
-
-
-OFCondition DRTIonToleranceTableSequence::Item::getFixationLightPolarAngleTolerance(Float64 &value, const unsigned long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return OFconst_cast(DcmDecimalString &, FixationLightPolarAngleTolerance).getFloat64(value, pos);
-}
-
-
 OFCondition DRTIonToleranceTableSequence::Item::getGantryAngleTolerance(OFString &value, const signed long pos) const
 {
     if (EmptyDefaultItem)
@@ -289,24 +207,6 @@ OFCondition DRTIonToleranceTableSequence::Item::getGantryAngleTolerance(Float64 
         return EC_IllegalCall;
     else
         return OFconst_cast(DcmDecimalString &, GantryAngleTolerance).getFloat64(value, pos);
-}
-
-
-OFCondition DRTIonToleranceTableSequence::Item::getHeadFixationAngleTolerance(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(HeadFixationAngleTolerance, value, pos);
-}
-
-
-OFCondition DRTIonToleranceTableSequence::Item::getHeadFixationAngleTolerance(Float64 &value, const unsigned long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return OFconst_cast(DcmDecimalString &, HeadFixationAngleTolerance).getFloat64(value, pos);
 }
 
 
@@ -449,45 +349,6 @@ OFCondition DRTIonToleranceTableSequence::Item::setBeamLimitingDeviceAngleTolera
 }
 
 
-OFCondition DRTIonToleranceTableSequence::Item::setChairHeadFramePositionTolerance(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmDecimalString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = ChairHeadFramePositionTolerance.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTIonToleranceTableSequence::Item::setFixationLightAzimuthalAngleTolerance(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmDecimalString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = FixationLightAzimuthalAngleTolerance.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTIonToleranceTableSequence::Item::setFixationLightPolarAngleTolerance(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmDecimalString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = FixationLightPolarAngleTolerance.putOFStringArray(value);
-    }
-    return result;
-}
-
-
 OFCondition DRTIonToleranceTableSequence::Item::setGantryAngleTolerance(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -496,19 +357,6 @@ OFCondition DRTIonToleranceTableSequence::Item::setGantryAngleTolerance(const OF
         result = (check) ? DcmDecimalString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
             result = GantryAngleTolerance.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTIonToleranceTableSequence::Item::setHeadFixationAngleTolerance(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmDecimalString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = HeadFixationAngleTolerance.putOFStringArray(value);
     }
     return result;
 }
@@ -722,7 +570,7 @@ OFBool DRTIonToleranceTableSequence::isValid() const
 }
 
 
-size_t DRTIonToleranceTableSequence::getNumberOfItems() const
+unsigned long DRTIonToleranceTableSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -752,12 +600,12 @@ OFCondition DRTIonToleranceTableSequence::gotoNextItem()
 }
 
 
-OFCondition DRTIonToleranceTableSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTIonToleranceTableSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -772,12 +620,12 @@ OFCondition DRTIonToleranceTableSequence::gotoItem(const size_t num, OFListItera
 }
 
 
-OFCondition DRTIonToleranceTableSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTIonToleranceTableSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -792,7 +640,7 @@ OFCondition DRTIonToleranceTableSequence::gotoItem(const size_t num, OFListConst
 }
 
 
-OFCondition DRTIonToleranceTableSequence::gotoItem(const size_t num)
+OFCondition DRTIonToleranceTableSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -828,7 +676,7 @@ const DRTIonToleranceTableSequence::Item &DRTIonToleranceTableSequence::getCurre
 }
 
 
-OFCondition DRTIonToleranceTableSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTIonToleranceTableSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -838,7 +686,7 @@ OFCondition DRTIonToleranceTableSequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTIonToleranceTableSequence::Item &DRTIonToleranceTableSequence::getItem(const size_t num)
+DRTIonToleranceTableSequence::Item &DRTIonToleranceTableSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -848,7 +696,7 @@ DRTIonToleranceTableSequence::Item &DRTIonToleranceTableSequence::getItem(const 
 }
 
 
-const DRTIonToleranceTableSequence::Item &DRTIonToleranceTableSequence::getItem(const size_t num) const
+const DRTIonToleranceTableSequence::Item &DRTIonToleranceTableSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -858,13 +706,13 @@ const DRTIonToleranceTableSequence::Item &DRTIonToleranceTableSequence::getItem(
 }
 
 
-DRTIonToleranceTableSequence::Item &DRTIonToleranceTableSequence::operator[](const size_t num)
+DRTIonToleranceTableSequence::Item &DRTIonToleranceTableSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTIonToleranceTableSequence::Item &DRTIonToleranceTableSequence::operator[](const size_t num) const
+const DRTIonToleranceTableSequence::Item &DRTIonToleranceTableSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -887,7 +735,7 @@ OFCondition DRTIonToleranceTableSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTIonToleranceTableSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTIonToleranceTableSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -910,7 +758,7 @@ OFCondition DRTIonToleranceTableSequence::insertItem(const size_t pos, Item *&it
 }
 
 
-OFCondition DRTIonToleranceTableSequence::removeItem(const size_t pos)
+OFCondition DRTIonToleranceTableSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2016, OFFIS e.V.
+ *  Copyright (C) 2002-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -82,9 +82,9 @@ public:
     long limitcol;
     long col; // must be signed!
     long maxval_l = OFstatic_cast(long, maxval);
-    int ind;
+    register int ind;
     const DcmQuantComponent *currentpixel;
-    DcmQuantComponent cr, cg, cb;
+    register DcmQuantComponent cr, cg, cb;
 
     // create scale table
     DcmQuantScaleTable scaletable;

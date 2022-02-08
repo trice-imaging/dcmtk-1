@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2010-2018, OFFIS e.V.
+ *  Copyright (C) 2010-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -68,29 +68,15 @@ class DCMTK_DCMSR_EXPORT DSRSpatialCoordinates3DValue
      */
     DSRSpatialCoordinates3DValue &operator=(const DSRSpatialCoordinates3DValue &coordinatesValue);
 
-    /** comparison operator "equal"
-     ** @param  coordinatesValue  spatial coordinates value that should be compared to the
-     *                            current one
-     ** @return OFTrue if both spatial coordinates values are equal, OFFalse otherwise
-     */
-    OFBool operator==(const DSRSpatialCoordinates3DValue &coordinatesValue) const;
-
-    /** comparison operator "not equal"
-     ** @param  coordinatesValue  spatial coordinates value that should be compared to the
-     *                            current one
-     ** @return OFTrue if both spatial coordinates values are not equal, OFFalse otherwise
-     */
-    OFBool operator!=(const DSRSpatialCoordinates3DValue &coordinatesValue) const;
-
     /** clear all internal variables.
-     *  Graphic type is set to DSRTypes::GT3_invalid.  Since an empty list of graphic data is
-     *  invalid the spatial coordinates value becomes invalid afterwards.
+     *  Graphic type is set to GT3_invalid.  Since an empty list of graphic data is invalid
+     *  the spatial coordinates value becomes invalid afterwards.
      */
     virtual void clear();
 
     /** check whether the current spatial coordinates value is valid.
-     *  The value is valid if the graphic type is not DSRTypes::GT3_invalid and the graphic data
-     *  as well as the referenced frame of reference UID are valid.  See checkXXX() methods for
+     *  The value is valid if the graphic type is not GT3_invalid and the graphic data as well
+     *  as the referenced frame of reference UID are valid.  See checkXXX() methods for
      *  details.
      ** @return OFTrue if reference value is valid, OFFalse otherwise
      */
@@ -115,11 +101,9 @@ class DCMTK_DCMSR_EXPORT DSRSpatialCoordinates3DValue
 
     /** read spatial coordinates value from dataset
      ** @param  dataset  DICOM dataset from which the value should be read
-     *  @param  flags    flag used to customize the reading process (see DSRTypes::RF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual OFCondition read(DcmItem &dataset,
-                             const size_t flags);
+    virtual OFCondition read(DcmItem &dataset);
 
     /** write spatial coordinates reference value to dataset
      ** @param  dataset  DICOM dataset to which the value should be written
@@ -130,12 +114,10 @@ class DCMTK_DCMSR_EXPORT DSRSpatialCoordinates3DValue
     /** read spatial coordinates value from XML document
      ** @param  doc     document containing the XML file content
      *  @param  cursor  cursor pointing to the starting node
-     *  @param  flags   flag used to customize the reading process (see DSRTypes::XF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition readXML(const DSRXMLDocument &doc,
-                                DSRXMLCursor cursor,
-                                const size_t flags);
+                                DSRXMLCursor cursor);
 
     /** write spatial coordinates value in XML format
      ** @param  stream  output stream to which the XML document is written
@@ -176,7 +158,7 @@ class DCMTK_DCMSR_EXPORT DSRSpatialCoordinates3DValue
     /** get current graphic type.
      *  The graphic type specifies the geometry of the coordinates stored in the graphic data
      *  list.
-     ** @return graphic type (might be DSRTypes::GT3_invalid)
+     ** @return graphic type (might be GT3_invalid)
      */
     inline DSRTypes::E_GraphicType3D getGraphicType() const
     {
@@ -228,7 +210,7 @@ class DCMTK_DCMSR_EXPORT DSRSpatialCoordinates3DValue
     /** set current graphic type.
      *  The graphic type specifies the geometry of the coordinates stored in the graphic data
      *  list.
-     ** @param  graphicType  graphic type to be set (DSRTypes::GT3_invalid is not allowed)
+     ** @param  graphicType  graphic type to be set (GT3_invalid is not allowed)
      *  @param  check        dummy parameter (currently not used)
      ** @return status, EC_Normal if successful, an error code otherwise
      */

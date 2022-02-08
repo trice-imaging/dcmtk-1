@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2021, OFFIS e.V.
+ *  Copyright (C) 1998-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -48,10 +48,13 @@
 #include "dcmtk/dcmpstat/dvpsri.h"      /* for DVPSReferencedImage, needed by MSVC5 with STL */
 
 
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
+
 /* --------------- class DVPSFilmSession --------------- */
 
 DVPSFilmSession::DVPSFilmSession(Uint16 illumin, Uint16 reflection)
-: sopInstanceUID()
+: sopInstanceUID(NULL)
 , numberOfCopies(DCM_NumberOfCopies)
 , printPriority(DCM_PrintPriority)
 , mediumType(DCM_MediumType)
@@ -93,11 +96,11 @@ OFBool DVPSFilmSession::isInstance(const char *uid)
 }
 
 OFBool DVPSFilmSession::printSCPCreate(
-    DVConfiguration& cfg,
-    const char *cfgname,
-    DcmDataset *rqDataset,
-    T_DIMSE_Message& rsp,
-    DcmDataset *& rspDataset,
+    DVConfiguration& cfg, 
+    const char *cfgname, 
+    DcmDataset *rqDataset, 
+    T_DIMSE_Message& rsp, 
+    DcmDataset *& rspDataset, 
     const char *peerae,
     OFBool presentationLUTnegotiated,
     DVPSPresentationLUT_PList& globalPresentationLUTList)
@@ -105,11 +108,11 @@ OFBool DVPSFilmSession::printSCPCreate(
   OFBool result = OFTrue;
   DcmStack stack;
   sopInstanceUID = rsp.msg.NCreateRSP.AffectedSOPInstanceUID;
-
+  
   // numberOfCopies
   if (result)
   {
-    READ_FROM_PDATASET(DcmIntegerString, EVR_IS, numberOfCopies)
+    READ_FROM_PDATASET(DcmIntegerString, numberOfCopies)
     if (numberOfCopies.getLength() == 0) numberOfCopies.putString(DEFAULT_numberOfCopies);
     else
     {
@@ -129,7 +132,7 @@ OFBool DVPSFilmSession::printSCPCreate(
   // printPriority
   if (result)
   {
-    READ_FROM_PDATASET(DcmCodeString, EVR_CS, printPriority)
+    READ_FROM_PDATASET(DcmCodeString, printPriority)
     if (printPriority.getLength() == 0) printPriority.putString(DEFAULT_priority);
     else
     {
@@ -143,18 +146,18 @@ OFBool DVPSFilmSession::printSCPCreate(
       }
     }
   }
-
+  
   // mediumType
   if (result)
   {
-    Uint32 numMediumTypes = cfg.getTargetPrinterNumberOfMediumTypes(cfgname);
-    READ_FROM_PDATASET(DcmCodeString, EVR_CS, mediumType)
-    if (mediumType.getLength() == 0)
+    Uint32 numMediumTypes = cfg.getTargetPrinterNumberOfMediumTypes(cfgname);  	
+    READ_FROM_PDATASET(DcmCodeString, mediumType)
+    if (mediumType.getLength() == 0) 
     {
       if (numMediumTypes > 0)
       {
-        OFString aString;
-        cfg.getTargetPrinterMediumType(cfgname, 0, aString);
+      	OFString aString;
+      	cfg.getTargetPrinterMediumType(cfgname, 0, aString);      	
         mediumType.putString(aString.c_str());
       } else {
         mediumType.putString(DEFAULT_mediumType);
@@ -167,12 +170,12 @@ OFBool DVPSFilmSession::printSCPCreate(
       mediumType.getOFString(theMedium, 0, OFTrue);
       for (Uint32 i=0; i<numMediumTypes; i++)
       {
-        cfg.getTargetPrinterMediumType(cfgname, i, aString);
-        if (theMedium == aString)
-        {
-          found = OFTrue;
-          break;
-        }
+      	cfg.getTargetPrinterMediumType(cfgname, i, aString);
+      	if (theMedium == aString) 
+      	{
+      	  found = OFTrue;
+      	  break;
+      	}	
       }
       if (! found)
       {
@@ -186,14 +189,14 @@ OFBool DVPSFilmSession::printSCPCreate(
   // filmDestination
   if (result)
   {
-    Uint32 numFilmDestination = cfg.getTargetPrinterNumberOfFilmDestinations(cfgname);
-    READ_FROM_PDATASET(DcmCodeString, EVR_CS, filmDestination)
-    if (filmDestination.getLength() == 0)
+    Uint32 numFilmDestination = cfg.getTargetPrinterNumberOfFilmDestinations(cfgname);  	
+    READ_FROM_PDATASET(DcmCodeString, filmDestination)
+    if (filmDestination.getLength() == 0) 
     {
       if (numFilmDestination > 0)
       {
-        OFString aString;
-        cfg.getTargetPrinterFilmDestination(cfgname, 0, aString);
+      	OFString aString;
+      	cfg.getTargetPrinterFilmDestination(cfgname, 0, aString);      	
         filmDestination.putString(aString.c_str());
       } else {
         filmDestination.putString(DEFAULT_filmDestination);
@@ -206,12 +209,12 @@ OFBool DVPSFilmSession::printSCPCreate(
       filmDestination.getOFString(theDestination, 0, OFTrue);
       for (Uint32 i=0; i<numFilmDestination; i++)
       {
-        cfg.getTargetPrinterFilmDestination(cfgname, i, aString);
-        if (theDestination == aString)
-        {
-          found = OFTrue;
-          break;
-        }
+      	cfg.getTargetPrinterFilmDestination(cfgname, i, aString);
+      	if (theDestination == aString) 
+      	{
+      	  found = OFTrue;
+      	  break;
+      	}	
       }
       if (! found)
       {
@@ -225,23 +228,23 @@ OFBool DVPSFilmSession::printSCPCreate(
   // filmSessionLabel
   if (result)
   {
-    READ_FROM_PDATASET(DcmLongString, EVR_LO, filmSessionLabel)
-    if (filmSessionLabel.getLength() == 0)
+    READ_FROM_PDATASET(DcmLongString, filmSessionLabel)
+    if (filmSessionLabel.getLength() == 0) 
     {
       OFString labelString("print job ");
       OFString aString;
       if (peerae)
       {
-        labelString += "for \"";
-        labelString += peerae;
-        labelString += "\" ";
+      	labelString += "for \"";
+      	labelString += peerae;
+      	labelString += "\" ";
       }
       labelString += "created ";
       DVPSHelper::currentDate(aString);
       labelString += aString;
       labelString += " ";
       DVPSHelper::currentTime(aString);
-      labelString += aString;
+      labelString += aString;      
       filmSessionLabel.putString(labelString.c_str());
     }
   }
@@ -249,8 +252,8 @@ OFBool DVPSFilmSession::printSCPCreate(
   // ownerID
   if (result)
   {
-    READ_FROM_PDATASET(DcmShortString, EVR_SH, ownerID)
-    if (ownerID.getLength() == 0)
+    READ_FROM_PDATASET(DcmShortString, ownerID)
+    if (ownerID.getLength() == 0) 
     {
       if (peerae) ownerID.putString(peerae); else ownerID.putString(DEFAULT_ownerID);
     }
@@ -262,7 +265,7 @@ OFBool DVPSFilmSession::printSCPCreate(
     // illumination
     if (result)
     {
-      READ_FROM_PDATASET(DcmUnsignedShort, EVR_US, illumination)
+      READ_FROM_PDATASET(DcmUnsignedShort, illumination)
       if (illumination.getLength() == 0) illumination.putUint16(DEFAULT_illumination, 0);
       // we don't check illumination set by the user (for now)
     }
@@ -270,7 +273,7 @@ OFBool DVPSFilmSession::printSCPCreate(
     // reflectedAmbientLight
     if (result)
     {
-      READ_FROM_PDATASET(DcmUnsignedShort, EVR_US, reflectedAmbientLight)
+      READ_FROM_PDATASET(DcmUnsignedShort, reflectedAmbientLight)
       if (reflectedAmbientLight.getLength() == 0) illumination.putUint16(DEFAULT_reflectedAmbientLight, 0);
       // we don't check reflected ambient light set by the user (for now)
     }
@@ -288,7 +291,7 @@ OFBool DVPSFilmSession::printSCPCreate(
            OFString aString;
            DcmItem *item = seq->getItem(0);
            stack.clear();
-           READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, referencedPresentationLUTInstanceUID)
+           READ_FROM_DATASET2(DcmUniqueIdentifier, referencedPresentationLUTInstanceUID)           
            if (referencedPresentationLUTInstanceUID.getLength() > 0)
            {
              referencedPresentationLUTInstanceUID.getOFString(aString,0);
@@ -302,9 +305,9 @@ OFBool DVPSFilmSession::printSCPCreate(
                // check referenced SOP class UID
                DcmUniqueIdentifier refClassUID(DCM_ReferencedSOPClassUID);
                stack.clear();
-               READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, refClassUID)
+               READ_FROM_DATASET2(DcmUniqueIdentifier, refClassUID)
                if (refClassUID.getLength() > 0)
-               {
+               {     
                   aString.clear();
                   refClassUID.getOFString(aString,0, OFTrue);
                   if (aString != UID_PresentationLUTSOPClass)
@@ -334,8 +337,8 @@ OFBool DVPSFilmSession::printSCPCreate(
           result = OFFalse;
         }
       }
-    }
-
+    }    
+    
   } /* if presentationLUTnegotiated */
 
   // browse through rqDataset and check for unsupported attributes
@@ -366,7 +369,7 @@ OFBool DVPSFilmSession::printSCPCreate(
         {
           DCMPSTAT_WARN("cannot create Basic Film Session: illumination received:\n"
               << DcmObject::PrintHelper(*stack.top(), DCMTypes::PF_shortenLongTagValues));
-          rsp.msg.NCreateRSP.DimseStatus = STATUS_N_NoSuchAttribute;
+          rsp.msg.NCreateRSP.DimseStatus = STATUS_N_NoSuchAttribute;          
           result = OFFalse;
         }
       }
@@ -376,7 +379,7 @@ OFBool DVPSFilmSession::printSCPCreate(
         {
           DCMPSTAT_WARN("cannot create Basic Film Session: reflected ambient light received:\n"
               << DcmObject::PrintHelper(*stack.top(), DCMTypes::PF_shortenLongTagValues));
-          rsp.msg.NCreateRSP.DimseStatus = STATUS_N_NoSuchAttribute;
+          rsp.msg.NCreateRSP.DimseStatus = STATUS_N_NoSuchAttribute;          
           result = OFFalse;
         }
       }
@@ -386,7 +389,7 @@ OFBool DVPSFilmSession::printSCPCreate(
         {
           DCMPSTAT_WARN("cannot create Basic Film Session: referenced presentation LUT sequence received:\n"
               << DcmObject::PrintHelper(*stack.top(), DCMTypes::PF_shortenLongTagValues));
-          rsp.msg.NCreateRSP.DimseStatus = STATUS_N_NoSuchAttribute;
+          rsp.msg.NCreateRSP.DimseStatus = STATUS_N_NoSuchAttribute;          
           result = OFFalse;
         }
       }
@@ -394,21 +397,21 @@ OFBool DVPSFilmSession::printSCPCreate(
       {
         DCMPSTAT_WARN("cannot create Basic Film Session: unsupported attribute received:\n"
             << DcmObject::PrintHelper(*stack.top(), DCMTypes::PF_shortenLongTagValues));
-        rsp.msg.NCreateRSP.DimseStatus = STATUS_N_NoSuchAttribute;
+      	rsp.msg.NCreateRSP.DimseStatus = STATUS_N_NoSuchAttribute;
         result = OFFalse;
       }
     }
   }
-
+  
   // if n-create was successful, create response dataset
   if (result)
   {
-    rspDataset = new DcmDataset;
+    rspDataset = new DcmDataset;    
     if (rspDataset)
     {
       OFCondition writeresult = EC_Normal;
       DcmElement *delem = NULL;
-
+      
       ADD_TO_PDATASET(DcmIntegerString, numberOfCopies)
       ADD_TO_PDATASET(DcmCodeString, printPriority)
       ADD_TO_PDATASET(DcmCodeString, mediumType)
@@ -428,7 +431,7 @@ OFBool DVPSFilmSession::printSCPCreate(
             {
               writeresult = wellknownlut->setType(DVPSP_identity);
               if (EC_Normal == writeresult) writeresult = wellknownlut->setSOPInstanceUID(WELLKNOWN_IDENTITY_PLUT_UID);
-              if (EC_Normal == writeresult) globalPresentationLUTList.insert(wellknownlut);
+              if (EC_Normal == writeresult) globalPresentationLUTList.insert(wellknownlut);              
             } else writeresult = EC_MemoryExhausted;
           }
         }
@@ -439,11 +442,11 @@ OFBool DVPSFilmSession::printSCPCreate(
       {
         rsp.msg.NCreateRSP.DataSetType = DIMSE_DATASET_PRESENT;
       } else {
-        delete rspDataset;
-        rspDataset = NULL;
+      	delete rspDataset;
+      	rspDataset = NULL;
         rsp.msg.NCreateRSP.DimseStatus = STATUS_N_ProcessingFailure;
         result = OFFalse;
-      }
+      }     
     } else {
       rsp.msg.NCreateRSP.DimseStatus = STATUS_N_ProcessingFailure;
       result = OFFalse;
@@ -454,10 +457,10 @@ OFBool DVPSFilmSession::printSCPCreate(
 
 
 OFBool DVPSFilmSession::printSCPSet(
-    DVConfiguration& cfg,
-    const char *cfgname,
-    DcmDataset *rqDataset,
-    T_DIMSE_Message& rsp,
+    DVConfiguration& cfg, 
+    const char *cfgname, 
+    DcmDataset *rqDataset, 
+    T_DIMSE_Message& rsp, 
     DcmDataset *& rspDataset,
     OFBool presentationLUTnegotiated,
     DVPSPresentationLUT_PList& globalPresentationLUTList,
@@ -468,14 +471,14 @@ OFBool DVPSFilmSession::printSCPSet(
   OFCondition writeresult = EC_Normal;
   DcmElement *delem = NULL;
   OFBool overrideFilmBoxPLUTSettings = OFFalse;
-
-  rspDataset = new DcmDataset;
+  
+  rspDataset = new DcmDataset;    
   if ((rqDataset == NULL)||(rspDataset == NULL))
   {
     rsp.msg.NSetRSP.DimseStatus = STATUS_N_ProcessingFailure;
     result = OFFalse;
   }
-
+  
   // numberOfCopies
   if (result)
   {
@@ -517,11 +520,11 @@ OFBool DVPSFilmSession::printSCPSet(
       }
     }
   }
-
+  
   // mediumType
   if (result)
   {
-    Uint32 numMediumTypes = cfg.getTargetPrinterNumberOfMediumTypes(cfgname);
+    Uint32 numMediumTypes = cfg.getTargetPrinterNumberOfMediumTypes(cfgname);  	
     stack.clear();
     if (rqDataset && (EC_Normal == rqDataset->search((DcmTagKey &)mediumType.getTag(), stack, ESM_fromHere, OFFalse)))
     {
@@ -532,12 +535,12 @@ OFBool DVPSFilmSession::printSCPSet(
       mediumType.getOFString(theMedium, 0, OFTrue);
       for (Uint32 i=0; i<numMediumTypes; i++)
       {
-        cfg.getTargetPrinterMediumType(cfgname, i, aString);
-        if (theMedium == aString)
-        {
-          found = OFTrue;
-          break;
-        }
+      	cfg.getTargetPrinterMediumType(cfgname, i, aString);
+      	if (theMedium == aString) 
+      	{
+      	  found = OFTrue;
+      	  break;
+      	}	
       }
       if (! found)
       {
@@ -553,7 +556,7 @@ OFBool DVPSFilmSession::printSCPSet(
   // filmDestination
   if (result)
   {
-    Uint32 numFilmDestination = cfg.getTargetPrinterNumberOfFilmDestinations(cfgname);
+    Uint32 numFilmDestination = cfg.getTargetPrinterNumberOfFilmDestinations(cfgname);  	
     stack.clear();
     if (rqDataset && (EC_Normal == rqDataset->search((DcmTagKey &)filmDestination.getTag(), stack, ESM_fromHere, OFFalse)))
     {
@@ -564,12 +567,12 @@ OFBool DVPSFilmSession::printSCPSet(
       filmDestination.getOFString(theDestination, 0, OFTrue);
       for (Uint32 i=0; i<numFilmDestination; i++)
       {
-        cfg.getTargetPrinterFilmDestination(cfgname, i, aString);
-        if (theDestination == aString)
-        {
-          found = OFTrue;
-          break;
-        }
+      	cfg.getTargetPrinterFilmDestination(cfgname, i, aString);
+      	if (theDestination == aString) 
+      	{
+      	  found = OFTrue;
+      	  break;
+      	}	
       }
       if (! found)
       {
@@ -644,7 +647,7 @@ OFBool DVPSFilmSession::printSCPSet(
            OFString aString;
            DcmItem *item = seq->getItem(0);
            stack.clear();
-           READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, referencedPresentationLUTInstanceUID)
+           READ_FROM_DATASET2(DcmUniqueIdentifier, referencedPresentationLUTInstanceUID)
            if (referencedPresentationLUTInstanceUID.getLength() > 0)
            {
              referencedPresentationLUTInstanceUID.getOFString(aString,0);
@@ -658,9 +661,9 @@ OFBool DVPSFilmSession::printSCPSet(
                // check referenced SOP class UID
                DcmUniqueIdentifier refClassUID(DCM_ReferencedSOPClassUID);
                stack.clear();
-               READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, refClassUID)
+               READ_FROM_DATASET2(DcmUniqueIdentifier, refClassUID)
                if (refClassUID.getLength() > 0)
-               {
+               {     
                   aString.clear();
                   refClassUID.getOFString(aString,0, OFTrue);
                   if (aString != UID_PresentationLUTSOPClass)
@@ -678,11 +681,11 @@ OFBool DVPSFilmSession::printSCPSet(
                       rsp.msg.NSetRSP.DimseStatus = STATUS_N_InvalidAttributeValue;
                       result = OFFalse;
                     } else {
-                      // referenced presentation LUT sequence is OK
+                      // referenced presentation LUT sequence is OK                      
                       overrideFilmBoxPLUTSettings = OFTrue;
                       DcmSequenceOfItems *newSeq = new DcmSequenceOfItems(*seq);
                       if (newSeq) rspDataset->insert(newSeq, OFTrue /*replaceOld*/);
-                      else
+                      else 
                       {
                         writeresult = EC_MemoryExhausted;
                       }
@@ -705,8 +708,8 @@ OFBool DVPSFilmSession::printSCPSet(
           result = OFFalse;
         }
       }
-    }
-
+    }    
+    
   } /* if presentationLUTnegotiated */
 
   // browse through rqDataset and check for unsupported attributes
@@ -729,7 +732,7 @@ OFBool DVPSFilmSession::printSCPSet(
       {
         DCMPSTAT_WARN("warning while updating Basic Film Session: memory allocation not supported\n"
             << DcmObject::PrintHelper(*stack.top(), DCMTypes::PF_shortenLongTagValues));
-        if (rsp.msg.NSetRSP.DimseStatus == 0) rsp.msg.NSetRSP.DimseStatus = STATUS_N_PRINT_BFS_Warn_MemoryAllocation;
+      	if (rsp.msg.NSetRSP.DimseStatus == 0) rsp.msg.NSetRSP.DimseStatus = STATUS_N_PRINT_BFS_Warn_MemoryAllocation;
       }
       else if (currentTag == DCM_Illumination)
       {
@@ -737,7 +740,7 @@ OFBool DVPSFilmSession::printSCPSet(
         {
           DCMPSTAT_WARN("cannot update Basic Film Session: illumination received:\n"
               << DcmObject::PrintHelper(*stack.top(), DCMTypes::PF_shortenLongTagValues));
-          rsp.msg.NSetRSP.DimseStatus = STATUS_N_NoSuchAttribute;
+          rsp.msg.NSetRSP.DimseStatus = STATUS_N_NoSuchAttribute;          
           result = OFFalse;
         }
       }
@@ -747,7 +750,7 @@ OFBool DVPSFilmSession::printSCPSet(
         {
           DCMPSTAT_WARN("cannot update Basic Film Session: reflected ambient light received:\n"
               << DcmObject::PrintHelper(*stack.top(), DCMTypes::PF_shortenLongTagValues));
-          rsp.msg.NSetRSP.DimseStatus = STATUS_N_NoSuchAttribute;
+          rsp.msg.NSetRSP.DimseStatus = STATUS_N_NoSuchAttribute;          
           result = OFFalse;
         }
       }
@@ -757,7 +760,7 @@ OFBool DVPSFilmSession::printSCPSet(
         {
           DCMPSTAT_WARN("cannot update Basic Film Session: referenced presentation LUT sequence received:\n"
               << DcmObject::PrintHelper(*stack.top(), DCMTypes::PF_shortenLongTagValues));
-          rsp.msg.NSetRSP.DimseStatus = STATUS_N_NoSuchAttribute;
+          rsp.msg.NSetRSP.DimseStatus = STATUS_N_NoSuchAttribute;          
           result = OFFalse;
         }
       }
@@ -765,19 +768,19 @@ OFBool DVPSFilmSession::printSCPSet(
       {
         DCMPSTAT_WARN("cannot update Basic Film Session: unsupported attribute received:\n"
             << DcmObject::PrintHelper(*stack.top(), DCMTypes::PF_shortenLongTagValues));
-        rsp.msg.NSetRSP.DimseStatus = STATUS_N_NoSuchAttribute;
+      	rsp.msg.NSetRSP.DimseStatus = STATUS_N_NoSuchAttribute;
         result = OFFalse;
       }
     }
   }
-
+  
   // if n-set was successful, send back response dataset
   if (result && (EC_Normal == writeresult))
   {
     rsp.msg.NSetRSP.DataSetType = DIMSE_DATASET_PRESENT;
     if (overrideFilmBoxPLUTSettings)
     {
-      basicFilmBoxList.overridePresentationLUTSettings(illumination, reflectedAmbientLight,
+      basicFilmBoxList.overridePresentationLUTSettings(illumination, reflectedAmbientLight, 
         referencedPresentationLUTInstanceUID, referencedPresentationLUTAlignment);
     }
   } else {
@@ -794,15 +797,8 @@ OFCondition DVPSFilmSession::addPresentationLUTReference(DcmItem& dset)
   DcmElement *delem=NULL;
   OFCondition result = EC_Normal;
 
-  if (illumination.getLength() > 0)
-  {
-    ADD_TO_DATASET(DcmUnsignedShort, illumination)
-  }
-
-  if (reflectedAmbientLight.getLength() > 0)
-  {
-    ADD_TO_DATASET(DcmUnsignedShort, reflectedAmbientLight)
-  }
+  ADD_TO_DATASET(DcmUnsignedShort, illumination)
+  ADD_TO_DATASET(DcmUnsignedShort, reflectedAmbientLight)
 
   if (referencedPresentationLUTInstanceUID.getLength() > 0)
   {
@@ -833,6 +829,6 @@ OFCondition DVPSFilmSession::addPresentationLUTReference(DcmItem& dset)
 
 void DVPSFilmSession::copyPresentationLUTSettings(DVPSStoredPrint& sp)
 {
-  sp.overridePresentationLUTSettings(illumination, reflectedAmbientLight,
+  sp.overridePresentationLUTSettings(illumination, reflectedAmbientLight, 
      referencedPresentationLUTInstanceUID, referencedPresentationLUTAlignment);
 }

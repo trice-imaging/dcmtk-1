@@ -1,6 +1,7 @@
+#define TRICE 1
 /*
  *
- *  Copyright (C) 2011-2018, OFFIS e.V.
+ *  Copyright (C) 2011-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -61,9 +62,20 @@ static char rcsid[] = "$dcmtk: " OFFIS_CONSOLE_APPLICATION " v"
 
 
 /* exit codes for this command line tool */
-/* (common codes are defined in "ofexit.h" included from "ofconapp.h") */
+/* (EXIT_SUCCESS and EXIT_FAILURE are standard codes) */
+
+// general
+#define EXITCODE_NO_ERROR                         0
+#define EXITCODE_COMMANDLINE_SYNTAX_ERROR         1      // this code is the default for printError()
+
+// input file errors
+#define EXITCODE_CANNOT_READ_INPUT_FILE          20      // placeholder, currently not used
+#define EXITCODE_NO_INPUT_FILES                  21
+#define EXITCODE_INVALID_INPUT_FILE              22
+#define EXITCODE_NO_VALID_INPUT_FILES            23
 
 // output file errors
+#define EXITCODE_CANNOT_WRITE_OUTPUT_FILE        40      // placeholder, currently not used
 #define EXITCODE_CANNOT_WRITE_REPORT_FILE        43
 
 // network errors
@@ -115,7 +127,11 @@ int main(int argc, char *argv[])
     E_FileReadMode opt_readMode = ERM_fileOnly;
 
     OFCmdUnsignedInt opt_port = 0;
+#ifdef TRICE
+    OFCmdUnsignedInt opt_timeout = 60;
+#else
     OFCmdUnsignedInt opt_timeout = 0;
+#endif
     OFCmdUnsignedInt opt_dimseTimeout = 0;
     OFCmdUnsignedInt opt_acseTimeout = 30;
     OFCmdUnsignedInt opt_maxReceivePDULength = ASC_DEFAULTMAXPDU;
@@ -129,9 +145,16 @@ int main(int argc, char *argv[])
     OFBool opt_haltOnInvalidFile = OFTrue;
     OFBool opt_haltOnUnsuccessfulStore = OFTrue;
     OFBool opt_allowIllegalProposal = OFTrue;
-    OFBool opt_checkUIDValues = OFTrue;
     OFBool opt_multipleAssociations = OFTrue;
+#ifdef TRICE
+    OFBool opt_checkUIDValues = OFFalse;
+    //DcmStorageSCU::E_DecompressionMode opt_decompressionMode = DcmStorageSCU::DM_lossyAndLossless;
     DcmStorageSCU::E_DecompressionMode opt_decompressionMode = DcmStorageSCU::DM_losslessOnly;
+    //DcmStorageSCU::E_DecompressionMode opt_decompressionMode = DcmStorageSCU::DM_never;
+#else
+    OFBool opt_checkUIDValues = OFTrue;
+    DcmStorageSCU::E_DecompressionMode opt_decompressionMode = DcmStorageSCU::DM_losslessOnly;
+#endif
 
     OFBool opt_dicomDir = OFFalse;
     OFBool opt_scanDir = OFFalse;
@@ -214,6 +237,10 @@ int main(int argc, char *argv[])
       cmd.addSubGroup("general:");
         cmd.addOption("--create-report-file",  "+crf", 1, "[f]ilename: string",
                                                           "create a detailed report on the transfer\n(if successful) and write it to text file f");
+#ifdef TRICE
+    cmd.addGroup("trice options:");
+       cmd.addOption("--dict-path",            "-dp",  1, "[p]ath: string", "complete path (including file name) for dicom.dic");
+#endif
 
     /* evaluate command line */
     prepareCmdLineArgs(argc, argv, OFFIS_CONSOLE_APPLICATION);
@@ -253,6 +280,10 @@ int main(int argc, char *argv[])
                 COUT << "- " << DcmXfer(EXS_JPEGLSLossless).getXferName() << OFendl;
                 COUT << "- " << DcmXfer(EXS_JPEGLSLossy).getXferName() << OFendl;
                 COUT << "- " << DcmXfer(EXS_RLELossless).getXferName() << OFendl;
+#ifdef TRICE
+                COUT << "- " << DcmXfer(EXS_JPEG2000).getXferName() << OFendl;
+                COUT << "- " << DcmXfer(EXS_JPEG2000LosslessOnly).getXferName() << OFendl;
+#endif
                 return EXITCODE_NO_ERROR;
             }
         }
@@ -359,6 +390,20 @@ int main(int argc, char *argv[])
 
     /* print resource identifier */
     OFLOG_DEBUG(dcmsendLogger, rcsid << OFendl);
+
+#ifdef TRICE
+    static const char* dicomPath;
+    if (cmd.findOption("--dict-path"))
+    {    app.checkValue(cmd.getValue(dicomPath));
+#ifndef __windows__
+         (void)setenv("DCMDICTPATH", dicomPath, 1);
+#else
+         char* envStr = (char*)malloc(strlen(dicomPath)+32);
+         sprintf(envStr, "DCMDICTPATH=%s", dicomPath);
+         (void)putenv(envStr);
+#endif
+    }
+#endif
 
     /* make sure data dictionary is loaded */
     if (!dcmDataDict.isDictionaryLoaded())

@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTApplicatorSequenceInRTIonBeamsModule
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -309,7 +309,7 @@ OFBool DRTApplicatorSequenceInRTIonBeamsModule::isValid() const
 }
 
 
-size_t DRTApplicatorSequenceInRTIonBeamsModule::getNumberOfItems() const
+unsigned long DRTApplicatorSequenceInRTIonBeamsModule::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -339,12 +339,12 @@ OFCondition DRTApplicatorSequenceInRTIonBeamsModule::gotoNextItem()
 }
 
 
-OFCondition DRTApplicatorSequenceInRTIonBeamsModule::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTApplicatorSequenceInRTIonBeamsModule::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -359,12 +359,12 @@ OFCondition DRTApplicatorSequenceInRTIonBeamsModule::gotoItem(const size_t num, 
 }
 
 
-OFCondition DRTApplicatorSequenceInRTIonBeamsModule::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTApplicatorSequenceInRTIonBeamsModule::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -379,7 +379,7 @@ OFCondition DRTApplicatorSequenceInRTIonBeamsModule::gotoItem(const size_t num, 
 }
 
 
-OFCondition DRTApplicatorSequenceInRTIonBeamsModule::gotoItem(const size_t num)
+OFCondition DRTApplicatorSequenceInRTIonBeamsModule::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -415,7 +415,7 @@ const DRTApplicatorSequenceInRTIonBeamsModule::Item &DRTApplicatorSequenceInRTIo
 }
 
 
-OFCondition DRTApplicatorSequenceInRTIonBeamsModule::getItem(const size_t num, Item *&item)
+OFCondition DRTApplicatorSequenceInRTIonBeamsModule::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -425,7 +425,7 @@ OFCondition DRTApplicatorSequenceInRTIonBeamsModule::getItem(const size_t num, I
 }
 
 
-DRTApplicatorSequenceInRTIonBeamsModule::Item &DRTApplicatorSequenceInRTIonBeamsModule::getItem(const size_t num)
+DRTApplicatorSequenceInRTIonBeamsModule::Item &DRTApplicatorSequenceInRTIonBeamsModule::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -435,7 +435,7 @@ DRTApplicatorSequenceInRTIonBeamsModule::Item &DRTApplicatorSequenceInRTIonBeams
 }
 
 
-const DRTApplicatorSequenceInRTIonBeamsModule::Item &DRTApplicatorSequenceInRTIonBeamsModule::getItem(const size_t num) const
+const DRTApplicatorSequenceInRTIonBeamsModule::Item &DRTApplicatorSequenceInRTIonBeamsModule::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -445,13 +445,13 @@ const DRTApplicatorSequenceInRTIonBeamsModule::Item &DRTApplicatorSequenceInRTIo
 }
 
 
-DRTApplicatorSequenceInRTIonBeamsModule::Item &DRTApplicatorSequenceInRTIonBeamsModule::operator[](const size_t num)
+DRTApplicatorSequenceInRTIonBeamsModule::Item &DRTApplicatorSequenceInRTIonBeamsModule::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTApplicatorSequenceInRTIonBeamsModule::Item &DRTApplicatorSequenceInRTIonBeamsModule::operator[](const size_t num) const
+const DRTApplicatorSequenceInRTIonBeamsModule::Item &DRTApplicatorSequenceInRTIonBeamsModule::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -474,7 +474,7 @@ OFCondition DRTApplicatorSequenceInRTIonBeamsModule::addItem(Item *&item)
 }
 
 
-OFCondition DRTApplicatorSequenceInRTIonBeamsModule::insertItem(const size_t pos, Item *&item)
+OFCondition DRTApplicatorSequenceInRTIonBeamsModule::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -497,7 +497,7 @@ OFCondition DRTApplicatorSequenceInRTIonBeamsModule::insertItem(const size_t pos
 }
 
 
-OFCondition DRTApplicatorSequenceInRTIonBeamsModule::removeItem(const size_t pos)
+OFCondition DRTApplicatorSequenceInRTIonBeamsModule::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

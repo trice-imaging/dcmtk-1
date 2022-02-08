@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2016, OFFIS e.V.
+ *  Copyright (C) 1996-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -87,12 +87,12 @@ class DiCMYKPixelTemplate
             const unsigned long count = (this->InputCount < this->Count) ? this->InputCount : this->Count;
             const T2 maxvalue = OFstatic_cast(T2, DicomImageClass::maxval(bits));
             const T1 offset = OFstatic_cast(T1, DicomImageClass::maxval(bits - 1));
-            const T1 *p = pixel;
+            register const T1 *p = pixel;
             if (this->PlanarConfiguration)
             {
 /*
-                const T1 *k;
-                T2 *q;
+                register const T1 *k;
+                register T2 *q;
                 for (int j = 0; j < 3; ++j)
                 {
                     q = this->Data[j];
@@ -101,10 +101,10 @@ class DiCMYKPixelTemplate
                         *(q++) = maxvalue - removeSign(*(p++), offset) - removeSign(*(k++), offset);
                 }
 */
-                const T1 *k;
-                T2 *q;
-                unsigned long l;
-                unsigned long i = 0;
+                register const T1 *k;
+                register T2 *q;
+                register unsigned long l;
+                register unsigned long i = 0;
                 while (i < count)
                 {
                     /* store current pixel index */
@@ -127,9 +127,9 @@ class DiCMYKPixelTemplate
             }
             else
             {
-                T1 k;
-                int j;
-                unsigned long i;
+                register T1 k;
+                register int j;
+                register unsigned long i;
                 for (i = 0; i < count; ++i)
                 {
                     k = *(p + 3);

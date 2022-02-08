@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2021, OFFIS e.V.
+ *  Copyright (C) 2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were slightly modified by
@@ -61,7 +61,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @version     V2.44
+ * @version     V2.43
  * @author      Frank Vanden Berghen
  *
  * \section tutorial First Tutorial
@@ -78,8 +78,9 @@
  * full-fledged HTML documentation using the DOXYGEN software: simply type: "doxygen doxy.cfg"
  *
  * By default, the XMLParser library uses (char*) for string representation.To use the (wchar_t*)
- * version of the library, you need to define the "WIDE_CHAR_XML_PARSER" preprocessor definition variable
- * (this is usually done inside your project definition file)
+ * version of the library, you need to define the "_UNICODE" preprocessor definition variable
+ * (this is usually done inside your project definition file) (This is done automatically for you
+ * when using Visual Studio).
  *
  * \section example Advanced Tutorial and Many Examples of usage.
  *
@@ -138,13 +139,17 @@
 // DCMTK: we need this header file at the beginning of each file
 #include "dcmtk/config/osconfig.h"
 
-#include <cstdlib>
-
+// DCMTK: we want to use our own standard include wrappers
+#define INCLUDE_CSTDLIB
+#include "dcmtk/ofstd/ofstdinc.h"
 #include "dcmtk/ofstd/ofdefine.h"
 
-// DCMTK: The XML parser is compiled in wide char (UTF-16) mode if and only if this macro is defined.
-// We want this to be independent from the UNICODE/_UNICODE macros.
-#ifdef WIDE_CHAR_XML_PARSER
+#ifdef _UNICODE
+// If you comment the next "define" line then the library will never "switch to" _UNICODE (wchar_t*) mode (16/32 bits per characters).
+// This is useful when you get error messages like:
+//    'XMLNode::openFileHelper' : cannot convert parameter 2 from 'const char [5]' to 'const wchar_t *'
+// The _XMLWIDECHAR preprocessor variable force the XMLParser library into either utf16/32-mode (the proprocessor variable
+// must be defined) or utf8-mode(the pre-processor variable must be undefined).
 #define _XMLWIDECHAR
 #endif
 
@@ -156,11 +161,9 @@
 // DCMTK: Simplified to use our own version in ofstd
 #define XMLDLLENTRY DCMTK_OFSTD_EXPORT
 
-// DCMTK: we don't want wide characters on other systems than Windows
-#if !defined(_XMLWINDOWS) || !defined(_XMLWIDECHAR)
 // uncomment the next line if you want no support for wchar_t* (no need for the <wchar.h> or <tchar.h> libraries anymore to compile)
+// DCMTK: we don't want wide characters
 #define XML_NO_WIDE_CHAR
-#endif
 
 #ifdef XML_NO_WIDE_CHAR
 // DCMTK: we definitely need the following define on Windows systems
@@ -318,7 +321,7 @@ typedef struct XMLDLLENTRY XMLNode
     /// Parse an XML file and return the root of a XMLNode tree representing the file. A very crude error checking is made. An attempt to guess the Char Encoding used in the file is made.
     static XMLNode openFileHelper(XMLCSTR     filename, XMLCSTR tag=NULL);
     /**< The "openFileHelper" function reports to the screen all the warnings and errors that occurred during parsing of the XML file.
-     * This function also tries to guess char Encoding (UTF-8, ASCII or SHIFT-JIS) based on the first 200 bytes of the file. Since each
+     * This function also tries to guess char Encoding (UTF-8, ASCII or SHIT-JIS) based on the first 200 bytes of the file. Since each
      * application has its own way to report and deal with errors, you should rather use the "parseFile" function to parse XML files
      * and program yourself thereafter an "error reporting" tailored for your needs (instead of using the very crude "error reporting"
      * mechanism included inside the "openFileHelper" function).
@@ -680,26 +683,25 @@ XMLDLLENTRY XMLSTR stringDup(XMLCSTR source, int cbData=-1);
 XMLDLLENTRY void freeXMLString(XMLSTR t); // {free(t);}
 /** @} */
 
+// DCMTK: currently, these functions are not needed
+#if 0
 /** @defgroup atoX ato? like functions
  * @ingroup XMLParserGeneral
- * The "xmlto?" functions are equivalents to the atoi, atol, atoll, atof functions.
+ * The "xmlto?" functions are equivalents to the atoi, atol, atof functions.
  * The only difference is: If the variable "xmlString" is NULL, than the return value
- * is "defautValue". These 7 functions are only here as "convenience" functions for the
+ * is "defautValue". These 6 functions are only here as "convenience" functions for the
  * user (they are not used inside the XMLparser). If you don't need them, you can
  * delete them without any trouble.
  *
  * @{ */
-XMLDLLENTRY char      xmltob (XMLCSTR xmlString,char      defautValue=0);
-XMLDLLENTRY int       xmltoi (XMLCSTR xmlString,int       defautValue=0);
-XMLDLLENTRY long      xmltol (XMLCSTR xmlString,long      defautValue=0);
-// DCMTK adds xmltoll() in addition to xmltol()
-#if defined(HAVE_LONG_LONG) && (defined(HAVE_ATOLL) || defined (_XMLWINDOWS))
-XMLDLLENTRY long long xmltoll(XMLCSTR xmlString,long long defautValue=0);
-#endif
-XMLDLLENTRY double    xmltof (XMLCSTR xmlString,double    defautValue=.0);
-XMLDLLENTRY XMLCSTR   xmltoa (XMLCSTR xmlString,XMLCSTR   defautValue=_CXML(""));
-XMLDLLENTRY XMLCHAR   xmltoc (XMLCSTR xmlString,const XMLCHAR defautValue=_CXML('\0'));
+XMLDLLENTRY char    xmltob(XMLCSTR xmlString,char   defautValue=0);
+XMLDLLENTRY int     xmltoi(XMLCSTR xmlString,int    defautValue=0);
+XMLDLLENTRY long    xmltol(XMLCSTR xmlString,long   defautValue=0);
+XMLDLLENTRY double  xmltof(XMLCSTR xmlString,double defautValue=.0);
+XMLDLLENTRY XMLCSTR xmltoa(XMLCSTR xmlString,XMLCSTR defautValue=_CXML(""));
+XMLDLLENTRY XMLCHAR xmltoc(XMLCSTR xmlString,const XMLCHAR defautValue=_CXML('\0'));
 /** @} */
+#endif
 
 /** @defgroup ToXMLStringTool Helper class to create XML files using "printf", "fprintf", "cout",... functions.
  * @ingroup XMLParserGeneral
@@ -767,7 +769,7 @@ public:
      * from "inByteBuf". If "formatted" parameter is true, then there will be a carriage-return every 72 chars.
      * The string will be free'd when the XMLParserBase64Tool object is deleted.
      * All returned strings are sharing the same memory space. */
-    XMLSTR encode(const unsigned char *inByteBuf, unsigned int inByteLen, char formatted=0); ///< returns a pointer to an internal buffer containing the base64 string containing the binary data encoded from "inByteBuf"
+    XMLSTR encode(unsigned char *inByteBuf, unsigned int inByteLen, char formatted=0); ///< returns a pointer to an internal buffer containing the base64 string containing the binary data encoded from "inByteBuf"
 
     /// returns the number of bytes which will be decoded from "inString".
     static unsigned int decodeSize(XMLCSTR inString, XMLError *xe=NULL);

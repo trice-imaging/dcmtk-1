@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2014-2019, OFFIS e.V.
+ *  Copyright (C) 2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,7 +28,7 @@
 #include "dcmtk/ofstd/oftypes.h"
 
 // use native classes if C++11 is supported
-#ifdef HAVE_TYPE_TRAITS
+#ifdef DCMTK_USE_CXX11_STL
 #include <type_traits>
 
 template<bool B,typename... ARGS>
@@ -37,8 +37,8 @@ using OFenable_if = std::enable_if<B,ARGS...>;
 template<bool B,typename... ARGS>
 using OFconditional = std::conditional<B,ARGS...>;
 
-template<typename T,T Value>
-using OFintegral_constant = std::integral_constant<T,Value>;
+template<typename... ARGS>
+using OFintegral_constant = std::integral_constant<ARGS...>;
 
 template<typename... ARGS>
 using OFis_signed = std::is_signed<ARGS...>;
@@ -54,12 +54,6 @@ using OFis_array = std::is_array<ARGS...>;
 
 template<typename... ARGS>
 using OFis_function = std::is_function<ARGS...>;
-
-template<typename... ARGS>
-using OFis_integral = std::is_integral<ARGS...>;
-
-template<typename... ARGS>
-using OFremove_pointer = std::remove_pointer<ARGS...>;
 
 template<typename... ARGS>
 using OFremove_reference = std::remove_reference<ARGS...>;
@@ -100,7 +94,7 @@ template<typename T,typename F>
 struct OFconditional<OFFalse,T,F> { typedef F type; };
 
 template<typename T,T Value>
-struct OFintegral_constant { typedef OFintegral_constant type; static const T value = Value; };
+struct OFintegral_constant { static const T value = Value; };
 
 template<typename T,T Value>
 const T OFintegral_constant<T,Value>::value;
@@ -124,9 +118,6 @@ template<typename T>
 struct OFis_function : OFfalse_type {};
 
 template<typename T>
-struct OFis_integral : OFfalse_type {};
-
-template<typename T>
 struct OFremove_reference { typedef T type; };
 
 template<typename T>
@@ -139,55 +130,38 @@ template<typename T>
 struct OFremove_extent { typedef T type; };
 
 template<>
-struct OFis_unsigned<bool> : OFtrue_type {};
-
-#ifndef C_CHAR_UNSIGNED
-template<>
-struct OFis_signed<char> : OFtrue_type {};
-#else
-template<>
-struct OFis_unsigned<char> : OFtrue_type {};
-#endif
+struct OFis_signed<Sint8> : OFtrue_type {};
 
 template<>
-struct OFis_signed<signed char> : OFtrue_type {};
+struct OFis_unsigned<Uint8> : OFtrue_type {};
 
 template<>
-struct OFis_unsigned<unsigned char> : OFtrue_type {};
+struct OFis_signed<Sint16> : OFtrue_type {};
 
 template<>
-struct OFis_signed<signed short> : OFtrue_type {};
+struct OFis_unsigned<Uint16> : OFtrue_type {};
 
 template<>
-struct OFis_unsigned<unsigned short> : OFtrue_type {};
+struct OFis_signed<Sint32> : OFtrue_type {};
 
 template<>
-struct OFis_signed<signed int> : OFtrue_type {};
+struct OFis_unsigned<Uint32> : OFtrue_type {};
+
+#ifndef OF_NO_SINT64
+template<>
+struct OFis_signed<Sint64> : OFtrue_type {};
+#endif // OF_NO_SINT64
+
+#ifndef OF_NO_UINT64
+template<>
+struct OFis_unsigned<Uint64> : OFtrue_type {};
+#endif // OF_NO_UINT64
 
 template<>
-struct OFis_unsigned<unsigned int> : OFtrue_type {};
+struct OFis_signed<Float32> : OFtrue_type {};
 
 template<>
-struct OFis_signed<signed long> : OFtrue_type {};
-
-template<>
-struct OFis_unsigned<unsigned long> : OFtrue_type {};
-
-#ifdef OFlonglong
-template<>
-struct OFis_signed<OFlonglong> : OFtrue_type {};
-#endif
-
-#ifdef OFulonglong
-template<>
-struct OFis_unsigned<OFulonglong> : OFtrue_type {};
-#endif
-
-template<>
-struct OFis_signed<float> : OFtrue_type {};
-
-template<>
-struct OFis_signed<double> : OFtrue_type {};
+struct OFis_signed<Float64> : OFtrue_type {};
 
 template<typename T>
 struct OFis_same<T,T> : OFtrue_type {};
@@ -224,43 +198,6 @@ struct OFis_function<R(T0,T1,T2,...)> : OFtrue_type {};
 
 /* TODO: handle functions with more than three arguments */
 
-template<>
-struct OFis_integral<char> : OFtrue_type {};
-
-template<>
-struct OFis_integral<signed char> : OFtrue_type {};
-
-template<>
-struct OFis_integral<unsigned char> : OFtrue_type {};
-
-template<>
-struct OFis_integral<signed short> : OFtrue_type {};
-
-template<>
-struct OFis_integral<unsigned short> : OFtrue_type {};
-
-template<>
-struct OFis_integral<signed int> : OFtrue_type {};
-
-template<>
-struct OFis_integral<unsigned int> : OFtrue_type {};
-
-template<>
-struct OFis_integral<signed long> : OFtrue_type {};
-
-template<>
-struct OFis_integral<unsigned long> : OFtrue_type {};
-
-#ifdef OFlonglong
-template<>
-struct OFis_integral<OFlonglong> : OFtrue_type {};
-#endif
-
-#ifdef OFulonglong
-template<>
-struct OFis_integral<OFulonglong> : OFtrue_type {};
-#endif
-
 template<typename T>
 struct OFremove_reference<T&> { typedef T type; };
 
@@ -280,22 +217,6 @@ template<typename T>
 struct OFremove_cv
 {
     typedef typename OFremove_volatile<typename OFremove_const<T>::type>::type type;
-};
-
-template< class T > struct OFremove_pointer                    {
-    typedef T type;
-};
-template< class T > struct OFremove_pointer<T*>                {
-    typedef T type;
-};
-template< class T > struct OFremove_pointer<T* const>          {
-    typedef T type;
-};
-template< class T > struct OFremove_pointer<T* volatile>       {
-    typedef T type;
-};
-template< class T > struct OFremove_pointer<T* const volatile> {
-    typedef T type;
 };
 
 template<typename T>
@@ -407,15 +328,6 @@ struct OFis_array {};
  */
 template<typename T>
 struct OFis_function {};
-
-/** Metafunction to determine if a type is an integer.
- *  OFis_integral is based on OFintegral_constant and evaluates to OFTrue if
- *  an integral type is probed, otherwise OFis_integral<...>::value equals OFFalse.
- *  @see http://en.cppreference.com/w/cpp/types/is_integral for details.
- *  @tparam T The type to inspect, e.g. "int" or "long".
- */
-template<typename T>
-struct OFis_integral {};
 
 /** Metafunction to remove the reference from a type.
  *  OFremove_reference provides a public member typedef "type" for the type

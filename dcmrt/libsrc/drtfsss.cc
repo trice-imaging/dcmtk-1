@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTFractionStatusSummarySequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -93,10 +93,10 @@ OFCondition DRTFractionStatusSummarySequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, ReferencedFractionNumber, "1", "1", "FractionStatusSummarySequence");
-        getAndCheckElementFromDataset(item, TreatmentDate, "1", "2", "FractionStatusSummarySequence");
-        getAndCheckElementFromDataset(item, TreatmentTime, "1", "2", "FractionStatusSummarySequence");
-        getAndCheckElementFromDataset(item, TreatmentTerminationStatus, "1", "2", "FractionStatusSummarySequence");
+        getAndCheckElementFromDataset(item, ReferencedFractionNumber, "1", "1C", "FractionStatusSummarySequence");
+        getAndCheckElementFromDataset(item, TreatmentDate, "1", "2C", "FractionStatusSummarySequence");
+        getAndCheckElementFromDataset(item, TreatmentTime, "1", "2C", "FractionStatusSummarySequence");
+        getAndCheckElementFromDataset(item, TreatmentTerminationStatus, "1", "2C", "FractionStatusSummarySequence");
         result = EC_Normal;
     }
     return result;
@@ -109,10 +109,10 @@ OFCondition DRTFractionStatusSummarySequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmIntegerString(ReferencedFractionNumber), "1", "1", "FractionStatusSummarySequence");
-        addElementToDataset(result, item, new DcmDate(TreatmentDate), "1", "2", "FractionStatusSummarySequence");
-        addElementToDataset(result, item, new DcmTime(TreatmentTime), "1", "2", "FractionStatusSummarySequence");
-        addElementToDataset(result, item, new DcmCodeString(TreatmentTerminationStatus), "1", "2", "FractionStatusSummarySequence");
+        addElementToDataset(result, item, new DcmIntegerString(ReferencedFractionNumber), "1", "1C", "FractionStatusSummarySequence");
+        addElementToDataset(result, item, new DcmDate(TreatmentDate), "1", "2C", "FractionStatusSummarySequence");
+        addElementToDataset(result, item, new DcmTime(TreatmentTime), "1", "2C", "FractionStatusSummarySequence");
+        addElementToDataset(result, item, new DcmCodeString(TreatmentTerminationStatus), "1", "2C", "FractionStatusSummarySequence");
     }
     return result;
 }
@@ -318,7 +318,7 @@ OFBool DRTFractionStatusSummarySequence::isValid() const
 }
 
 
-size_t DRTFractionStatusSummarySequence::getNumberOfItems() const
+unsigned long DRTFractionStatusSummarySequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -348,12 +348,12 @@ OFCondition DRTFractionStatusSummarySequence::gotoNextItem()
 }
 
 
-OFCondition DRTFractionStatusSummarySequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTFractionStatusSummarySequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -368,12 +368,12 @@ OFCondition DRTFractionStatusSummarySequence::gotoItem(const size_t num, OFListI
 }
 
 
-OFCondition DRTFractionStatusSummarySequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTFractionStatusSummarySequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -388,7 +388,7 @@ OFCondition DRTFractionStatusSummarySequence::gotoItem(const size_t num, OFListC
 }
 
 
-OFCondition DRTFractionStatusSummarySequence::gotoItem(const size_t num)
+OFCondition DRTFractionStatusSummarySequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -424,7 +424,7 @@ const DRTFractionStatusSummarySequence::Item &DRTFractionStatusSummarySequence::
 }
 
 
-OFCondition DRTFractionStatusSummarySequence::getItem(const size_t num, Item *&item)
+OFCondition DRTFractionStatusSummarySequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -434,7 +434,7 @@ OFCondition DRTFractionStatusSummarySequence::getItem(const size_t num, Item *&i
 }
 
 
-DRTFractionStatusSummarySequence::Item &DRTFractionStatusSummarySequence::getItem(const size_t num)
+DRTFractionStatusSummarySequence::Item &DRTFractionStatusSummarySequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -444,7 +444,7 @@ DRTFractionStatusSummarySequence::Item &DRTFractionStatusSummarySequence::getIte
 }
 
 
-const DRTFractionStatusSummarySequence::Item &DRTFractionStatusSummarySequence::getItem(const size_t num) const
+const DRTFractionStatusSummarySequence::Item &DRTFractionStatusSummarySequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -454,13 +454,13 @@ const DRTFractionStatusSummarySequence::Item &DRTFractionStatusSummarySequence::
 }
 
 
-DRTFractionStatusSummarySequence::Item &DRTFractionStatusSummarySequence::operator[](const size_t num)
+DRTFractionStatusSummarySequence::Item &DRTFractionStatusSummarySequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTFractionStatusSummarySequence::Item &DRTFractionStatusSummarySequence::operator[](const size_t num) const
+const DRTFractionStatusSummarySequence::Item &DRTFractionStatusSummarySequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -483,7 +483,7 @@ OFCondition DRTFractionStatusSummarySequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTFractionStatusSummarySequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTFractionStatusSummarySequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -506,7 +506,7 @@ OFCondition DRTFractionStatusSummarySequence::insertItem(const size_t pos, Item 
 }
 
 
-OFCondition DRTFractionStatusSummarySequence::removeItem(const size_t pos)
+OFCondition DRTFractionStatusSummarySequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

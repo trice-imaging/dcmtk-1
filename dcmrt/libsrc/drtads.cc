@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTAdditionalDrugSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -30,13 +30,7 @@ DRTAdditionalDrugSequence::Item::Item(const OFBool emptyDefaultItem)
     ContextGroupLocalVersion(DCM_ContextGroupLocalVersion),
     ContextGroupVersion(DCM_ContextGroupVersion),
     ContextIdentifier(DCM_ContextIdentifier),
-    ContextUID(DCM_ContextUID),
-    EquivalentCodeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
-    LongCodeValue(DCM_LongCodeValue),
-    MappingResource(DCM_MappingResource),
-    MappingResourceName(DCM_MappingResourceName),
-    MappingResourceUID(DCM_MappingResourceUID),
-    URNCodeValue(DCM_URNCodeValue)
+    MappingResource(DCM_MappingResource)
 {
 }
 
@@ -52,13 +46,7 @@ DRTAdditionalDrugSequence::Item::Item(const Item &copy)
     ContextGroupLocalVersion(copy.ContextGroupLocalVersion),
     ContextGroupVersion(copy.ContextGroupVersion),
     ContextIdentifier(copy.ContextIdentifier),
-    ContextUID(copy.ContextUID),
-    EquivalentCodeSequence(copy.EquivalentCodeSequence),
-    LongCodeValue(copy.LongCodeValue),
-    MappingResource(copy.MappingResource),
-    MappingResourceName(copy.MappingResourceName),
-    MappingResourceUID(copy.MappingResourceUID),
-    URNCodeValue(copy.URNCodeValue)
+    MappingResource(copy.MappingResource)
 {
 }
 
@@ -82,13 +70,7 @@ DRTAdditionalDrugSequence::Item &DRTAdditionalDrugSequence::Item::operator=(cons
         ContextGroupLocalVersion = copy.ContextGroupLocalVersion;
         ContextGroupVersion = copy.ContextGroupVersion;
         ContextIdentifier = copy.ContextIdentifier;
-        ContextUID = copy.ContextUID;
-        EquivalentCodeSequence = copy.EquivalentCodeSequence;
-        LongCodeValue = copy.LongCodeValue;
         MappingResource = copy.MappingResource;
-        MappingResourceName = copy.MappingResourceName;
-        MappingResourceUID = copy.MappingResourceUID;
-        URNCodeValue = copy.URNCodeValue;
     }
     return *this;
 }
@@ -103,14 +85,8 @@ void DRTAdditionalDrugSequence::Item::clear()
         CodingSchemeDesignator.clear();
         CodingSchemeVersion.clear();
         CodeMeaning.clear();
-        LongCodeValue.clear();
-        URNCodeValue.clear();
-        EquivalentCodeSequence.clear();
         ContextIdentifier.clear();
-        ContextUID.clear();
         MappingResource.clear();
-        MappingResourceUID.clear();
-        MappingResourceName.clear();
         ContextGroupVersion.clear();
         ContextGroupExtensionFlag.clear();
         ContextGroupLocalVersion.clear();
@@ -125,14 +101,8 @@ OFBool DRTAdditionalDrugSequence::Item::isEmpty()
            CodingSchemeDesignator.isEmpty() &&
            CodingSchemeVersion.isEmpty() &&
            CodeMeaning.isEmpty() &&
-           LongCodeValue.isEmpty() &&
-           URNCodeValue.isEmpty() &&
-           EquivalentCodeSequence.isEmpty() &&
            ContextIdentifier.isEmpty() &&
-           ContextUID.isEmpty() &&
            MappingResource.isEmpty() &&
-           MappingResourceUID.isEmpty() &&
-           MappingResourceName.isEmpty() &&
            ContextGroupVersion.isEmpty() &&
            ContextGroupExtensionFlag.isEmpty() &&
            ContextGroupLocalVersion.isEmpty() &&
@@ -156,15 +126,9 @@ OFCondition DRTAdditionalDrugSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, CodeValue, "1", "1C", "AdditionalDrugSequence");
         getAndCheckElementFromDataset(item, CodingSchemeDesignator, "1", "1C", "AdditionalDrugSequence");
         getAndCheckElementFromDataset(item, CodingSchemeVersion, "1", "1C", "AdditionalDrugSequence");
-        getAndCheckElementFromDataset(item, CodeMeaning, "1", "1", "AdditionalDrugSequence");
-        getAndCheckElementFromDataset(item, LongCodeValue, "1", "1C", "AdditionalDrugSequence");
-        getAndCheckElementFromDataset(item, URNCodeValue, "1", "1C", "AdditionalDrugSequence");
-        EquivalentCodeSequence.read(item, "1-n", "3", "AdditionalDrugSequence");
+        getAndCheckElementFromDataset(item, CodeMeaning, "1", "1C", "AdditionalDrugSequence");
         getAndCheckElementFromDataset(item, ContextIdentifier, "1", "3", "AdditionalDrugSequence");
-        getAndCheckElementFromDataset(item, ContextUID, "1", "3", "AdditionalDrugSequence");
         getAndCheckElementFromDataset(item, MappingResource, "1", "1C", "AdditionalDrugSequence");
-        getAndCheckElementFromDataset(item, MappingResourceUID, "1", "3", "AdditionalDrugSequence");
-        getAndCheckElementFromDataset(item, MappingResourceName, "1", "3", "AdditionalDrugSequence");
         getAndCheckElementFromDataset(item, ContextGroupVersion, "1", "1C", "AdditionalDrugSequence");
         getAndCheckElementFromDataset(item, ContextGroupExtensionFlag, "1", "3", "AdditionalDrugSequence");
         getAndCheckElementFromDataset(item, ContextGroupLocalVersion, "1", "1C", "AdditionalDrugSequence");
@@ -184,15 +148,9 @@ OFCondition DRTAdditionalDrugSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmShortString(CodeValue), "1", "1C", "AdditionalDrugSequence");
         addElementToDataset(result, item, new DcmShortString(CodingSchemeDesignator), "1", "1C", "AdditionalDrugSequence");
         addElementToDataset(result, item, new DcmShortString(CodingSchemeVersion), "1", "1C", "AdditionalDrugSequence");
-        addElementToDataset(result, item, new DcmLongString(CodeMeaning), "1", "1", "AdditionalDrugSequence");
-        addElementToDataset(result, item, new DcmUnlimitedCharacters(LongCodeValue), "1", "1C", "AdditionalDrugSequence");
-        addElementToDataset(result, item, new DcmUniversalResourceIdentifierOrLocator(URNCodeValue), "1", "1C", "AdditionalDrugSequence");
-        if (result.good()) result = EquivalentCodeSequence.write(item, "1-n", "3", "AdditionalDrugSequence");
+        addElementToDataset(result, item, new DcmLongString(CodeMeaning), "1", "1C", "AdditionalDrugSequence");
         addElementToDataset(result, item, new DcmCodeString(ContextIdentifier), "1", "3", "AdditionalDrugSequence");
-        addElementToDataset(result, item, new DcmUniqueIdentifier(ContextUID), "1", "3", "AdditionalDrugSequence");
         addElementToDataset(result, item, new DcmCodeString(MappingResource), "1", "1C", "AdditionalDrugSequence");
-        addElementToDataset(result, item, new DcmUniqueIdentifier(MappingResourceUID), "1", "3", "AdditionalDrugSequence");
-        addElementToDataset(result, item, new DcmLongString(MappingResourceName), "1", "3", "AdditionalDrugSequence");
         addElementToDataset(result, item, new DcmDateTime(ContextGroupVersion), "1", "1C", "AdditionalDrugSequence");
         addElementToDataset(result, item, new DcmCodeString(ContextGroupExtensionFlag), "1", "3", "AdditionalDrugSequence");
         addElementToDataset(result, item, new DcmDateTime(ContextGroupLocalVersion), "1", "1C", "AdditionalDrugSequence");
@@ -283,57 +241,12 @@ OFCondition DRTAdditionalDrugSequence::Item::getContextIdentifier(OFString &valu
 }
 
 
-OFCondition DRTAdditionalDrugSequence::Item::getContextUID(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(ContextUID, value, pos);
-}
-
-
-OFCondition DRTAdditionalDrugSequence::Item::getLongCodeValue(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(LongCodeValue, value, pos);
-}
-
-
 OFCondition DRTAdditionalDrugSequence::Item::getMappingResource(OFString &value, const signed long pos) const
 {
     if (EmptyDefaultItem)
         return EC_IllegalCall;
     else
         return getStringValueFromElement(MappingResource, value, pos);
-}
-
-
-OFCondition DRTAdditionalDrugSequence::Item::getMappingResourceName(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(MappingResourceName, value, pos);
-}
-
-
-OFCondition DRTAdditionalDrugSequence::Item::getMappingResourceUID(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(MappingResourceUID, value, pos);
-}
-
-
-OFCondition DRTAdditionalDrugSequence::Item::getURNCodeValue(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(URNCodeValue, value, pos);
 }
 
 
@@ -454,32 +367,6 @@ OFCondition DRTAdditionalDrugSequence::Item::setContextIdentifier(const OFString
 }
 
 
-OFCondition DRTAdditionalDrugSequence::Item::setContextUID(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmUniqueIdentifier::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = ContextUID.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTAdditionalDrugSequence::Item::setLongCodeValue(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmUnlimitedCharacters::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = LongCodeValue.putOFStringArray(value);
-    }
-    return result;
-}
-
-
 OFCondition DRTAdditionalDrugSequence::Item::setMappingResource(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -488,45 +375,6 @@ OFCondition DRTAdditionalDrugSequence::Item::setMappingResource(const OFString &
         result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
             result = MappingResource.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTAdditionalDrugSequence::Item::setMappingResourceName(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = MappingResourceName.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTAdditionalDrugSequence::Item::setMappingResourceUID(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmUniqueIdentifier::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = MappingResourceUID.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTAdditionalDrugSequence::Item::setURNCodeValue(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmUniversalResourceIdentifierOrLocator::checkStringValue(value) : EC_Normal;
-        if (result.good())
-            result = URNCodeValue.putOFStringArray(value);
     }
     return result;
 }
@@ -635,7 +483,7 @@ OFBool DRTAdditionalDrugSequence::isValid() const
 }
 
 
-size_t DRTAdditionalDrugSequence::getNumberOfItems() const
+unsigned long DRTAdditionalDrugSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -665,12 +513,12 @@ OFCondition DRTAdditionalDrugSequence::gotoNextItem()
 }
 
 
-OFCondition DRTAdditionalDrugSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTAdditionalDrugSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -685,12 +533,12 @@ OFCondition DRTAdditionalDrugSequence::gotoItem(const size_t num, OFListIterator
 }
 
 
-OFCondition DRTAdditionalDrugSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTAdditionalDrugSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -705,7 +553,7 @@ OFCondition DRTAdditionalDrugSequence::gotoItem(const size_t num, OFListConstIte
 }
 
 
-OFCondition DRTAdditionalDrugSequence::gotoItem(const size_t num)
+OFCondition DRTAdditionalDrugSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -741,7 +589,7 @@ const DRTAdditionalDrugSequence::Item &DRTAdditionalDrugSequence::getCurrentItem
 }
 
 
-OFCondition DRTAdditionalDrugSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTAdditionalDrugSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -751,7 +599,7 @@ OFCondition DRTAdditionalDrugSequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTAdditionalDrugSequence::Item &DRTAdditionalDrugSequence::getItem(const size_t num)
+DRTAdditionalDrugSequence::Item &DRTAdditionalDrugSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -761,7 +609,7 @@ DRTAdditionalDrugSequence::Item &DRTAdditionalDrugSequence::getItem(const size_t
 }
 
 
-const DRTAdditionalDrugSequence::Item &DRTAdditionalDrugSequence::getItem(const size_t num) const
+const DRTAdditionalDrugSequence::Item &DRTAdditionalDrugSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -771,13 +619,13 @@ const DRTAdditionalDrugSequence::Item &DRTAdditionalDrugSequence::getItem(const 
 }
 
 
-DRTAdditionalDrugSequence::Item &DRTAdditionalDrugSequence::operator[](const size_t num)
+DRTAdditionalDrugSequence::Item &DRTAdditionalDrugSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTAdditionalDrugSequence::Item &DRTAdditionalDrugSequence::operator[](const size_t num) const
+const DRTAdditionalDrugSequence::Item &DRTAdditionalDrugSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -800,7 +648,7 @@ OFCondition DRTAdditionalDrugSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTAdditionalDrugSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTAdditionalDrugSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -823,7 +671,7 @@ OFCondition DRTAdditionalDrugSequence::insertItem(const size_t pos, Item *&item)
 }
 
 
-OFCondition DRTAdditionalDrugSequence::removeItem(const size_t pos)
+OFCondition DRTAdditionalDrugSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

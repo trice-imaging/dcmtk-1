@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2003-2020, OFFIS e.V.
+ *  Copyright (C) 2003-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,6 +26,7 @@
 
 #include "dcmtk/config/osconfig.h"   /* make sure OS specific configuration is included first */
 
+#include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/dcmsr/dsrtypes.h"
 #include "dcmtk/dcmsr/dsrxmlc.h"
 
@@ -83,12 +84,9 @@ class DCMTK_DCMSR_EXPORT DSRXMLDocument
   // --- input and output ---
 
     /** read XML document from file.
-     *  In order to enable the optional Schema validation the flag DSRTypes::XF_validateSchema
-     *  has to be set.
-     ** @param  filename  name of the file from which the XML document is read
-     *                    ("-" for stdin)
-     *  @param  flags     optional flag used to customize the reading process
-     *                    (see DSRTypes::XF_xxx)
+     *  In order to enable the optional Schema validation the flag XF_validateSchema has to be set.
+     ** @param  filename  name of the file from which the XML document is read ("-" for stdin)
+     *  @param  flags     optional flag used to customize the reading process (see DSRTypes::XF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     OFCondition read(const OFString &filename,
@@ -103,9 +101,7 @@ class DCMTK_DCMSR_EXPORT DSRXMLDocument
      */
     OFBool encodingHandlerValid() const;
 
-    /** set character encoding handler for converting internally stored character strings
-     *  (UTF-8) to a particular character set.  This conversion is only done when requested,
-     *  e.g. when calling getStringFromAttribute() with the 'encoding' parameter being OFTrue.
+    /** set the specified character encoding handler.
      *  NB: 'libxml' relies on GNU 'libiconv' for most character sets.
      ** @param  charset  XML name of the character set (e.g. "ISO-8859-1" for ISO Latin-1)
      ** @return status, EC_Normal if successful, an error code otherwise
@@ -125,26 +121,13 @@ class DCMTK_DCMSR_EXPORT DSRXMLDocument
      *  deep search is performed.
      ** @param  cursor    cursor pointing to the node where to start from
      *  @param  name      name of the node (XML element) to be searched for
-     *  @param  required  flag specifying whether the node is required or not.  If the node is
-     *                    required to be present, an error message is reported if necessary.
+     *  @param  required  flag specifying whether the node is required or not.  If the node
+     *                    is required to be present an error message is reported.
      ** @return cursor pointing to the named node if successful, invalid cursor otherwise
      */
     DSRXMLCursor getNamedNode(const DSRXMLCursor &cursor,
                               const char *name,
                               const OFBool required = OFTrue) const;
-
-    /** get a particular named child node of the document.
-     *  Please note that the search process is limited to the first level below the current
-     *  one, i.e. no deep search is performed.
-     ** @param  cursor    cursor pointing to the parent of the node where to start from
-     *  @param  name      name of the node (XML element) to be searched for
-     *  @param  required  flag specifying whether the node is required or not.  If the node is
-     *                    required to be present, an error message is reported if necessary.
-     ** @return cursor pointing to the named node if successful, invalid cursor otherwise
-     */
-    DSRXMLCursor getNamedChildNode(const DSRXMLCursor &cursor,
-                                   const char *name,
-                                   const OFBool required = OFTrue) const;
 
     /** check whether particular node matches a given name
      ** @param  cursor  cursor pointing to the particular node
@@ -237,7 +220,7 @@ class DCMTK_DCMSR_EXPORT DSRXMLDocument
      *  Additionally, by-reference relationships are also supported (either by attribute
      *  "ref" being present or element named "reference").
      ** @param  cursor  cursor pointing to the particular node
-     ** @return value type (incl. by-reference) if successful, DSRTypes::VT_invalid otherwise
+     ** @return value type (incl. by-reference) if successful, VT_invalid/unknown otherwise
      */
     E_ValueType getValueTypeFromNode(const DSRXMLCursor &cursor) const;
 
@@ -245,8 +228,7 @@ class DCMTK_DCMSR_EXPORT DSRXMLDocument
      *  The relationship type is either stored in the element "relationship" or in the
      *  attribute "relType".
      ** @param  cursor  cursor pointing to the particular node
-     ** @return relationship type if successful, DSRTypes::RT_invalid or DSRTypes::RT_unknown
-     *          otherwise
+     ** @return relationship type if successful, RT_invalid/unknown otherwise
      */
     E_RelationshipType getRelationshipTypeFromNode(const DSRXMLCursor &cursor) const;
 
@@ -257,13 +239,6 @@ class DCMTK_DCMSR_EXPORT DSRXMLDocument
      ** @param  cursor  cursor pointing to the unexpected node
      */
     void printUnexpectedNodeWarning(const DSRXMLCursor &cursor) const;
-
-    /** print warning message for missing attribute
-     ** @param  cursor  cursor pointing to the relevant node
-     *  @param  name    name of the XML attribute
-     */
-    void printMissingAttributeWarning(const DSRXMLCursor &cursor,
-                                      const char *name) const;
 
     /** print general node error message
      ** @param  cursor  cursor pointing to the unexpected node
@@ -291,11 +266,11 @@ class DCMTK_DCMSR_EXPORT DSRXMLDocument
 
   // --- static function ---
 
-    /** get the full path (incl.\ all predecessors) to the current node
+    /** get the full path (incl. all predecessors) to the current node.
+     *  Returns "<invalid>" in case of an invalid 'cursor'.
      ** @param  cursor       cursor pointing to the relevant node
      *  @param  stringValue  reference to string object in which the result should be stored
      *  @param  omitCurrent  flag indicating whether to omit the current node or not
-     ** @return resulting character string, set to "<invalid>" in case of an invalid 'cursor'
      */
     static OFString &getFullNodePath(const DSRXMLCursor &cursor,
                                      OFString &stringValue,

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2021, OFFIS e.V.
+ *  Copyright (C) 1998-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,6 +24,8 @@
 #include "dcmtk/dcmpstat/dvpsgl.h"
 #include "dcmtk/dcmpstat/dvpsdef.h"     /* for constants and macros */
 
+#define INCLUDE_CSTDIO
+#include "dcmtk/ofstd/ofstdinc.h"
 
 /* --------------- class DVPSGraphicLayer --------------- */
 
@@ -54,11 +56,11 @@ OFCondition DVPSGraphicLayer::read(DcmItem &dset)
   OFCondition result = EC_Normal;
   DcmStack stack;
 
-  READ_FROM_DATASET(DcmCodeString, EVR_CS, graphicLayer)
-  READ_FROM_DATASET(DcmIntegerString, EVR_IS, graphicLayerOrder)
-  READ_FROM_DATASET(DcmUnsignedShort, EVR_US, graphicLayerRecommendedDisplayGrayscaleValue)
-  READ_FROM_DATASET(DcmUnsignedShort, EVR_US, graphicLayerRecommendedDisplayRGBValue)
-  READ_FROM_DATASET(DcmLongString, EVR_LO, graphicLayerDescription)
+  READ_FROM_DATASET(DcmCodeString, graphicLayer)
+  READ_FROM_DATASET(DcmIntegerString, graphicLayerOrder)
+  READ_FROM_DATASET(DcmUnsignedShort, graphicLayerRecommendedDisplayGrayscaleValue)
+  READ_FROM_DATASET(DcmUnsignedShort, graphicLayerRecommendedDisplayRGBValue)
+  READ_FROM_DATASET(DcmLongString, graphicLayerDescription)
   
   /* Now perform basic sanity checks */
 

@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTBrachyAccessoryDeviceSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -113,14 +113,14 @@ OFCondition DRTBrachyAccessoryDeviceSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, BrachyAccessoryDeviceNumber, "1", "2", "BrachyAccessoryDeviceSequence");
-        getAndCheckElementFromDataset(item, BrachyAccessoryDeviceID, "1", "2", "BrachyAccessoryDeviceSequence");
-        getAndCheckElementFromDataset(item, BrachyAccessoryDeviceType, "1", "1", "BrachyAccessoryDeviceSequence");
+        getAndCheckElementFromDataset(item, BrachyAccessoryDeviceNumber, "1", "2C", "BrachyAccessoryDeviceSequence");
+        getAndCheckElementFromDataset(item, BrachyAccessoryDeviceID, "1", "2C", "BrachyAccessoryDeviceSequence");
+        getAndCheckElementFromDataset(item, BrachyAccessoryDeviceType, "1", "1C", "BrachyAccessoryDeviceSequence");
         getAndCheckElementFromDataset(item, BrachyAccessoryDeviceName, "1", "3", "BrachyAccessoryDeviceSequence");
         getAndCheckElementFromDataset(item, MaterialID, "1", "3", "BrachyAccessoryDeviceSequence");
         getAndCheckElementFromDataset(item, BrachyAccessoryDeviceNominalThickness, "1", "3", "BrachyAccessoryDeviceSequence");
         getAndCheckElementFromDataset(item, BrachyAccessoryDeviceNominalTransmission, "1", "3", "BrachyAccessoryDeviceSequence");
-        getAndCheckElementFromDataset(item, ReferencedROINumber, "1", "2", "BrachyAccessoryDeviceSequence");
+        getAndCheckElementFromDataset(item, ReferencedROINumber, "1", "2C", "BrachyAccessoryDeviceSequence");
         result = EC_Normal;
     }
     return result;
@@ -133,14 +133,14 @@ OFCondition DRTBrachyAccessoryDeviceSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmIntegerString(BrachyAccessoryDeviceNumber), "1", "2", "BrachyAccessoryDeviceSequence");
-        addElementToDataset(result, item, new DcmShortString(BrachyAccessoryDeviceID), "1", "2", "BrachyAccessoryDeviceSequence");
-        addElementToDataset(result, item, new DcmCodeString(BrachyAccessoryDeviceType), "1", "1", "BrachyAccessoryDeviceSequence");
+        addElementToDataset(result, item, new DcmIntegerString(BrachyAccessoryDeviceNumber), "1", "2C", "BrachyAccessoryDeviceSequence");
+        addElementToDataset(result, item, new DcmShortString(BrachyAccessoryDeviceID), "1", "2C", "BrachyAccessoryDeviceSequence");
+        addElementToDataset(result, item, new DcmCodeString(BrachyAccessoryDeviceType), "1", "1C", "BrachyAccessoryDeviceSequence");
         addElementToDataset(result, item, new DcmLongString(BrachyAccessoryDeviceName), "1", "3", "BrachyAccessoryDeviceSequence");
         addElementToDataset(result, item, new DcmShortString(MaterialID), "1", "3", "BrachyAccessoryDeviceSequence");
         addElementToDataset(result, item, new DcmDecimalString(BrachyAccessoryDeviceNominalThickness), "1", "3", "BrachyAccessoryDeviceSequence");
         addElementToDataset(result, item, new DcmDecimalString(BrachyAccessoryDeviceNominalTransmission), "1", "3", "BrachyAccessoryDeviceSequence");
-        addElementToDataset(result, item, new DcmIntegerString(ReferencedROINumber), "1", "2", "BrachyAccessoryDeviceSequence");
+        addElementToDataset(result, item, new DcmIntegerString(ReferencedROINumber), "1", "2C", "BrachyAccessoryDeviceSequence");
     }
     return result;
 }
@@ -461,7 +461,7 @@ OFBool DRTBrachyAccessoryDeviceSequence::isValid() const
 }
 
 
-size_t DRTBrachyAccessoryDeviceSequence::getNumberOfItems() const
+unsigned long DRTBrachyAccessoryDeviceSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -491,12 +491,12 @@ OFCondition DRTBrachyAccessoryDeviceSequence::gotoNextItem()
 }
 
 
-OFCondition DRTBrachyAccessoryDeviceSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTBrachyAccessoryDeviceSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -511,12 +511,12 @@ OFCondition DRTBrachyAccessoryDeviceSequence::gotoItem(const size_t num, OFListI
 }
 
 
-OFCondition DRTBrachyAccessoryDeviceSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTBrachyAccessoryDeviceSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -531,7 +531,7 @@ OFCondition DRTBrachyAccessoryDeviceSequence::gotoItem(const size_t num, OFListC
 }
 
 
-OFCondition DRTBrachyAccessoryDeviceSequence::gotoItem(const size_t num)
+OFCondition DRTBrachyAccessoryDeviceSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -567,7 +567,7 @@ const DRTBrachyAccessoryDeviceSequence::Item &DRTBrachyAccessoryDeviceSequence::
 }
 
 
-OFCondition DRTBrachyAccessoryDeviceSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTBrachyAccessoryDeviceSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -577,7 +577,7 @@ OFCondition DRTBrachyAccessoryDeviceSequence::getItem(const size_t num, Item *&i
 }
 
 
-DRTBrachyAccessoryDeviceSequence::Item &DRTBrachyAccessoryDeviceSequence::getItem(const size_t num)
+DRTBrachyAccessoryDeviceSequence::Item &DRTBrachyAccessoryDeviceSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -587,7 +587,7 @@ DRTBrachyAccessoryDeviceSequence::Item &DRTBrachyAccessoryDeviceSequence::getIte
 }
 
 
-const DRTBrachyAccessoryDeviceSequence::Item &DRTBrachyAccessoryDeviceSequence::getItem(const size_t num) const
+const DRTBrachyAccessoryDeviceSequence::Item &DRTBrachyAccessoryDeviceSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -597,13 +597,13 @@ const DRTBrachyAccessoryDeviceSequence::Item &DRTBrachyAccessoryDeviceSequence::
 }
 
 
-DRTBrachyAccessoryDeviceSequence::Item &DRTBrachyAccessoryDeviceSequence::operator[](const size_t num)
+DRTBrachyAccessoryDeviceSequence::Item &DRTBrachyAccessoryDeviceSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTBrachyAccessoryDeviceSequence::Item &DRTBrachyAccessoryDeviceSequence::operator[](const size_t num) const
+const DRTBrachyAccessoryDeviceSequence::Item &DRTBrachyAccessoryDeviceSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -626,7 +626,7 @@ OFCondition DRTBrachyAccessoryDeviceSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTBrachyAccessoryDeviceSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTBrachyAccessoryDeviceSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -649,7 +649,7 @@ OFCondition DRTBrachyAccessoryDeviceSequence::insertItem(const size_t pos, Item 
 }
 
 
-OFCondition DRTBrachyAccessoryDeviceSequence::removeItem(const size_t pos)
+OFCondition DRTBrachyAccessoryDeviceSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

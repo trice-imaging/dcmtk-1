@@ -1,9 +1,9 @@
 /*
  *
- *  Copyright (C) 2013-2021, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
- *  This software and supporting documentation are maintained by
+ *  This software and supporting documentation were developed by
  *
  *    OFFIS e.V.
  *    R&D Division Health
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRImageSegmentList
@@ -25,16 +25,17 @@
 
 #include "dcmtk/dcmsr/dsrimgse.h"
 
-#include "dcmtk/dcmdata/dcdeftag.h"
-#include "dcmtk/dcmdata/dcvrus.h"
+#define INCLUDE_CSTDIO
+#include "dcmtk/ofstd/ofstdinc.h"
 
-template<>
-const Uint16& DSRgetEmptyItem<Uint16>()
-{
-    // no need to be thread-safe, since it is only an int
-    static const Uint16 t = 0;
-    return t;
-}
+#ifdef HAVE_EXPLICIT_TEMPLATE_SPECIALIZATION
+#define EXPLICIT_SPECIALIZATION template<>
+#else
+#define EXPLICIT_SPECIALIZATION
+#endif
+
+/* declared in class DSRListOfItems<T> */
+EXPLICIT_SPECIALIZATION const Uint16 DSRListOfItems<Uint16>::EmptyItem = 0;
 
 
 DSRImageSegmentList::DSRImageSegmentList()
@@ -62,8 +63,8 @@ DSRImageSegmentList &DSRImageSegmentList::operator=(const DSRImageSegmentList &l
 
 
 OFCondition DSRImageSegmentList::print(STD_NAMESPACE ostream &stream,
-                                       const size_t flags,
-                                       const char separator) const
+                                     const size_t flags,
+                                     const char separator) const
 {
     const OFListConstIterator(Uint16) endPos = ItemList.end();
     OFListConstIterator(Uint16) iterator = ItemList.begin();
@@ -86,8 +87,7 @@ OFCondition DSRImageSegmentList::print(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRImageSegmentList::read(DcmItem &dataset,
-                                      const size_t /*flags*/)
+OFCondition DSRImageSegmentList::read(DcmItem &dataset)
 {
     /* get integer array from dataset */
     DcmUnsignedShort delem(DCM_ReferencedSegmentNumber);

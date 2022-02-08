@@ -83,19 +83,19 @@ DCMTK_LOG4CPLUS_EXPORT STD_NAMESPACE wstring towstring(char const *);
 
 } // namespace helpers
 
-#ifdef DCMTK_OFLOG_UNICODE
+#ifdef UNICODE
 
 #define DCMTK_LOG4CPLUS_C_STR_TO_TSTRING(STRING) log4cplus::helpers::towstring(STRING)
 #define DCMTK_LOG4CPLUS_STRING_TO_TSTRING(STRING) log4cplus::helpers::towstring(STRING)
 #define DCMTK_LOG4CPLUS_TSTRING_TO_STRING(STRING) log4cplus::helpers::tostring(STRING)
 
-#else // DCMTK_OFLOG_UNICODE
+#else // UNICODE
 
 #define DCMTK_LOG4CPLUS_C_STR_TO_TSTRING(STRING) OFString(STRING)
 #define DCMTK_LOG4CPLUS_STRING_TO_TSTRING(STRING) STRING
 #define DCMTK_LOG4CPLUS_TSTRING_TO_STRING(STRING) STRING
 
-#endif // DCMTK_OFLOG_UNICODE
+#endif // UNICODE
 
 } // namespace log4cplus
 } // end namespace dcmtk

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2021, OFFIS e.V.
+ *  Copyright (C) 1998-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,19 +22,21 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#ifdef HAVE_WINDOWS_H
-// on Windows, we need Winsock2 for network functions
-#include <winsock2.h>
-#endif
-
 #include "dcmtk/dcmnet/dcompat.h"
+
+BEGIN_EXTERN_C
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#include <winbase.h>
+#endif
+END_EXTERN_C
+
 #include "dcmtk/dcmpstat/dvpsmsg.h"
 #include "dcmtk/ofstd/ofstring.h"    /* for class OFString */
 #include "dcmtk/ofstd/ofbmanip.h"    /* for OFBitmanipTemplate<> */
 #include "dcmtk/dcmdata/dcswap.h"      /* for swapIfNecessary() */
 #include "dcmtk/dcmnet/dcmtrans.h"    /* for class DcmTransportConnection */
-#include "dcmtk/ofstd/ofsockad.h"
-#include "dcmtk/ofstd/ofstd.h"
+#include "dcmtk/ofstd/ofnetdb.h"
 
 /* --------------- class DVPSIPCMessage --------------- */
 
@@ -110,9 +112,9 @@ DVPSIPCMessage& DVPSIPCMessage::operator=(const DVPSIPCMessage& copy)
   return *this;
 }
 
-void DVPSIPCMessage::resizePayload(size_t i)
+void DVPSIPCMessage::resizePayload(Uint32 i)
 {
-  size_t requiredSize = payloadUsed+i;
+  Uint32 requiredSize = payloadUsed+i;
   if (requiredSize < payloadAllocated) return;
 
   while (payloadAllocated < requiredSize) payloadAllocated += PAYLOAD_ALLOCATION_UNIT;
@@ -125,18 +127,17 @@ void DVPSIPCMessage::resizePayload(size_t i)
 
 void DVPSIPCMessage::addStringToPayload(const char *str)
 {
-  size_t length = 0;
+  Uint32 length = 0;
   if (str) length = strlen(str); else str = "";
   Uint32 padBytes = 4 - (length % 4);
-  size_t sizeNeeded = sizeof(Uint32)+length+padBytes;
-  resizePayload(sizeNeeded);
+  resizePayload(sizeof(Uint32)+length+padBytes);
 
   // write string length
-  addIntToPayload(OFstatic_cast(Uint32, length+padBytes));
+  addIntToPayload(length+padBytes);  
 
   // write string
-  OFStandard::strlcpy((char *)(payload + payloadUsed), str, (length+padBytes));
-  payloadUsed += OFstatic_cast(Uint32, length);
+  strcpy((char *)(payload + payloadUsed), str);
+  payloadUsed += length;
 
   // write pad bytes
   for (Uint32 i=0; i < padBytes; i++) *(payload + payloadUsed++) = 0;
@@ -164,7 +165,7 @@ OFBool DVPSIPCMessage::extractStringFromPayload(OFString& str)
 
   str = (const char *)(payload+payloadReadOffset); // guaranteed to be zero terminated string
   payloadReadOffset += length;
-  return OFTrue;
+  return OFTrue;  
 }
 
 OFBool DVPSIPCMessage::extractIntFromPayload(Uint32& i)
@@ -173,13 +174,13 @@ OFBool DVPSIPCMessage::extractIntFromPayload(Uint32& i)
   if (payloadReadOffset + sizeof(Uint32) > payloadUsed) return OFFalse;
 
   // copy integer into temporary buffer and adjust byte order there
-  unsigned char *temp = new unsigned char[sizeof(Uint32)+8]; // allocate a bit more than needed to be safe
+  unsigned char *temp = new unsigned char[sizeof(Uint32)+8]; // allocate a bit more than needed to be safe  
   OFBitmanipTemplate<unsigned char>::copyMem(payload+payloadReadOffset, temp, sizeof(Uint32));
   swapIfNecessary(gLocalByteOrder, EBO_BigEndian, temp, sizeof(Uint32), sizeof(Uint32));
   payloadReadOffset += sizeof(Uint32);
-
+  
   i = *(Uint32 *)temp;
-  delete[] temp;
+  delete[] temp;  
   return OFTrue;
 }
 
@@ -196,7 +197,7 @@ void DVPSIPCMessage::erasePayload()
 OFBool DVPSIPCMessage::send(DcmTransportConnection &connection)
 {
   // adjust message type and length
-  *(Uint32 *)payload = messageType;
+  *(Uint32 *)payload = messageType;  
   *(Uint32 *)(payload + sizeof(Uint32)) = (payloadUsed - PAYLOAD_OFFSET);
   swapIfNecessary(EBO_BigEndian, gLocalByteOrder, payload, 2*sizeof(Uint32), sizeof(Uint32));
 
@@ -225,9 +226,9 @@ OFBool DVPSIPCMessage::receive(DcmTransportConnection &connection)
   }
 
   // read payload if any
-  if (payloadUsed > 0)
+  if (payloadUsed > 0) 
   {
-    if (connection.read(payload+PAYLOAD_OFFSET, (size_t)payloadUsed) <= 0)
+    if (connection.read(payload+PAYLOAD_OFFSET, (size_t)payloadUsed) <= 0) 
     {
       payloadUsed = PAYLOAD_OFFSET;
       return OFFalse;
@@ -256,16 +257,16 @@ DVPSIPCClient::DVPSIPCClient(Uint32 clientType, const char *txt, int thePort, OF
   if (performTransaction(msg))
   {
     if ((msg.getMessageType() != DVPSIPCMessage::assignApplicationID) || (! msg.extractIntFromPayload(applicationID)))
-    {
+    {      
       // protocol violation
-      serverActive = OFFalse;
+      serverActive = OFFalse;	
     }
   } else {
-    serverActive = OFFalse;
+    serverActive = OFFalse;	
   }
   return;
 }
-
+ 
 DVPSIPCClient::~DVPSIPCClient()
 {
   if (connection)
@@ -279,21 +280,21 @@ void DVPSIPCClient::requestConnection()
 {
   if (connection) return; // connection already open
 
-#ifdef _WIN32
-  SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
-  if (s == INVALID_SOCKET) return;
-#else
   int s = socket(AF_INET, SOCK_STREAM, 0);
   if (s < 0) return;
-#endif
-  OFSockAddr server;
-  OFStandard::getAddressByHostname("localhost", server);
-  server.setPort(OFstatic_cast(unsigned short, htons(OFstatic_cast(unsigned short, port))));
 
-  if (connect(s, server.getSockaddr(), server.size()) < 0)
+  OFStandard::OFHostent hp = OFStandard::getHostByName("localhost");
+  if (!hp) return;
+
+  struct sockaddr_in server;
+  server.sin_family = AF_INET;
+  server.sin_port = (unsigned short) htons(port);
+  memcpy(&server.sin_addr, hp.h_addr.c_str(), (size_t) hp.h_length);
+
+  if (connect(s, (struct sockaddr *) & server, sizeof(server)) < 0)
   {
 #ifdef HAVE_WINSOCK_H
-    (void) shutdown(s,  1 /* SD_SEND */);
+    (void) shutdown(s,  1 /* SD_SEND */); 
     (void) closesocket(s);
 #else
     (void) close(s);

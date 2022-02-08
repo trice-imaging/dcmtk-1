@@ -1,9 +1,9 @@
 /*
  *
- *  Copyright (C) 2013-2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
- *  This software and supporting documentation are maintained by
+ *  This software and supporting documentation were developed by
  *
  *    OFFIS e.V.
  *    R&D Division Health
@@ -33,7 +33,7 @@
  *  class declaration  *
  *---------------------*/
 
-/** Class for checking the relationship content constraints of the Comprehensive 3D SR IOD
+/** Class for checking the content relationship constraints of the Comprehensive 3D SR IOD
  */
 class DCMTK_DCMSR_EXPORT DSRComprehensive3DSRConstraintChecker
   : public DSRIODConstraintChecker
@@ -59,14 +59,10 @@ class DCMTK_DCMSR_EXPORT DSRComprehensive3DSRConstraintChecker
      */
     virtual OFBool isTemplateSupportRequired() const;
 
-    /** get identifier and mapping resource of the root template (if any)
-     ** @param  templateIdentifier  identifier of the root template (might be empty)
-     *  @param  mappingResource     mapping resource that defines the root template
-     *                              (might be empty)
-     ** @return status, EC_Normal if successful, an error code otherwise
+    /** get identifier of the root template
+     ** @return always returns NULL (no template required)
      */
-    virtual OFCondition getRootTemplateIdentification(OFString &templateIdentifier,
-                                                      OFString &mappingResource) const;
+    virtual const char *getRootTemplateIdentifier() const;
 
     /** get the associated document type of the SR IOD
      ** @return document type (DSRTypes::DT_Comprehensive3DSR)

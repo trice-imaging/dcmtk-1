@@ -14,8 +14,9 @@
 #    define assert(t) { }
 #  endif
 #else
-  #include <cassert>
- #define ASSERT(t) assert(t)
+#define INCLUDE_CASSERT
+#include "dcmtk/ofstd/ofstdinc.h"
+#define ASSERT(t) assert(t)
 #endif
 
 #if defined(_WIN32)

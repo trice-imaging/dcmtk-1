@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2021, OFFIS e.V.
+ *  Copyright (C) 1998-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,7 +21,6 @@
 
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
-
 #include "dcmtk/dcmpstat/dviface.h"
 
 #include "dcmtk/dcmpstat/dvpsdef.h"   /* for constants */
@@ -62,6 +61,12 @@
 #include "dcmtk/dcmqrdb/dcmqrdbi.h"   /* for DB_UpperMaxBytesPerStudy */
 #include "dcmtk/dcmqrdb/dcmqrdbs.h"   /* for DcmQueryRetrieveDatabaseStatus */
 
+#define INCLUDE_CSTDIO
+#define INCLUDE_CCTYPE
+#define INCLUDE_CMATH
+#define INCLUDE_UNISTD
+#include "dcmtk/ofstd/ofstdinc.h"
+
 BEGIN_EXTERN_C
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>   /* for fork */
@@ -87,6 +92,7 @@ BEGIN_EXTERN_C
 END_EXTERN_C
 
 #ifdef HAVE_WINDOWS_H
+#include <windows.h>
 #include <winbase.h>     /* for CreateProcess */
 #endif
 
@@ -99,7 +105,6 @@ BEGIN_EXTERN_C
 #include <openssl/x509.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
-#include <openssl/ssl.h>
 END_EXTERN_C
 #endif
 
@@ -219,13 +224,13 @@ DVInterface::DVInterface(const char *config_file, OFBool useLog)
 
             // This will badly interact with oflog config files :(
             const char *pattern = "%D, Level %p, Module DCMPSTAT%n%m%n";
-            OFunique_ptr<dcmtk::log4cplus::Layout> layout(new dcmtk::log4cplus::PatternLayout(pattern));
+            OFauto_ptr<dcmtk::log4cplus::Layout> layout(new dcmtk::log4cplus::PatternLayout(pattern));
             dcmtk::log4cplus::SharedAppenderPtr logfile(new dcmtk::log4cplus::FileAppender(filepath, STD_NAMESPACE ios::app));
             // We can't use OFLog::getLogger() here because that doesn't let us
             // configure the object
             dcmtk::log4cplus::Logger log = dcmtk::log4cplus::Logger::getInstance("dcmtk.dcmpstat.logfile");
 
-            logfile->setLayout(OFmove(layout));
+            logfile->setLayout(layout);
             log.addAppender(logfile);
             log.setLogLevel(getLogLevel());
 
@@ -658,7 +663,7 @@ OFCondition DVInterface::savePState(OFBool replaceSOPInstanceUID)
         return EC_IllegalCall;
     }
 
-    if (dbhandle.makeNewStoreFileName(UID_GrayscaleSoftcopyPresentationStateStorage, instanceUID, imageFileName, sizeof(imageFileName)).good())
+    if (dbhandle.makeNewStoreFileName(UID_GrayscaleSoftcopyPresentationStateStorage, instanceUID, imageFileName).good())
     {
         // now store presentation state as filename
         result = savePState(imageFileName, OFFalse);
@@ -682,14 +687,14 @@ OFCondition DVInterface::savePState(OFBool replaceSOPInstanceUID)
             DIC_UI instanceUID2;
             DIC_UI seriesUID;
             DIC_UI studyUID;
-            if (DU_getStringDOElement(dset, DCM_SOPClassUID, sopClass, sizeof(sopClass)) &&
-                    DU_getStringDOElement(dset, DCM_SOPInstanceUID, instanceUID2, sizeof(instanceUID2)) &&
-                    DU_getStringDOElement(dset, DCM_SeriesInstanceUID, seriesUID, sizeof(seriesUID)) &&
-                    DU_getStringDOElement(dset, DCM_StudyInstanceUID, studyUID, sizeof(studyUID)) &&
+            if (DU_getStringDOElement(dset, DCM_SOPClassUID, sopClass) &&
+                    DU_getStringDOElement(dset, DCM_SOPInstanceUID, instanceUID2) &&
+                    DU_getStringDOElement(dset, DCM_SeriesInstanceUID, seriesUID) &&
+                    DU_getStringDOElement(dset, DCM_StudyInstanceUID, studyUID) &&
                 ((!imageInDatabase) || (getSeriesStruct(studyUID, seriesUID, instanceUID2) == NULL)))
             {
                 releaseDatabase();   /* avoid deadlocks */
-                if (dbhandle.makeNewStoreFileName(sopClass, instanceUID2, imageFileName, sizeof(imageFileName)).good())
+                if (dbhandle.makeNewStoreFileName(sopClass, instanceUID2, imageFileName).good())
                 {
                     // now store presentation state as filename
                     result = saveCurrentImage(imageFileName);
@@ -785,7 +790,7 @@ OFCondition DVInterface::saveStructuredReport()
         return EC_IllegalCall;
     }
 
-    if (dbhandle.makeNewStoreFileName(sopClassUID.c_str(), instanceUID.c_str(), filename, sizeof(filename)).good())
+    if (dbhandle.makeNewStoreFileName(sopClassUID.c_str(), instanceUID.c_str(), filename).good())
     {
         // now store presentation state as filename
         result = saveStructuredReport(filename);
@@ -1352,22 +1357,18 @@ OFBool DVInterface::createIndexCache()
                         if (!series->List.isElem(record.SOPInstanceUID))
                         {
                             DVPSInstanceType type = DVPSI_image;
-                            if (DSRTypes::sopClassUIDToDocumentType(record.SOPClassUID) != DSRTypes::DT_invalid)
-                                type = DVPSI_structuredReport;
-                            else if (strcmp(record.Modality, "PR") == 0)
-                                type = DVPSI_presentationState;
-                            else if (strcmp(record.Modality, "SR") == 0)
-                                type = DVPSI_structuredReport;
-                            else if (strcmp(record.Modality, "HC") == 0)
-                                type =DVPSI_hardcopyGrayscale;
-                            else if (strcmp(record.Modality, "STORED_PRINT") == 0)
-                                type = DVPSI_storedPrint;
-                            series->List.addItem(record.SOPInstanceUID,
-                                                 counter,
-                                                 OFstatic_cast(DVIFhierarchyStatus, record.hstat),
-                                                 type,
-                                                 record.ImageSize,
-                                                 record.filename);
+                            if (record.Modality != NULL)
+                            {
+                                if (strcmp(record.Modality, "PR") == 0)
+                                    type = DVPSI_presentationState;
+                                if (strcmp(record.Modality, "SR") == 0)
+                                    type = DVPSI_structuredReport;
+                                else if (strcmp(record.Modality, "HC") == 0)
+                                    type =DVPSI_hardcopyGrayscale;
+                                else if (strcmp(record.Modality, "STORED_PRINT") == 0)
+                                    type = DVPSI_storedPrint;
+                            }
+                            series->List.addItem(record.SOPInstanceUID, counter, record.hstat, type, record.ImageSize, record.filename);
                             if (series->Type == DVPSI_image)
                                 series->Type = type;                // series contains only one type of instances
                         }
@@ -1676,7 +1677,7 @@ OFCondition DVInterface::selectInstance(const char *instanceUID, const char *sop
                             {
                                 if (sopClassUID == NULL)
                                     return EC_Normal;
-                                else if (strcmp(sopClassUID, idxRec.SOPClassUID) == 0)
+                                else if ((idxRec.SOPClassUID != NULL) && (strcmp(sopClassUID, idxRec.SOPClassUID) == 0))
                                     return EC_Normal;
                             }
                         }
@@ -1952,9 +1953,7 @@ OFCondition DVInterface::instanceReviewed(int pos)
     lockDatabase();
     OFBool wasNew = newInstancesReceived();
     if (pHandle == NULL) return EC_IllegalCall;
-    pHandle->DB_unlock();
     OFCondition result = pHandle->instanceReviewed(pos);
-    pHandle->DB_lock(OFFalse);
     if (!wasNew) resetDatabaseReferenceTime();
     releaseDatabase();
     return result;
@@ -1983,11 +1982,14 @@ int DVInterface::findStudyIdx(StudyDescRecord *study,
 {
     if ((study != NULL) && (uid != NULL))
     {
-        int i = 0;
+        register int i = 0;
         for (i = 0; i < PSTAT_MAXSTUDYCOUNT; i++)
         {
-            if (strcmp(uid, study[i].StudyInstanceUID) == 0)
+            if ((study[i].StudyInstanceUID != NULL) &&
+                (strcmp(uid, study[i].StudyInstanceUID) == 0))
+            {
                 return i;
+            }
         }
     }
     return -1;
@@ -1998,16 +2000,9 @@ int DVInterface::deleteImageFile(const char *filename)
 {
     if ((filename != NULL) && (pHandle != NULL))
     {
-        const char *pos = strrchr(filename, OFstatic_cast(int, PATH_SEPARATOR));
-#ifdef _WIN32
-        // Windows accepts both backslash and forward slash as path separators.
-        const char *pos2 = strrchr(filename, OFstatic_cast(int, '/'));
-
-        // if pos2 points to a character closer to the end of the string, use this instead of strPos
-        if ((pos == NULL) || ((pos2 != NULL) && (pos2 > pos))) pos = pos2;
-#endif
-        // check whether image file resides in index.dat directory
-        if ((pos == NULL) || (strncmp(filename, pHandle->getStorageArea(), pos - filename) == 0))
+        const char *pos;
+        if (((pos = strrchr(filename, OFstatic_cast(int, PATH_SEPARATOR))) == NULL) ||   // check whether image file resides in index.dat directory
+            (strncmp(filename, pHandle->getStorageArea(), pos - filename) == 0))
         {
 //            DB_deleteImageFile((/*const */char *)filename);
             if (unlink(filename) == 0)
@@ -2138,10 +2133,11 @@ OFCondition DVInterface::deleteInstance(const char *studyUID,
             {
                 if (pHandle->DB_GetStudyDesc(study_desc).good())
                 {
-                    int i = 0;
+                    register int i = 0;
                     for (i = 0; i < PSTAT_MAXSTUDYCOUNT; i++)
                     {
-                        if (strcmp(studyUID, study_desc[i].StudyInstanceUID) != 0)
+                        if ((study_desc[i].StudyInstanceUID != NULL) &&
+                            (strcmp(studyUID, study_desc[i].StudyInstanceUID) != 0))
                         {
                             if (study_desc[i].NumberofRegistratedImages > 0)
                             {
@@ -2224,7 +2220,7 @@ OFCondition DVInterface::sendIOD(const char * targetID,
   } else {
     // we are the child process
     if (execl(sender_application, sender_application, configPath.c_str(),
-            targetID, studyUID, seriesUID, instanceUID, OFreinterpret_cast(char *, 0)) < 0)
+            targetID, studyUID, seriesUID, instanceUID, NULL) < 0)
     {
       DCMPSTAT_ERROR("Unable to execute '" << sender_application << "'");
     }
@@ -2237,7 +2233,7 @@ OFCondition DVInterface::sendIOD(const char * targetID,
 
   // initialize startup info
   PROCESS_INFORMATION procinfo;
-  STARTUPINFOA sinfo;
+  STARTUPINFO sinfo;
   OFBitmanipTemplate<char>::zeroMem((char *)&sinfo, sizeof(sinfo));
   sinfo.cb = sizeof(sinfo);
   char commandline[4096];
@@ -2247,9 +2243,9 @@ OFCondition DVInterface::sendIOD(const char * targetID,
       studyUID, seriesUID);
   else sprintf(commandline, "%s %s %s %s", sender_application, configPath.c_str(), targetID, studyUID);
 #ifdef DEBUG
-  if (CreateProcessA(NULL, commandline, NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo))
+  if (CreateProcess(NULL, commandline, NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo))
 #else
-  if (CreateProcessA(NULL, commandline, NULL, NULL, 0, DETACHED_PROCESS, NULL, NULL, &sinfo, &procinfo))
+  if (CreateProcess(NULL, commandline, NULL, NULL, 0, DETACHED_PROCESS, NULL, NULL, &sinfo, &procinfo))
 #endif
   {
     return EC_Normal;
@@ -2287,7 +2283,7 @@ OFCondition DVInterface::startReceiver()
       // we are the parent process, continue loop
     } else {
       // we are the child process
-      if (execl(receiver_application, receiver_application, configPath.c_str(), getTargetID(i, DVPSE_receiver), OFreinterpret_cast(char *, 0)) < 0)
+      if (execl(receiver_application, receiver_application, configPath.c_str(), getTargetID(i, DVPSE_receiver), NULL) < 0)
       {
           DCMPSTAT_ERROR("Unable to execute '" << receiver_application << "'");
       }
@@ -2299,15 +2295,15 @@ OFCondition DVInterface::startReceiver()
     // Windows version - call CreateProcess()
     // initialize startup info
     PROCESS_INFORMATION procinfo;
-    STARTUPINFOA sinfo;
+    STARTUPINFO sinfo;
     OFBitmanipTemplate<char>::zeroMem((char *)&sinfo, sizeof(sinfo));
     sinfo.cb = sizeof(sinfo);
     char commandline[4096];
     sprintf(commandline, "%s %s %s", receiver_application, configPath.c_str(), getTargetID(i, DVPSE_receiver));
 #ifdef DEBUG
-    if (CreateProcessA(NULL, commandline, NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo))
+    if (CreateProcess(NULL, commandline, NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo))
 #else
-    if (CreateProcessA(NULL, commandline, NULL, NULL, 0, DETACHED_PROCESS, NULL, NULL, &sinfo, &procinfo))
+    if (CreateProcess(NULL, commandline, NULL, NULL, 0, DETACHED_PROCESS, NULL, NULL, &sinfo, &procinfo))
 #endif
     {
       // continue loop
@@ -2342,7 +2338,7 @@ OFCondition DVInterface::terminateReceiver()
     // we are the parent process, continue loop
   } else {
     // we are the child process
-    if (execl(receiver_application, receiver_application, configPath.c_str(), "--terminate", OFreinterpret_cast(char *, 0)) < 0)
+    if (execl(receiver_application, receiver_application, configPath.c_str(), "--terminate", NULL) < 0)
     {
         DCMPSTAT_ERROR("Unable to execute '" << receiver_application << "'");
     }
@@ -2354,15 +2350,15 @@ OFCondition DVInterface::terminateReceiver()
   // Windows version - call CreateProcess()
   // initialize startup info
   PROCESS_INFORMATION procinfo;
-  STARTUPINFOA sinfo;
+  STARTUPINFO sinfo;
   OFBitmanipTemplate<char>::zeroMem((char *)&sinfo, sizeof(sinfo));
   sinfo.cb = sizeof(sinfo);
   char commandline[4096];
   sprintf(commandline, "%s %s %s", receiver_application, configPath.c_str(), "--terminate");
 #ifdef DEBUG
-  if (CreateProcessA(NULL, commandline, NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo))
+  if (CreateProcess(NULL, commandline, NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo))
 #else
-  if (CreateProcessA(NULL, commandline, NULL, NULL, 0, DETACHED_PROCESS, NULL, NULL, &sinfo, &procinfo))
+  if (CreateProcess(NULL, commandline, NULL, NULL, 0, DETACHED_PROCESS, NULL, NULL, &sinfo, &procinfo))
 #endif
   {
     // continue loop
@@ -2410,11 +2406,11 @@ OFCondition DVInterface::startQueryRetrieveServer()
       char str_timeout[20];
       sprintf(str_timeout, "%lu", OFstatic_cast(unsigned long, timeout));
       execl(server_application, server_application, "-c", config_filename.c_str(), "--allow-shutdown",
-        "--timeout", str_timeout, OFreinterpret_cast(char *, 0));
+        "--timeout", str_timeout, NULL);
     }
     else
     {
-      execl(server_application, server_application, "-c", config_filename.c_str(), "--allow-shutdown", OFreinterpret_cast(char *, 0));
+      execl(server_application, server_application, "-c", config_filename.c_str(), "--allow-shutdown", NULL);
     }
 
     DCMPSTAT_ERROR("Unable to execute '" << server_application << "'");
@@ -2427,7 +2423,7 @@ OFCondition DVInterface::startQueryRetrieveServer()
   // Windows version - call CreateProcess()
   // initialize startup info
   PROCESS_INFORMATION procinfo;
-  STARTUPINFOA sinfo;
+  STARTUPINFO sinfo;
   OFBitmanipTemplate<char>::zeroMem((char *)&sinfo, sizeof(sinfo));
   sinfo.cb = sizeof(sinfo);
   char commandline[4096];
@@ -2443,9 +2439,9 @@ OFCondition DVInterface::startQueryRetrieveServer()
   }
 
 #ifdef DEBUG
-  if (CreateProcessA(NULL, commandline, NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo))
+  if (CreateProcess(NULL, commandline, NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo))
 #else
-  if (CreateProcessA(NULL, commandline, NULL, NULL, 0, DETACHED_PROCESS, NULL, NULL, &sinfo, &procinfo))
+  if (CreateProcess(NULL, commandline, NULL, NULL, 0, DETACHED_PROCESS, NULL, NULL, &sinfo, &procinfo))
 #endif
   {
     return EC_Normal;
@@ -2461,11 +2457,22 @@ OFCondition DVInterface::terminateQueryRetrieveServer()
   if (getQueryRetrieveServerName()==NULL) return EC_IllegalCall;
   if (configPath.empty()) return EC_IllegalCall;
 
-  OFStandard::initializeNetwork();
+#ifdef HAVE_GUSI_H
+  GUSISetup(GUSIwithSIOUXSockets);
+  GUSISetup(GUSIwithInternetSockets);
+#endif
+
+#ifdef HAVE_WINSOCK_H
+  WSAData winSockData;
+  /* we need at least version 1.1 */
+  WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
+  WSAStartup(winSockVersionNeeded, &winSockData);
+#endif
 
   OFCondition result = EC_Normal;
   T_ASC_Network *net=NULL;
   T_ASC_Parameters *params=NULL;
+  DIC_NODENAME localHost;
   DIC_NODENAME peerHost;
   T_ASC_Association *assoc=NULL;
 
@@ -2478,8 +2485,9 @@ OFCondition DVInterface::terminateQueryRetrieveServer()
     if (cond.good())
     {
       ASC_setAPTitles(params, getNetworkAETitle(), getQueryRetrieveAETitle(), NULL);
+      gethostname(localHost, sizeof(localHost) - 1);
       sprintf(peerHost, "localhost:%d", OFstatic_cast(int, getQueryRetrievePort()));
-      ASC_setPresentationAddresses(params, OFStandard::getHostName().c_str(), peerHost);
+      ASC_setPresentationAddresses(params, localHost, peerHost);
 
       const char* transferSyntaxes[] = { UID_LittleEndianImplicitTransferSyntax };
       cond = ASC_addPresentationContext(params, 1, UID_PrivateShutdownSOPClass, transferSyntaxes, 1);
@@ -2494,7 +2502,9 @@ OFCondition DVInterface::terminateQueryRetrieveServer()
     ASC_dropNetwork(&net);
   } else result = EC_IllegalCall;
 
-  OFStandard::shutdownNetwork();
+#ifdef HAVE_WINSOCK_H
+  WSACleanup();
+#endif
 
   return result;
 }
@@ -2653,7 +2663,7 @@ OFCondition DVInterface::saveDICOMImage(
     return result;
   }
 
-  if (handle.makeNewStoreFileName(UID_SecondaryCaptureImageStorage, uid, imageFileName, sizeof(imageFileName)).good())
+  if (handle.makeNewStoreFileName(UID_SecondaryCaptureImageStorage, uid, imageFileName).good())
   {
      // now store presentation state as filename
      result = saveDICOMImage(imageFileName, pixelData, width, height, aspectRatio, OFTrue, uid);
@@ -2726,8 +2736,6 @@ OFCondition DVInterface::saveHardcopyGrayscaleImage(
       if (EC_Normal==status) status = DVPSHelper::putStringValue(dataset, DCM_InstanceCreationDate, aString.c_str());
       DVPSHelper::currentTime(aString);
       if (EC_Normal==status) status = DVPSHelper::putStringValue(dataset, DCM_InstanceCreationTime, aString.c_str());
-      const char *specificCharSet = pState->getCharsetString();
-      if (status.good() && specificCharSet) status = DVPSHelper::putStringValue(dataset, DCM_SpecificCharacterSet, specificCharSet);
 
       // Hardcopy Grayscale Image Module
       if (EC_Normal==status) status = DVPSHelper::putStringValue(dataset, DCM_PhotometricInterpretation, "MONOCHROME2");
@@ -2814,7 +2822,7 @@ OFCondition DVInterface::saveHardcopyGrayscaleImage(
     return result;
   }
 
-  if (handle.makeNewStoreFileName(UID_RETIRED_HardcopyGrayscaleImageStorage, uid, imageFileName, sizeof(imageFileName)).good())
+  if (handle.makeNewStoreFileName(UID_RETIRED_HardcopyGrayscaleImageStorage, uid, imageFileName).good())
   {
      result = saveHardcopyGrayscaleImage(imageFileName, pixelData, width, height, aspectRatio, OFTrue, uid);
      if (EC_Normal==result)
@@ -2866,7 +2874,7 @@ OFCondition DVInterface::saveFileFormatToDB(DcmFileFormat &fileformat)
     return result;
   }
 
-  if (handle.makeNewStoreFileName(classUID, instanceUID, imageFileName, sizeof(imageFileName)).good())
+  if (handle.makeNewStoreFileName(classUID, instanceUID, imageFileName).good())
   {
      // save image file
      result = DVPSHelper::saveFileFormat(imageFileName, &fileformat, OFTrue);
@@ -2975,7 +2983,6 @@ OFCondition DVInterface::saveStoredPrint(
       if (prependDateTime)
       {
         OFDateTime::getCurrentDateTime().getISOFormattedDateTime(text, OFFalse /*showSeconds*/);
-        text += " ";
       }
       if (prependPrinterName)
       {
@@ -3045,7 +3052,7 @@ OFCondition DVInterface::saveStoredPrint(OFBool writeRequestedImageSize)
     return result;
   }
 
-  if (handle.makeNewStoreFileName(UID_RETIRED_StoredPrintStorage, uid, imageFileName, sizeof(imageFileName)).good())
+  if (handle.makeNewStoreFileName(UID_RETIRED_StoredPrintStorage, uid, imageFileName).good())
   {
      // now store stored print object as filename
      result = saveStoredPrint(imageFileName, writeRequestedImageSize, OFTrue, uid);
@@ -3111,7 +3118,7 @@ OFCondition DVInterface::loadPrintPreview(size_t idx, OFBool printLUT, OFBool ch
               if (pHardcopyImage->getStatus() == EIS_Normal)
               {
                 /* set display function for calibrated output */
-                if (displayFunction[DVPSD_GSDF] != NULL)
+                if (displayFunction != NULL)
                   pHardcopyImage->setDisplayFunction(displayFunction[DVPSD_GSDF]);
                 /* adapt polarity if necessary */
                 const char *polarity = pPrint->getImagePolarity(idx);
@@ -3391,7 +3398,7 @@ OFCondition DVInterface::startPrintSpooler()
   const char *printer = NULL;
   unsigned long sleepingTime = getSpoolerSleep();
   if (sleepingTime==0) sleepingTime=1; // default
-  char sleepStr[30];
+  char sleepStr[20];
   sprintf(sleepStr, "%lu", sleepingTime);
   OFBool detailedLog = getDetailedLog();
 
@@ -3416,13 +3423,13 @@ OFCondition DVInterface::startPrintSpooler()
       if (detailedLog)
       {
         if (execl(spooler_application, spooler_application, "--verbose", "--dump", "--spool", printJobIdentifier.c_str(),
-          "--printer", printer, "--config", configPath.c_str(), "--sleep", sleepStr, OFreinterpret_cast(char *, 0)) < 0)
+          "--printer", printer, "--config", configPath.c_str(), "--sleep", sleepStr, NULL) < 0)
         {
           DCMPSTAT_ERROR("Unable to execute '" << spooler_application << "'");
         }
       } else {
         if (execl(spooler_application, spooler_application, "--spool", printJobIdentifier.c_str(),
-          "--printer", printer, "--config", configPath.c_str(), "--sleep", sleepStr, OFreinterpret_cast(char *, 0)) < 0)
+          "--printer", printer, "--config", configPath.c_str(), "--sleep", sleepStr, NULL) < 0)
         {
           DCMPSTAT_ERROR("Unable to execute '" << spooler_application << "'");
         }
@@ -3436,7 +3443,7 @@ OFCondition DVInterface::startPrintSpooler()
     // Windows version - call CreateProcess()
     // initialize startup info
     PROCESS_INFORMATION procinfo;
-    STARTUPINFOA sinfo;
+    STARTUPINFO sinfo;
     OFBitmanipTemplate<char>::zeroMem((char *)&sinfo, sizeof(sinfo));
     sinfo.cb = sizeof(sinfo);
     char commandline[4096];
@@ -3449,9 +3456,9 @@ OFCondition DVInterface::startPrintSpooler()
         printJobIdentifier.c_str(), printer, configPath.c_str(), sleepStr);
     }
 #ifdef DEBUG
-    if (0 == CreateProcessA(NULL, commandline, NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo))
+    if (0 == CreateProcess(NULL, commandline, NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo))
 #else
-    if (0 == CreateProcessA(NULL, commandline, NULL, NULL, 0, DETACHED_PROCESS, NULL, NULL, &sinfo, &procinfo))
+    if (0 == CreateProcess(NULL, commandline, NULL, NULL, 0, DETACHED_PROCESS, NULL, NULL, &sinfo, &procinfo))
 #endif
     {
       DCMPSTAT_ERROR("Unable to execute '" << spooler_application << "'");
@@ -3552,12 +3559,12 @@ OFCondition DVInterface::startPrintServer()
       if (detailedLog)
       {
         if (execl(application, application, "--logfile", "--verbose", "--dump", "--printer", printer, "--config",
-            configPath.c_str(), OFreinterpret_cast(char *, 0)) < 0)
+            configPath.c_str(), NULL) < 0)
         {
           DCMPSTAT_ERROR("Unable to execute '" << application << "'");
         }
       } else {
-        if (execl(application, application, "--logfile", "--printer", printer, "--config", configPath.c_str(), OFreinterpret_cast(char *, 0)) < 0)
+        if (execl(application, application, "--logfile", "--printer", printer, "--config", configPath.c_str(), NULL) < 0)
         {
           DCMPSTAT_ERROR("Unable to execute '" << application << "'");
         }
@@ -3571,7 +3578,7 @@ OFCondition DVInterface::startPrintServer()
     // Windows version - call CreateProcess()
     // initialize startup info
     PROCESS_INFORMATION procinfo;
-    STARTUPINFOA sinfo;
+    STARTUPINFO sinfo;
     OFBitmanipTemplate<char>::zeroMem((char *)&sinfo, sizeof(sinfo));
     sinfo.cb = sizeof(sinfo);
     char commandline[4096];
@@ -3582,9 +3589,9 @@ OFCondition DVInterface::startPrintServer()
       sprintf(commandline, "%s --logfile --printer %s --config %s", application, printer, configPath.c_str());
     }
 #ifdef DEBUG
-    if (0 == CreateProcessA(NULL, commandline, NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo))
+    if (0 == CreateProcess(NULL, commandline, NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo))
 #else
-    if (0 == CreateProcessA(NULL, commandline, NULL, NULL, 0, DETACHED_PROCESS, NULL, NULL, &sinfo, &procinfo))
+    if (0 == CreateProcess(NULL, commandline, NULL, NULL, 0, DETACHED_PROCESS, NULL, NULL, &sinfo, &procinfo))
 #endif
     {
       DCMPSTAT_ERROR("Unable to execute '" << application << "'");
@@ -3600,11 +3607,22 @@ OFCondition DVInterface::terminatePrintServer()
   if (getPrintServerName()==NULL) return EC_IllegalCall;
   if (configPath.empty()) return EC_IllegalCall;
 
-  OFStandard::initializeNetwork();
+#ifdef HAVE_GUSI_H
+  GUSISetup(GUSIwithSIOUXSockets);
+  GUSISetup(GUSIwithInternetSockets);
+#endif
+
+#ifdef HAVE_WINSOCK_H
+  WSAData winSockData;
+  /* we need at least version 1.1 */
+  WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
+  WSAStartup(winSockVersionNeeded, &winSockData);
+#endif
 
   OFCondition result = EC_Normal;
   T_ASC_Network *net=NULL;
   T_ASC_Parameters *params=NULL;
+  DIC_NODENAME localHost;
   DIC_NODENAME peerHost;
   T_ASC_Association *assoc=NULL;
   const char *target = NULL;
@@ -3619,8 +3637,8 @@ OFCondition DVInterface::terminatePrintServer()
   if (tlsFolder==NULL) tlsFolder = ".";
 
   /* key file format */
-  DcmKeyFileFormat keyFileFormat = DCF_Filetype_PEM;
-  if (! getTLSPEMFormat()) keyFileFormat = DCF_Filetype_ASN1;
+  int keyFileFormat = SSL_FILETYPE_PEM;
+  if (! getTLSPEMFormat()) keyFileFormat = SSL_FILETYPE_ASN1;
 #endif
 
   Uint32 numberOfPrinters = getNumberOfTargets(DVPSE_printLocal);
@@ -3673,8 +3691,30 @@ OFCondition DVInterface::terminatePrintServer()
           const char *tlsCACertificateFolder = getTLSCACertificateFolder();
           if (tlsCACertificateFolder==NULL) tlsCACertificateFolder = ".";
 
+          /* ciphersuites */
+#if OPENSSL_VERSION_NUMBER >= 0x0090700fL
+          OFString tlsCiphersuites(TLS1_TXT_RSA_WITH_AES_128_SHA ":" SSL3_TXT_RSA_DES_192_CBC3_SHA);
+#else
+          OFString tlsCiphersuites(SSL3_TXT_RSA_DES_192_CBC3_SHA);
+#endif
+          Uint32 tlsNumberOfCiphersuites = getTargetNumberOfCipherSuites(target);
+          if (tlsNumberOfCiphersuites > 0)
+          {
+            tlsCiphersuites.clear();
+            OFString currentSuite;
+            const char *currentOpenSSL;
+            for (Uint32 ui=0; ui<tlsNumberOfCiphersuites; ui++)
+            {
+              getTargetCipherSuite(target, ui, currentSuite);
+              if (NULL != (currentOpenSSL = DcmTLSTransportLayer::findOpenSSLCipherSuiteName(currentSuite.c_str())))
+              {
+                if (!tlsCiphersuites.empty()) tlsCiphersuites += ":";
+                tlsCiphersuites += currentOpenSSL;
+              }
+            }
+          }
 
-          DcmTLSTransportLayer *tLayer = new DcmTLSTransportLayer(NET_REQUESTOR, tlsRandomSeedFile.c_str(), OFTrue);
+          DcmTLSTransportLayer *tLayer = new DcmTLSTransportLayer(DICOM_APPLICATION_REQUESTOR, tlsRandomSeedFile.c_str());
           if (tLayer)
           {
             if (tlsCACertificateFolder) tLayer->addTrustedCertificateDir(tlsCACertificateFolder, keyFileFormat);
@@ -3682,26 +3722,8 @@ OFCondition DVInterface::terminatePrintServer()
             tLayer->setPrivateKeyPasswd(tlsPrivateKeyPassword); // never prompt on console
             tLayer->setPrivateKeyFile(tlsPrivateKeyFile.c_str(), keyFileFormat);
             tLayer->setCertificateFile(tlsCertificateFile.c_str(), keyFileFormat);
+            tLayer->setCipherSuites(tlsCiphersuites.c_str());
             tLayer->setCertificateVerification(DCV_ignoreCertificate);
-
-           // determine TLS profile
-             OFString profileName;
-            const char *profileNamePtr = getTargetTLSProfile(target);
-            if (profileNamePtr) profileName = profileNamePtr;
-            DcmTLSSecurityProfile tlsProfile = TSP_Profile_BCP195;  // default
-            if (profileName == "BCP195-ND") tlsProfile = TSP_Profile_BCP195_ND;
-            else if (profileName == "BCP195-EX") tlsProfile = TSP_Profile_BCP195_Extended;
-            else if (profileName == "BCP195") tlsProfile = TSP_Profile_BCP195;
-            else if (profileName == "AES") tlsProfile = TSP_Profile_AES;
-            else if (profileName == "BASIC") tlsProfile = TSP_Profile_Basic;
-            else if (profileName == "NULL") tlsProfile = TSP_Profile_IHE_ATNA_Unencrypted;
-
-            // set TLS profile
-            (void) tLayer->setTLSProfile(tlsProfile);
-
-            // activate cipher suites
-            (void) tLayer->activateCipherSuites();
-
             ASC_setTransportLayer(net, tLayer, 1);
           }
 #else
@@ -3711,8 +3733,9 @@ OFCondition DVInterface::terminatePrintServer()
         }
 
         ASC_setAPTitles(params, getNetworkAETitle(), getTargetAETitle(target), NULL);
+        gethostname(localHost, sizeof(localHost) - 1);
         sprintf(peerHost, "%s:%d", getTargetHostname(target), OFstatic_cast(int, getTargetPort(target)));
-        ASC_setPresentationAddresses(params, OFStandard::getHostName().c_str(), peerHost);
+        ASC_setPresentationAddresses(params, localHost, peerHost);
 
         if (cond.good()) cond = ASC_setTransportLayerType(params, useTLS);
 
@@ -3730,7 +3753,9 @@ OFCondition DVInterface::terminatePrintServer()
     } else result = EC_IllegalCall;
   }
 
-  OFStandard::shutdownNetwork();
+#ifdef HAVE_WINSOCK_H
+  WSACleanup();
+#endif
 
   return result;    // result of last process only
 }
@@ -3834,7 +3859,7 @@ OFCondition DVInterface::printSCUcreateBasicFilmSession(DVPSPrintMessageHandler&
   OFCondition result = EC_Normal;
   DcmDataset dset;
   DcmElement *delem = NULL;
-  char buf[30];
+  char buf[20];
 
   if ((EC_Normal==result)&&(printerMediumType.size() > 0))
   {
@@ -3913,7 +3938,7 @@ OFCondition DVInterface::startExternalApplication(const char *application, const
   else
   {
     // we are the child process
-    if (execl(application, application, filename, OFreinterpret_cast(char *, 0)) < 0)
+    if (execl(application, application, filename, NULL) < 0)
     {
       DCMPSTAT_ERROR("Unable to execute '" << application << "'");
     }
@@ -3926,15 +3951,15 @@ OFCondition DVInterface::startExternalApplication(const char *application, const
 
   // initialize startup info
   PROCESS_INFORMATION procinfo;
-  STARTUPINFOA sinfo;
+  STARTUPINFO sinfo;
   OFBitmanipTemplate<char>::zeroMem((char *)&sinfo, sizeof(sinfo));
   sinfo.cb = sizeof(sinfo);
   char commandline[4096];
   sprintf(commandline, "%s %s", application, filename);
 #ifdef DEBUG
-  if (CreateProcessA(NULL, commandline, NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo))
+  if (CreateProcess(NULL, commandline, NULL, NULL, 0, 0, NULL, NULL, &sinfo, &procinfo))
 #else
-  if (CreateProcessA(NULL, commandline, NULL, NULL, 0, DETACHED_PROCESS, NULL, NULL, &sinfo, &procinfo))
+  if (CreateProcess(NULL, commandline, NULL, NULL, 0, DETACHED_PROCESS, NULL, NULL, &sinfo, &procinfo))
 #endif
   {
     return EC_Normal;
@@ -4055,7 +4080,7 @@ OFBool DVInterface::verifyUserPassword(const char * /*userID*/, const char * /*p
 
     /* attempt to load the private key with the given password*/
     EVP_PKEY *pkey = NULL;
-    BIO *in = BIO_new(BIO_s_file());
+    BIO *in = BIO_new(BIO_s_file_internal());
     if (in)
     {
       if (BIO_read_filename(in, filename.c_str()) > 0)
@@ -4094,7 +4119,7 @@ OFCondition DVInterface::verifyAndSignStructuredReport(const char *userID, const
     OFString userOrg(getUserOrganization(userID));
     OFString userCV, userCSD, userCSV, userCM;
     DSRCodedEntryValue userCode(getUserCodeValue(userID, userCV), getUserCodingSchemeDesignator(userID, userCSD),
-                                getUserCodingSchemeVersion(userID, userCSV), getUserCodeMeaning(userID, userCM));
+                                getUserCodingSchemeVersion(userID, userCSV), getUserCodeMeaning(userID, userCM), OFTrue /*check*/);
     /* verify document */
     if (pReport->verifyDocument(userName, userCode, userOrg) == EC_Normal)
     {

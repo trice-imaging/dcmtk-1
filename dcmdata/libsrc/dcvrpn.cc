@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2020, OFFIS e.V.
+ *  Copyright (C) 1994-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,15 +22,10 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#include "dcmtk/dcmdata/dcjson.h"
 #include "dcmtk/dcmdata/dcvrpn.h"
-#include "dcmtk/ofstd/ofstd.h"
 
 
 // ********************************
-
-
-const char* const DcmPersonName::componentGroupNames[3] = { "Alphabetic", "Ideographic", "Phonetic" };
 
 
 DcmPersonName::DcmPersonName(const DcmTag &tag,
@@ -39,6 +34,7 @@ DcmPersonName::DcmPersonName(const DcmTag &tag,
 {
     setMaxLength(64);     // not correct: max length of PN is 3*64+2 = 194 characters (not bytes!)
     setNonSignificantChars(" \\^=");
+    setDelimiterChars("\\^=");
 }
 
 
@@ -90,8 +86,7 @@ OFCondition DcmPersonName::checkValue(const OFString &vm,
     {
         OFString charset;
         /* try to determine the value of the SpecificCharacterSet element */
-        if (getSpecificCharacterSet(charset) == EC_CorruptedData)
-            charset = "UNKNOWN";
+        getSpecificCharacterSet(charset);
         l_error = DcmPersonName::checkStringValue(strVal, vm, charset);
     }
     return l_error;
@@ -118,9 +113,7 @@ OFCondition DcmPersonName::writeXML(STD_NAMESPACE ostream &out,
     /* PN requires special handling in the Native DICOM Model format */
     if (flags & DCMTypes::XF_useNativeModel)
     {
-       const OFBool convertNonASCII = (flags & DCMTypes::XF_convertNonASCII) > 0;
-
-       /* write normal XML start tag */
+        /* write normal XML start tag */
         DcmElement::writeXMLStartTag(out, flags);
         /* if the value is empty, we do not need to insert any PersonName attribute at all */
         if (!isEmpty())
@@ -132,6 +125,7 @@ OFCondition DcmPersonName::writeXML(STD_NAMESPACE ostream &out,
             /* strings to hold family, first, and middle name as well as prefix and suffix component */
             OFString components[5];
             /* arrays in order to permit looping while creating the output */
+            const char* compGroupNames[3] = { "Alphabetic", "Ideographic", "Phonetic" };
             const char* compNames[5] = { "FamilyName", "GivenName", "MiddleName", "NamePrefix", "NameSuffix" };
             for (unsigned int it = 0; it < vm; it++)
             {
@@ -155,24 +149,17 @@ OFCondition DcmPersonName::writeXML(STD_NAMESPACE ostream &out,
                         /* output one component group, e.g. <SingleByte> <FamilyName>Onken</FamilyName> </SingleByte> */
                         if (result.good())
                         {
-                            out << "<" << componentGroupNames[cg] << ">" << OFendl; // e.g. <SingleByte>
+                            out << "<" << compGroupNames[cg] << ">" << OFendl; // e.g. <SingleByte>
                             /* go through components (last name, first name, ...) */
                             for (unsigned short c = 0; c < 5; c++)
                             {
                                 if (!components[c].empty())
                                 {
                                     /* output name component, e.g. <FamilyName>Onken</FamilyName> */
-                                    out << "<" << compNames[c] << ">";
-
-                                    /* check whether conversion to XML markup string is required */
-                                    if (OFStandard::checkForMarkupConversion(components[c], convertNonASCII))
-                                        OFStandard::convertToMarkupStream(out, components[c], convertNonASCII);
-                                    else
-                                        out << components[c];
-                                    out << "</" << compNames[c] << ">" << OFendl;
+                                    out << "<" << compNames[c] << ">" << components[c] << "</" << compNames[c] << ">" << OFendl;
                                 }
                             }
-                            out << "</" << componentGroupNames[cg] << ">" << OFendl; // e.g. </SingleByte>
+                            out << "</" << compGroupNames[cg] << ">" << OFendl; // e.g. </SingleByte>
                         }
                     }
                 }
@@ -189,251 +176,6 @@ OFCondition DcmPersonName::writeXML(STD_NAMESPACE ostream &out,
     }
 }
 
-
-// ********************************
-
-
-OFCondition DcmPersonName::writeJson(STD_NAMESPACE ostream &out,
-                                     DcmJsonFormat &format)
-{
-    // helper struct to operate on the value pointers
-    struct Lexer
-    {
-        // initializes everything with foolproof defaults
-        Lexer()
-        : it(OFnullptr)
-        , end(OFnullptr)
-        , componentGroupName(componentGroupNames)
-        , currentComponent(0)
-        , hasTrailingNull(OFFalse)
-        {
-
-        }
-
-        // resets component groups and components for the new value and
-        // remembers that there was a value separator, so that trailing
-        // 'null' values can be printed.
-        void handleValue()
-        {
-            currentComponent = 0;
-            componentGroupName = componentGroupNames;
-            hasTrailingNull = OFTrue;
-        }
-
-        // check component group validity and set members
-        // appropriately
-        // emit warnings for invalid component groups
-        void handleComponentGroup()
-        {
-            if (componentGroupName != componentGroupNames + 2)
-            {
-                currentComponent = 0;
-                ++componentGroupName;
-            }
-            else
-            {
-                DCMDATA_ERROR("DcmPersonName::writeJson(): omitting invalid "
-                    "component group (more than three component groups present)");
-                // seek to the end of the current component group - 1, since
-                // the iterator will be incremented in the calling code
-                while (++it != end && *it != '\\' && *it != '=');
-                --it;
-            }
-        }
-
-        // searches for the next significant character
-        // (no delimiter or padding character).
-        // keeps track of the component group name and component
-        // number.
-        // returns OFFalse if no more significant characters exist.
-        OFBool nextValue()
-        {
-            for (; it != end; ++it) switch (*it)
-            {
-            case '\\':
-                handleValue();
-                return OFTrue;
-            case '=':
-                handleComponentGroup();
-                break;
-            case '^':
-                ++currentComponent;
-                break;
-            case ' ':
-                break;
-            default:
-                return OFTrue;
-            }
-            // this ends the output, unless we have to write
-            // a trailing 'null'
-            return hasTrailingNull;
-        }
-
-        // searches for the next significant character
-        // (no delimiter or padding character)
-        // within the current value.
-        // keeps track of the current component group and component
-        // number.
-        // returns OFFalse if no more significant characters exist
-        // within the current value.
-        OFBool nextComponentGroup()
-        {
-            for (; it != end; ++it) switch(*it)
-            {
-            case '\\':
-                // skip over any value separator
-                ++it;
-                handleValue();
-                return OFFalse;
-            case '=':
-                handleComponentGroup();
-                break;
-            case '^':
-                ++currentComponent;
-                break;
-            case ' ':
-                break;
-            default:
-                return OFTrue;
-            }
-            return OFFalse;
-        }
-
-        // searches for the next significant character
-        // (no delimiter or padding character)
-        // within the current component group.
-        // keeps track of the current component number.
-        // returns OFFalse if no more significant characters exist
-        // within the current component group.
-        OFBool nextComponent()
-        {
-            for (; it != end; ++it) switch(*it)
-            {
-            case '\\':
-            case '=':
-                return OFFalse;
-            case '^':
-                ++currentComponent;
-                break;
-            case ' ':
-                break;
-            default:
-                return OFTrue;
-            }
-            return OFFalse;
-        }
-
-        // writes all significant characters of the current component,
-        // prepending '^' characters as required by the current component
-        // number.
-        void writeComponent(STD_NAMESPACE ostream &out)
-        {
-            for (; currentComponent; --currentComponent)
-                out << '^';
-            const char* const begin = it;
-            while (++it != end && *it != '\\' && *it != '=' && *it != '^');
-            const char* componentEnd = it - 1;
-            while (*componentEnd == ' ')
-                --componentEnd;
-            OFString s(begin, 0, componentEnd - begin + 1);
-            DcmJsonFormat::escapeControlCharacters(out, s);
-        }
-
-        // writes the name of the current component group and all components
-        // within the current component group that contain at least one significant
-        // character.
-        // All others are replaced by a single '^' character each, except for the
-        // trailing ones (that are omitted).
-        void writeComponentGroup(STD_NAMESPACE ostream &out, DcmJsonFormat &format)
-        {
-            out << format.indent() << '"' << *componentGroupName << "\":"
-                << format.space() << '"';
-            writeComponent(out);
-            while (nextComponent())
-                writeComponent(out);
-            out << '"';
-        }
-
-        // writes all component groups of the current value that contain at least
-        // a single significant character, separated by ',' characters.
-        // all other component groups are omitted entirely.
-        // writes 'null' if all component groups are empty.
-        void writeCurrentValue(STD_NAMESPACE ostream &out, DcmJsonFormat &format)
-        {
-            hasTrailingNull = OFFalse;
-            if (nextComponentGroup())
-            {
-                out << '{' << format.newline();
-                ++format.indent();
-                writeComponentGroup(out, format);
-                while (nextComponentGroup())
-                {
-                    out << ',' << format.newline();
-                    writeComponentGroup(out, format);
-                }
-                out << format.newline() << --format.indent() << '}';
-            }
-            else out << "null";
-        }
-
-        // points to the character that is currently being processed
-        const char* it;
-
-        // points to the end of the entire attribute's data, including
-        // all values
-        const char* const end;
-
-        // points to the respective entry of the componentGroupNames
-        // array that contains the name of the component group that
-        // is currently being processed
-        const char* const * componentGroupName;
-
-        // denotes the number of empty components within the current
-        // component group since the last component that contained
-        // at least one significant character.
-        unsigned currentComponent;
-
-        // will be OFTrue if the last value is empty, so that a
-        // trailing 'null' will be written
-        OFBool hasTrailingNull;
-    } lexer;
-
-    // initialize the lexer, return an error if the data
-    // of the current attribute can't be accessed for whatever
-    // reason
-    OFCondition result = DcmCharString::getString(OFconst_cast(char*&, lexer.it));
-    if (result.bad())
-        return result;
-    OFconst_cast(const char*&, lexer.end) = lexer.it + DcmCharString::getLength();
-
-    // write attribute name etc., even if the attribute is empty
-    DcmElement::writeJsonOpener(out, format);
-
-    // search for the first significant character within the
-    // entire data or the first value separator '\'
-    if (lexer.nextValue())
-    {
-        // write the fist value or 'null'
-        format.printValuePrefix(out);
-        lexer.writeCurrentValue(out, format);
-        // search for the first significant character within
-        // the next value or the next '\'
-        while (lexer.nextValue())
-        {
-            // write array element separator and the next
-            // value or 'null'
-            format.printNextArrayElementPrefix(out);
-            lexer.writeCurrentValue(out, format);
-        }
-        // close the array after the last value
-        format.printValueSuffix(out);
-    }
-
-    // close the current attribute
-    DcmElement::writeJsonCloser(out, format);
-
-    return EC_Normal;
-}
 
 
 // ********************************
@@ -710,19 +452,10 @@ OFCondition DcmPersonName::checkStringValue(const OFString &value,
             const size_t length = (posEnd == OFString_npos) ? valLen - posStart : posEnd - posStart;
             if (dcmEnableVRCheckerForStringValues.get())
             {
-                /* check for non-ASCII characters (if default character set used) */
-                if (charset.empty() || (charset == "ISO_IR 6"))
-                {
-                    if (DcmByteString::containsExtendedCharacters(value.c_str() + posStart, length))
-                    {
-                        result = EC_InvalidCharacter;
-                        break;
-                    }
-                }
                 /* currently, the VR checker only supports ASCII and Latin-1 */
                 if (charset.empty() || (charset == "ISO_IR 6") || (charset == "ISO_IR 100"))
                 {
-                    /* check value representation (VR) */
+                    /* check value representation */
                     const int vrID = DcmElement::scanValue(value, "pn", posStart, length);
                     if (vrID != 11)
                     {
@@ -735,18 +468,9 @@ OFCondition DcmPersonName::checkStringValue(const OFString &value,
         }
         if (result.good() && !vm.empty())
         {
-            /* check value multiplicity (VM) */
+            /* check value multiplicity */
             result = DcmElement::checkVM(vmNum, vm);
         }
     }
     return result;
-}
-
-
-// ********************************
-
-
-const OFString& DcmPersonName::getDelimiterChars() const
-{
-    return DcmVR(EVR_PN).getDelimiterChars();
 }

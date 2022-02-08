@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -30,7 +30,6 @@
 
 // forward declarations
 class DcmInputStreamFactory;
-class DcmJsonFormat;
 class DcmFileCache;
 class DcmItem;
 
@@ -41,13 +40,6 @@ class DCMTK_DCMDATA_EXPORT DcmElement
 {
 
   public:
-
-    // be friend with "greater than" and "less than" operators that are defined
-    // outside of this class
-    friend OFBool operator< (const DcmElement& lhs, const DcmElement& rhs);
-    friend OFBool operator> (const DcmElement& lhs, const DcmElement& rhs);
-    friend OFBool operator<=(const DcmElement& lhs, const DcmElement& rhs);
-    friend OFBool operator>=(const DcmElement& lhs, const DcmElement& rhs);
 
     /** constructor.
      *  Create new element from given tag and length.
@@ -72,31 +64,6 @@ class DCMTK_DCMDATA_EXPORT DcmElement
      */
     DcmElement &operator=(const DcmElement &obj);
 
-    /** comparison operator that compares the normalized value of this element
-     *  with a given element of the same type (e.g. an DcmUnsignedShort with a
-     *  DcmUnsignedShort). The tag of the element is also considered as the first
-     *  component that is compared, followed by the object types (VR, i.e. DCMTK'S EVR).
-     *  DcmElement's default implementation does only compare the tag and EVR while
-     *  the derived classes implement the value comparisons by comparing all the
-     *  components that make up the value, preferably in the order declared in
-     *  the object (if applicable).
-     *  @param  rhs the right hand side of the comparison
-     *  @return 0 if the object values are equal.
-     *    -1 if this element has fewer components than the rhs element.
-     *    Also -1 if the value of the first component that does not match
-     *    is lower in this object than in rhs. Also returned if rhs
-     *    cannot be casted to this object type or both objects are of
-     *    different VR (i.e. the DcmEVR returned by the element's ident()
-     *    call are different).
-     *    1 if either this element has more components than the rhs element, or
-     *    if the first component that does not match is greater in this object
-     *    than in rhs object.
-     *    If the function is overwritten by derived classes, the behaviour might
-     *    slightly change but all methods will return 0 on equality, and 1 or -1
-     *    if different.
-     */
-    virtual int compare(const DcmElement& rhs) const =0;
-
     /** Virtual object copying. This method can be used for DcmObject
      *  and derived classes to get a deep copy of an object. Internally
      *  the assignment operator is called if the given DcmObject parameter
@@ -111,7 +78,15 @@ class DCMTK_DCMDATA_EXPORT DcmElement
      */
     virtual OFCondition copyFrom(const DcmObject& rhs);
 
-    /** @copydoc DcmObject::calcElementLength()
+    /** calculate the length of this DICOM element when encoded with the
+     *  given transfer syntax and the given encoding type for sequences.
+     *  For elements, the length includes the length of the tag, length field,
+     *  VR field and the value itself, for items and sequences it returns
+     *  the length of the complete item or sequence including delimitation tags
+     *  if applicable. Never returns undefined length.
+     *  @param xfer transfer syntax for length calculation
+     *  @param enctype sequence encoding type for length calculation
+     *  @return length of DICOM element
      */
     virtual Uint32 calcElementLength(const E_TransferSyntax xfer,
                                      const E_EncodingType enctype);
@@ -210,14 +185,6 @@ class DCMTK_DCMDATA_EXPORT DcmElement
     virtual OFCondition writeXML(STD_NAMESPACE ostream &out,
                                  const size_t flags = 0);
 
-    /** write object in JSON format
-     *  @param out output stream to which the JSON document is written
-     *  @param format used to format and customize the output
-     *  @return status, EC_Normal if successful, an error code otherwise
-     */
-    virtual OFCondition writeJson(STD_NAMESPACE ostream &out,
-                                  DcmJsonFormat &format);
-
     /** special write method for creation of digital signatures
      *  @param outStream DICOM output stream
      *  @param oxfer output transfer syntax
@@ -303,22 +270,6 @@ class DCMTK_DCMDATA_EXPORT DcmElement
      *  @return EC_Normal upon success, an error code otherwise
      */
     virtual OFCondition getFloat32(Float32 &val, const unsigned long pos = 0);
-
-    /** retrieve a single value of type Sint64. Requires element to be of corresponding VR,
-     *  otherwise an error is returned.
-     *  @param val value returned in this parameter upon success
-     *  @param pos position in multi-valued attribute, default 0
-     *  @return EC_Normal upon success, an error code otherwise
-     */
-    virtual OFCondition getSint64(Sint64 &val, const unsigned long pos = 0);
-
-    /** retrieve a single value of type Uint64. Requires element to be of corresponding VR,
-     *  otherwise an error is returned.
-     *  @param val value returned in this parameter upon success
-     *  @param pos position in multi-valued attribute, default 0
-     *  @return EC_Normal upon success, an error code otherwise
-     */
-    virtual OFCondition getUint64(Uint64 &val, const unsigned long pos = 0);
 
     /** retrieve a single value of type Float64. Requires element to be of corresponding VR,
      *  otherwise an error is returned.
@@ -440,26 +391,6 @@ class DCMTK_DCMDATA_EXPORT DcmElement
      *  @return EC_Normal upon success, an error code otherwise
      */
     virtual OFCondition getFloat32Array(Float32 *&val);
-
-    /** get a pointer to the element value of the current element as type Sint64.
-     *  Requires element to be of corresponding VR, otherwise an error is returned.
-     *  This method does not copy, but returns a pointer to the element value,
-     *  which remains under control of this object and is valid only until the next
-     *  read, write or put operation.
-     *  @param val pointer to value returned in this parameter upon success
-     *  @return EC_Normal upon success, an error code otherwise
-     */
-    virtual OFCondition getSint64Array(Sint64 *&val);
-
-    /** get a pointer to the element value of the current element as type Uint64.
-     *  Requires element to be of corresponding VR, otherwise an error is returned.
-     *  This method does not copy, but returns a pointer to the element value,
-     *  which remains under control of this object and is valid only until the next
-     *  read, write or put operation.
-     *  @param val pointer to value returned in this parameter upon success
-     *  @return EC_Normal upon success, an error code otherwise
-     */
-    virtual OFCondition getUint64Array(Uint64 *&val);
 
     /** get a pointer to the element value of the current element as type Float64.
      *  Requires element to be of corresponding VR, otherwise an error is returned.
@@ -668,7 +599,7 @@ class DCMTK_DCMDATA_EXPORT DcmElement
                                         E_ByteOrder byteOrder = gLocalByteOrder);
 
     /** create an empty Uint8 array of given number of bytes and set it.
-     *  All array elements are initialized with a value of 0 (using 'memset').
+     *  All array elements are initialized with a value of 0 (using 'memzero').
      *  This method is only applicable to certain VRs, e.g. OB.
      *  @param numBytes number of bytes (8 bit) to be created
      *  @param bytes stores the pointer to the resulting buffer
@@ -677,7 +608,7 @@ class DCMTK_DCMDATA_EXPORT DcmElement
     virtual OFCondition createUint8Array(const Uint32 numBytes, Uint8 *&bytes);
 
     /** create an empty Uint16 array of given number of words and set it.
-     *  All array elements are initialized with a value of 0 (using 'memset').
+     *  All array elements are initialized with a value of 0 (using 'memzero').
      *  This method is only applicable to OW data.
      *  @param numWords number of words (16 bit) to be created
      *  @param words stores the pointer to the resulting buffer
@@ -709,8 +640,7 @@ class DCMTK_DCMDATA_EXPORT DcmElement
      *  Note that the value returned by this method does not include the pad byte
      *  to even size needed for a buffer into which a frame is to be loaded.
      *  @param dataset dataset in which this pixel data element is contained
-     *  @param frameSize frame size in bytes (without padding) returned in this
-     *    parameter upon success, otherwise set to 0
+     *  @param frameSize frame size in bytes (without padding) returned in this parameter upon success
      *  @return EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition getUncompressedFrameSize(DcmItem *dataset,
@@ -721,7 +651,7 @@ class DCMTK_DCMDATA_EXPORT DcmElement
      *  which must be large enough to contain a complete frame.
      *  @param dataset pointer to DICOM dataset in which this pixel data object is
      *    located. Used to access rows, columns, samples per pixel etc.
-     *  @param frameNo number of frame, starting with 0 for the first frame.
+     *  @param frameNo numer of frame, starting with 0 for the first frame.
      *  @param startFragment index of the compressed fragment that contains
      *    all or the first part of the compressed bitstream for the given frameNo.
      *    Upon successful return this parameter is updated to contain the index
@@ -762,66 +692,6 @@ class DCMTK_DCMDATA_EXPORT DcmElement
     virtual OFCondition getDecompressedColorModel(DcmItem *dataset,
                                                   OFString &decompressedColorModel);
 
-    /** Determine if this element is universal matching.
-     *  @param normalize normalize each element value. Defaults to OFTrue.
-     *  @param enableWildCardMatching enable or disable wild card matching. Defaults to OFTrue,
-     *    which means wild card matching is performed if the element's VR supports it. Set to
-     *    OFFalse to force single value matching instead.
-     *  @return returns OFTrue if element is empty or if enableWildCardMatching is enabled and
-     *    the element contains only wildcard characters. Returns OFFalse otherwise.
-     */
-    virtual OFBool isUniversalMatch(const OFBool normalize = OFTrue,
-                                    const OFBool enableWildCardMatching = OFTrue);
-
-    /** perform attribute matching.
-     *  Perform attribute matching on a candidate element using this element as the matching
-     *  key.
-     *  @note The given candidate element must refer to the same attribute kind, i.e. have the
-     *    same tag and VR. The method will return OFFalse if it doesn't.
-     *  @param candidate the candidate element to compare this element with.
-     *  @param enableWildCardMatching enable or disable wild card matching. Defaults to OFTrue,
-     *    which means wild card matching is performed if the element's VR supports it. Set to
-     *    OFFalse to force single value matching instead.
-     *  @return OFTrue if the candidate matches this element, OFFalse otherwise.
-     */
-    virtual OFBool matches(const DcmElement& candidate,
-                           const OFBool enableWildCardMatching = OFTrue) const;
-
-    /** perform combined attribute matching.
-     *  Combine the given Attributes to one pair of matching key and candidate respectively
-     *  and perform attribute matching on the result.
-     *  @note The DICOM standard currently defines combined attribute matching for the VR
-     *    DA in combination with TM, such that two attributes can be combined into a single
-     *    attribute with VR=DT before matching against another pair of attributes with VR
-     *    DA and TM. The method will return OFFalse if this element's VR is not DA or the
-     *    given attributes are not of VR TM, DA and TM respectively.
-     *  @param keySecond the second part of the matching key that will be combined with this
-     *    element.
-     *  @param candidateFirst the first part of the candidate that will be matched against this
-     *    this element + keySecond.
-     *  @param candidateSecond the second part of the candidate that will be combined with
-     *    candidateFirst for matching against this elemement + keySecond.
-     *  @return OFTrue if the combination of this elemement and keySecond match with the
-     *    combination of candidateFirst and candidateSecond. OFFalse otherwise.
-     */
-    virtual OFBool combinationMatches(const DcmElement& keySecond,
-                                      const DcmElement& candidateFirst,
-                                      const DcmElement& candidateSecond) const;
-
-    /** returns a pointer to the input stream, if available, NULL otherwise.
-     *  In general, this pointer is available when the element is part of a dataset
-     *  that has been read from a DICOM file, the file is not encoded in deflate
-     *  transfer syntax, and the element value is large enough that loading the value
-     *  has been postponed to the first read access. The DcmInputStreamFactory object
-     *  can create an instance of a file stream seeked to the right position within
-     *  the DICOM file from where the element value can be read.
-     *  @return pointer to the input stream factory of the element, null if no object is available
-     */
-    inline const DcmInputStreamFactory* getInputStream() const
-    {
-        return fLoadValue;
-    }
-
     /* --- static helper functions --- */
 
     /** scan string value for conformance with given value representation (VR)
@@ -835,16 +705,6 @@ class DCMTK_DCMDATA_EXPORT DcmElement
                          const OFString &vr,
                          const size_t pos = 0,
                          const size_t num = OFString_npos);
-
-    /** scan string value for conformance with given value representation (VR)
-     *  @param vr two-character identifier of the VR to be checked (lower case)
-     *  @param value string value to be scanned
-     *  @param size number of characters to be scanned in 'value'
-     *  @return numeric identifier of the VR found, 16 in case of unknown VR
-     */
-    static int scanValue(const OFString &vr,
-                         const char* const value,
-                         const size_t size);
 
     /** determine the number of values stored in a string, i.e.\ the value multiplicity (VM)
      *  @param str character string
@@ -867,22 +727,10 @@ class DCMTK_DCMDATA_EXPORT DcmElement
                                      const size_t len,
                                      OFString &val);
 
-    /** check for correct value multiplicity (VM)
-     *  @param vmNum value multiplicity of the value to be checked.
-     *    For empty values (vmNum=0), the status of the check is always EC_Normal (i.e. no error).
-     *  @param vmStr value multiplicity (according to the data dictionary) to be checked for.
-     *    (valid values: "1", "1-2", "1-3", "1-8", "1-99", "1-n", "2", "2-n", "2-2n",
-     *                   "3", "3-n", "3-3n", "4", "5", "5-n", "6", "7", "7-7n", "8", "9",
-     *                   "16", "24", "32", "256")
-     *  @return status of the check, EC_ValueMultiplicityViolated in case of error
-     */
-    static OFCondition checkVM(const unsigned long vmNum,
-                               const OFString &vmStr);
-
   protected:
 
     /** This function returns this element's value. The returned value corresponds to the
-     *   byte ordering (little or big endian) that was passed.
+    *   byte ordering (little or big endian) that was passed.
      *  @param newByteOrder The byte ordering that shall be accounted
      *                      for (little or big endian).
      */
@@ -936,7 +784,6 @@ class DCMTK_DCMDATA_EXPORT DcmElement
     /** This function creates a byte array of Length bytes and returns this
      *  array. In case Length is odd, an array of Length+1 bytes will be
      *  created and Length will be increased by 1.
-     *  @return pointer to created byte array
      */
     virtual Uint8 *newValueField();
 
@@ -962,20 +809,6 @@ class DCMTK_DCMDATA_EXPORT DcmElement
     virtual void writeXMLEndTag(STD_NAMESPACE ostream &out,
                                 const size_t flags);
 
-    /** write element start tag in JSON format
-     *  @param out output stream to which the JSON document is written
-     *  @param format used to format the output
-     */
-    virtual void writeJsonOpener(STD_NAMESPACE ostream &out,
-                                 DcmJsonFormat &format);
-
-    /** write element end tag in JSON format
-     *  @param out output stream to which the JSON document is written
-     *  @param format used to format the output
-     */
-    virtual void writeJsonCloser(STD_NAMESPACE ostream &out,
-                                 DcmJsonFormat &format);
-
     /** return the current byte order of the value field
      *  @return current byte order of the value field
      */
@@ -985,6 +818,20 @@ class DCMTK_DCMDATA_EXPORT DcmElement
      *  @param val byte order of the value field
      */
     void setByteOrder(E_ByteOrder val) { fByteOrder = val; }
+
+    /* --- static helper functions --- */
+
+    /** check for correct value multiplicity (VM)
+     *  @param vmNum value multiplicity of the value to be checked.
+     *    For empty values (vmNum=0), the status of the check is always EC_Normal (i.e. no error).
+     *  @param vmStr value multiplicity (according to the data dictionary) to be checked for.
+     *    (valid values: "1", "1-2", "1-3", "1-8", "1-99", "1-n", "2", "2-n", "2-2n",
+     *                   "3", "3-n", "3-3n", "4", "5", "5-n", "6", "7", "7-7n", "8", "9",
+     *                   "16", "24", "32", "256")
+     *  @return status of the check, EC_ValueMultiplicityViolated in case of error
+     */
+    static OFCondition checkVM(const unsigned long vmNum,
+                               const OFString &vmStr);
 
   private:
 
@@ -998,54 +845,5 @@ class DCMTK_DCMDATA_EXPORT DcmElement
     Uint8 *fValue;
 };
 
-/** Checks whether left hand side element is smaller than right hand side
- *  element. Uses DcmElement's compare() method in order to perform the
- *  comparison. See DcmElement::compare() for details.
- *  @param lhs left hand side of the comparison
- *  @param rhs right hand side of the comparison
- *  @return OFTrue if lhs is smaller than rhs, OFFalse otherwise
- */
-inline OFBool operator< (const DcmElement& lhs, const DcmElement& rhs)
-{
-  return ( lhs.compare(rhs) < 0 );
-}
-
-/** Checks whether left hand side element is greater than right hand side
- *  element. Uses DcmElement's compare() method in order to perform the
- *  comparison. See DcmElement::compare() for details.
- *  @param lhs left hand side of the comparison
- *  @param rhs right hand side of the comparison
- *  @return OFTrue if lhs is greater than rhs, OFFalse otherwise
- */
-inline OFBool operator> (const DcmElement& lhs, const DcmElement& rhs)
-{
-    return rhs < lhs;
-}
-
-/** Checks whether left hand side element is smaller than or equal to right hand
- *  side element. Uses DcmElement's compare() method in order to perform the
- *  comparison. See DcmElement::compare() for details.
- *  @param lhs left hand side of the comparison
- *  @param rhs right hand side of the comparison
- *  @return OFTrue if lhs is smaller than rhs or both are equal, OFFalse
- *          otherwise
- */
-inline OFBool operator<=(const DcmElement& lhs, const DcmElement& rhs)
-{
-    return !(lhs > rhs);
-}
-
-/** Checks whether left hand side element is greater than or equal to right hand
- *  side element. Uses DcmElement's compare() method in order to perform the
- *  comparison. See DcmElement::compare() for details.
- *  @param lhs left hand side of the comparison
- *  @param rhs right hand side of the comparison
- *  @return OFTrue if lhs is greater than rhs or both are equal, OFFalse
- *          otherwise
- */
-inline OFBool operator>=(const DcmElement& lhs, const DcmElement& rhs)
-{
-    return !(lhs < rhs);
-}
 
 #endif // DCELEM_H

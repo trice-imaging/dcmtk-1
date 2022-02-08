@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2021, OFFIS e.V.
+ *  Copyright (C) 2000-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRImageFrameList
@@ -25,17 +25,17 @@
 
 #include "dcmtk/dcmsr/dsrimgfr.h"
 
-#include "dcmtk/dcmdata/dcdeftag.h"
-#include "dcmtk/dcmdata/dcvris.h"
+#define INCLUDE_CSTDIO
+#include "dcmtk/ofstd/ofstdinc.h"
 
+#ifdef HAVE_EXPLICIT_TEMPLATE_SPECIALIZATION
+#define EXPLICIT_SPECIALIZATION template<>
+#else
+#define EXPLICIT_SPECIALIZATION
+#endif
 
-template<>
-const Sint32& DSRgetEmptyItem<Sint32>()
-{
-    // no need to be thread-safe, since it is only an int
-    static const Sint32 t = 0;
-    return t;
-}
+/* declared in class DSRListOfItems<T> */
+EXPLICIT_SPECIALIZATION const Sint32 DSRListOfItems<Sint32>::EmptyItem = 0;
 
 
 DSRImageFrameList::DSRImageFrameList()
@@ -87,8 +87,7 @@ OFCondition DSRImageFrameList::print(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRImageFrameList::read(DcmItem &dataset,
-                                    const size_t /*flags*/)
+OFCondition DSRImageFrameList::read(DcmItem &dataset)
 {
     /* get integer string from dataset */
     DcmIntegerString delem(DCM_ReferencedFrameNumber);
@@ -124,9 +123,7 @@ OFCondition DSRImageFrameList::write(DcmItem &dataset) const
     {
         if (!tmpString.empty())
             tmpString += '\\';
-#ifdef PRId32
-        sprintf(buffer, "%" PRId32, *iterator);
-#elif SIZEOF_LONG == 8
+#if SIZEOF_LONG == 8
         sprintf(buffer, "%d", *iterator);
 #else
         sprintf(buffer, "%ld", *iterator);
@@ -157,9 +154,7 @@ OFCondition DSRImageFrameList::putString(const char *stringValue)
         /* retrieve frame values from string */
         while (result.good() && (ptr != NULL))
         {
-#ifdef SCNd32
-            if (sscanf(ptr, "%" SCNd32, &value) == 1)
-#elif SIZEOF_LONG == 8
+#if SIZEOF_LONG == 8
             if (sscanf(ptr, "%d", &value) == 1)
 #else
             if (sscanf(ptr, "%ld", &value) == 1)

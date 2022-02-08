@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2019, OFFIS e.V.
+ *  Copyright (C) 2000-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRWaveformTreeNode
@@ -27,57 +27,16 @@
 #include "dcmtk/dcmsr/dsrwavtn.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
 
-#include "dcmtk/dcmdata/dcdeftag.h"
-
 
 DSRWaveformTreeNode::DSRWaveformTreeNode(const E_RelationshipType relationshipType)
-  : DSRDocumentTreeNode(relationshipType, VT_Waveform),
-    DSRWaveformReferenceValue()
-{
-}
-
-
-DSRWaveformTreeNode::DSRWaveformTreeNode(const DSRWaveformTreeNode &node)
-  : DSRDocumentTreeNode(node),
-    DSRWaveformReferenceValue(node)
+ : DSRDocumentTreeNode(relationshipType, VT_Waveform),
+   DSRWaveformReferenceValue()
 {
 }
 
 
 DSRWaveformTreeNode::~DSRWaveformTreeNode()
 {
-}
-
-
-OFBool DSRWaveformTreeNode::operator==(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator==(node);
-    if (result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRWaveformReferenceValue::operator==(OFstatic_cast(const DSRWaveformTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-OFBool DSRWaveformTreeNode::operator!=(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator!=(node);
-    if (!result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRWaveformReferenceValue::operator!=(OFstatic_cast(const DSRWaveformTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-DSRWaveformTreeNode *DSRWaveformTreeNode::clone() const
-{
-    return new DSRWaveformTreeNode(*this);
 }
 
 
@@ -90,13 +49,7 @@ void DSRWaveformTreeNode::clear()
 
 OFBool DSRWaveformTreeNode::isValid() const
 {
-    return DSRDocumentTreeNode::isValid() && hasValidValue();
-}
-
-
-OFBool DSRWaveformTreeNode::hasValidValue() const
-{
-    return DSRWaveformReferenceValue::isValid();
+    return DSRDocumentTreeNode::isValid() && DSRWaveformReferenceValue::isValid();
 }
 
 
@@ -135,11 +88,10 @@ OFCondition DSRWaveformTreeNode::writeXML(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRWaveformTreeNode::readContentItem(DcmItem &dataset,
-                                                 const size_t flags)
+OFCondition DSRWaveformTreeNode::readContentItem(DcmItem &dataset)
 {
     /* read ReferencedSOPSequence */
-    return DSRWaveformReferenceValue::readSequence(dataset, DCM_ReferencedSOPSequence, "1" /*type*/, flags);
+    return DSRWaveformReferenceValue::readSequence(dataset, DCM_ReferencedSOPSequence, "1" /*type*/);
 }
 
 
@@ -151,11 +103,10 @@ OFCondition DSRWaveformTreeNode::writeContentItem(DcmItem &dataset) const
 
 
 OFCondition DSRWaveformTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
-                                                    DSRXMLCursor cursor,
-                                                    const size_t flags)
+                                                    DSRXMLCursor cursor)
 {
     /* retrieve value from XML element "value" */
-    return DSRWaveformReferenceValue::readXML(doc, doc.getNamedChildNode(cursor, "value"), flags);
+    return DSRWaveformReferenceValue::readXML(doc, doc.getNamedNode(cursor.gotoChild(), "value"));
 }
 
 

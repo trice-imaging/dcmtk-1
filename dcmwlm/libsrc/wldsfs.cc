@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2021, OFFIS e.V.
+ *  Copyright (C) 1996-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,13 +27,9 @@ BEGIN_EXTERN_C
 #include <fcntl.h>     // for O_RDWR
 #endif
 END_EXTERN_C
-#include "dcmtk/ofstd/oftypes.h"
-#include "dcmtk/ofstd/ofstd.h"
-#include "dcmtk/ofstd/ofdatime.h"
-#include "dcmtk/oflog/internal/env.h"
 #include "dcmtk/dcmnet/dicom.h"
-#include "dcmtk/dcmnet/dimse.h"
 #include "dcmtk/dcmwlm/wltypdef.h"
+#include "dcmtk/ofstd/oftypes.h"
 #include "dcmtk/dcmdata/dcdatset.h"
 #include "dcmtk/dcmdata/dcsequen.h"
 #include "dcmtk/dcmdata/dcvrat.h"
@@ -42,6 +38,7 @@ END_EXTERN_C
 #include "dcmtk/dcmdata/dcvrcs.h"
 #include "dcmtk/dcmwlm/wlds.h"
 #include "dcmtk/dcmwlm/wlfsim.h"
+#include "dcmtk/ofstd/ofstd.h"
 
 #include "dcmtk/dcmwlm/wldsfs.h"
 
@@ -53,7 +50,8 @@ WlmDataSourceFileSystem::WlmDataSourceFileSystem()
 // Task         : Constructor.
 // Parameters   : none.
 // Return Value : none.
-  : fileSystemInteractionManager( ), dfPath( "" ), enableRejectionOfIncompleteWlFiles( OFTrue ), handleToReadLockFile( 0 )
+  : fileSystemInteractionManager( ), dfPath( "" ), enableRejectionOfIncompleteWlFiles( OFTrue ),
+    handleToReadLockFile( 0 )
 {
 }
 
@@ -78,7 +76,7 @@ OFCondition WlmDataSourceFileSystem::ConnectToDataSource()
 // Author       : Thomas Wilkens
 // Task         : Connects to the data source.
 // Parameters   : none.
-// Return Value : Indicates if the connection was established successfully.
+// Return Value : Indicates if the connection was established succesfully.
 {
   // set variables in fileSystemInteractionManager object
   fileSystemInteractionManager.SetEnableRejectionOfIncompleteWlFiles( enableRejectionOfIncompleteWlFiles );
@@ -97,7 +95,7 @@ OFCondition WlmDataSourceFileSystem::DisconnectFromDataSource()
 // Author       : Thomas Wilkens
 // Task         : Disconnects from the data source.
 // Parameters   : none.
-// Return Value : Indicates if the disconnection was completed successfully.
+// Return Value : Indicates if the disconnection was completed succesfully.
 {
   // disconnect from file system
   OFCondition cond = fileSystemInteractionManager.DisconnectFromFileSystem();
@@ -105,7 +103,6 @@ OFCondition WlmDataSourceFileSystem::DisconnectFromDataSource()
   // return result
   return( cond );
 }
-
 
 // ----------------------------------------------------------------------------
 
@@ -265,9 +262,9 @@ WlmDataSourceStatusType WlmDataSourceFileSystem::StartFindRequest( const DcmData
   delete offendingElements;
   delete errorElements;
   delete errorComment;
-  offendingElements = new DcmAttributeTag( DCM_OffendingElement);
-  errorElements = new DcmAttributeTag( DCM_OffendingElement);
-  errorComment = new DcmLongString( DCM_ErrorComment);
+  offendingElements = new DcmAttributeTag( DCM_OffendingElement, 0 );
+  errorElements = new DcmAttributeTag( DCM_OffendingElement, 0 );
+  errorComment = new DcmLongString( DCM_ErrorComment, 0 );
 
   // Initialize member variable identifiers; this variable will contain the search mask.
   ClearDataset( identifiers );
@@ -288,7 +285,7 @@ WlmDataSourceStatusType WlmDataSourceFileSystem::StartFindRequest( const DcmData
 
   // This member variable indicates if we encountered an unsupported
   // optional key attribute in the search mask; initialize it with false.
-  // It might be updated within CheckSearchMask().
+  // It might be updated whithin CheckSearchMask().
   foundUnsupportedOptionalKey = OFFalse;
 
   // Scrutinize the search mask.
@@ -306,14 +303,14 @@ WlmDataSourceStatusType WlmDataSourceFileSystem::StartFindRequest( const DcmData
     << "=============================");
 
   // Set a read lock on the worklist files which shall be read from.
-  if (!SetReadlock())
-    return(WLM_REFUSED_OUT_OF_RESOURCES);
+  if( !SetReadlock() )
+    return( WLM_REFUSED_OUT_OF_RESOURCES );
 
   // dump some information if required
   DCMWLM_INFO("Determining matching records from worklist files");
 
   // Determine records from worklist files which match the search mask
-  unsigned long numOfMatchingRecords = OFstatic_cast(unsigned long, fileSystemInteractionManager.DetermineMatchingRecords( identifiers ));
+  unsigned long numOfMatchingRecords = fileSystemInteractionManager.DetermineMatchingRecords( identifiers );
 
   // dump some information if required
   DCMWLM_INFO("Matching results: " << numOfMatchingRecords << " matching records found in worklist files");
@@ -383,7 +380,7 @@ WlmDataSourceStatusType WlmDataSourceFileSystem::StartFindRequest( const DcmData
         {
           cond = resultRecord->putAndInsertString( DCM_SpecificCharacterSet, "ISO_IR 100" );
         }
-        // third option: use character set from worklist file
+        // third option: use charactet set from worklist file
         else if( returnedCharacterSet == RETURN_CHARACTER_SET_FROM_FILE )
         {
           char *value = NULL;
@@ -426,10 +423,10 @@ DcmDataset *WlmDataSourceFileSystem::NextFindResponse( WlmDataSourceStatusType &
 // Date         : July 11, 2002
 // Author       : Thomas Wilkens
 // Task         : This function will return the next dataset that matches the given search mask, if
-//                there is one more resulting dataset to return. In such a case, rStatus will be set
+//                there is one more resulting dataset to return. In such a case, rstatus will be set
 //                to WLM_PENDING or WLM_PENDING_WARNING, depending on if an unsupported key attribute
 //                was encountered in the search mask or not. If there are no more datasets that match
-//                the search mask, this function will return an empty dataset and WLM_SUCCESS in rStatus.
+//                the search mask, this function will return an empty dataset and WLM_SUCCESS in rstatus.
 // Parameters   : rStatus - [out] A value of type WlmDataSourceStatusType that can be used to
 //                          decide if there are still elements that have to be returned.
 // Return Value : The next dataset that matches the given search mask, or an empty dataset if
@@ -498,7 +495,7 @@ void WlmDataSourceFileSystem::HandleNonSequenceElementInResultDataset( DcmElemen
     // value into an unsigned integer and set it correspondingly in the element variable)
     if( tag == DCM_PregnancyStatus )
     {
-      Uint16 uintValue = OFstatic_cast(Uint16, atoi( value ));
+      Uint16 uintValue = atoi( value );
       cond = element->putUint16( uintValue );
     }
     else
@@ -665,12 +662,12 @@ OFBool WlmDataSourceFileSystem::SetReadlock()
   // assign path to a local variable
   OFString lockname = dfPath;
 
-  // if the given path does not show a PATH_SEPARATOR at the end, append one
+  // if the given path does not show a PATH_SEPERATOR at the end, append one
   if( !lockname.empty() && lockname[lockname.length()-1] != PATH_SEPARATOR )
     lockname += PATH_SEPARATOR;
 
-  // append calledApplicationEntityTitle, another PATH_SEPARATOR,
-  // and LOCKFILENAME to the given path (and separator)
+  // append calledApplicationEntityTitle, another PATH_SEPERATOR,
+  // and LOCKFILENAME to the given path (and seperator)
   lockname += calledApplicationEntityTitle;
   lockname += PATH_SEPARATOR;
   lockname += LOCKFILENAME;
@@ -679,9 +676,10 @@ OFBool WlmDataSourceFileSystem::SetReadlock()
   handleToReadLockFile = open( lockname.c_str(), O_RDWR );
   if( handleToReadLockFile == -1 )
   {
+    char buf[256];
     handleToReadLockFile = 0;
     DCMWLM_ERROR("WlmDataSourceFileSystem::SetReadlock: Cannot open file " << lockname
-      << " (return code: " << OFStandard::getLastSystemErrorCode().message() << ")");
+      << " (return code: " << OFStandard::strerror(errno, buf, sizeof(buf)) << ")");
     return OFFalse;
   }
 

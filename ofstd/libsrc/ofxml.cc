@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2021, OFFIS e.V.
+ *  Copyright (C) 2011-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were slightly modified by
@@ -25,7 +25,7 @@
  * for portability. It works by using recursion and a node tree for breaking
  * down the elements of an XML document.  </P>
  *
- * @version     V2.44
+ * @version     V2.43
  * @author      Frank Vanden Berghen
  *
  * NOTE:
@@ -104,8 +104,6 @@
 #endif
 // DCMTK: we need this header file at the beginning of each file
 #include "dcmtk/config/osconfig.h"
-#include "dcmtk/ofstd/ofstdinc.h"
-#include "dcmtk/ofstd/ofdiag.h"
 
 // DCMTK: we need the correct header file (was "xmlParser.h")
 #include "dcmtk/ofstd/ofxml.h"
@@ -119,38 +117,15 @@
                      // to have "MessageBoxA" to display error messages for openFileHelper
 #endif
 
-#include <cstdio>
-#include <cstring>
-#include <cassert>
-#include <cstdlib>
+// DCMTK: we want to use our own standard include wrappers
+#define INCLUDE_CMEMORY
+#define INCLUDE_CASSERT
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CSTDLIB
 #include "dcmtk/ofstd/ofstdinc.h"
 
-using STD_NAMESPACE free;
-using STD_NAMESPACE malloc;
-using STD_NAMESPACE FILE;
-using STD_NAMESPACE fopen;
-using STD_NAMESPACE atoi;
-using STD_NAMESPACE fread;
-using STD_NAMESPACE atof;
-using STD_NAMESPACE fclose;
-using STD_NAMESPACE fprintf;
-using STD_NAMESPACE realloc;
-using STD_NAMESPACE atol;
-using STD_NAMESPACE fwrite;
-using STD_NAMESPACE fseek;
-using STD_NAMESPACE ftell;
-
-#ifdef HAVE_STRINGS_H
-BEGIN_EXTERN_C
-#include <strings.h>
-END_EXTERN_C
-#endif
-
-// The code in this class ensures that raw access to 'struct XMLNode'
-// is safe. Therefore it is safe to suppress this warning.
-#include DCMTK_DIAGNOSTIC_IGNORE_CLASS_MEMACCESS_WARNING
-
-XMLCSTR XMLNode::getVersion() { return _CXML("v2.44"); }
+XMLCSTR XMLNode::getVersion() { return _CXML("v2.43"); }
 void freeXMLString(XMLSTR t){if(t)free(t);}
 
 static XMLNode::XMLCharEncoding characterEncoding=XMLNode::char_encoding_UTF8;
@@ -238,8 +213,7 @@ XMLCSTR XMLNode::getError(XMLError xerror)
 // If you plan to "port" the library to a new system/compiler, all you have to do is
 // to edit the following lines.
 #ifdef XML_NO_WIDE_CHAR
-// DCMTK: uncomment parameter names to avoid compiler warnings
-char myIsTextWideChar(const void * /*b*/, int /*len*/) { return FALSE; }
+char myIsTextWideChar(const void *b, int len) { return FALSE; }
 #else
     #if defined (UNDER_CE) || !defined(_XMLWINDOWS)
     char myIsTextWideChar(const void *b, int len) // inspired by the Wine API: RtlIsTextUnicode
@@ -343,8 +317,7 @@ char myIsTextWideChar(const void * /*b*/, int /*len*/) { return FALSE; }
 #else
 // for gcc and CC
     #ifdef XML_NO_WIDE_CHAR
-        // DCMTK: uncomment parameter name to avoid compiler warning
-        char *myWideCharToMultiByte(const wchar_t * /*s*/) { return NULL; }
+        char *myWideCharToMultiByte(const wchar_t *s) { return NULL; }
     #else
         char *myWideCharToMultiByte(const wchar_t *s)
         {
@@ -426,46 +399,35 @@ char myIsTextWideChar(const void * /*b*/, int /*len*/) { return FALSE; }
         static inline XMLSTR xstrstr(XMLCSTR c1, XMLCSTR c2) { return OFconst_cast(XMLSTR, strstr(c1,c2)); }
         static inline XMLSTR xstrcpy(XMLSTR c1, XMLCSTR c2) { return OFconst_cast(XMLSTR, strcpy(c1,c2)); }
     #endif
+    static inline int _strnicmp(const char *c1,const char *c2, int l) { return strncasecmp(c1,c2,l);}
 #endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
-//     the "xmltoc,xmltob,xmltoi,xmltol,xmltoll,xmltof,xmltoa" functions     //
+//            the "xmltoc,xmltob,xmltoi,xmltol,xmltof,xmltoa" functions      //
 ///////////////////////////////////////////////////////////////////////////////
-// These 7 functions are not used inside the XMLparser.
+// These 6 functions are not used inside the XMLparser.
 // There are only here as "convenience" functions for the user.
 // If you don't need them, you can delete them without any trouble.
 #ifdef _XMLWIDECHAR
     #ifdef _XMLWINDOWS
     // for Microsoft Visual Studio 6.0 and Microsoft Visual Studio .NET and Borland C++ Builder 6.0
-        char      xmltob (XMLCSTR t,char      v){ if (t&&(*t)) return (char)_wtoi(t); return v; }
-        int       xmltoi (XMLCSTR t,int       v){ if (t&&(*t)) return _wtoi(t); return v; }
-        long      xmltol (XMLCSTR t,long      v){ if (t&&(*t)) return _wtol(t); return v; }
-      #ifdef HAVE_LONG_LONG
-        // DCMTK adds xmltoll() in addition to xmltol()
-        long long xmltoll(XMLCSTR t,long long v){ if (t&&(*t)) return _wtoi64(t); return v; }
-      #endif
-        double    xmltof (XMLCSTR t,double    v){ if (t&&(*t)) swscanf(t, L"%lf", &v); /*v=_wtof(t);*/ return v; }
+        char    xmltob(XMLCSTR t,char    v){ if (t&&(*t)) return (char)_wtoi(t); return v; }
+        int     xmltoi(XMLCSTR t,int     v){ if (t&&(*t)) return _wtoi(t); return v; }
+        long    xmltol(XMLCSTR t,long    v){ if (t&&(*t)) return _wtol(t); return v; }
+        double  xmltof(XMLCSTR t,double  v){ if (t&&(*t)) swscanf(t, L"%lf", &v); /*v=_wtof(t);*/ return v; }
     #else
         #ifdef sun
         // for CC
-            #include <widec.h>
-            char      xmltob (XMLCSTR t,char      v){ if (t) return (char)wstol(t,NULL,10); return v; }
-            int       xmltoi (XMLCSTR t,int       v){ if (t) return (int)wstol(t,NULL,10); return v; }
-            long      xmltol (XMLCSTR t,long      v){ if (t) return wstol(t,NULL,10); return v; }
-          #ifdef HAVE_LONG_LONG
-            // DCMTK adds xmltoll() in addition to xmltol()
-            long long xmltoll(XMLCSTR t,long long v){ if (t) return wstol(t,NULL,10); return v; }
-          #endif
+           #include <widec.h>
+           char    xmltob(XMLCSTR t,char    v){ if (t) return (char)wstol(t,NULL,10); return v; }
+           int     xmltoi(XMLCSTR t,int     v){ if (t) return (int)wstol(t,NULL,10); return v; }
+           long    xmltol(XMLCSTR t,long    v){ if (t) return wstol(t,NULL,10); return v; }
         #else
         // for gcc
-            char      xmltob (XMLCSTR t,char      v){ if (t) return (char)wcstol(t,NULL,10); return v; }
-            int       xmltoi (XMLCSTR t,int       v){ if (t) return (int)wcstol(t,NULL,10); return v; }
-            long      xmltol (XMLCSTR t,long      v){ if (t) return wcstol(t,NULL,10); return v; }
-          #ifdef HAVE_LONG_LONG
-            // DCMTK adds xmltoll() in addition to xmltol()
-            long long xmltoll(XMLCSTR t,long long v){ if (t) return wcstol(t,NULL,10); return v; }
-          #endif
+           char    xmltob(XMLCSTR t,char    v){ if (t) return (char)wcstol(t,NULL,10); return v; }
+           int     xmltoi(XMLCSTR t,int     v){ if (t) return (int)wcstol(t,NULL,10); return v; }
+           long    xmltol(XMLCSTR t,long    v){ if (t) return wcstol(t,NULL,10); return v; }
         #endif
         double  xmltof(XMLCSTR t,double  v){ if (t&&(*t)) swscanf(t, L"%lf", &v); /*v=_wtof(t);*/ return v; }
     #endif
@@ -473,14 +435,6 @@ char myIsTextWideChar(const void * /*b*/, int /*len*/) { return FALSE; }
     char    xmltob(XMLCSTR t,char    v){ if (t&&(*t)) return OFstatic_cast(char, atoi(t)); return v; }
     int     xmltoi(XMLCSTR t,int     v){ if (t&&(*t)) return atoi(t); return v; }
     long    xmltol(XMLCSTR t,long    v){ if (t&&(*t)) return atol(t); return v; }
-    #ifdef HAVE_LONG_LONG
-      // DCMTK adds xmltoll() in addition to xmltol()
-      #ifdef _XMLWINDOWS
-        long long xmltoll(XMLCSTR t,long long v){ if (t&&(*t)) return _atoi64(t); return v; }
-      #elif defined(HAVE_ATOLL)
-        long long xmltoll(XMLCSTR t,long long v){ if (t&&(*t)) return atoll(t); return v; }
-      #endif
-    #endif
     double  xmltof(XMLCSTR t,double  v){ if (t&&(*t)) return atof(t); return v; }
 #endif
 XMLCSTR xmltoa(XMLCSTR t,      XMLCSTR v){ if (t)       return  t; return v; }
@@ -517,11 +471,7 @@ XMLNode XMLNode::openFileHelper(XMLCSTR filename, XMLCSTR tag)
         // create message
         char message[2000],*s1=(char*)"",*s3=(char*)""; XMLCSTR s2=_CXML("");
         if (pResults.error==eXMLErrorFirstTagNotFound) { s1=(char*)"First Tag should be '"; s2=tag; s3=(char*)"'.\n"; }
-#ifdef _XMLWINDOWS
-        _snprintf(message,2000,
-#else
-        snprintf(message,2000,
-#endif
+        sprintf(message,
 #ifdef _XMLWIDECHAR
             "XML Parsing error inside file '%S'.\n%S\nAt line %i, column %i.\n%s%S%s"
 #else
@@ -784,7 +734,7 @@ XMLSTR stringDup(XMLCSTR lpszData, int cbData)
     if (lpszNew)
     {
         memcpy(lpszNew, lpszData, (cbData) * sizeof(XMLCHAR));
-        lpszNew[cbData] = OFstatic_cast(XMLCHAR, 0);
+        lpszNew[cbData] = OFstatic_cast(XMLCHAR, NULL);
     }
     return lpszNew;
 }
@@ -794,7 +744,7 @@ XMLSTR ToXMLStringTool::toXMLUnSafe(XMLSTR dest,XMLCSTR source)
     XMLSTR dd=dest;
     XMLCHAR ch;
     XMLCharacterEntity *entity;
-    while ((ch=*source) != 0)
+    while ((ch=*source))
     {
         entity=XMLEntities;
         do
@@ -807,36 +757,9 @@ XMLSTR ToXMLStringTool::toXMLUnSafe(XMLSTR dest,XMLCSTR source)
 #else
         switch(XML_ByteTable[OFstatic_cast(unsigned char, ch)])
         {
-        case 4:
-            if ((!(source[1]))||(!(source[2]))||(!(source[3]))) { *(dest++)='_'; source++; }
-            else
-            {
-                *dest=*source;
-                dest[1]=source[1];
-                dest[2]=source[2];
-                dest[3]=source[3];
-                dest+=4; source+=4;
-            }
-            break;
-        case 3:
-            if ((!(source[1]))||(!(source[2]))) { *(dest++)='_'; source++; }
-            else
-            {
-                *dest=*source;
-                dest[1]=source[1];
-                dest[2]=source[2];
-                dest+=3; source+=3;
-            }
-            break;
-        case 2:
-            if (!(source[1])) { *(dest++)='_'; source++; }
-            else
-            {
-                *dest=*source;
-                dest[1]=source[1];
-                dest+=2; source+=2;
-            }
-            break;
+        case 4: *(dest++)=*(source++);
+        case 3: *(dest++)=*(source++);
+        case 2: *(dest++)=*(source++);
         case 1: *(dest++)=*(source++);
         }
 #endif
@@ -853,7 +776,7 @@ int ToXMLStringTool::lengthXMLString(XMLCSTR source)
     int r=0;
     XMLCharacterEntity *entity;
     XMLCHAR ch;
-    while ((ch=*source) != 0)
+    while ((ch=*source))
     {
         entity=XMLEntities;
         do
@@ -1068,7 +991,7 @@ static NextToken GetNextToken(XML *pXML, int *pcbToken, enum XMLTokenTypeTag *pT
             nFoundMatch = FALSE;
 
             // Search through the string to find a matching quote
-            while((ch = getNextChar(pXML)) != 0)
+            while((ch = getNextChar(pXML)))
             {
                 if (ch==chTemp) { nFoundMatch = TRUE; break; }
                 if (ch==_CXML('<')) break;
@@ -1173,7 +1096,7 @@ static NextToken GetNextToken(XML *pXML, int *pcbToken, enum XMLTokenTypeTag *pT
         {
             // Indicate we are dealing with text
             *pType = eTokenText;
-            while((ch = getNextChar(pXML)) != 0)
+            while((ch = getNextChar(pXML)))
             {
                 if XML_isSPACECHAR(ch)
                 {
@@ -2288,7 +2211,7 @@ XMLSTR XMLNode::createXMLString(int nFormat, int *pnSize) const
     if (!dropWhiteSpace) nFormat=0;
     nFormat = nFormat ? 0 : -1;
     cbStr = CreateXMLStringR(d, 0, nFormat);
-    // Allocate memory for the XML string + the NULL terminator and
+    // Alllocate memory for the XML string + the NULL terminator and
     // create the recursively XML string.
     lpszResult=OFreinterpret_cast(XMLSTR, malloc((cbStr+1)*sizeof(XMLCHAR)));
     CreateXMLStringR(d, lpszResult, nFormat);
@@ -2949,7 +2872,7 @@ int XMLParserBase64Tool::encodeLength(int inlen, char formatted)
     return i;
 }
 
-XMLSTR XMLParserBase64Tool::encode(const unsigned char *inbuf, unsigned int inlen, char formatted)
+XMLSTR XMLParserBase64Tool::encode(unsigned char *inbuf, unsigned int inlen, char formatted)
 {
     int i=encodeLength(inlen,formatted),k=17,eLen=inlen/3,j;
     alloc(OFstatic_cast(int, i*sizeof(XMLCHAR)));

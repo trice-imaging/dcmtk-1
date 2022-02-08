@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2016, OFFIS e.V.
+ *  Copyright (C) 2002-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,6 +26,13 @@
 #define DSRSOPRF_H
 
 #include "dcmtk/config/osconfig.h"   /* make sure OS specific configuration is included first */
+
+#include "dcmtk/ofstd/oflist.h"
+#include "dcmtk/ofstd/ofstring.h"
+#include "dcmtk/ofstd/ofcond.h"
+
+#include "dcmtk/dcmdata/dcitem.h"
+#include "dcmtk/dcmdata/dctagkey.h"
 
 #include "dcmtk/dcmsr/dsrtypes.h"
 #include "dcmtk/dcmsr/dsrcodvl.h"
@@ -59,7 +66,7 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
     /** check whether list of references is empty
      ** @return OFTrue if list is empty, OFFalse otherwise
      */
-    OFBool isEmpty() const;
+    OFBool empty() const;
 
     /** get number of instance stored in the list of references
      ** @return number of instances
@@ -72,11 +79,9 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
      *  i.e. the structure might look different when written back to a dataset.  However,
      *  the content is identical and this way of storing information saves storage space.
      ** @param  dataset  DICOM dataset from which the data should be read
-     *  @param  flags    flag used to customize the reading process (see DSRTypes::RF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition read(DcmItem &dataset,
-                     const size_t flags);
+    OFCondition read(DcmItem &dataset);
 
     /** write list of referenced SOP instances.
      *  Does nothing if list is empty.
@@ -92,7 +97,7 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
      *  the content is identical and this way of storing information saves storage space.
      ** @param  doc     document containing the XML file content
      *  @param  cursor  cursor pointing to the starting node
-     *  @param  flags   flag used to customize the reading process (see DSRTypes::XF_xxx)
+     *  @param  flags   optional flag used to customize the reading process (see DSRTypes::XF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     OFCondition readXML(const DSRXMLDocument &doc,
@@ -101,21 +106,11 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
 
     /** write current list of references in XML format
      ** @param  stream  output stream to which the XML data is written
-     *  @param  flags   flag used to customize the output (see DSRTypes::XF_xxx)
+     *  @param  flags   optional flag used to customize the output (see DSRTypes::XF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     OFCondition writeXML(STD_NAMESPACE ostream &stream,
-                         const size_t flags) const;
-
-    /** set specific character set, which is used for checking the affected element values.
-     *  Please note that this method does not return an error if the given 'value' is not
-     *  defined by the DICOM standard or not supported by this implementation.
-     ** @param  value  value to be set (single or multiple values) or "" for no value
-     *  @param  check  check 'value' for conformance with VR (CS) and VM (1-n) if enabled
-     ** @return status, EC_Normal if successful, an error code otherwise
-     */
-    OFCondition setSpecificCharacterSet(const OFString &value,
-                                        const OFBool check = OFTrue);
+                         const size_t flags = 0) const;
 
     /** add the specified item to the list of references.
      *  Before adding the item, the given UID values are usually checked.  If one of the
@@ -139,7 +134,7 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
                         const OFBool check = OFTrue);
 
     /** add item from specified DICOM dataset to the list of references.
-     *  Internally, an item representing the given dataset is inserted into the hierarchical
+     *  Internally an item representing the given dataset is inserted into the hierarchical
      *  structure of studies, series and instances, if not already contained in the list.
      *  In any case, the specified item is selected as the current one.
      ** @param  dataset  reference to DICOM dataset from which the relevant UIDs are retrieved
@@ -236,15 +231,6 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
      ** @return reference to the resulting string (might be empty)
      */
     const OFString &getSOPClassUID(OFString &stringValue) const;
-
-    /** get name associated with the SOP class UID of the currently selected entry
-     ** @param  stringValue  reference to string variable in which the result is stored
-     *  @param  defaultName  string value that is returned if the SOP class UID is unknown
-     ** @return reference to the resulting string (might be empty even if 'defaultName' is
-     *          non-empty, e.g. in case no entry is currently selected)
-     */
-    const OFString &getSOPClassName(OFString &stringValue,
-                                    const OFString &defaultName = "unknown SOP Class UID") const;
 
     /** get the retrieve application entity title of the currently selected entry (optional).
      *  The resulting string may contain multiple values separated by a backslash ("\").
@@ -370,11 +356,9 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
 
         /** read instance level attributes from dataset
          ** @param  dataset  DICOM dataset from which the list should be read
-         *  @param  flags    flag used to customize the reading process (see DSRTypes::RF_xxx)
          ** @return status, EC_Normal if successful, an error code otherwise
          */
-        OFCondition read(DcmItem &dataset,
-                         const size_t flags);
+        OFCondition read(DcmItem &dataset);
 
         /** write series and instance level attributes to dataset
          ** @param  dataset  DICOM dataset to which the list should be written
@@ -385,20 +369,18 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
         /** read series and instance level attributes from XML document
          ** @param  doc     document containing the XML file content
          *  @param  cursor  cursor pointing to the starting node
-         *  @param  flags   flag used to customize the reading process (see DSRTypes::XF_xxx)
          ** @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition readXML(const DSRXMLDocument &doc,
-                            DSRXMLCursor cursor,
-                            const size_t flags);
+                            DSRXMLCursor cursor);
 
         /** write series and instance level attributes in XML format
          ** @param  stream  output stream to which the XML document is written
-         *  @param  flags   flag used to customize the output (see DSRTypes::XF_xxx)
+         *  @param  flags   optional flag used to customize the output (see DSRTypes::XF_xxx)
          ** @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition writeXML(STD_NAMESPACE ostream &stream,
-                             const size_t flags) const;
+                             const size_t flags = 0) const;
 
         /** set cursor to the specified instance (if existent)
          ** @param  instanceUID  SOP instance UID of the entry to be searched for
@@ -474,11 +456,9 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
 
         /** read series and instance level from dataset
          ** @param  dataset  DICOM dataset from which the list should be read
-         *  @param  flags    flag used to customize the reading process (see DSRTypes::RF_xxx)
          ** @return status, EC_Normal if successful, an error code otherwise
          */
-        OFCondition read(DcmItem &dataset,
-                         const size_t flags);
+        OFCondition read(DcmItem &dataset);
 
         /** write study, series and instance level attributes to dataset
          ** @param  dataset  DICOM dataset to which the list should be written
@@ -489,20 +469,18 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
         /** read study, series and instance level attributes from XML document
          ** @param  doc     document containing the XML file content
          *  @param  cursor  cursor pointing to the starting node
-         *  @param  flags   flag used to customize the reading process (see DSRTypes::XF_xxx)
          ** @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition readXML(const DSRXMLDocument &doc,
-                            DSRXMLCursor cursor,
-                            const size_t flags);
+                            DSRXMLCursor cursor);
 
         /** write study, series and instance level attributes in XML format
          ** @param  stream  output stream to which the XML document is written
-         *  @param  flags   flag used to customize the output (see DSRTypes::XF_xxx)
+         *  @param  flags   optional flag used to customize the output (see DSRTypes::XF_xxx)
          ** @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition writeXML(STD_NAMESPACE ostream &stream,
-                             const size_t flags) const;
+                             const size_t flags = 0) const;
 
         /** set cursor to the specified series entry (if existent)
          ** @param  seriesUID  series instance UID of the entry to be searched for
@@ -624,8 +602,6 @@ class DCMTK_DCMSR_EXPORT DSRSOPInstanceReferenceList
     OFList<StudyStruct *> StudyList;
     /// internal cursor to current (selected) list item
     OFListIterator(StudyStruct *) Iterator;
-    /// specific character set used for checking purposes
-    OFString SpecificCharacterSet;
 
     // default constructor - not implemented!
     DSRSOPInstanceReferenceList();

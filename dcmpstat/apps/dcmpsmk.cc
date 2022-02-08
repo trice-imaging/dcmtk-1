@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2021, OFFIS e.V.
+ *  Copyright (C) 1998-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,6 +23,15 @@
 
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
+
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>
+#endif
 
 #include "dcmtk/ofstd/ofconapp.h"
 #include "dcmtk/dcmdata/dctk.h"
@@ -50,6 +59,11 @@ static char rcsid[] = "$dcmtk: " OFFIS_CONSOLE_APPLICATION " v"
 
 int main(int argc, char *argv[])
 {
+
+#ifdef HAVE_GUSI_H
+    GUSISetup(GUSIwithSIOUXSockets);
+    GUSISetup(GUSIwithInternetSockets);
+#endif
 
 #ifdef WITH_TCPWRAPPER
     // this code makes sure that the linker cannot optimize away
@@ -306,7 +320,7 @@ int main(int argc, char *argv[])
     /* add additional image references to pstate */
     if (cmd.getParamCount() > 2)
     {
-        OFLOG_INFO(dcmpsmkLogger, "adding additional image reference(s)");
+        OFLOG_INFO(dcmpsmkLogger, "adding additonal image reference(s)");
         const int count = cmd.getParamCount();
         for (int i = 2; i < count; i++)
         {
@@ -348,7 +362,9 @@ int main(int argc, char *argv[])
 
     DcmXfer oxferSyn(opt_oxfer);
 
-    if (dataset2->chooseRepresentation(opt_oxfer, NULL).good() && dataset2->canWriteXfer(opt_oxfer))
+    dataset2->chooseRepresentation(opt_oxfer, NULL);
+
+    if (dataset2->canWriteXfer(opt_oxfer))
     {
         OFLOG_INFO(dcmpsmkLogger, "Output transfer syntax " << oxferSyn.getXferName()
                 << " can be written");
