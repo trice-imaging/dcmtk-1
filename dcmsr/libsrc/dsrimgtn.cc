@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2019, OFFIS e.V.
+ *  Copyright (C) 2000-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRImageTreeNode
@@ -27,8 +27,6 @@
 #include "dcmtk/dcmsr/dsrimgtn.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
 
-#include "dcmtk/dcmdata/dcdeftag.h"
-
 
 DSRImageTreeNode::DSRImageTreeNode(const E_RelationshipType relationshipType)
   : DSRDocumentTreeNode(relationshipType, VT_Image),
@@ -37,47 +35,8 @@ DSRImageTreeNode::DSRImageTreeNode(const E_RelationshipType relationshipType)
 }
 
 
-DSRImageTreeNode::DSRImageTreeNode(const DSRImageTreeNode &node)
-  : DSRDocumentTreeNode(node),
-    DSRImageReferenceValue(node)
-{
-}
-
-
 DSRImageTreeNode::~DSRImageTreeNode()
 {
-}
-
-
-OFBool DSRImageTreeNode::operator==(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator==(node);
-    if (result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRImageReferenceValue::operator==(OFstatic_cast(const DSRImageTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-OFBool DSRImageTreeNode::operator!=(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator!=(node);
-    if (!result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRImageReferenceValue::operator!=(OFstatic_cast(const DSRImageTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-DSRImageTreeNode *DSRImageTreeNode::clone() const
-{
-    return new DSRImageTreeNode(*this);
 }
 
 
@@ -90,13 +49,7 @@ void DSRImageTreeNode::clear()
 
 OFBool DSRImageTreeNode::isValid() const
 {
-    return DSRDocumentTreeNode::isValid() && hasValidValue();
-}
-
-
-OFBool DSRImageTreeNode::hasValidValue() const
-{
-    return DSRImageReferenceValue::isValid();
+    return DSRDocumentTreeNode::isValid() && DSRImageReferenceValue::isValid();
 }
 
 
@@ -135,11 +88,10 @@ OFCondition DSRImageTreeNode::writeXML(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRImageTreeNode::readContentItem(DcmItem &dataset,
-                                              const size_t flags)
+OFCondition DSRImageTreeNode::readContentItem(DcmItem &dataset)
 {
     /* read ReferencedSOPSequence */
-    return DSRImageReferenceValue::readSequence(dataset, DCM_ReferencedSOPSequence, "1" /*type*/, flags);
+    return DSRImageReferenceValue::readSequence(dataset, DCM_ReferencedSOPSequence, "1" /*type*/);
 }
 
 
@@ -151,11 +103,10 @@ OFCondition DSRImageTreeNode::writeContentItem(DcmItem &dataset) const
 
 
 OFCondition DSRImageTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
-                                                 DSRXMLCursor cursor,
-                                                 const size_t flags)
+                                                 DSRXMLCursor cursor)
 {
     /* retrieve value from XML element "value" */
-    return DSRImageReferenceValue::readXML(doc, doc.getNamedChildNode(cursor, "value"), flags);
+    return DSRImageReferenceValue::readXML(doc, doc.getNamedNode(cursor.gotoChild(), "value"));
 }
 
 

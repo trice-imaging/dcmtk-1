@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2012-2021, OFFIS e.V.
+ *  Copyright (C) 2012-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,14 +25,6 @@
 #define OFTEST_OFSTD_ONLY
 #include "dcmtk/ofstd/oftest.h"
 #include "dcmtk/ofstd/ofmem.h"
-#include "dcmtk/ofstd/ofdiag.h"
-#include DCMTK_DIAGNOSTIC_IGNORE_PESSIMIZING_MOVE_WARNING
-
-OFrvalue<OFunique_ptr<int> > testMove()
-{
-    OFunique_ptr<int> pT( new int( 27 ) );
-    return OFmove( pT );
-}
 
 OFTEST(ofstd_memory)
 {
@@ -57,7 +49,7 @@ OFTEST(ofstd_memory)
     // check destruction of reference from p1.
     // The static cast is necessary since the c++11 version
     // of operator bool is explicit.
-    OFCHECK_EQUAL( OFstatic_cast( OFBool, p0 ), !p1 );
+    OFCHECK_EQUAL( OFstatic_cast( bool, p0 ), !p1 );
     // check the refered object is still valid.
     OFCHECK_EQUAL( *p1, 8 );
 
@@ -78,20 +70,7 @@ OFTEST(ofstd_memory)
     // check ownership has been removed.
     // The static cast is necessary since the c++11 version
     // of operator bool is explicit.
-    OFCHECK_EQUAL( OFstatic_cast( OFBool, u0 ), !u1 );
+    OFCHECK_EQUAL( OFstatic_cast( bool, u0 ), !u1 );
     // check if u1 can still be dereferenced.
     OFCHECK_EQUAL( *u1.get() = 23, 23 );
-    // move the object back
-    u0 = OFmove( u1 );
-    // destroy object owned by u1 (should do nothing).
-    u1.reset();
-    // check ownership has been removed.
-    // The static cast is necessary since the c++11 version
-    // of operator bool is explicit.
-    OFCHECK_EQUAL( OFstatic_cast( OFBool, u1 ), !u0 );
-    // check if u1 can still be dereferenced.
-    OFCHECK_EQUAL( *u0.get() = 3, 3 );
-    // test move out of function
-    OFCHECK_EQUAL( *testMove(), 27 );
-    OFunique_ptr<int> pi( testMove() );
 }

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2010-2021, OFFIS e.V.
+ *  Copyright (C) 2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,7 +28,7 @@
 #error Your C++ compiler cannot handle class templates:
 #endif
 
-#ifdef HAVE_STL_VECTOR
+#if defined(HAVE_STL) || defined(HAVE_STL_VECTOR)
 
 // Use the standard template library (STL) vector class.
 #include <vector>
@@ -41,8 +41,9 @@
 
 #else
 
-#include <cassert>
-
+#define INCLUDE_CASSERT          /* for assert() */
+#define INCLUDE_CSTDLIB          /* for NULL */
+#include "dcmtk/ofstd/ofstdinc.h"
 #include "dcmtk/ofstd/oftypes.h" /* for OFBool */
 
 /** this is a resizable array. You can add and remove elements after it was
@@ -84,7 +85,7 @@ public:
     /** default constructor. This creates an empty OFVector. */
     OFVector() : values_(NULL), allocated_(0), size_(0)
     {
-
+        reserve(0);
     }
 
     /** copy constructor.
@@ -189,7 +190,7 @@ public:
      */
     size_type size() const { return size_; }
 
-    /** check whether this OFVector is empty.
+    /** check wether this OFVector is empty.
      *  @return true if this OFVector is empty.
      */
     OFBool empty() const { return size_ == 0; }
@@ -231,11 +232,7 @@ public:
     iterator insert(iterator it, const T& v)
     {
         size_type idx = it - begin();
-
-        if (size_ == allocated_) {
-            reserve(size_ * 2);
-        }
-
+        reserve(size_ + 1);
         if (idx < size_)
             for (size_type i = size_; i > idx; i--) {
                 values_[i] = values_[i - 1];

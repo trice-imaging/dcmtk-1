@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTOtherPatientIDsSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -22,7 +22,6 @@
 DRTOtherPatientIDsSequence::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
     IssuerOfPatientID(DCM_IssuerOfPatientID),
-    IssuerOfPatientIDQualifiersSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     PatientID(DCM_PatientID),
     TypeOfPatientID(DCM_TypeOfPatientID)
 {
@@ -32,7 +31,6 @@ DRTOtherPatientIDsSequence::Item::Item(const OFBool emptyDefaultItem)
 DRTOtherPatientIDsSequence::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
     IssuerOfPatientID(copy.IssuerOfPatientID),
-    IssuerOfPatientIDQualifiersSequence(copy.IssuerOfPatientIDQualifiersSequence),
     PatientID(copy.PatientID),
     TypeOfPatientID(copy.TypeOfPatientID)
 {
@@ -50,7 +48,6 @@ DRTOtherPatientIDsSequence::Item &DRTOtherPatientIDsSequence::Item::operator=(co
     {
         EmptyDefaultItem = copy.EmptyDefaultItem;
         IssuerOfPatientID = copy.IssuerOfPatientID;
-        IssuerOfPatientIDQualifiersSequence = copy.IssuerOfPatientIDQualifiersSequence;
         PatientID = copy.PatientID;
         TypeOfPatientID = copy.TypeOfPatientID;
     }
@@ -65,7 +62,6 @@ void DRTOtherPatientIDsSequence::Item::clear()
         /* clear all DICOM attributes */
         PatientID.clear();
         IssuerOfPatientID.clear();
-        IssuerOfPatientIDQualifiersSequence.clear();
         TypeOfPatientID.clear();
     }
 }
@@ -75,7 +71,6 @@ OFBool DRTOtherPatientIDsSequence::Item::isEmpty()
 {
     return PatientID.isEmpty() &&
            IssuerOfPatientID.isEmpty() &&
-           IssuerOfPatientIDQualifiersSequence.isEmpty() &&
            TypeOfPatientID.isEmpty();
 }
 
@@ -94,8 +89,7 @@ OFCondition DRTOtherPatientIDsSequence::Item::read(DcmItem &item)
         /* re-initialize object */
         clear();
         getAndCheckElementFromDataset(item, PatientID, "1", "1", "OtherPatientIDsSequence");
-        getAndCheckElementFromDataset(item, IssuerOfPatientID, "1", "3", "OtherPatientIDsSequence");
-        IssuerOfPatientIDQualifiersSequence.read(item, "1-n", "3", "OtherPatientIDsSequence");
+        getAndCheckElementFromDataset(item, IssuerOfPatientID, "1", "1", "OtherPatientIDsSequence");
         getAndCheckElementFromDataset(item, TypeOfPatientID, "1", "1", "OtherPatientIDsSequence");
         result = EC_Normal;
     }
@@ -110,8 +104,7 @@ OFCondition DRTOtherPatientIDsSequence::Item::write(DcmItem &item)
     {
         result = EC_Normal;
         addElementToDataset(result, item, new DcmLongString(PatientID), "1", "1", "OtherPatientIDsSequence");
-        addElementToDataset(result, item, new DcmLongString(IssuerOfPatientID), "1", "3", "OtherPatientIDsSequence");
-        if (result.good()) result = IssuerOfPatientIDQualifiersSequence.write(item, "1-n", "3", "OtherPatientIDsSequence");
+        addElementToDataset(result, item, new DcmLongString(IssuerOfPatientID), "1", "1", "OtherPatientIDsSequence");
         addElementToDataset(result, item, new DcmCodeString(TypeOfPatientID), "1", "1", "OtherPatientIDsSequence");
     }
     return result;
@@ -287,7 +280,7 @@ OFBool DRTOtherPatientIDsSequence::isValid() const
 }
 
 
-size_t DRTOtherPatientIDsSequence::getNumberOfItems() const
+unsigned long DRTOtherPatientIDsSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -317,12 +310,12 @@ OFCondition DRTOtherPatientIDsSequence::gotoNextItem()
 }
 
 
-OFCondition DRTOtherPatientIDsSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTOtherPatientIDsSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -337,12 +330,12 @@ OFCondition DRTOtherPatientIDsSequence::gotoItem(const size_t num, OFListIterato
 }
 
 
-OFCondition DRTOtherPatientIDsSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTOtherPatientIDsSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -357,7 +350,7 @@ OFCondition DRTOtherPatientIDsSequence::gotoItem(const size_t num, OFListConstIt
 }
 
 
-OFCondition DRTOtherPatientIDsSequence::gotoItem(const size_t num)
+OFCondition DRTOtherPatientIDsSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -393,7 +386,7 @@ const DRTOtherPatientIDsSequence::Item &DRTOtherPatientIDsSequence::getCurrentIt
 }
 
 
-OFCondition DRTOtherPatientIDsSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTOtherPatientIDsSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -403,7 +396,7 @@ OFCondition DRTOtherPatientIDsSequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTOtherPatientIDsSequence::Item &DRTOtherPatientIDsSequence::getItem(const size_t num)
+DRTOtherPatientIDsSequence::Item &DRTOtherPatientIDsSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -413,7 +406,7 @@ DRTOtherPatientIDsSequence::Item &DRTOtherPatientIDsSequence::getItem(const size
 }
 
 
-const DRTOtherPatientIDsSequence::Item &DRTOtherPatientIDsSequence::getItem(const size_t num) const
+const DRTOtherPatientIDsSequence::Item &DRTOtherPatientIDsSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -423,13 +416,13 @@ const DRTOtherPatientIDsSequence::Item &DRTOtherPatientIDsSequence::getItem(cons
 }
 
 
-DRTOtherPatientIDsSequence::Item &DRTOtherPatientIDsSequence::operator[](const size_t num)
+DRTOtherPatientIDsSequence::Item &DRTOtherPatientIDsSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTOtherPatientIDsSequence::Item &DRTOtherPatientIDsSequence::operator[](const size_t num) const
+const DRTOtherPatientIDsSequence::Item &DRTOtherPatientIDsSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -452,7 +445,7 @@ OFCondition DRTOtherPatientIDsSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTOtherPatientIDsSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTOtherPatientIDsSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -475,7 +468,7 @@ OFCondition DRTOtherPatientIDsSequence::insertItem(const size_t pos, Item *&item
 }
 
 
-OFCondition DRTOtherPatientIDsSequence::removeItem(const size_t pos)
+OFCondition DRTOtherPatientIDsSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

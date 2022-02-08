@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTBlockSequenceInRTBeamsModule
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -33,8 +33,7 @@ DRTBlockSequenceInRTBeamsModule::Item::Item(const OFBool emptyDefaultItem)
     BlockTrayID(DCM_BlockTrayID),
     BlockType(DCM_BlockType),
     MaterialID(DCM_MaterialID),
-    SourceToBlockTrayDistance(DCM_SourceToBlockTrayDistance),
-    TrayAccessoryCode(DCM_TrayAccessoryCode)
+    SourceToBlockTrayDistance(DCM_SourceToBlockTrayDistance)
 {
 }
 
@@ -53,8 +52,7 @@ DRTBlockSequenceInRTBeamsModule::Item::Item(const Item &copy)
     BlockTrayID(copy.BlockTrayID),
     BlockType(copy.BlockType),
     MaterialID(copy.MaterialID),
-    SourceToBlockTrayDistance(copy.SourceToBlockTrayDistance),
-    TrayAccessoryCode(copy.TrayAccessoryCode)
+    SourceToBlockTrayDistance(copy.SourceToBlockTrayDistance)
 {
 }
 
@@ -82,7 +80,6 @@ DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::Item::op
         BlockType = copy.BlockType;
         MaterialID = copy.MaterialID;
         SourceToBlockTrayDistance = copy.SourceToBlockTrayDistance;
-        TrayAccessoryCode = copy.TrayAccessoryCode;
     }
     return *this;
 }
@@ -94,7 +91,6 @@ void DRTBlockSequenceInRTBeamsModule::Item::clear()
     {
         /* clear all DICOM attributes */
         BlockTrayID.clear();
-        TrayAccessoryCode.clear();
         AccessoryCode.clear();
         SourceToBlockTrayDistance.clear();
         BlockType.clear();
@@ -114,7 +110,6 @@ void DRTBlockSequenceInRTBeamsModule::Item::clear()
 OFBool DRTBlockSequenceInRTBeamsModule::Item::isEmpty()
 {
     return BlockTrayID.isEmpty() &&
-           TrayAccessoryCode.isEmpty() &&
            AccessoryCode.isEmpty() &&
            SourceToBlockTrayDistance.isEmpty() &&
            BlockType.isEmpty() &&
@@ -144,19 +139,18 @@ OFCondition DRTBlockSequenceInRTBeamsModule::Item::read(DcmItem &item)
         /* re-initialize object */
         clear();
         getAndCheckElementFromDataset(item, BlockTrayID, "1", "3", "BlockSequence");
-        getAndCheckElementFromDataset(item, TrayAccessoryCode, "1", "3", "BlockSequence");
         getAndCheckElementFromDataset(item, AccessoryCode, "1", "3", "BlockSequence");
-        getAndCheckElementFromDataset(item, SourceToBlockTrayDistance, "1", "2", "BlockSequence");
-        getAndCheckElementFromDataset(item, BlockType, "1", "1", "BlockSequence");
-        getAndCheckElementFromDataset(item, BlockDivergence, "1", "2", "BlockSequence");
+        getAndCheckElementFromDataset(item, SourceToBlockTrayDistance, "1", "2C", "BlockSequence");
+        getAndCheckElementFromDataset(item, BlockType, "1", "1C", "BlockSequence");
+        getAndCheckElementFromDataset(item, BlockDivergence, "1", "2C", "BlockSequence");
         getAndCheckElementFromDataset(item, BlockMountingPosition, "1", "3", "BlockSequence");
-        getAndCheckElementFromDataset(item, BlockNumber, "1", "1", "BlockSequence");
+        getAndCheckElementFromDataset(item, BlockNumber, "1", "1C", "BlockSequence");
         getAndCheckElementFromDataset(item, BlockName, "1", "3", "BlockSequence");
-        getAndCheckElementFromDataset(item, MaterialID, "1", "2", "BlockSequence");
+        getAndCheckElementFromDataset(item, MaterialID, "1", "2C", "BlockSequence");
         getAndCheckElementFromDataset(item, BlockThickness, "1", "2C", "BlockSequence");
         getAndCheckElementFromDataset(item, BlockTransmission, "1", "2C", "BlockSequence");
-        getAndCheckElementFromDataset(item, BlockNumberOfPoints, "1", "2", "BlockSequence");
-        getAndCheckElementFromDataset(item, BlockData, "2-2n", "2", "BlockSequence");
+        getAndCheckElementFromDataset(item, BlockNumberOfPoints, "1", "2C", "BlockSequence");
+        getAndCheckElementFromDataset(item, BlockData, "2-2n", "2C", "BlockSequence");
         result = EC_Normal;
     }
     return result;
@@ -170,19 +164,18 @@ OFCondition DRTBlockSequenceInRTBeamsModule::Item::write(DcmItem &item)
     {
         result = EC_Normal;
         addElementToDataset(result, item, new DcmShortString(BlockTrayID), "1", "3", "BlockSequence");
-        addElementToDataset(result, item, new DcmLongString(TrayAccessoryCode), "1", "3", "BlockSequence");
         addElementToDataset(result, item, new DcmLongString(AccessoryCode), "1", "3", "BlockSequence");
-        addElementToDataset(result, item, new DcmDecimalString(SourceToBlockTrayDistance), "1", "2", "BlockSequence");
-        addElementToDataset(result, item, new DcmCodeString(BlockType), "1", "1", "BlockSequence");
-        addElementToDataset(result, item, new DcmCodeString(BlockDivergence), "1", "2", "BlockSequence");
+        addElementToDataset(result, item, new DcmDecimalString(SourceToBlockTrayDistance), "1", "2C", "BlockSequence");
+        addElementToDataset(result, item, new DcmCodeString(BlockType), "1", "1C", "BlockSequence");
+        addElementToDataset(result, item, new DcmCodeString(BlockDivergence), "1", "2C", "BlockSequence");
         addElementToDataset(result, item, new DcmCodeString(BlockMountingPosition), "1", "3", "BlockSequence");
-        addElementToDataset(result, item, new DcmIntegerString(BlockNumber), "1", "1", "BlockSequence");
+        addElementToDataset(result, item, new DcmIntegerString(BlockNumber), "1", "1C", "BlockSequence");
         addElementToDataset(result, item, new DcmLongString(BlockName), "1", "3", "BlockSequence");
-        addElementToDataset(result, item, new DcmShortString(MaterialID), "1", "2", "BlockSequence");
+        addElementToDataset(result, item, new DcmShortString(MaterialID), "1", "2C", "BlockSequence");
         addElementToDataset(result, item, new DcmDecimalString(BlockThickness), "1", "2C", "BlockSequence");
         addElementToDataset(result, item, new DcmDecimalString(BlockTransmission), "1", "2C", "BlockSequence");
-        addElementToDataset(result, item, new DcmIntegerString(BlockNumberOfPoints), "1", "2", "BlockSequence");
-        addElementToDataset(result, item, new DcmDecimalString(BlockData), "2-2n", "2", "BlockSequence");
+        addElementToDataset(result, item, new DcmIntegerString(BlockNumberOfPoints), "1", "2C", "BlockSequence");
+        addElementToDataset(result, item, new DcmDecimalString(BlockData), "2-2n", "2C", "BlockSequence");
     }
     return result;
 }
@@ -368,15 +361,6 @@ OFCondition DRTBlockSequenceInRTBeamsModule::Item::getSourceToBlockTrayDistance(
 }
 
 
-OFCondition DRTBlockSequenceInRTBeamsModule::Item::getTrayAccessoryCode(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(TrayAccessoryCode, value, pos);
-}
-
-
 OFCondition DRTBlockSequenceInRTBeamsModule::Item::setAccessoryCode(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -546,19 +530,6 @@ OFCondition DRTBlockSequenceInRTBeamsModule::Item::setSourceToBlockTrayDistance(
 }
 
 
-OFCondition DRTBlockSequenceInRTBeamsModule::Item::setTrayAccessoryCode(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = TrayAccessoryCode.putOFStringArray(value);
-    }
-    return result;
-}
-
-
 // --- sequence class ---
 
 DRTBlockSequenceInRTBeamsModule::DRTBlockSequenceInRTBeamsModule(const OFBool emptyDefaultSequence)
@@ -662,7 +633,7 @@ OFBool DRTBlockSequenceInRTBeamsModule::isValid() const
 }
 
 
-size_t DRTBlockSequenceInRTBeamsModule::getNumberOfItems() const
+unsigned long DRTBlockSequenceInRTBeamsModule::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -692,12 +663,12 @@ OFCondition DRTBlockSequenceInRTBeamsModule::gotoNextItem()
 }
 
 
-OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -712,12 +683,12 @@ OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const size_t num, OFListIt
 }
 
 
-OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -732,7 +703,7 @@ OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const size_t num, OFListCo
 }
 
 
-OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const size_t num)
+OFCondition DRTBlockSequenceInRTBeamsModule::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -768,7 +739,7 @@ const DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::ge
 }
 
 
-OFCondition DRTBlockSequenceInRTBeamsModule::getItem(const size_t num, Item *&item)
+OFCondition DRTBlockSequenceInRTBeamsModule::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -778,7 +749,7 @@ OFCondition DRTBlockSequenceInRTBeamsModule::getItem(const size_t num, Item *&it
 }
 
 
-DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::getItem(const size_t num)
+DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -788,7 +759,7 @@ DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::getItem(
 }
 
 
-const DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::getItem(const size_t num) const
+const DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -798,13 +769,13 @@ const DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::ge
 }
 
 
-DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::operator[](const size_t num)
+DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::operator[](const size_t num) const
+const DRTBlockSequenceInRTBeamsModule::Item &DRTBlockSequenceInRTBeamsModule::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -827,7 +798,7 @@ OFCondition DRTBlockSequenceInRTBeamsModule::addItem(Item *&item)
 }
 
 
-OFCondition DRTBlockSequenceInRTBeamsModule::insertItem(const size_t pos, Item *&item)
+OFCondition DRTBlockSequenceInRTBeamsModule::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -850,7 +821,7 @@ OFCondition DRTBlockSequenceInRTBeamsModule::insertItem(const size_t pos, Item *
 }
 
 
-OFCondition DRTBlockSequenceInRTBeamsModule::removeItem(const size_t pos)
+OFCondition DRTBlockSequenceInRTBeamsModule::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

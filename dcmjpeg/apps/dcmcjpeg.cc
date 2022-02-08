@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2001-2021, OFFIS e.V.
+ *  Copyright (C) 2001-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,6 +21,14 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
+
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>
+#endif
 
 #include "dcmtk/dcmdata/dctk.h"
 #include "dcmtk/dcmdata/cmdlnarg.h"
@@ -53,6 +61,11 @@ static char rcsid[] = "$dcmtk: " OFFIS_CONSOLE_APPLICATION " v"
 int main(int argc, char *argv[])
 {
 
+#ifdef HAVE_GUSI_H
+  GUSISetup(GUSIwithSIOUXSockets);
+  GUSISetup(GUSIwithInternetSockets);
+#endif
+
   const char *opt_ifname = NULL;
   const char *opt_ofname = NULL;
 
@@ -77,11 +90,8 @@ int main(int argc, char *argv[])
   int              opt_compressedBits = 0; // 0=auto, 8/12/16=force
   E_CompressionColorSpaceConversion opt_compCSconversion = ECC_lossyYCbCr;
   E_DecompressionColorSpaceConversion opt_decompCSconversion = EDC_photometricInterpretation;
-  OFBool           opt_predictor6WorkaroundEnable = OFFalse;
-  OFBool           opt_cornellWorkaroundEnable = OFFalse;
-  OFBool           opt_forceSingleFragmentPerFrame = OFFalse;
-  E_SubSampling    opt_sampleFactors = ESS_422;
-  OFBool           opt_useYBR422 = OFTrue;
+  E_SubSampling    opt_sampleFactors = ESS_444;
+  OFBool           opt_useYBR422 = OFFalse;
   OFCmdUnsignedInt opt_fragmentSize = 0; // 0=unlimited
   OFBool           opt_createOffsetTable = OFTrue;
   int              opt_windowType = 0;  /* default: no windowing; 1=Wi, 2=Wl, 3=Wm, 4=Wh, 5=Ww, 6=Wn, 7=Wr */
@@ -93,7 +103,6 @@ int main(int argc, char *argv[])
   OFBool           opt_usePixelValues = OFTrue;
   OFBool           opt_useModalityRescale = OFFalse;
   OFBool           opt_trueLossless = OFTrue;
-  OFBool           opt_lossless = OFTrue;
   OFBool           lossless = OFTrue;  /* see opt_oxfer */
 
   OFConsoleApplication app(OFFIS_CONSOLE_APPLICATION, "Encode DICOM file to JPEG transfer syntax", rcsid);
@@ -171,16 +180,11 @@ int main(int argc, char *argv[])
       cmd.addOption("--conv-always",         "+ca",    "always convert YCbCr to RGB");
       cmd.addOption("--conv-never",          "+cn",    "never convert color space");
 
-    cmd.addSubGroup("decompr. workaround options for incorrect encodings (if input is compressed):");
-      cmd.addOption("--workaround-pred6",    "+w6",    "enable workaround for JPEG lossless images\nwith overflow in predictor 6");
-      cmd.addOption("--workaround-incpl",    "+wi",    "enable workaround for incomplete JPEG data");
-      cmd.addOption("--workaround-cornell",  "+wc",    "enable workaround for 16-bit JPEG lossless\nCornell images with Huffman table overflow");
+    cmd.addSubGroup("standard YCbCr component subsampling (not with +tl):");
+      cmd.addOption("--sample-444",          "+s4",    "4:4:4 sampling with YBR_FULL (default)");
+      cmd.addOption("--sample-422",          "+s2",    "4:2:2 subsampling with YBR_FULL_422");
 
-    cmd.addSubGroup("YCbCr component subsampling (lossy JPEG only):");
-      cmd.addOption("--sample-422",          "+s2",    "4:2:2 subsampling with YBR_FULL_422 (default)");
-
-    cmd.addSubGroup("non-standard YCbCr component subsampling (lossy JPEG only):");
-      cmd.addOption("--nonstd-444",          "+s4",    "4:4:4 sampling with YBR_FULL");
+    cmd.addSubGroup("non-standard YCbCr component subsampling (not with +tl):");
       cmd.addOption("--nonstd-422-full",     "+n2",    "4:2:2 subsampling with YBR_FULL");
       cmd.addOption("--nonstd-411-full",     "+n1",    "4:1:1 subsampling with YBR_FULL");
       cmd.addOption("--nonstd-411",          "+np",    "4:1:1 subsampling with YBR_FULL_422");
@@ -307,36 +311,12 @@ int main(int argc, char *argv[])
       // JPEG options
 
       cmd.beginOptionBlock();
-      if (cmd.findOption("--encode-lossless-sv1"))
-      {
-          opt_oxfer = EXS_JPEGProcess14SV1;
-          opt_lossless = OFTrue;
-      }
-      if (cmd.findOption("--encode-lossless"))
-      {
-          opt_oxfer = EXS_JPEGProcess14;
-          opt_lossless = OFTrue;
-      }
-      if (cmd.findOption("--encode-baseline"))
-      {
-          opt_oxfer = EXS_JPEGProcess1;
-          opt_lossless = OFFalse;
-      }
-      if (cmd.findOption("--encode-extended"))
-      {
-          opt_oxfer = EXS_JPEGProcess2_4;
-          opt_lossless = OFFalse;
-      }
-      if (cmd.findOption("--encode-spectral"))
-      {
-          opt_oxfer = EXS_JPEGProcess6_8;
-          opt_lossless = OFFalse;
-      }
-      if (cmd.findOption("--encode-progressive"))
-      {
-          opt_oxfer = EXS_JPEGProcess10_12;
-          opt_lossless = OFFalse;
-      }
+      if (cmd.findOption("--encode-lossless-sv1")) opt_oxfer = EXS_JPEGProcess14SV1;
+      if (cmd.findOption("--encode-lossless")) opt_oxfer = EXS_JPEGProcess14;
+      if (cmd.findOption("--encode-baseline")) opt_oxfer = EXS_JPEGProcess1;
+      if (cmd.findOption("--encode-extended")) opt_oxfer = EXS_JPEGProcess2_4;
+      if (cmd.findOption("--encode-spectral")) opt_oxfer = EXS_JPEGProcess6_8;
+      if (cmd.findOption("--encode-progressive")) opt_oxfer = EXS_JPEGProcess10_12;
       cmd.endOptionBlock();
 
       // check for JPEG lossless output transfer syntaxes
@@ -462,43 +442,34 @@ int main(int argc, char *argv[])
       cmd.endOptionBlock();
       if (opt_trueLossless) opt_decompCSconversion = EDC_never;
 
-      if (cmd.findOption("--workaround-pred6")) opt_predictor6WorkaroundEnable = OFTrue;
-      if (cmd.findOption("--workaround-incpl")) opt_forceSingleFragmentPerFrame = OFTrue;
-      if (cmd.findOption("--workaround-cornell")) opt_cornellWorkaroundEnable = OFTrue;
-
       cmd.beginOptionBlock();
-      if (cmd.findOption("--nonstd-444"))
+      if (cmd.findOption("--sample-444"))
       {
-        app.checkConflict("--nonstd-444", "--true-lossless", opt_trueLossless);
-        app.checkConflict("--nonstd-444", "--pseudo-lossless", opt_lossless);
+        app.checkConflict("--sample-444", "--true-lossless", opt_trueLossless);
         opt_sampleFactors = ESS_444;
         opt_useYBR422 = OFFalse;
       }
       if (cmd.findOption("--sample-422"))
       {
         app.checkConflict("--sample-422", "--true-lossless", opt_trueLossless);
-        app.checkConflict("--sample-422", "--pseudo-lossless", opt_lossless);
         opt_sampleFactors = ESS_422;
         opt_useYBR422 = OFTrue;
       }
       if (cmd.findOption("--nonstd-422-full"))
       {
         app.checkConflict("--nonstd-422-full", "--true-lossless", opt_trueLossless);
-        app.checkConflict("--nonstd-422-full", "--pseudo-lossless", opt_lossless);
         opt_sampleFactors = ESS_422;
         opt_useYBR422 = OFFalse;
       }
       if (cmd.findOption("--nonstd-411-full"))
       {
         app.checkConflict("--nonstd-411-full", "--true-lossless", opt_trueLossless);
-        app.checkConflict("--nonstd-411-full", "--pseudo-lossless", opt_lossless);
         opt_sampleFactors = ESS_411;
         opt_useYBR422 = OFFalse;
       }
       if (cmd.findOption("--nonstd-411"))
       {
         app.checkConflict("--nonstd-411", "--true-lossless", opt_trueLossless);
-        app.checkConflict("--nonstd-411", "--pseudo-lossless", opt_lossless);
         opt_sampleFactors = ESS_411;
         opt_useYBR422 = OFTrue;
       }
@@ -587,8 +558,20 @@ int main(int argc, char *argv[])
       cmd.endOptionBlock();
 
       cmd.beginOptionBlock();
-      if (cmd.findOption("--enable-new-vr")) dcmEnableGenerationOfNewVRs();
-      if (cmd.findOption("--disable-new-vr")) dcmDisableGenerationOfNewVRs();
+      if (cmd.findOption("--enable-new-vr"))
+      {
+        dcmEnableUnknownVRGeneration.set(OFTrue);
+        dcmEnableUnlimitedTextVRGeneration.set(OFTrue);
+        dcmEnableOtherFloatStringVRGeneration.set(OFTrue);
+        dcmEnableOtherDoubleStringVRGeneration.set(OFTrue);
+      }
+      if (cmd.findOption("--disable-new-vr"))
+      {
+        dcmEnableUnknownVRGeneration.set(OFFalse);
+        dcmEnableUnlimitedTextVRGeneration.set(OFFalse);
+        dcmEnableOtherFloatStringVRGeneration.set(OFFalse);
+        dcmEnableOtherDoubleStringVRGeneration.set(OFFalse);
+      }
       cmd.endOptionBlock();
 
       cmd.beginOptionBlock();
@@ -621,11 +604,7 @@ int main(int argc, char *argv[])
     // register global decompression codecs
     DJDecoderRegistration::registerCodecs(
       opt_decompCSconversion,
-      opt_uidcreation,
-      EPC_default,
-      opt_predictor6WorkaroundEnable,
-      opt_cornellWorkaroundEnable,
-      opt_forceSingleFragmentPerFrame);
+      opt_uidcreation);
 
     // register global compression codecs
     DJEncoderRegistration::registerCodecs(
@@ -712,7 +691,8 @@ int main(int argc, char *argv[])
     if (lossless)
         rp = &rp_lossless;
 
-    if (dataset->chooseRepresentation(opt_oxfer, rp).good() && dataset->canWriteXfer(opt_oxfer))
+    dataset->chooseRepresentation(opt_oxfer, rp);
+    if (dataset->canWriteXfer(opt_oxfer))
     {
       OFLOG_INFO(dcmcjpegLogger, "Output transfer syntax " << opt_oxferSyn.getXferName() << " can be written");
     } else {

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1997-2021, OFFIS e.V.
+ *  Copyright (C) 1997-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,19 +24,21 @@
 ** A simple string class
 ** - for OFFIS projects when an ANSI string class is not always available
 ** - based on the ANSI-C++ specifications
-** - this implementation is intended to be slow but reliable
+** - this impementation is intended to be slow but reliable
 ** - it is known to be slow but is it reliable?
 */
 
 #include "dcmtk/config/osconfig.h"     /* include OS specific configuration first */
 
-#ifndef HAVE_STL_STRING
+#ifndef HAVE_STD_STRING
 
 #include "dcmtk/ofstd/ofstring.h"
 #include "dcmtk/ofstd/ofcast.h"
 #include "dcmtk/ofstd/ofbmanip.h"
 #include "dcmtk/ofstd/oftypes.h"
-#include "dcmtk/ofstd/ofstd.h"
+
+#define INCLUDE_CCTYPE
+#include "dcmtk/ofstd/ofstdinc.h"
 
 static const char* verify_string(const char *s)
 {
@@ -87,11 +89,9 @@ OFString::OFString (const char* s)
     s = verify_string(s);
     const size_t n = strlen(s);
     reserve(n);
-    // Because we used strlen() to figure out the length we can use strlcpy()
+    // Because we used strlen() to figure out the length we can use strcpy()
     // since there won't be any '\0' bytes in the string.
-    // The amount of memory allocated is always theCapacity+1
-    // because one extra byte is always allocated for the eos zero byte.
-    OFStandard::strlcpy(this->theCString, s, this->theCapacity+1);
+    strcpy(this->theCString, s);
     this->theSize = n;
 }
 
@@ -524,7 +524,7 @@ OFString::find (const OFString& pattern, size_t pos) const
         return OFString_npos;
     }
     for (size_t i = pos; i < this_size; i++) {
-        /* is there enough space for the pattern? */
+        /* is there enought space for the pattern? */
         if ((i + pattern_size) > this_size) {
             return OFString_npos;
         }
@@ -1049,7 +1049,7 @@ OFBool operator>= (const OFString& lhs, char rhs)
     return (!(lhs < rhs));
 }
 
-#else /* HAVE_STL_STRING */
+#else /* HAVE_STD_STRING */
 
 int ofstring_cc_dummy_to_keep_linker_from_moaning = 0;
 

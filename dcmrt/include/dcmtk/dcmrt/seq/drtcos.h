@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class DRTCompensatorSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -55,7 +55,6 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
 
         /** assigment operator
          *  @param copy item object to be copied
-         *  @return reference to this object
          */
         Item &operator=(const Item &copy);
 
@@ -111,13 +110,6 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
          *  @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition getCompensatorColumns(Sint32 &value, const unsigned long pos = 0) const;
-
-        /** get CompensatorDescription (300a,02eb)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getCompensatorDescription(OFString &value, const signed long pos = 0) const;
 
         /** get CompensatorDivergence (300a,02e0)
          *  @param  value  reference to variable in which the value should be stored
@@ -248,13 +240,6 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
          */
         OFCondition getCompensatorTransmissionData(OFVector<Float64> &value) const;
 
-        /** get CompensatorTrayID (300a,00ef)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getCompensatorTrayID(OFString &value, const signed long pos = 0) const;
-
         /** get CompensatorType (300a,00ee)
          *  @param  value  reference to variable in which the value should be stored
          *  @param  pos    index of the value to get (0..vm-1), -1 for all components
@@ -303,13 +288,6 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
          */
         OFCondition getSourceToCompensatorTrayDistance(Float64 &value, const unsigned long pos = 0) const;
 
-        /** get TrayAccessoryCode (300a,0355)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getTrayAccessoryCode(OFString &value, const signed long pos = 0) const;
-
       // --- set DICOM attribute values ---
 
         /** set AccessoryCode (300a,00f9)
@@ -325,13 +303,6 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
          *  @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition setCompensatorColumns(const OFString &value, const OFBool check = OFTrue);
-
-        /** set CompensatorDescription (300a,02eb)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (LT) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setCompensatorDescription(const OFString &value, const OFBool check = OFTrue);
 
         /** set CompensatorDivergence (300a,02e0)
          *  @param  value  value to be set (single value only) or "" for no value
@@ -396,13 +367,6 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
          */
         OFCondition setCompensatorTransmissionData(const OFString &value, const OFBool check = OFTrue);
 
-        /** set CompensatorTrayID (300a,00ef)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (SH) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setCompensatorTrayID(const OFString &value, const OFBool check = OFTrue);
-
         /** set CompensatorType (300a,00ee)
          *  @param  value  value to be set (single value only) or "" for no value
          *  @param  check  check 'value' for conformance with VR (CS) and VM (1) if enabled
@@ -431,13 +395,6 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
          */
         OFCondition setSourceToCompensatorTrayDistance(const OFString &value, const OFBool check = OFTrue);
 
-        /** set TrayAccessoryCode (300a,0355)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (LO) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setTrayAccessoryCode(const OFString &value, const OFBool check = OFTrue);
-
       private:
 
         /// internal flag used to mark the empty default item
@@ -445,10 +402,8 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
 
         /// AccessoryCode (300a,00f9) vr=LO, vm=1, type=3
         DcmLongString AccessoryCode;
-        /// CompensatorColumns (300a,00e8) vr=IS, vm=1, type=1
+        /// CompensatorColumns (300a,00e8) vr=IS, vm=1, type=1C
         DcmIntegerString CompensatorColumns;
-        /// CompensatorDescription (300a,02eb) vr=LT, vm=1, type=3
-        DcmLongText CompensatorDescription;
         /// CompensatorDivergence (300a,02e0) vr=CS, vm=1, type=3
         DcmCodeString CompensatorDivergence;
         /// CompensatorID (300a,00e5) vr=SH, vm=1, type=3
@@ -457,28 +412,24 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
         DcmCodeString CompensatorMountingPosition;
         /// CompensatorNumber (300a,00e4) vr=IS, vm=1, type=1C
         DcmIntegerString CompensatorNumber;
-        /// CompensatorPixelSpacing (300a,00e9) vr=DS, vm=2, type=1
+        /// CompensatorPixelSpacing (300a,00e9) vr=DS, vm=2, type=1C
         DcmDecimalString CompensatorPixelSpacing;
-        /// CompensatorPosition (300a,00ea) vr=DS, vm=2, type=1
+        /// CompensatorPosition (300a,00ea) vr=DS, vm=2, type=1C
         DcmDecimalString CompensatorPosition;
-        /// CompensatorRows (300a,00e7) vr=IS, vm=1, type=1
+        /// CompensatorRows (300a,00e7) vr=IS, vm=1, type=1C
         DcmIntegerString CompensatorRows;
         /// CompensatorThicknessData (300a,00ec) vr=DS, vm=1-n, type=1C
         DcmDecimalString CompensatorThicknessData;
         /// CompensatorTransmissionData (300a,00eb) vr=DS, vm=1-n, type=1C
         DcmDecimalString CompensatorTransmissionData;
-        /// CompensatorTrayID (300a,00ef) vr=SH, vm=1, type=3
-        DcmShortString CompensatorTrayID;
         /// CompensatorType (300a,00ee) vr=CS, vm=1, type=3
         DcmCodeString CompensatorType;
         /// MaterialID (300a,00e1) vr=SH, vm=1, type=2C
         DcmShortString MaterialID;
         /// SourceToCompensatorDistance (300a,02e2) vr=DS, vm=1-n, type=1C
         DcmDecimalString SourceToCompensatorDistance;
-        /// SourceToCompensatorTrayDistance (300a,00e6) vr=DS, vm=1, type=2
+        /// SourceToCompensatorTrayDistance (300a,00e6) vr=DS, vm=1, type=2C
         DcmDecimalString SourceToCompensatorTrayDistance;
-        /// TrayAccessoryCode (300a,0355) vr=LO, vm=1, type=3
-        DcmLongString TrayAccessoryCode;
 
     };
 
@@ -500,7 +451,6 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
 
     /** assigment operator
      *  @param copy sequence object to be copied
-     *  @return reference to this object
      */
     DRTCompensatorSequence &operator=(const DRTCompensatorSequence &copy);
 
@@ -523,7 +473,7 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
     /** get number of items in the sequence
      *  @return number of items
      */
-    size_t getNumberOfItems() const;
+    unsigned long getNumberOfItems() const;
 
     /** goto first item in the sequence
      *  @return status, EC_Normal if successful, an error code otherwise
@@ -539,7 +489,7 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
      *  @param  num  number of the item to be selected (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num);
+    OFCondition gotoItem(const unsigned long num);
 
     /** get current item in the sequence
      *  @param  item  reference to item pointer (result variable)
@@ -562,31 +512,31 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
      *  @param  item  reference to item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition getItem(const size_t num, Item *&item);
+    OFCondition getItem(const unsigned long num, Item *&item);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &getItem(const size_t num);
+    Item &getItem(const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &getItem(const size_t num) const;
+    const Item &getItem(const unsigned long num) const;
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &operator[](const size_t num);
+    Item &operator[](const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &operator[](const size_t num) const;
+    const Item &operator[](const unsigned long num) const;
 
     /** add new item to the end of this sequence
      *  @param  item  reference to new item pointer (result variable)
@@ -599,13 +549,13 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
      *  @param  item  reference to new item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition insertItem(const size_t pos, Item *&item);
+    OFCondition insertItem(const unsigned long pos, Item *&item);
 
     /** remove particular item from the sequence
      *  @param  pos  position of the item to be removed (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition removeItem(const size_t pos);
+    OFCondition removeItem(const unsigned long pos);
 
   // --- input/output methods ---
 
@@ -640,7 +590,7 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListIterator(Item *) &iterator);
 
     /** goto particular item in the sequence
@@ -648,7 +598,7 @@ class DCMTK_DCMRT_EXPORT DRTCompensatorSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListConstIterator(Item *) &iterator) const;
 
   private:

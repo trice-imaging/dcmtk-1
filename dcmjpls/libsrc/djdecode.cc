@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1997-2019, OFFIS e.V.
+ *  Copyright (C) 1997-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -34,12 +34,11 @@ DJLSNearLosslessDecoder *DJLSDecoderRegistration::nearlosslessdecoder_ = NULL;
 void DJLSDecoderRegistration::registerCodecs(
     JLS_UIDCreation uidcreation,
     JLS_PlanarConfiguration planarconfig,
-    OFBool ignoreOffsetTable,
-    OFBool forceSingleFragmentPerFrame)
+    OFBool ignoreOffsetTable)
 {
   if (! registered_)
   {
-    cp_ = new DJLSCodecParameter(uidcreation, planarconfig, ignoreOffsetTable, forceSingleFragmentPerFrame);
+    cp_ = new DJLSCodecParameter(uidcreation, planarconfig, ignoreOffsetTable);
     if (cp_)
     {
       losslessdecoder_ = new DJLSLosslessDecoder();

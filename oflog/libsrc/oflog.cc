@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2009-2019, OFFIS e.V.
+ *  Copyright (C) 2009-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,13 +20,12 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
-#include "dcmtk/oflog/oflog.h"
 
 #include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/ofstd/ofdate.h"
 #include "dcmtk/ofstd/oftime.h"
-#include "dcmtk/ofstd/ofconapp.h"
 
+#include "dcmtk/oflog/oflog.h"
 #include "dcmtk/oflog/configrt.h"
 #include "dcmtk/oflog/consap.h"
 #include "dcmtk/oflog/helpers/loglog.h"
@@ -34,7 +33,7 @@
 #include "dcmtk/oflog/helpers/strhelp.h"
 #include "dcmtk/oflog/internal/internal.h"
 
-OFunique_ptr<dcmtk::log4cplus::helpers::Properties> OFLog::configProperties_;
+OFauto_ptr<dcmtk::log4cplus::helpers::Properties> OFLog::configProperties_;
 
 OFLogger::OFLogger(const dcmtk::log4cplus::Logger &base)
     : dcmtk::log4cplus::Logger(base)
@@ -60,11 +59,11 @@ static void OFLog_init()
 
     // we default to a really simple pattern: loglevel_prefix: message\n
     const char *pattern = "%P: %m%n";
-    OFunique_ptr<dcmtk::log4cplus::Layout> layout(new dcmtk::log4cplus::PatternLayout(pattern));
+    OFauto_ptr<dcmtk::log4cplus::Layout> layout(new dcmtk::log4cplus::PatternLayout(pattern));
     dcmtk::log4cplus::SharedAppenderPtr console(new dcmtk::log4cplus::ConsoleAppender(OFTrue /* logToStdErr */, OFTrue /* immediateFlush */));
     dcmtk::log4cplus::Logger rootLogger = dcmtk::log4cplus::Logger::getRoot();
 
-    console->setLayout(OFmove(layout));
+    console->setLayout(layout);
     rootLogger.addAppender(console);
     rootLogger.setLogLevel(dcmtk::log4cplus::INFO_LOG_LEVEL);
 }
@@ -185,7 +184,7 @@ void OFLog::configureFromCommandLine(OFCommandLine &cmd,
 
         app.checkValue(cmd.getValue(logConfig));
 
-        // check whether config file exists at all and is readable
+        // check wether config file exists at all and is readable
         if (!OFStandard::fileExists(logConfig))
             app.printError("Specified --log-config file does not exist");
         if (!OFStandard::isReadable(logConfig))

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2018, OFFIS e.V.
+ *  Copyright (C) 1998-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,9 +21,7 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
-
 #include "dcmtk/ofstd/ofstring.h"
-#include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/dcmpstat/dvpsdef.h"
 #include "dcmtk/dcmpstat/dvpspr.h"
 
@@ -237,10 +235,10 @@ OFCondition DVPSPrintMessageHandler::createRQ(
   // construct N-CREATE-RQ
   request.CommandField = DIMSE_N_CREATE_RQ;
   request.msg.NCreateRQ.MessageID = assoc->nextMsgID++;
-  OFStandard::strlcpy(request.msg.NCreateRQ.AffectedSOPClassUID, sopclassUID, sizeof(request.msg.NCreateRQ.AffectedSOPClassUID));
+  strcpy(request.msg.NCreateRQ.AffectedSOPClassUID, sopclassUID);
   if (sopinstanceUID.size() > 0)
   {
-    OFStandard::strlcpy(request.msg.NCreateRQ.AffectedSOPInstanceUID, sopinstanceUID.c_str(), sizeof(request.msg.NCreateRQ.AffectedSOPInstanceUID));
+    strcpy(request.msg.NCreateRQ.AffectedSOPInstanceUID, sopinstanceUID.c_str());
     request.msg.NCreateRQ.opts = O_NCREATE_AFFECTEDSOPINSTANCEUID;
   } else {
     request.msg.NCreateRQ.AffectedSOPInstanceUID[0] = 0;
@@ -290,8 +288,8 @@ OFCondition DVPSPrintMessageHandler::setRQ(
   // construct N-SET-RQ
   request.CommandField = DIMSE_N_SET_RQ;
   request.msg.NSetRQ.MessageID = assoc->nextMsgID++;
-  OFStandard::strlcpy(request.msg.NSetRQ.RequestedSOPClassUID, sopclassUID, sizeof(request.msg.NSetRQ.RequestedSOPClassUID));
-  OFStandard::strlcpy(request.msg.NSetRQ.RequestedSOPInstanceUID, sopinstanceUID, sizeof(request.msg.NSetRQ.RequestedSOPInstanceUID));
+  strcpy(request.msg.NSetRQ.RequestedSOPClassUID, sopclassUID);
+  strcpy(request.msg.NSetRQ.RequestedSOPInstanceUID, sopinstanceUID);
    
   OFCondition cond = sendNRequest(presCtx, request, modificationList, response, statusDetail, attributeListOut);
   if (cond.good()) status = response.msg.NSetRSP.DimseStatus;
@@ -329,8 +327,8 @@ OFCondition DVPSPrintMessageHandler::getRQ(
   // construct N-GET-RQ
   request.CommandField = DIMSE_N_GET_RQ;
   request.msg.NGetRQ.MessageID = assoc->nextMsgID++;
-  OFStandard::strlcpy(request.msg.NGetRQ.RequestedSOPClassUID, sopclassUID, sizeof(request.msg.NGetRQ.RequestedSOPClassUID));
-  OFStandard::strlcpy(request.msg.NGetRQ.RequestedSOPInstanceUID, sopinstanceUID, sizeof(request.msg.NGetRQ.RequestedSOPInstanceUID));
+  strcpy(request.msg.NGetRQ.RequestedSOPClassUID, sopclassUID);
+  strcpy(request.msg.NGetRQ.RequestedSOPInstanceUID, sopinstanceUID);
   request.msg.NGetRQ.ListCount = 0;
   if (attributeIdentifierList) request.msg.NGetRQ.ListCount = (int)numShorts;
   request.msg.NGetRQ.AttributeIdentifierList = (DIC_US *)attributeIdentifierList;
@@ -372,8 +370,8 @@ OFCondition DVPSPrintMessageHandler::actionRQ(
   // construct N-ACTION-RQ
   request.CommandField = DIMSE_N_ACTION_RQ;
   request.msg.NActionRQ.MessageID = assoc->nextMsgID++;
-  OFStandard::strlcpy(request.msg.NActionRQ.RequestedSOPClassUID, sopclassUID, sizeof(request.msg.NActionRQ.RequestedSOPClassUID));
-  OFStandard::strlcpy(request.msg.NActionRQ.RequestedSOPInstanceUID, sopinstanceUID, sizeof(request.msg.NActionRQ.RequestedSOPInstanceUID));
+  strcpy(request.msg.NActionRQ.RequestedSOPClassUID, sopclassUID);
+  strcpy(request.msg.NActionRQ.RequestedSOPInstanceUID, sopinstanceUID);
   request.msg.NActionRQ.ActionTypeID = (DIC_US)actionTypeID;
    
   OFCondition cond = sendNRequest(presCtx, request, actionInformation, response, statusDetail, actionReply);
@@ -410,8 +408,8 @@ OFCondition DVPSPrintMessageHandler::deleteRQ(
   // construct N-DELETE-RQ
   request.CommandField = DIMSE_N_DELETE_RQ;
   request.msg.NDeleteRQ.MessageID = assoc->nextMsgID++;
-  OFStandard::strlcpy(request.msg.NDeleteRQ.RequestedSOPClassUID, sopclassUID, sizeof(request.msg.NDeleteRQ.RequestedSOPClassUID));
-  OFStandard::strlcpy(request.msg.NDeleteRQ.RequestedSOPInstanceUID, sopinstanceUID, sizeof(request.msg.NDeleteRQ.RequestedSOPInstanceUID));
+  strcpy(request.msg.NDeleteRQ.RequestedSOPClassUID, sopclassUID);
+  strcpy(request.msg.NDeleteRQ.RequestedSOPInstanceUID, sopinstanceUID);
    
   OFCondition cond = sendNRequest(presCtx, request, NULL, response, statusDetail, attributeListOut);
   if (cond.good()) status = response.msg.NDeleteRSP.DimseStatus;
@@ -484,6 +482,7 @@ OFCondition DVPSPrintMessageHandler::negotiateAssociation(
   }
   
   T_ASC_Parameters *params=NULL;
+  DIC_NODENAME dnlocalHost;
   DIC_NODENAME dnpeerHost;
 
   OFCondition cond = ASC_initializeNetwork(NET_REQUESTOR, 0, 30, &net);
@@ -498,8 +497,9 @@ OFCondition DVPSPrintMessageHandler::negotiateAssociation(
   if (cond.bad()) return cond;
 
   ASC_setAPTitles(params, myAEtitle, peerAEtitle, NULL);
+  gethostname(dnlocalHost, sizeof(dnlocalHost) - 1);
   sprintf(dnpeerHost, "%s:%d", peerHost, peerPort);
-  ASC_setPresentationAddresses(params, OFStandard::getHostName().c_str(), dnpeerHost);
+  ASC_setPresentationAddresses(params, dnlocalHost, dnpeerHost);
 
   /* presentation contexts */
   const char* transferSyntaxes[3];

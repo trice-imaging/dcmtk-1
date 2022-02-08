@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2021, OFFIS e.V.
+ *  Copyright (C) 1998-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,13 +22,15 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 #include "dcmtk/ofstd/ofstring.h"
-#include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/dcmpstat/dvpsda.h"
 #include "dcmtk/dcmpstat/dvpsri.h"      /* for DVPSReferencedImage */
 #include "dcmtk/dcmpstat/dvpsrsl.h"     /* DVPSReferencedSeries_PList */
 #include "dcmtk/dcmpstat/dvpsdef.h"     /* for constants and macros */
 #include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/dcmpstat/dvpsrs.h"      /* for DVPSReferencedSeries, needed by MSVC5 with STL */
+
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
 
 /* --------------- class DVPSDisplayedArea --------------- */
 
@@ -64,12 +66,12 @@ OFCondition DVPSDisplayedArea::read(DcmItem &dset)
   DcmStack stack;
   OFString aString;
   
-  READ_FROM_DATASET(DcmSignedLong, EVR_SL, displayedAreaTopLeftHandCorner)
-  READ_FROM_DATASET(DcmSignedLong, EVR_SL, displayedAreaBottomRightHandCorner)
-  READ_FROM_DATASET(DcmCodeString, EVR_CS, presentationSizeMode)
-  READ_FROM_DATASET(DcmDecimalString, EVR_DS, presentationPixelSpacing)
-  READ_FROM_DATASET(DcmIntegerString, EVR_IS, presentationPixelAspectRatio)
-  READ_FROM_DATASET(DcmFloatingPointSingle, EVR_FL, presentationPixelMagnificationRatio)
+  READ_FROM_DATASET(DcmSignedLong, displayedAreaTopLeftHandCorner)
+  READ_FROM_DATASET(DcmSignedLong, displayedAreaBottomRightHandCorner)
+  READ_FROM_DATASET(DcmCodeString, presentationSizeMode)
+  READ_FROM_DATASET(DcmDecimalString, presentationPixelSpacing)
+  READ_FROM_DATASET(DcmIntegerString, presentationPixelAspectRatio)
+  READ_FROM_DATASET(DcmFloatingPointSingle, presentationPixelMagnificationRatio)
 
   if (result==EC_Normal) result = referencedImageList.read(dset);
 
@@ -283,7 +285,7 @@ OFCondition DVPSDisplayedArea::setDisplayedAreaPixelSpacing(double spacingX, dou
 {
   char str[66];
   OFStandard::ftoa(str, 32, spacingY, OFStandard::ftoa_format_f);
-  OFStandard::strlcat(str, "\\", 66);
+  strcat(str, "\\");
   OFStandard::ftoa(strchr(str, 0), 32, spacingX, OFStandard::ftoa_format_f);
 
   return setDisplayedAreaPixelSpacing(str);

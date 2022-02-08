@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were partly developed by
@@ -60,13 +60,20 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 #include "dcmtk/ofstd/ofcond.h"
-#include "dcmtk/ofstd/ofstd.h"
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CERRNO
+#define INCLUDE_CSIGNAL
+#define INCLUDE_CSTDARG
+#include "dcmtk/ofstd/ofstdinc.h"
 
 #include "dcmtk/dcmnet/dicom.h"
 #include "dcmtk/dcmnet/cond.h"
 #include "dcmtk/dcmnet/lst.h"
 #include "dcmtk/dcmnet/dul.h"
-#include "dcmtk/dcmnet/dulstruc.h"
+#include "dulstruc.h"
 #include "dulpriv.h"
 #include "dulfsm.h"
 
@@ -74,45 +81,45 @@
 /* DUL_MakePresentationCtx
 **
 ** Purpose:
-**  Build a Presentation Context from the specified parameters
+**	Build a Presentation Context from the specified parameters
 **
 ** Parameter Dictionary:
-**  ctx     Pointer to the presentation context that is to
-**          be built.
-**  proposedSCRole  Proposed role played by the caller
-**  acceptedSCRole  Accepted role (after negotiation)
-**  ctxID       Unique ID for this presentation context
-**  result
-**  abstarctSyntax
+**	ctx		Pointer to the presentation context that is to
+**			be built.
+**	proposedSCRole	Proposed role played by the caller
+**	acceptedSCRole	Accepted role (after negotiation)
+**	ctxID		Unique ID for this presentation context
+**	result
+**	abstarctSyntax
 **
 ** Return Values:
-**  DUL_LISTERROR
+**	DUL_LISTERROR
 **
 **
 ** Notes:
-**  The transfer syntax argument allows the caller to specify one
-**  or more transfer syntaxes.  The function expects the caller to
-**  terminate the set of transfer syntaxes with a NULL pointer.
+**	The transfer syntax argument allows the caller to specify one
+**	or more transfer syntaxes.  The function expects the caller to
+**	terminate the set of transfer syntaxes with a NULL pointer.
 **
-**  Transfer syntaxes of 0 length are not considered an error and/but
-**  are ignored.
+**	Transfer syntaxes of 0 length are not considered an error and/but
+**	are ignored.
 **
 ** Algorithm:
-**  Description of the algorithm (optional) and any other notes.
+**	Description of the algorithm (optional) and any other notes.
 */
 
 OFCondition
 DUL_MakePresentationCtx(DUL_PRESENTATIONCONTEXT ** ctx,
-             DUL_SC_ROLE proposedSCRole, DUL_SC_ROLE acceptedSCRole,
-              DUL_PRESENTATIONCONTEXTID ctxID, unsigned char result,
-            const char *abstractSyntax, const char *transferSyntax,...)
+		     DUL_SC_ROLE proposedSCRole, DUL_SC_ROLE acceptedSCRole,
+		      DUL_PRESENTATIONCONTEXTID ctxID, unsigned char result,
+			const char *abstractSyntax, const char *transferSyntax,...)
 {
     va_list
-    args;
+	args;
     LST_HEAD
-    * lst;
+	* lst;
     DUL_TRANSFERSYNTAX
-    * transfer;
+	* transfer;
 
     *ctx = (DUL_PRESENTATIONCONTEXT *) malloc(sizeof(**ctx));
     if (*ctx == NULL) return EC_MemoryExhausted;
@@ -125,19 +132,19 @@ DUL_MakePresentationCtx(DUL_PRESENTATIONCONTEXT ** ctx,
     (*ctx)->result = result;
     (*ctx)->proposedSCRole = proposedSCRole;
     (*ctx)->acceptedSCRole = acceptedSCRole;
-    OFStandard::strlcpy((*ctx)->abstractSyntax, abstractSyntax, sizeof((*ctx)->abstractSyntax));
+    strcpy((*ctx)->abstractSyntax, abstractSyntax);
 
     va_start(args, transferSyntax);
-    OFStandard::strlcpy((*ctx)->acceptedTransferSyntax, transferSyntax, sizeof((*ctx)->acceptedTransferSyntax));
+    strcpy((*ctx)->acceptedTransferSyntax, transferSyntax);
     while ((transferSyntax = va_arg(args, char *)) != NULL)
     {
-    if (strlen(transferSyntax) != 0)
-    {
-        transfer = (DUL_TRANSFERSYNTAX*)malloc(sizeof(DUL_TRANSFERSYNTAX));
-        if (transfer == NULL) return EC_MemoryExhausted;
-        OFStandard::strlcpy(transfer->transferSyntax, transferSyntax, sizeof(transfer->transferSyntax));
-        LST_Enqueue(&lst, (LST_NODE*)transfer);
-    }
+	if (strlen(transferSyntax) != 0)
+	{
+	    transfer = (DUL_TRANSFERSYNTAX*)malloc(sizeof(DUL_TRANSFERSYNTAX));
+	    if (transfer == NULL) return EC_MemoryExhausted;
+	    strcpy(transfer->transferSyntax, transferSyntax);
+	    LST_Enqueue(&lst, (LST_NODE*)transfer);
+	}
     }
     va_end(args);
     (*ctx)->proposedTransferSyntax = lst;

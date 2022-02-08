@@ -224,7 +224,6 @@ emit_dac (j_compress_ptr cinfo)
 /* Since the useful info is so small, we want to emit all the tables in */
 /* one DAC marker.  Therefore this routine does its own scan of the table. */
 {
-  (void)cinfo;
 #ifdef C_ARITH_CODING_SUPPORTED
   char dc_in_use[NUM_ARITH_TBLS];
   char ac_in_use[NUM_ARITH_TBLS];
@@ -547,7 +546,7 @@ write_frame_header (j_compress_ptr cinfo)
       emit_sof(cinfo, M_SOF2);	/* SOF code for progressive Huffman */
     else if (cinfo->process == JPROC_LOSSLESS)
       emit_sof(cinfo, M_SOF3);	/* SOF code for lossless Huffman */
-    else if (is_baseline && (!cinfo->force_extended_sequential_marker))
+    else if (is_baseline)
       emit_sof(cinfo, M_SOF0);	/* SOF code for baseline implementation */
     else
       emit_sof(cinfo, M_SOF1);	/* SOF code for non-baseline Huffman file */

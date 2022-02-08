@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTReferencedStudySequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -83,8 +83,8 @@ OFCondition DRTReferencedStudySequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, ReferencedSOPClassUID, "1", "1", "ReferencedStudySequence");
-        getAndCheckElementFromDataset(item, ReferencedSOPInstanceUID, "1", "1", "ReferencedStudySequence");
+        getAndCheckElementFromDataset(item, ReferencedSOPClassUID, "1", "1C", "ReferencedStudySequence");
+        getAndCheckElementFromDataset(item, ReferencedSOPInstanceUID, "1", "1C", "ReferencedStudySequence");
         result = EC_Normal;
     }
     return result;
@@ -97,8 +97,8 @@ OFCondition DRTReferencedStudySequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPClassUID), "1", "1", "ReferencedStudySequence");
-        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPInstanceUID), "1", "1", "ReferencedStudySequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPClassUID), "1", "1C", "ReferencedStudySequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPInstanceUID), "1", "1C", "ReferencedStudySequence");
     }
     return result;
 }
@@ -251,7 +251,7 @@ OFBool DRTReferencedStudySequence::isValid() const
 }
 
 
-size_t DRTReferencedStudySequence::getNumberOfItems() const
+unsigned long DRTReferencedStudySequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -281,12 +281,12 @@ OFCondition DRTReferencedStudySequence::gotoNextItem()
 }
 
 
-OFCondition DRTReferencedStudySequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTReferencedStudySequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -301,12 +301,12 @@ OFCondition DRTReferencedStudySequence::gotoItem(const size_t num, OFListIterato
 }
 
 
-OFCondition DRTReferencedStudySequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTReferencedStudySequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -321,7 +321,7 @@ OFCondition DRTReferencedStudySequence::gotoItem(const size_t num, OFListConstIt
 }
 
 
-OFCondition DRTReferencedStudySequence::gotoItem(const size_t num)
+OFCondition DRTReferencedStudySequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -357,7 +357,7 @@ const DRTReferencedStudySequence::Item &DRTReferencedStudySequence::getCurrentIt
 }
 
 
-OFCondition DRTReferencedStudySequence::getItem(const size_t num, Item *&item)
+OFCondition DRTReferencedStudySequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -367,7 +367,7 @@ OFCondition DRTReferencedStudySequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTReferencedStudySequence::Item &DRTReferencedStudySequence::getItem(const size_t num)
+DRTReferencedStudySequence::Item &DRTReferencedStudySequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -377,7 +377,7 @@ DRTReferencedStudySequence::Item &DRTReferencedStudySequence::getItem(const size
 }
 
 
-const DRTReferencedStudySequence::Item &DRTReferencedStudySequence::getItem(const size_t num) const
+const DRTReferencedStudySequence::Item &DRTReferencedStudySequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -387,13 +387,13 @@ const DRTReferencedStudySequence::Item &DRTReferencedStudySequence::getItem(cons
 }
 
 
-DRTReferencedStudySequence::Item &DRTReferencedStudySequence::operator[](const size_t num)
+DRTReferencedStudySequence::Item &DRTReferencedStudySequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTReferencedStudySequence::Item &DRTReferencedStudySequence::operator[](const size_t num) const
+const DRTReferencedStudySequence::Item &DRTReferencedStudySequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -416,7 +416,7 @@ OFCondition DRTReferencedStudySequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTReferencedStudySequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTReferencedStudySequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -439,7 +439,7 @@ OFCondition DRTReferencedStudySequence::insertItem(const size_t pos, Item *&item
 }
 
 
-OFCondition DRTReferencedStudySequence::removeItem(const size_t pos)
+OFCondition DRTReferencedStudySequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

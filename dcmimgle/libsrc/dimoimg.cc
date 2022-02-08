@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2021 OFFIS e.V.
+ *  Copyright (C) 1996-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -36,6 +36,10 @@
 #include "dcmtk/dcmimgle/didocu.h"
 #include "dcmtk/dcmimgle/diutils.h"
 #include "dcmtk/dcmimgle/diregbas.h"
+
+#define INCLUDE_CMATH
+#include "dcmtk/ofstd/ofstdinc.h"
+
 
 /*---------------------*
  *  const definitions  *
@@ -530,6 +534,36 @@ DiMonoImage::DiMonoImage(const DiMonoImage *image,
         VoiLutData->addReference();
     if (PresLutData != NULL)
         PresLutData->addReference();
+}
+
+
+/*
+ *   this implementation is necessary to avoid linker errors on NeXTSTEP (gcc 2.5.8)
+ */
+
+DiMonoImage::DiMonoImage(const DiMonoImage &)
+  : DiImage(NULL),
+    WindowCenter(0),
+    WindowWidth(0),
+    WindowCount(0),
+    VoiLutCount(0),
+    ValidWindow(0),
+    VoiExplanation(),
+    VoiLutFunction(EFV_Default),
+    PresLutShape(ESP_Default),
+    MinDensity(Default_MinDensity),
+    MaxDensity(Default_MaxDensity),
+    Reflection(Default_Reflection),
+    Illumination(Default_Illumination),
+    VoiLutData(NULL),
+    PresLutData(NULL),
+    InterData(NULL),
+    DisplayFunction(NULL),
+    OutputData(NULL),
+    OverlayData(NULL)
+{
+    DCMIMGLE_FATAL("using unimplemented copy constructor in class DiMonoImage ... aborting");
+    abort();
 }
 
 
@@ -1640,7 +1674,7 @@ unsigned long DiMonoImage::createDIB(void *&data,
         if ((OutputData != NULL) && (OutputData->getData() != NULL))
         {
             const signed long nextRow = (upsideDown) ? -2 * OFstatic_cast(signed long, Columns) : 0;
-            const Uint8 *p = OFstatic_cast(const Uint8 *, OutputData->getData()) + ((upsideDown) ?
+            register const Uint8 *p = OFstatic_cast(const Uint8 *, OutputData->getData()) + ((upsideDown) ?
                 OFstatic_cast(unsigned long, Rows - 1) * OFstatic_cast(unsigned long, Columns) : 0);
             if (bits == 8)                                  // -- for idx color model (byte)
             {
@@ -1655,9 +1689,9 @@ unsigned long DiMonoImage::createDIB(void *&data,
                             data = new Uint8[count];            // allocated memory buffer
                         if (data != NULL)
                         {
-                            Uint8 *q = OFstatic_cast(Uint8 *, data);
-                            Uint16 x;
-                            Uint16 y;
+                            register Uint8 *q = OFstatic_cast(Uint8 *, data);
+                            register Uint16 x;
+                            register Uint16 y;
                             for (y = Rows; y != 0; --y)
                             {
                                 for (x = Columns; x != 0; --x)
@@ -1686,11 +1720,11 @@ unsigned long DiMonoImage::createDIB(void *&data,
                         data = new Uint8[count];               // allocated memory buffer
                     if (data != NULL)
                     {
-                        Uint8 *q = OFstatic_cast(Uint8 *, data);
-                        Uint8 value;
-                        Uint16 x;
-                        Uint16 y;
-                        int j;
+                        register Uint8 *q = OFstatic_cast(Uint8 *, data);
+                        register Uint8 value;
+                        register Uint16 x;
+                        register Uint16 y;
+                        register int j;
                         for (y = Rows; y != 0; --y)
                         {
                             for (x = Columns; x != 0; --x)
@@ -1715,10 +1749,10 @@ unsigned long DiMonoImage::createDIB(void *&data,
                         data = new Uint32[count];               // allocated memory buffer
                     if (data != NULL)
                     {
-                        Uint32 *q = OFstatic_cast(Uint32 *, data);
-                        Uint32 value;
-                        Uint16 x;
-                        Uint16 y;
+                        register Uint32 *q = OFstatic_cast(Uint32 *, data);
+                        register Uint32 value;
+                        register Uint16 x;
+                        register Uint16 y;
                         for (y = Rows; y != 0; --y)
                         {
                             for (x = Columns; x != 0; --x)
@@ -1770,10 +1804,10 @@ unsigned long DiMonoImage::createAWTBitmap(void *&data,
             data = new Uint32[count];
             if (data != NULL)
             {
-                const Uint8 *p = OFstatic_cast(const Uint8 *, OutputData->getData());
-                Uint32 *q = OFstatic_cast(Uint32 *, data);
-                Uint32 value;
-                unsigned long i;
+                register const Uint8 *p = OFstatic_cast(const Uint8 *, OutputData->getData());
+                register Uint32 *q = OFstatic_cast(Uint32 *, data);
+                register Uint32 value;
+                register unsigned long i;
                 for (i = count; i != 0; --i)
                 {
                     value = *(p++);                     // store gray value
@@ -1814,11 +1848,11 @@ void *DiMonoImage::createPackedBitmap(const void *buffer,
                 data = new Uint16[((count + 1) * stored - 1) / 16];     // create new memory buffer
                 if (data != NULL)
                 {
-                    const Uint16 *p = OFstatic_cast(const Uint16 *, buffer);
-                    Uint16 *q = data;
-                    unsigned long i;
-                    Uint16 value1;
-                    Uint16 value2;
+                    register const Uint16 *p = OFstatic_cast(const Uint16 *, buffer);
+                    register Uint16 *q = data;
+                    register unsigned long i;
+                    register Uint16 value1;
+                    register Uint16 value2;
                     for (i = 0; i < count - 3; i += 4)                  // make 3 items out of 4
                     {
                         value1 = *(p++);
@@ -1867,7 +1901,7 @@ DiImage *DiMonoImage::createOutputImage(const unsigned long frame,
     if ((OutputData != NULL) && (OutputData->getData() != NULL))
     {
 
-        DiImage *image = new DiMono2Image(this, OutputData, frame, bits, OFstatic_cast(int, OutputData->getItemSize() * 8));
+        DiImage *image = new DiMono2Image(this, OutputData, frame, bits, OutputData->getItemSize() * 8);
         if (image != NULL)
             OutputData->removeDataReference();              // output data is now handled by new mono image
         return image;
@@ -1901,7 +1935,7 @@ int DiMonoImage::createLinODPresentationLut(const unsigned long count, const int
                 *(p++) = OFstatic_cast(Uint16, (DiGSDFunction::getJNDIndex(la + l0 *
                     pow(OFstatic_cast(double, 10), -(dmin + OFstatic_cast(double, i) * density))) - jmin) * factor);
             }
-            PresLutData = new DiLookupTable(data, count, OFstatic_cast(const Uint16, bits));
+            PresLutData = new DiLookupTable(data, count, bits);
             return (PresLutData != NULL) && (PresLutData->isValid());
         }
     }
@@ -1985,12 +2019,10 @@ int DiMonoImage::writeImageToDataset(DcmItem &dataset,
             /* set image resolution */
             dataset.putAndInsertUint16(DCM_Columns, Columns);
             dataset.putAndInsertUint16(DCM_Rows, Rows);
-#ifdef PRIu32
-            sprintf(numBuf, "%" PRIu32, NumberOfFrames);
-#elif SIZEOF_LONG == 8
-            sprintf(numBuf, "%u", NumberOfFrames);
+#if SIZEOF_LONG == 8
+            sprintf(numBuf, "%d", NumberOfFrames);
 #else
-            sprintf(numBuf, "%lu", NumberOfFrames);
+            sprintf(numBuf, "%ld", NumberOfFrames);
 #endif
             dataset.putAndInsertString(DCM_NumberOfFrames, numBuf);
             dataset.putAndInsertUint16(DCM_SamplesPerPixel, 1);
@@ -2028,8 +2060,8 @@ int DiMonoImage::writeImageToDataset(DcmItem &dataset,
                     dataset.putAndInsertUint16Array(DCM_PixelData, OFstatic_cast(const Uint16 *, pixel), count * 2 /*double-words*/);
                     break;
             }
-            dataset.putAndInsertUint16(DCM_BitsStored, OFstatic_cast(Uint16, bits));
-            dataset.putAndInsertUint16(DCM_HighBit, OFstatic_cast(Uint16, (bits - 1)));
+            dataset.putAndInsertUint16(DCM_BitsStored, bits);
+            dataset.putAndInsertUint16(DCM_HighBit, bits - 1);
             /* update other DICOM attributes */
             updateImagePixelModuleAttributes(dataset);
             result = 1;
@@ -2111,10 +2143,9 @@ int DiMonoImage::writeRawPPM(FILE *stream,
                 fprintf(stream, "P6\n%u %u\n255\n", Columns, Rows);
             else
                 fprintf(stream, "P5\n%u %u\n%lu\n", Columns, Rows, DicomImageClass::maxval(bits));
-            const size_t count = OFstatic_cast(size_t, OutputData->getCount());
-            int ok = (fwrite(OutputData->getData(), OutputData->getItemSize(), count, stream) == count) ? 1 : 0;
+            fwrite(OutputData->getData(), OFstatic_cast(size_t, OutputData->getCount()), OutputData->getItemSize(), stream);
             deleteOutputData();
-            return ok;
+            return 1;
         }
     }
     return 0;

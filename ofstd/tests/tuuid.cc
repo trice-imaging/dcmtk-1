@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2021, OFFIS e.V.
+ *  Copyright (C) 2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,6 +25,10 @@
 #define OFTEST_OFSTD_ONLY
 #include "dcmtk/ofstd/oftest.h"
 #include "dcmtk/ofstd/ofuuid.h"
+
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"     /* needed for memcmp() */
+
 
 OFTEST(ofstd_OFUUID_1)
 {

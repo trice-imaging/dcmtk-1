@@ -33,10 +33,6 @@
 #include "dcmtk/oflog/streams.h"
 #include <sstream>
 
-#ifdef __MINGW32__
-#include <winerror.h> /* needed for NO_ERROR constant on MinGW */
-#endif
-
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 
@@ -119,7 +115,7 @@ Win32ConsoleAppender::write_handle (void * outvoid, tchar const * s,
     size_t str_len)
 {
     HANDLE out = OFstatic_cast(HANDLE, outvoid);
-#if defined (DCMTK_OFLOG_UNICODE)
+#if defined (UNICODE)
     STD_NAMESPACE wstring wstr (s, str_len);
     STD_NAMESPACE string str (helpers::tostring (wstr));
     str_len = str.size ();

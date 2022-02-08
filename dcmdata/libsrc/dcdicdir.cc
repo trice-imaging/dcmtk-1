@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,6 +21,13 @@
 
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CERRNO
+#define INCLUDE_LIBC
+#define INCLUDE_UNISTD
+#include "dcmtk/ofstd/ofstdinc.h"
 
 #ifdef HAVE_UNIX_H
 #if defined(macintosh) && defined (HAVE_WINSOCK_H)
@@ -388,20 +395,10 @@ OFCondition DcmDicomDir::moveRecordToTree( DcmDirectoryRecord *startRec,
         l_error = EC_IllegalCall;
     else
     {
-        while ( (startRec != NULL) && l_error.good() )
+        while ( startRec != NULL )
         {
             DcmDirectoryRecord *lowerRec = NULL;
             DcmDirectoryRecord *nextRec = NULL;
-
-            // check whether directory record is really part of the given sequence:
-            if (&fromDirSQ != startRec->getParent())
-            {
-                DCMDATA_ERROR("DcmDicomDir: Record with offset=" << startRec->getFileOffset()
-                    << " is referenced more than once, ignoring later reference");
-                l_error = EC_InvalidDICOMDIR;
-                // exit the while loop
-                break;
-            }
 
             DcmUnsignedLongOffset *offElem;
             offElem = lookForOffsetElem( startRec, DCM_OffsetOfReferencedLowerLevelDirectoryEntity );
@@ -411,8 +408,8 @@ OFCondition DcmDicomDir::moveRecordToTree( DcmDirectoryRecord *startRec,
             if ( offElem != NULL )
                 nextRec = OFstatic_cast(DcmDirectoryRecord *, offElem->getNextRecord());
 
-            DCMDATA_TRACE("DcmDicomDir::moveRecordToTree() Record with"
-                << " offset=" << startRec->getFileOffset()
+            DCMDATA_TRACE("DcmDicomDir::moveRecordToTree() Record "
+                << startRec->getTag()
                 << " p=" << OFstatic_cast(void *, startRec)
                 << " has lower=" << OFstatic_cast(void *, lowerRec)
                 << " and next=" << OFstatic_cast(void *, nextRec) << " Record");
@@ -426,17 +423,14 @@ OFCondition DcmDicomDir::moveRecordToTree( DcmDirectoryRecord *startRec,
                 DcmItem *dit = fromDirSQ.remove( startRec );
                 if ( dit == NULL )
                 {
-                    DCMDATA_ERROR("DcmDicomDir: Record with offset=" << startRec->getFileOffset()
-                        << " is part of unknown Sequence");
+                    DCMDATA_ERROR("DcmDicomDir::moveRecordToTree() DirRecord is part of unknown Sequence");
                 }
             }
             else
             {
                 DCMDATA_ERROR("DcmDicomDir::moveRecordToTree() Cannot insert DirRecord (=NULL?)");
             }
-
-            // recursively call this method for next lower level:
-            l_error = moveRecordToTree( lowerRec, fromDirSQ, startRec );
+            moveRecordToTree( lowerRec, fromDirSQ, startRec );
 
             // We handled this record, now move on to the next one on this level.
             // The next while-loop iteration does the equivalent of the following:
@@ -481,7 +475,6 @@ OFCondition DcmDicomDir::convertLinearToTree()
 {
     DcmDataset &dset = getDataset();    // guaranteed to exist
     DcmSequenceOfItems &localDirRecSeq = getDirRecSeq( dset );
-    // currently, always returns EC_Normal
     OFCondition l_error = resolveAllOffsets( dset );
 
     // search for first directory record:
@@ -491,17 +484,15 @@ OFCondition DcmDicomDir::convertLinearToTree()
         firstRootRecord = OFstatic_cast(DcmDirectoryRecord *, offElem->getNextRecord());
 
     // create tree structure from flat record list:
-    l_error = moveRecordToTree( firstRootRecord, localDirRecSeq, &getRootRecord() );
+    moveRecordToTree( firstRootRecord, localDirRecSeq, &getRootRecord() );
 
-    if (l_error.good())
-    {
-        // move MRDRs from localDirRecSeq to global MRDRSeq:
-        moveMRDRbetweenSQs( localDirRecSeq, getMRDRSequence() );
+    // move MRDRs from localDirRecSeq to global MRDRSeq:
+    moveMRDRbetweenSQs( localDirRecSeq, getMRDRSequence() );
 
-        // dissolve MRDR references for all remaining items
-        for (unsigned long i = localDirRecSeq.card(); i > 0; i-- )
-            linkMRDRtoRecord( OFstatic_cast(DcmDirectoryRecord *, localDirRecSeq.getItem(i-1)) );
-    }
+    // dissolve MRDR references for all remaining items
+    for (unsigned long i = localDirRecSeq.card(); i > 0; i-- )
+        linkMRDRtoRecord( OFstatic_cast(DcmDirectoryRecord *, localDirRecSeq.getItem(i-1)) );
+
     return l_error;
 }
 
@@ -787,7 +778,7 @@ OFCondition DcmDicomDir::insertMediaSOPUID( DcmMetaInfo &metaInfo )  // inout
 // ********************************
 
 
-void DcmDicomDir::print(STD_NAMESPACE ostream &out,
+void DcmDicomDir::print(STD_NAMESPACE ostream&out,
                         const size_t flags,
                         const int level,
                         const char *pixelFileName,
@@ -1023,12 +1014,10 @@ OFCondition DcmDicomDir::write(const E_TransferSyntax oxfer,
     DcmTag unresSeqTag(DCM_DirectoryRecordSequence);
     DcmSequenceOfItems localUnresRecs(unresSeqTag);
 
-    // insert Media Storage SOP Class UID
+    // insert Media Stored SOP Class UID
     insertMediaSOPUID(metainfo);
 
-    // add missing information such as Media Storage SOP Instance UID,
-    // but do not overwrite the value of Media Storage SOP Class UID
-    getDirFileFormat().validateMetaInfo(outxfer, EWM_fileformat);
+    getDirFileFormat().validateMetaInfo(outxfer);
 
     {
         // it is important that the cache object is destroyed before the file is renamed!
@@ -1064,23 +1053,29 @@ OFCondition DcmDicomDir::write(const E_TransferSyntax oxfer,
         {
             if (!OFStandard::renameFile(dicomDirFileName, backupFilename))
             {
-                OFString buffer = OFStandard::getLastSystemErrorCode().message();
-                errorFlag = makeOFCondition(OFM_dcmdata, 19, OF_error, buffer.c_str());
+                char buf[256];
+                const char *text = OFStandard::strerror(errno, buf, sizeof(buf));
+                if (text == NULL) text = "(unknown error code)";
+                errorFlag = makeOFCondition(OFM_dcmdata, 19, OF_error, text);
             }
         }
 #else
         if (!OFStandard::deleteFile(dicomDirFileName))
         {
-            OFString buffer = OFStandard::getLastSystemErrorCode().message();
-            errorFlag = makeOFCondition(OFM_dcmdata, 19, OF_error, buffer.c_str());
+            char buf[256];
+            const char *text = OFStandard::strerror(errno, buf, sizeof(buf));
+            if (text == NULL) text = "(unknown error code)";
+            errorFlag = makeOFCondition(OFM_dcmdata, 19, OF_error, text);
         }
 #endif
     }
 
     if (errorFlag == EC_Normal && !OFStandard::renameFile(tempFilename, dicomDirFileName))
     {
-        OFString buffer = OFStandard::getLastSystemErrorCode().message();
-        errorFlag = makeOFCondition(OFM_dcmdata, 19, OF_error, buffer.c_str());
+        char buf[256];
+        const char *text = OFStandard::strerror(errno, buf, sizeof(buf));
+        if (text == NULL) text = "(unknown error code)";
+        errorFlag = makeOFCondition(OFM_dcmdata, 19, OF_error, text);
     }
 
     modified = OFFalse;

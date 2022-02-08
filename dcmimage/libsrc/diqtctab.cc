@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2021, OFFIS e.V.
+ *  Copyright (C) 2002-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -31,9 +31,9 @@
 #include "dcmtk/dcmdata/dcswap.h"    /* for swapIfNecessary() */
 #include "dcmtk/dcmdata/dcdeftag.h"  /* for tag constants */
 #include "dcmtk/dcmdata/dcuid.h"     /* for OFFIS_DCMTK_VERSION */
-#include "dcmtk/ofstd/ofdiag.h"      /* for DCMTK_DIAGNOSTIC macros */
 
-#include DCMTK_DIAGNOSTIC_IGNORE_CONST_EXPRESSION_WARNING
+#define INCLUDE_CSTDIO
+#include "dcmtk/ofstd/ofstdinc.h"
 
 /* ------------------------------------------------------------ */
 
@@ -140,8 +140,8 @@ OFCondition DcmQuantColorTable::medianCut(
   for (unsigned int xx=0; xx < numberOfColors; xx++) array[xx] = new DcmQuantHistogramItem();
   numColors = numberOfColors;
 
-  int i;
-  unsigned int bi;
+  register int i;
+  register unsigned int bi;
   DcmQuantPixelBoxArray bv(numberOfColors);
 
   // Set up the initial box.
@@ -153,9 +153,9 @@ OFCondition DcmQuantColorTable::medianCut(
   // Main loop: split boxes until we have enough.
   while ( boxes < numberOfColors )
   {
-      int indx, clrs;
+      register int indx, clrs;
       unsigned long sm;
-      int minr, maxr, ming, maxg, minb, maxb, v;
+      register int minr, maxr, ming, maxg, minb, maxb, v;
       unsigned long halfsum, lowersum;
 
       // Find the first splittable box.
@@ -206,13 +206,13 @@ OFCondition DcmQuantColorTable::medianCut(
           double rl, gl, bl;
           DcmQuantPixel p;
 
-          p.assign(OFstatic_cast(DcmQuantComponent, (maxr - minr)), 0, 0);
+          p.assign(maxr - minr, 0, 0);
           rl = p.luminance();
 
-          p.assign(0, OFstatic_cast(DcmQuantComponent, (maxg - ming)), 0);
+          p.assign(0, maxg - ming, 0);
           gl = p.luminance();
 
-          p.assign(0, 0, OFstatic_cast(DcmQuantComponent, (maxb - minb)));
+          p.assign(0, 0, maxb - minb);
           bl = p.luminance();
 
           if ( rl >= gl && rl >= bl )
@@ -258,9 +258,9 @@ OFCondition DcmQuantColorTable::medianCut(
   {
       for ( bi = 0; bi < boxes; ++bi )
       {
-          int indx = bv[bi].ind;
-          int clrs = bv[bi].colors;
-          int minr, maxr, ming, maxg, minb, maxb, v;
+          register int indx = bv[bi].ind;
+          register int clrs = bv[bi].colors;
+          register int minr, maxr, ming, maxg, minb, maxb, v;
 
           minr = maxr = histogram.array[indx]->getRed();
           ming = maxg = histogram.array[indx]->getGreen();
@@ -277,16 +277,16 @@ OFCondition DcmQuantColorTable::medianCut(
               minb = (minb < v ? minb : v);
               maxb = (minb > v ? minb : v);
           }
-          array[bi]->assign(OFstatic_cast(DcmQuantComponent, (( minr + maxr ) / 2)), OFstatic_cast(DcmQuantComponent, (( ming + maxg ) / 2)), OFstatic_cast(DcmQuantComponent, (( minb + maxb ) / 2)));
+          array[bi]->assign(( minr + maxr ) / 2, ( ming + maxg ) / 2, ( minb + maxb ) / 2);
       }
   }
   else if (repType == DcmRepresentativeColorType_default)
   {
       for ( bi = 0; bi < boxes; ++bi )
       {
-          int indx = bv[bi].ind;
-          int clrs = bv[bi].colors;
-          long r = 0, g = 0, b = 0;
+          register int indx = bv[bi].ind;
+          register int clrs = bv[bi].colors;
+          register long r = 0, g = 0, b = 0;
 
           for ( i = 0; i < clrs; ++i )
           {
@@ -304,9 +304,9 @@ OFCondition DcmQuantColorTable::medianCut(
   {
       for ( bi = 0; bi < boxes; ++bi )
       {
-          int indx = bv[bi].ind;
-          int clrs = bv[bi].colors;
-          unsigned long r = 0, g = 0, b = 0, sumVal = 0;
+          register int indx = bv[bi].ind;
+          register int clrs = bv[bi].colors;
+          register unsigned long r = 0, g = 0, b = 0, sumVal = 0;
 
           for ( i = 0; i < clrs; ++i )
           {

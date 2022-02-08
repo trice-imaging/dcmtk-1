@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTFractionGroupSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -21,7 +21,6 @@
 
 DRTFractionGroupSequence::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
-    BeamDoseMeaning(DCM_BeamDoseMeaning),
     FractionGroupDescription(DCM_FractionGroupDescription),
     FractionGroupNumber(DCM_FractionGroupNumber),
     FractionPattern(DCM_FractionPattern),
@@ -40,7 +39,6 @@ DRTFractionGroupSequence::Item::Item(const OFBool emptyDefaultItem)
 
 DRTFractionGroupSequence::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
-    BeamDoseMeaning(copy.BeamDoseMeaning),
     FractionGroupDescription(copy.FractionGroupDescription),
     FractionGroupNumber(copy.FractionGroupNumber),
     FractionPattern(copy.FractionPattern),
@@ -67,7 +65,6 @@ DRTFractionGroupSequence::Item &DRTFractionGroupSequence::Item::operator=(const 
     if (this != &copy)
     {
         EmptyDefaultItem = copy.EmptyDefaultItem;
-        BeamDoseMeaning = copy.BeamDoseMeaning;
         FractionGroupDescription = copy.FractionGroupDescription;
         FractionGroupNumber = copy.FractionGroupNumber;
         FractionPattern = copy.FractionPattern;
@@ -98,7 +95,6 @@ void DRTFractionGroupSequence::Item::clear()
         NumberOfFractionPatternDigitsPerDay.clear();
         RepeatFractionCycleLength.clear();
         FractionPattern.clear();
-        BeamDoseMeaning.clear();
         NumberOfBeams.clear();
         ReferencedBeamSequence.clear();
         NumberOfBrachyApplicationSetups.clear();
@@ -117,7 +113,6 @@ OFBool DRTFractionGroupSequence::Item::isEmpty()
            NumberOfFractionPatternDigitsPerDay.isEmpty() &&
            RepeatFractionCycleLength.isEmpty() &&
            FractionPattern.isEmpty() &&
-           BeamDoseMeaning.isEmpty() &&
            NumberOfBeams.isEmpty() &&
            ReferencedBeamSequence.isEmpty() &&
            NumberOfBrachyApplicationSetups.isEmpty() &&
@@ -146,7 +141,6 @@ OFCondition DRTFractionGroupSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, NumberOfFractionPatternDigitsPerDay, "1", "3", "FractionGroupSequence");
         getAndCheckElementFromDataset(item, RepeatFractionCycleLength, "1", "3", "FractionGroupSequence");
         getAndCheckElementFromDataset(item, FractionPattern, "1", "3", "FractionGroupSequence");
-        getAndCheckElementFromDataset(item, BeamDoseMeaning, "1", "3", "FractionGroupSequence");
         getAndCheckElementFromDataset(item, NumberOfBeams, "1", "1", "FractionGroupSequence");
         ReferencedBeamSequence.read(item, "1-n", "1C", "FractionGroupSequence");
         getAndCheckElementFromDataset(item, NumberOfBrachyApplicationSetups, "1", "1", "FractionGroupSequence");
@@ -171,22 +165,12 @@ OFCondition DRTFractionGroupSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmIntegerString(NumberOfFractionPatternDigitsPerDay), "1", "3", "FractionGroupSequence");
         addElementToDataset(result, item, new DcmIntegerString(RepeatFractionCycleLength), "1", "3", "FractionGroupSequence");
         addElementToDataset(result, item, new DcmLongText(FractionPattern), "1", "3", "FractionGroupSequence");
-        addElementToDataset(result, item, new DcmCodeString(BeamDoseMeaning), "1", "3", "FractionGroupSequence");
         addElementToDataset(result, item, new DcmIntegerString(NumberOfBeams), "1", "1", "FractionGroupSequence");
         if (result.good()) result = ReferencedBeamSequence.write(item, "1-n", "1C", "FractionGroupSequence");
         addElementToDataset(result, item, new DcmIntegerString(NumberOfBrachyApplicationSetups), "1", "1", "FractionGroupSequence");
         if (result.good()) result = ReferencedBrachyApplicationSetupSequence.write(item, "1-n", "1C", "FractionGroupSequence");
     }
     return result;
-}
-
-
-OFCondition DRTFractionGroupSequence::Item::getBeamDoseMeaning(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(BeamDoseMeaning, value, pos);
 }
 
 
@@ -313,19 +297,6 @@ OFCondition DRTFractionGroupSequence::Item::getRepeatFractionCycleLength(Sint32 
         return EC_IllegalCall;
     else
         return OFconst_cast(DcmIntegerString &, RepeatFractionCycleLength).getSint32(value, pos);
-}
-
-
-OFCondition DRTFractionGroupSequence::Item::setBeamDoseMeaning(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = BeamDoseMeaning.putOFStringArray(value);
-    }
-    return result;
 }
 
 
@@ -536,7 +507,7 @@ OFBool DRTFractionGroupSequence::isValid() const
 }
 
 
-size_t DRTFractionGroupSequence::getNumberOfItems() const
+unsigned long DRTFractionGroupSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -566,12 +537,12 @@ OFCondition DRTFractionGroupSequence::gotoNextItem()
 }
 
 
-OFCondition DRTFractionGroupSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTFractionGroupSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -586,12 +557,12 @@ OFCondition DRTFractionGroupSequence::gotoItem(const size_t num, OFListIterator(
 }
 
 
-OFCondition DRTFractionGroupSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTFractionGroupSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -606,7 +577,7 @@ OFCondition DRTFractionGroupSequence::gotoItem(const size_t num, OFListConstIter
 }
 
 
-OFCondition DRTFractionGroupSequence::gotoItem(const size_t num)
+OFCondition DRTFractionGroupSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -642,7 +613,7 @@ const DRTFractionGroupSequence::Item &DRTFractionGroupSequence::getCurrentItem()
 }
 
 
-OFCondition DRTFractionGroupSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTFractionGroupSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -652,7 +623,7 @@ OFCondition DRTFractionGroupSequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTFractionGroupSequence::Item &DRTFractionGroupSequence::getItem(const size_t num)
+DRTFractionGroupSequence::Item &DRTFractionGroupSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -662,7 +633,7 @@ DRTFractionGroupSequence::Item &DRTFractionGroupSequence::getItem(const size_t n
 }
 
 
-const DRTFractionGroupSequence::Item &DRTFractionGroupSequence::getItem(const size_t num) const
+const DRTFractionGroupSequence::Item &DRTFractionGroupSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -672,13 +643,13 @@ const DRTFractionGroupSequence::Item &DRTFractionGroupSequence::getItem(const si
 }
 
 
-DRTFractionGroupSequence::Item &DRTFractionGroupSequence::operator[](const size_t num)
+DRTFractionGroupSequence::Item &DRTFractionGroupSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTFractionGroupSequence::Item &DRTFractionGroupSequence::operator[](const size_t num) const
+const DRTFractionGroupSequence::Item &DRTFractionGroupSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -701,7 +672,7 @@ OFCondition DRTFractionGroupSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTFractionGroupSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTFractionGroupSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -724,7 +695,7 @@ OFCondition DRTFractionGroupSequence::insertItem(const size_t pos, Item *&item)
 }
 
 
-OFCondition DRTFractionGroupSequence::removeItem(const size_t pos)
+OFCondition DRTFractionGroupSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

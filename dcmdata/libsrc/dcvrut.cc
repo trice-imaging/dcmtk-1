@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2018, OFFIS e.V.
+ *  Copyright (C) 1998-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -16,6 +16,7 @@
  *  Author:  Andrew Hewett
  *
  *  Purpose: Implementation of class DcmUnlimitedText
+ *           Value Representation UT is defined in Correction Proposal 101
  *
  */
 
@@ -54,41 +55,6 @@ DcmUnlimitedText &DcmUnlimitedText::operator=(const DcmUnlimitedText &obj)
 }
 
 
-int DcmUnlimitedText::compare(const DcmElement& rhs) const
-{
-    int result = DcmElement::compare(rhs);
-    if (result != 0)
-    {
-        return result;
-    }
-
-    /* cast away constness (dcmdata is not const correct...) */
-    DcmUnlimitedText* myThis = NULL;
-    DcmUnlimitedText* myRhs = NULL;
-    myThis = OFconst_cast(DcmUnlimitedText*, this);
-    myRhs = OFstatic_cast(DcmUnlimitedText*, OFconst_cast(DcmElement*, &rhs));
-
-    /* compare length */
-    unsigned long thisLength = myThis->getLength();
-    unsigned long rhsLength = myRhs->getLength();
-    if (thisLength < rhsLength)
-    {
-        return -1;
-    }
-    else if (thisLength > rhsLength)
-    {
-        return 1;
-    }
-
-    /* check whether values are equal */
-    OFString thisValue, rhsValue;
-    myThis->getOFStringArray(thisValue);
-    myThis->getOFStringArray(rhsValue);
-    return thisValue.compare(rhsValue);
-}
-
-
-
 OFCondition DcmUnlimitedText::copyFrom(const DcmObject& rhs)
 {
   if (this != &rhs)
@@ -119,8 +85,7 @@ OFCondition DcmUnlimitedText::checkValue(const OFString & /*vm*/,
     {
         OFString charset;
         /* try to determine the value of the SpecificCharacterSet element */
-        if (getSpecificCharacterSet(charset) == EC_CorruptedData)
-            charset = "UNKNOWN";
+        getSpecificCharacterSet(charset);
         l_error = DcmUnlimitedText::checkStringValue(strVal, charset);
     }
     return l_error;
@@ -151,6 +116,7 @@ OFCondition DcmUnlimitedText::getOFStringArray(OFString &strValue,
 {
     /* get string value without handling the "\" as a delimiter */
     OFCondition l_error = getStringValue(strValue);
+    // leading spaces are significant and backslash is normal character
     if (l_error.good() && normalize)
         normalizeString(strValue, !MULTIPART, !DELETE_LEADING, DELETE_TRAILING);
     return l_error;

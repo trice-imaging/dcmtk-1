@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2020, OFFIS e.V.
+ *  Copyright (C) 1994-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,9 +26,6 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #include "dcmtk/dcmdata/dcchrstr.h"
-
-// forward declarations
-class DcmJsonFormat;
 
 
 /** a class representing the DICOM value representation 'Person Name' (PN)
@@ -89,9 +86,7 @@ class DCMTK_DCMDATA_EXPORT DcmPersonName
      */
     virtual DcmEVR ident() const;
 
-    /** check whether stored value conforms to the VR and to the specified VM.
-     *  Currently, the VR checker only supports ASCII (ISO_IR 6) and Latin-1 (ISO_IR 100).
-     *  All other specific character sets disable the check of the value representation.
+    /** check whether stored value conforms to the VR and to the specified VM
      *  @param vm value multiplicity (according to the data dictionary) to be checked for.
      *    (See DcmElement::checkVM() for a list of valid values.)
      *  @param oldFormat parameter not used for this VR (only for DA, TM)
@@ -177,14 +172,6 @@ class DCMTK_DCMDATA_EXPORT DcmPersonName
      */
     OFCondition writeXML(STD_NAMESPACE ostream &out,
                          const size_t flags = 0);
-
-    /** write object in JSON format
-     *  @param out output stream to which the JSON document is written
-     *  @param format used to format and customize the output
-     *  @return status, EC_Normal if successful, an error code otherwise
-     */
-    virtual OFCondition writeJson(STD_NAMESPACE ostream &out,
-                          DcmJsonFormat &format);
 
     /* --- static helper functions --- */
 
@@ -295,25 +282,11 @@ class DCMTK_DCMDATA_EXPORT DcmPersonName
      *    (See DcmElement::checkVM() for a list of valid values.)
      *  @param charset character set (according to the value of the SpecificCharacterSet
      *    element) to be used for checking the string value. The default is ASCII (7-bit).
-     *    Currently, the VR checker only supports ASCII (ISO_IR 6) and Latin-1 (ISO_IR 100).
-     *    All other values disable the check of the value representation, e.g. "UNKNOWN".
      *  @return status of the check, EC_Normal if value is correct, an error code otherwise
      */
     static OFCondition checkStringValue(const OFString &value,
                                         const OFString &vm = "1-n",
                                         const OFString &charset = "");
-
-protected:
-
-    /** @copydoc DcmCharString::getDelimiterChars()
-     */
-    virtual const OFString& getDelimiterChars() const;
-
-private:
-
-    /** an array containing the component group names, for XML and JSON output.
-     */
-    static const char* const componentGroupNames[3];
 };
 
 

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1999-2021, OFFIS e.V.
+ *  Copyright (C) 1999-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,6 +20,10 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>
+#endif
 
 BEGIN_EXTERN_C
 #ifdef HAVE_FCNTL_H
@@ -42,7 +46,6 @@ END_EXTERN_C
 #include "dcmtk/dcmnet/diutil.h"
 #include "dcmtk/dcmdata/cmdlnarg.h"
 #include "dcmtk/ofstd/ofconapp.h"
-#include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/dcmpstat/dvpshlp.h"     /* for class DVPSHelper */
 #include "dcmtk/dcmqrdb/dcmqrdbi.h"     /* for LOCK_IMAGE_FILES */
 #include "dcmtk/dcmqrdb/dcmqrdbs.h"     /* for DcmQueryRetrieveDatabaseStatus */
@@ -122,9 +125,8 @@ static OFCondition sendImage(T_ASC_Association *assoc, const char *sopClass, con
     /* start store */
     OFBitmanipTemplate<char>::zeroMem((char *)&req, sizeof(req));
     req.MessageID = assoc->nextMsgID++;
-
-    OFStandard::strlcpy(req.AffectedSOPClassUID, sopClass, sizeof(req.AffectedSOPClassUID));
-    OFStandard::strlcpy(req.AffectedSOPInstanceUID, sopInstance, sizeof(req.AffectedSOPInstanceUID));
+    strcpy(req.AffectedSOPClassUID, sopClass);
+    strcpy(req.AffectedSOPInstanceUID, sopInstance);
     req.DataSetType = DIMSE_DATASET_PRESENT;
     req.Priority = DIMSE_PRIORITY_MEDIUM;
 
@@ -251,7 +253,7 @@ static OFCondition sendStudy(
 
     while (dbStatus.status() == STATUS_Pending)
     {
-      cond = handle.nextMoveResponse(sopClass, sizeof(sopClass), sopInstance, sizeof(sopInstance), imgFile, sizeof(imgFile), &nRemaining, &dbStatus);
+      cond = handle.nextMoveResponse(sopClass, sopInstance, imgFile, &nRemaining, &dbStatus);
       if (cond.bad()) return cond;
 
       if (dbStatus.status() == STATUS_Pending)
@@ -307,7 +309,7 @@ static OFCondition addAllStoragePresentationContexts(T_ASC_Parameters *params, i
 
     for (int i=0; i<numberOfDcmLongSCUStorageSOPClassUIDs && cond.good(); i++) {
         cond = ASC_addPresentationContext(
-            params, OFstatic_cast(T_ASC_PresentationContextID, pid), dcmLongSCUStorageSOPClassUIDs[i],
+            params, pid, dcmLongSCUStorageSOPClassUIDs[i],
             transferSyntaxes, transferSyntaxCount);
         pid += 2;       /* only odd presentation context id's */
     }
@@ -322,12 +324,18 @@ static OFCondition addAllStoragePresentationContexts(T_ASC_Parameters *params, i
 
 int main(int argc, char *argv[])
 {
-    OFStandard::initializeNetwork();
-#ifdef WITH_OPENSSL
-    DcmTLSTransportLayer::initializeOpenSSL();
+    OFString temp_str;
+#ifdef HAVE_GUSI_H
+    GUSISetup(GUSIwithSIOUXSockets);
+    GUSISetup(GUSIwithInternetSockets);
 #endif
 
-    OFString temp_str;
+#ifdef HAVE_WINSOCK_H
+    WSAData winSockData;
+    /* we need at least version 1.1 */
+    WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
+    WSAStartup(winSockVersionNeeded, &winSockData);
+#endif
 
     const char *opt_cfgName     = NULL;                /* config file name */
     const char *opt_target      = NULL;                /* send target name */
@@ -371,7 +379,7 @@ int main(int argc, char *argv[])
             COUT << "- ZLIB, Version " << zlibVersion() << OFendl;
 #endif
 #ifdef WITH_OPENSSL
-            COUT << "- " << DcmTLSTransportLayer::getOpenSSLVersionName() << OFendl;
+            COUT << "- " << OPENSSL_VERSION_TEXT << OFendl;
 #endif
             return 0;
          }
@@ -485,9 +493,39 @@ int main(int argc, char *argv[])
     if (tlsCACertificateFolder==NULL) tlsCACertificateFolder = ".";
 
     /* key file format */
-    DcmKeyFileFormat keyFileFormat = DCF_Filetype_PEM;
-    if (! dvi.getTLSPEMFormat()) keyFileFormat = DCF_Filetype_ASN1;
+    int keyFileFormat = SSL_FILETYPE_PEM;
+    if (! dvi.getTLSPEMFormat()) keyFileFormat = SSL_FILETYPE_ASN1;
 
+    /* ciphersuites */
+#if OPENSSL_VERSION_NUMBER >= 0x0090700fL
+    OFString tlsCiphersuites(TLS1_TXT_RSA_WITH_AES_128_SHA ":" SSL3_TXT_RSA_DES_192_CBC3_SHA);
+#else
+    OFString tlsCiphersuites(SSL3_TXT_RSA_DES_192_CBC3_SHA);
+#endif
+    Uint32 tlsNumberOfCiphersuites = dvi.getTargetNumberOfCipherSuites(opt_target);
+    if (tlsNumberOfCiphersuites > 0)
+    {
+      tlsCiphersuites.clear();
+      OFString currentSuite;
+      const char *currentOpenSSL;
+      for (Uint32 ui=0; ui<tlsNumberOfCiphersuites; ui++)
+      {
+        dvi.getTargetCipherSuite(opt_target, ui, currentSuite);
+        if (NULL == (currentOpenSSL = DcmTLSTransportLayer::findOpenSSLCipherSuiteName(currentSuite.c_str())))
+        {
+          OFLOG_FATAL(dcmpssndLogger, "ciphersuite '" << currentSuite << "' is unknown. Known ciphersuites are:");
+          unsigned long numSuites = DcmTLSTransportLayer::getNumberOfCipherSuites();
+          for (unsigned long cs=0; cs < numSuites; cs++)
+          {
+            OFLOG_FATAL(dcmpssndLogger, "    " << DcmTLSTransportLayer::getTLSCipherSuiteName(cs));
+          }
+          return 1;
+        } else {
+          if (!tlsCiphersuites.empty()) tlsCiphersuites += ":";
+          tlsCiphersuites += currentOpenSSL;
+        }
+      }
+    }
 #else
     if (useTLS)
     {
@@ -524,7 +562,10 @@ int main(int argc, char *argv[])
 
     if (targetDisableNewVRs)
     {
-        dcmDisableGenerationOfNewVRs();
+      dcmEnableUnknownVRGeneration.set(OFFalse);
+      dcmEnableUnlimitedTextVRGeneration.set(OFFalse);
+      dcmEnableOtherFloatStringVRGeneration.set(OFFalse);
+      dcmEnableOtherDoubleStringVRGeneration.set(OFFalse);
     }
 
     OFOStringStream verboseParameters;
@@ -548,110 +589,17 @@ int main(int argc, char *argv[])
     verboseParameters << "\tTLS             : ";
     if (useTLS) verboseParameters << "enabled" << OFendl; else verboseParameters << "disabled" << OFendl;
 
-    /* open database */
-    const char *dbfolder = dvi.getDatabaseFolder();
-
-    OFLOG_INFO(dcmpssndLogger, "Opening database in directory '" << dbfolder << "'");
-
-    OFCondition result;
-    DcmQueryRetrieveIndexDatabaseHandle dbhandle(dbfolder, PSTAT_MAXSTUDYCOUNT, PSTAT_STUDYSIZE, result);
-    if (result.bad())
-    {
-      OFLOG_FATAL(dcmpssndLogger, "Unable to access database '" << dbfolder << "'");
-      return 1;
-    }
-
 #ifdef WITH_OPENSSL
-
-    DcmTLSTransportLayer *tLayer = NULL;
     if (useTLS)
     {
-      tLayer = new DcmTLSTransportLayer(NET_REQUESTOR, tlsRandomSeedFile.c_str(), OFFalse);
-      if (tLayer == NULL)
-      {
-        OFLOG_FATAL(dcmpssndLogger, "unable to create TLS transport layer");
-        return 1;
-      }
-
-      // determine TLS profile
-      OFString profileName;
-      const char *profileNamePtr = dvi.getTargetTLSProfile(opt_target);
-      if (profileNamePtr) profileName = profileNamePtr;
-      DcmTLSSecurityProfile tlsProfile = TSP_Profile_BCP195;  // default
-      if (profileName == "BCP195") tlsProfile = TSP_Profile_BCP195;
-      else if (profileName == "BCP195-ND") tlsProfile = TSP_Profile_BCP195_ND;
-      else if (profileName == "BCP195-EX") tlsProfile = TSP_Profile_BCP195_Extended;
-      else if (profileName == "AES") tlsProfile = TSP_Profile_AES;
-      else if (profileName == "BASIC") tlsProfile = TSP_Profile_Basic;
-      else if (profileName == "NULL") tlsProfile = TSP_Profile_IHE_ATNA_Unencrypted;
-      else
-      {
-        OFLOG_WARN(dcmpssndLogger, "unknown TLS profile '" << profileName << "', ignoring");
-      }
-
-      if (tLayer->setTLSProfile(tlsProfile).bad())
-      {
-        OFLOG_FATAL(dcmpssndLogger, "unable to select the TLS security profile");
-        return 1;
-      }
-
-      // activate cipher suites
-      if (tLayer->activateCipherSuites().bad())
-      {
-        OFLOG_FATAL(dcmpssndLogger, "unable to activate the selected list of TLS ciphersuites");
-        return 1;
-      }
-
-      if (tlsCACertificateFolder && (tLayer->addTrustedCertificateDir(tlsCACertificateFolder, keyFileFormat).bad()))
-      {
-        OFLOG_WARN(dcmpssndLogger, "unable to load certificates from directory '" << tlsCACertificateFolder << "', ignoring");
-      }
-      if ((tlsDHParametersFile.size() > 0) && ! (tLayer->setTempDHParameters(tlsDHParametersFile.c_str())))
-      {
-        OFLOG_WARN(dcmpssndLogger, "unable to load temporary DH parameter file '" << tlsDHParametersFile << "', ignoring");
-      }
-      tLayer->setPrivateKeyPasswd(tlsPrivateKeyPassword); // never prompt on console
-
-      if (!tlsPrivateKeyFile.empty() && !tlsCertificateFile.empty())
-      {
-        if (tLayer->setPrivateKeyFile(tlsPrivateKeyFile.c_str(), keyFileFormat).bad())
-        {
-          OFLOG_FATAL(dcmpssndLogger, "unable to load private TLS key from '" << tlsPrivateKeyFile<< "'");
-          return 1;
-        }
-        if (tLayer->setCertificateFile(tlsCertificateFile.c_str(), keyFileFormat).bad())
-        {
-          OFLOG_FATAL(dcmpssndLogger, "unable to load certificate from '" << tlsCertificateFile << "'");
-          return 1;
-        }
-        if (! tLayer->checkPrivateKeyMatchesCertificate())
-        {
-          OFLOG_FATAL(dcmpssndLogger, "private key '" << tlsPrivateKeyFile << "' and certificate '" << tlsCertificateFile << "' do not match");
-          return 1;
-        }
-      }
-
-      tLayer->setCertificateVerification(tlsCertVerification);
-
-      // a generated UID contains the process ID and current time.
-      // Adding it to the PRNG seed guarantees that we have different seeds for different processes.
-      char randomUID[65];
-      dcmGenerateUniqueIdentifier(randomUID);
-      tLayer->addPRNGseed(randomUID, strlen(randomUID));
-    }
-
-    if (useTLS)
-    {
-      OFString cslist;
-      if (tLayer) tLayer->getListOfCipherSuitesForOpenSSL(cslist);
       verboseParameters << "\tTLS certificate : " << tlsCertificateFile << OFendl
            << "\tTLS key file    : " << tlsPrivateKeyFile << OFendl
            << "\tTLS DH params   : " << tlsDHParametersFile << OFendl
            << "\tTLS PRNG seed   : " << tlsRandomSeedFile << OFendl
            << "\tTLS CA directory: " << tlsCACertificateFolder << OFendl
-           << "\tTLS ciphersuites: " << cslist << OFendl
+           << "\tTLS ciphersuites: " << tlsCiphersuites << OFendl
            << "\tTLS key format  : ";
-      if (keyFileFormat == DCF_Filetype_PEM) verboseParameters << "PEM" << OFendl; else verboseParameters << "DER" << OFendl;
+      if (keyFileFormat == SSL_FILETYPE_PEM) verboseParameters << "PEM" << OFendl; else verboseParameters << "DER" << OFendl;
       verboseParameters << "\tTLS cert verify : ";
       switch (tlsCertVerification)
       {
@@ -672,9 +620,80 @@ int main(int argc, char *argv[])
     OFSTRINGSTREAM_GETOFSTRING(verboseParameters, verboseParametersString)
     OFLOG_INFO(dcmpssndLogger, verboseParametersString);
 
+    /* open database */
+    const char *dbfolder = dvi.getDatabaseFolder();
+
+    OFLOG_INFO(dcmpssndLogger, "Opening database in directory '" << dbfolder << "'");
+
+    OFCondition result;
+    DcmQueryRetrieveIndexDatabaseHandle dbhandle(dbfolder, PSTAT_MAXSTUDYCOUNT, PSTAT_STUDYSIZE, result);
+    if (result.bad())
+    {
+      OFLOG_FATAL(dcmpssndLogger, "Unable to access database '" << dbfolder << "'");
+      return 1;
+    }
+
+#ifdef WITH_OPENSSL
+
+    DcmTLSTransportLayer *tLayer = NULL;
+    if (useTLS)
+    {
+      tLayer = new DcmTLSTransportLayer(DICOM_APPLICATION_REQUESTOR, tlsRandomSeedFile.c_str());
+      if (tLayer == NULL)
+      {
+        OFLOG_FATAL(dcmpssndLogger, "unable to create TLS transport layer");
+        return 1;
+      }
+
+      if (tlsCACertificateFolder && (TCS_ok != tLayer->addTrustedCertificateDir(tlsCACertificateFolder, keyFileFormat)))
+      {
+        OFLOG_WARN(dcmpssndLogger, "unable to load certificates from directory '" << tlsCACertificateFolder << "', ignoring");
+      }
+      if ((tlsDHParametersFile.size() > 0) && ! (tLayer->setTempDHParameters(tlsDHParametersFile.c_str())))
+      {
+        OFLOG_WARN(dcmpssndLogger, "unable to load temporary DH parameter file '" << tlsDHParametersFile << "', ignoring");
+      }
+      tLayer->setPrivateKeyPasswd(tlsPrivateKeyPassword); // never prompt on console
+
+      if (!tlsPrivateKeyFile.empty() && !tlsCertificateFile.empty())
+      {
+        if (TCS_ok != tLayer->setPrivateKeyFile(tlsPrivateKeyFile.c_str(), keyFileFormat))
+        {
+          OFLOG_FATAL(dcmpssndLogger, "unable to load private TLS key from '" << tlsPrivateKeyFile<< "'");
+          return 1;
+        }
+        if (TCS_ok != tLayer->setCertificateFile(tlsCertificateFile.c_str(), keyFileFormat))
+        {
+          OFLOG_FATAL(dcmpssndLogger, "unable to load certificate from '" << tlsCertificateFile << "'");
+          return 1;
+        }
+        if (! tLayer->checkPrivateKeyMatchesCertificate())
+        {
+          OFLOG_FATAL(dcmpssndLogger, "private key '" << tlsPrivateKeyFile << "' and certificate '" << tlsCertificateFile << "' do not match");
+          return 1;
+        }
+      }
+      if (TCS_ok != tLayer->setCipherSuites(tlsCiphersuites.c_str()))
+      {
+        OFLOG_FATAL(dcmpssndLogger, "unable to set selected cipher suites");
+        return 1;
+      }
+
+      tLayer->setCertificateVerification(tlsCertVerification);
+
+      // a generated UID contains the process ID and current time.
+      // Adding it to the PRNG seed guarantees that we have different seeds for different processes.
+      char randomUID[65];
+      dcmGenerateUniqueIdentifier(randomUID);
+      tLayer->addPRNGseed(randomUID, strlen(randomUID));
+    }
+
+#endif
+
     /* open network connection */
     T_ASC_Network *net=NULL;
     T_ASC_Parameters *params=NULL;
+    DIC_NODENAME localHost;
     DIC_NODENAME peerHost;
     T_ASC_Association *assoc=NULL;
 
@@ -713,8 +732,9 @@ int main(int argc, char *argv[])
 
     ASC_setAPTitles(params, dvi.getNetworkAETitle(), targetAETitle, NULL);
 
+    gethostname(localHost, sizeof(localHost) - 1);
     sprintf(peerHost, "%s:%d", targetHostname, (int)targetPort);
-    ASC_setPresentationAddresses(params, OFStandard::getHostName().c_str(), peerHost);
+    ASC_setPresentationAddresses(params, localHost, peerHost);
 
     cond = addAllStoragePresentationContexts(params, targetImplicitOnly);
     if (cond.bad())
@@ -931,7 +951,9 @@ int main(int argc, char *argv[])
       delete messageClient;
     }
 
-    OFStandard::shutdownNetwork();
+#ifdef HAVE_WINSOCK_H
+    WSACleanup();
+#endif
 
 #ifdef WITH_OPENSSL
     if (tLayer)

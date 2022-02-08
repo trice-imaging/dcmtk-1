@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1997-2021, OFFIS e.V.
+ *  Copyright (C) 1997-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -47,7 +47,7 @@
 #error Your C++ compiler cannot handle class templates:
 #endif
 
-#ifdef HAVE_STL_LIST
+#if defined(HAVE_STL) || defined(HAVE_STL_LIST)
 // It is possible to use the standard template library list class since the
 // interface is nearly identical.
 // Important: If you want to use the standard template library (STL), no
@@ -73,14 +73,9 @@
 
 #else
 
-#ifdef HAVE_ITERATOR_HEADER
-#include <iterator>
-#endif
-
-// #define INCLUDE_CASSERT
-// #define INCLUDE_CSTDDEF
-// #include "dcmtk/ofstd/ofstdinc.h"
-#include <cassert>
+#define INCLUDE_CASSERT
+#define INCLUDE_CSTDDEF
+#include "dcmtk/ofstd/ofstdinc.h"
 
 #define OFLIST_TYPENAME
 
@@ -94,7 +89,7 @@ END_EXTERN_C
 // OFListLinkBase, OFListLink and OFListBase are classes for internal
 // use only and shall not be used.
 
-/* non-template double linked list. Base class of OFListLink.
+/* non-template double linked list. Base class fo OFListLink.
  * Implicitly used by OFList, should not be called by users.
  */
 struct OFListLinkBase
@@ -180,20 +175,6 @@ protected:
      */
     OFIterator(OFListLinkBase * x) : node(x) { }
 public:
-
-    /// member typedef for T
-    typedef T value_type;
-
-    /// member typedef for T*
-    typedef T* pointer;
-
-    /// member typedef for T&
-    typedef T& reference;
-
-#ifdef HAVE_BIDIRECTIONAL_ITERATOR_CATEGORY
-    /// member typedef declaring the category
-    typedef STD_NAMESPACE bidirectional_iterator_tag iterator_category;
-#endif
 
     /** default constructor. Creates an iterator referencing nothing.
      *  In general, iterators should always be copy-constructed
@@ -425,11 +406,7 @@ public:
      */
     void insert(OFIterator<T> position, size_t n, const T& x)
     {
-      while(n)
-      {
-        --n;
-        OFListBase::base_insert(position.node, new OFListLink<T>(x));
-      }
+      while(n--) OFListBase::base_insert(position.node, new OFListLink<T>(x));
     }
 
     /** removes the element at the given position from the list.

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2007-2020, OFFIS e.V.
+ *  Copyright (C) 2007-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -31,7 +31,6 @@
 class DJLSRepresentationParameter;
 class DJLSCodecParameter;
 class DicomImage;
-struct JlsCustomParameters;
 
 /** abstract codec class for JPEG-LS encoders.
  *  This abstract class contains most of the application logic
@@ -57,10 +56,6 @@ public:
    *  @param cp codec parameters for this codec
    *  @param objStack stack pointing to the location of the pixel data
    *    element in the current dataset.
-   *  @param removeOldRep boolean flag that should be set to false before this method call
-   *    and will be set to true if the codec modifies the DICOM dataset such
-   *    that the pixel data of the original representation may not be usable
-   *    anymore.
    *  @return EC_Normal if successful, an error code otherwise.
    */
   virtual OFCondition decode(
@@ -68,8 +63,7 @@ public:
     DcmPixelSequence * pixSeq,
     DcmPolymorphOBOW& uncompressedPixelData,
     const DcmCodecParameter * cp,
-    const DcmStack & objStack,
-    OFBool& removeOldRep) const;
+    const DcmStack& objStack) const;
 
   /** decompresses a single frame from the given pixel sequence and
    *  stores the result in the given buffer.
@@ -119,10 +113,6 @@ public:
    *  @param cp codec parameters for this codec
    *  @param objStack stack pointing to the location of the pixel data
    *    element in the current dataset.
-   *  @param removeOldRep boolean flag that should be set to false before this method call
-   *    and will be set to true if the codec modifies the DICOM dataset such
-   *    that the pixel data of the original representation may not be usable
-   *    anymore.
    *  @return EC_Normal if successful, an error code otherwise.
    */
   virtual OFCondition encode(
@@ -131,8 +121,7 @@ public:
     const DcmRepresentationParameter * toRepParam,
     DcmPixelSequence * & pixSeq,
     const DcmCodecParameter *cp,
-    DcmStack & objStack,
-    OFBool& removeOldRep) const;
+    DcmStack & objStack) const;
 
   /** transcodes (re-compresses) the given compressed DICOM image and stores
    *  the result in the given toPixSeq element.
@@ -146,10 +135,6 @@ public:
    *  @param cp codec parameters for this codec
    *  @param objStack stack pointing to the location of the pixel data
    *    element in the current dataset.
-   *  @param removeOldRep boolean flag that should be set to false before this method call
-   *    and will be set to true if the codec modifies the DICOM dataset such
-   *    that the pixel data of the original representation may not be usable
-   *    anymore.
    *  @return EC_Normal if successful, an error code otherwise.
    */
   virtual OFCondition encode(
@@ -159,8 +144,7 @@ public:
     const DcmRepresentationParameter * toRepParam,
     DcmPixelSequence * & toPixSeq,
     const DcmCodecParameter * cp,
-    DcmStack & objStack,
-    OFBool& removeOldRep) const;
+    DcmStack & objStack) const;
 
   /** checks if this codec is able to convert from the
    *  given current transfer syntax to the given new
@@ -359,34 +343,6 @@ private:
     Uint32 width,
     Uint32 height,
     Uint16 bitsAllocated) const;
-
-  /** Adjust the padding of the JPEG-LS bitstream in the buffer if it has odd length,
-   *  such that the End of Image (EOI) marker ends on an even byte boundary.
-   *  @param buffer pointer to buffer containing compressed JPEG-LS bitstream
-   *  @param bufSize size of the buffer in bytes
-   *  @param bytesWritten number of bytes written to buffer; value is increased
-   *   if this method adds a pad byte.
-   *  @param useFFpadding true if a standard-conforming extended EOI marker
-   *   should be used for padding an odd-length bitstream
-   */
-  static void fixPaddingIfNecessary(
-    Uint8 *buffer,
-    size_t bufSize,
-    unsigned long &bytesWritten,
-    OFBool useFFpadding);
-
-  /** compute the parameters for the CharLS JlsCustomParameters struct, which maintains
-   *  the JPEG-LS encoding process parameters T1, T2, T3, MAXVAL and RESET.
-   *  @param custom reference to initialized JlsCustomParameters object, values filled by this method
-   *  @param bitsAllocated number of bits allocated
-   *  @param nearLosslessDeviation parameter NEAR of near-lossless mode
-   *  @param djcp parameters for the codec
-   */
-  static void setCustomParameters(
-    JlsCustomParameters& custom,
-    Uint16 bitsAllocated,
-    Uint16 nearLosslessDeviation,
-    const DJLSCodecParameter *djcp);
 };
 
 

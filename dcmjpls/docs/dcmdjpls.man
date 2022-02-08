@@ -6,19 +6,19 @@
 \page dcmdjpls dcmdjpls: Decode JPEG-LS compressed DICOM file
 \endif
 
-\section dcmdjpls_synopsis SYNOPSIS
+\section synopsis SYNOPSIS
 
 \verbatim
 dcmdjpls [options] dcmfile-in dcmfile-out
 \endverbatim
 
-\section dcmdjpls_description DESCRIPTION
+\section description DESCRIPTION
 
 The \b dcmdjpls utility reads a JPEG-ls compressed DICOM image (\e dcmfile-in),
 decompresses the JPEG-LS data (i. e. conversion to a native DICOM transfer
 syntax) and writes the converted image to an output file (\e dcmfile-out).
 
-\section dcmdjpls_parameters PARAMETERS
+\section parameters PARAMETERS
 
 \verbatim
 dcmfile-in   DICOM input filename to be converted
@@ -26,9 +26,9 @@ dcmfile-in   DICOM input filename to be converted
 dcmfile-out  DICOM output filename
 \endverbatim
 
-\section dcmdjpls_options OPTIONS
+\section options OPTIONS
 
-\subsection dcmdjpls_general_options general options
+\subsection general_options general options
 \verbatim
   -h   --help
          print this help text and exit
@@ -56,7 +56,7 @@ dcmfile-out  DICOM output filename
          use config file f for the logger
 \endverbatim
 
-\subsection dcmdjpls_input_options input options
+\subsection input_options input options
 \verbatim
 input file format:
 
@@ -75,7 +75,7 @@ input file format:
   # but unfortunately it does.
 \endverbatim
 
-\subsection dcmdjpls_processing_options processing options
+\subsection processing_options processing options
 \verbatim
 planar configuration:
 
@@ -120,18 +120,13 @@ SOP Instance UID:
 
   # Always assigns a new SOP instance UID.
 
-workaround options for incorrect JPEG-LS encodings:
-
-  +wi  --workaround-incpl
-         enable workaround for incomplete JPEG-LS data
-
 other processing options:
 
   +io  --ignore-offsettable
          ignore offset table when decompressing
 \endverbatim
 
-\subsection dcmdjpls_output_options output options
+\subsection output_options output options
 \verbatim
 output file format:
 
@@ -192,7 +187,7 @@ data set trailing padding (not with --write-dataset):
          and items on multiple of i bytes
 \endverbatim
 
-\section dcmdjpls_transfer_syntaxes TRANSFER SYNTAXES
+\section transfer_syntaxes TRANSFER SYNTAXES
 
 \b dcmdjpls supports the following transfer syntaxes for input
 (\e dcmfile-in):
@@ -217,7 +212,7 @@ LittleEndianExplicitTransferSyntax             1.2.840.10008.1.2.1
 BigEndianExplicitTransferSyntax                1.2.840.10008.1.2.2
 \endverbatim
 
-\section dcmdjpls_logging LOGGING
+\section logging LOGGING
 
 The level of logging output of the various command line tools and underlying
 libraries can be specified by the user.  By default, only errors and warnings
@@ -236,7 +231,7 @@ messages to a particular output stream and for filtering certain messages
 based on the module or application where they are generated.  An example
 configuration file is provided in <em>\<etcdir\>/logger.cfg</em>.
 
-\section dcmdjpls_command_line COMMAND LINE
+\section command_line COMMAND LINE
 
 All command line tools use the following notation for parameters: square
 brackets enclose optional values (0-1), three trailing dots indicate that
@@ -258,7 +253,7 @@ allows one to summarize common combinations of options/parameters and avoids
 longish and confusing command lines (an example is provided in file
 <em>\<datadir\>/dumppat.txt</em>).
 
-\section dcmdjpls_environment ENVIRONMENT
+\section environment ENVIRONMENT
 
 The \b dcmdjpls utility will attempt to load DICOM data dictionaries specified
 in the \e DCMDICTPATH environment variable.  By default, i.e. if the
@@ -274,11 +269,11 @@ a semicolon (";") is used as a separator.  The data dictionary code will
 attempt to load each file specified in the \e DCMDICTPATH environment variable.
 It is an error if no data dictionary can be loaded.
 
-\section dcmdjpls_see_also SEE ALSO
+\section see_also SEE ALSO
 
 <b>dcmcjpls</b>(1)
 
-\section dcmdjpls_copyright COPYRIGHT
+\section copyright COPYRIGHT
 
 Copyright (C) 2009-2014 by OFFIS e.V., Escherweg 2, 26121 Oldenburg, Germany.
 

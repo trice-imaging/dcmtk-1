@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTReferencedFrameOfReferenceSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -21,6 +21,7 @@
 
 DRTReferencedFrameOfReferenceSequence::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
+    FrameOfReferenceRelationshipSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     FrameOfReferenceUID(DCM_FrameOfReferenceUID),
     RTReferencedStudySequence(emptyDefaultItem /*emptyDefaultSequence*/)
 {
@@ -29,6 +30,7 @@ DRTReferencedFrameOfReferenceSequence::Item::Item(const OFBool emptyDefaultItem)
 
 DRTReferencedFrameOfReferenceSequence::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
+    FrameOfReferenceRelationshipSequence(copy.FrameOfReferenceRelationshipSequence),
     FrameOfReferenceUID(copy.FrameOfReferenceUID),
     RTReferencedStudySequence(copy.RTReferencedStudySequence)
 {
@@ -45,6 +47,7 @@ DRTReferencedFrameOfReferenceSequence::Item &DRTReferencedFrameOfReferenceSequen
     if (this != &copy)
     {
         EmptyDefaultItem = copy.EmptyDefaultItem;
+        FrameOfReferenceRelationshipSequence = copy.FrameOfReferenceRelationshipSequence;
         FrameOfReferenceUID = copy.FrameOfReferenceUID;
         RTReferencedStudySequence = copy.RTReferencedStudySequence;
     }
@@ -58,6 +61,7 @@ void DRTReferencedFrameOfReferenceSequence::Item::clear()
     {
         /* clear all DICOM attributes */
         FrameOfReferenceUID.clear();
+        FrameOfReferenceRelationshipSequence.clear();
         RTReferencedStudySequence.clear();
     }
 }
@@ -66,6 +70,7 @@ void DRTReferencedFrameOfReferenceSequence::Item::clear()
 OFBool DRTReferencedFrameOfReferenceSequence::Item::isEmpty()
 {
     return FrameOfReferenceUID.isEmpty() &&
+           FrameOfReferenceRelationshipSequence.isEmpty() &&
            RTReferencedStudySequence.isEmpty();
 }
 
@@ -83,7 +88,8 @@ OFCondition DRTReferencedFrameOfReferenceSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, FrameOfReferenceUID, "1", "1", "ReferencedFrameOfReferenceSequence");
+        getAndCheckElementFromDataset(item, FrameOfReferenceUID, "1", "1C", "ReferencedFrameOfReferenceSequence");
+        FrameOfReferenceRelationshipSequence.read(item, "1-n", "3", "ReferencedFrameOfReferenceSequence");
         RTReferencedStudySequence.read(item, "1-n", "3", "ReferencedFrameOfReferenceSequence");
         result = EC_Normal;
     }
@@ -97,7 +103,8 @@ OFCondition DRTReferencedFrameOfReferenceSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmUniqueIdentifier(FrameOfReferenceUID), "1", "1", "ReferencedFrameOfReferenceSequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(FrameOfReferenceUID), "1", "1C", "ReferencedFrameOfReferenceSequence");
+        if (result.good()) result = FrameOfReferenceRelationshipSequence.write(item, "1-n", "3", "ReferencedFrameOfReferenceSequence");
         if (result.good()) result = RTReferencedStudySequence.write(item, "1-n", "3", "ReferencedFrameOfReferenceSequence");
     }
     return result;
@@ -229,7 +236,7 @@ OFBool DRTReferencedFrameOfReferenceSequence::isValid() const
 }
 
 
-size_t DRTReferencedFrameOfReferenceSequence::getNumberOfItems() const
+unsigned long DRTReferencedFrameOfReferenceSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -259,12 +266,12 @@ OFCondition DRTReferencedFrameOfReferenceSequence::gotoNextItem()
 }
 
 
-OFCondition DRTReferencedFrameOfReferenceSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTReferencedFrameOfReferenceSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -279,12 +286,12 @@ OFCondition DRTReferencedFrameOfReferenceSequence::gotoItem(const size_t num, OF
 }
 
 
-OFCondition DRTReferencedFrameOfReferenceSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTReferencedFrameOfReferenceSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -299,7 +306,7 @@ OFCondition DRTReferencedFrameOfReferenceSequence::gotoItem(const size_t num, OF
 }
 
 
-OFCondition DRTReferencedFrameOfReferenceSequence::gotoItem(const size_t num)
+OFCondition DRTReferencedFrameOfReferenceSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -335,7 +342,7 @@ const DRTReferencedFrameOfReferenceSequence::Item &DRTReferencedFrameOfReference
 }
 
 
-OFCondition DRTReferencedFrameOfReferenceSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTReferencedFrameOfReferenceSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -345,7 +352,7 @@ OFCondition DRTReferencedFrameOfReferenceSequence::getItem(const size_t num, Ite
 }
 
 
-DRTReferencedFrameOfReferenceSequence::Item &DRTReferencedFrameOfReferenceSequence::getItem(const size_t num)
+DRTReferencedFrameOfReferenceSequence::Item &DRTReferencedFrameOfReferenceSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -355,7 +362,7 @@ DRTReferencedFrameOfReferenceSequence::Item &DRTReferencedFrameOfReferenceSequen
 }
 
 
-const DRTReferencedFrameOfReferenceSequence::Item &DRTReferencedFrameOfReferenceSequence::getItem(const size_t num) const
+const DRTReferencedFrameOfReferenceSequence::Item &DRTReferencedFrameOfReferenceSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -365,13 +372,13 @@ const DRTReferencedFrameOfReferenceSequence::Item &DRTReferencedFrameOfReference
 }
 
 
-DRTReferencedFrameOfReferenceSequence::Item &DRTReferencedFrameOfReferenceSequence::operator[](const size_t num)
+DRTReferencedFrameOfReferenceSequence::Item &DRTReferencedFrameOfReferenceSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTReferencedFrameOfReferenceSequence::Item &DRTReferencedFrameOfReferenceSequence::operator[](const size_t num) const
+const DRTReferencedFrameOfReferenceSequence::Item &DRTReferencedFrameOfReferenceSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -394,7 +401,7 @@ OFCondition DRTReferencedFrameOfReferenceSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTReferencedFrameOfReferenceSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTReferencedFrameOfReferenceSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -417,7 +424,7 @@ OFCondition DRTReferencedFrameOfReferenceSequence::insertItem(const size_t pos, 
 }
 
 
-OFCondition DRTReferencedFrameOfReferenceSequence::removeItem(const size_t pos)
+OFCondition DRTReferencedFrameOfReferenceSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

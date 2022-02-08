@@ -25,7 +25,6 @@
 #include "jerror8.h"
 
 #ifdef USE_WINDOWS_MESSAGEBOX
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
 

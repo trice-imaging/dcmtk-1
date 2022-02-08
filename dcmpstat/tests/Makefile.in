@@ -33,7 +33,7 @@ LIBDIRS = -L$(top_srcdir)/libsrc -L$(dcmnetdir)/libsrc -L$(ofstddir)/libsrc \
 	-L$(dcmimagedir)/libsrc -L$(dcmsrdir)/libsrc
 LOCALLIBS = -ldcmpstat -ldcmdsig -ldcmsr -ldcmimage -ldcmimgle -ldcmqrdb -ldcmnet \
 	-ldcmtls -ldcmdata -loflog -lofstd $(TIFFLIBS) $(PNGLIBS) $(XMLLIBS) $(ZLIBLIBS) \
-	$(TCPWRAPPERLIBS) $(OPENSSLLIBS) $(CHARCONVLIBS) $(MATHLIBS)
+	$(TCPWRAPPERLIBS) $(OPENSSLLIBS) $(ICONVLIBS)
 
 objs = msgserv.o
 progs = msgserv
@@ -42,12 +42,10 @@ progs = msgserv
 all: $(progs)
 
 msgserv: msgserv.o
-	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ msgserv.o $(LOCALLIBS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ msgserv.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
 
 
 check:
-
-check-exhaustive:
 
 install: all
 

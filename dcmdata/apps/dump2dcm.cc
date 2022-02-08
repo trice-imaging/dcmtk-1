@@ -1,6 +1,7 @@
+#define TRICE 1
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -15,7 +16,7 @@
  *
  *  Author:  Andreas Barth
  *
- *  Purpose: create a DICOM FileFormat or DataSet from an ASCII-dump
+ *  Purpose: create a Dicom FileFormat or DataSet from an ASCII-dump
  *
  */
 
@@ -34,8 +35,8 @@
  *        two characters.  If the VR can determined from the tag, this part
  *        of a line is optional.
  * Value: There are several rules for writing values:
- *        1. US, SS, UL, SL, UV, SV, FD, FL, OD, OF, OL and OV are written as
- *           decimal strings that can be read by scanf().
+ *        1. US, SS, SL, UL, FD, FL are written as decimal strings that can
+ *           be read by scanf().
  *        2. AT is written as '(gggg,eeee)' with additional spaces stripped
  *           off automatically and gggg and eeee being decimal strings that
  *           can be read by scanf().
@@ -77,10 +78,18 @@
 #include "dcmtk/config/osconfig.h"
 
 // if defined, use createValueFromTempFile() for large binary data files
-//#define EXPERIMENTAL_READ_FROM_FILE
+#define EXPERIMENTAL_READ_FROM_FILE
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CCTYPE
+#include "dcmtk/ofstd/ofstdinc.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>
 #endif
 
 #include "dcmtk/ofstd/ofstd.h"
@@ -266,12 +275,6 @@ parseVR(char *&s, DcmEVR &vr)
         vr = EVR_UNKNOWN;
         s += 2;
     }
-    // dcmdump uses "??" in case of "Unknown Tag & Data" and implicit VR
-    else if ((*s == '?') && (*(s + 1) == '?'))
-    {
-        vr = EVR_UNKNOWN;
-        s += 2;
-    }
     else ok = OFFalse;
 
     return ok;
@@ -318,7 +321,7 @@ searchCommentOrEol(char *s)
 }
 
 
-static void
+static char *
 convertNewlineCharacters(char *s)
 {
     // convert the string "\n" into the \r\n combination required by DICOM
@@ -327,6 +330,7 @@ convertNewlineCharacters(char *s)
         *s = '\r';
         *++s = '\n';
     }
+    return s;
 }
 
 static OFBool
@@ -348,7 +352,7 @@ parseValue(char *&s, char *&value, DcmEVR &vr, const DcmTagKey &tagkey)
             {
                 value = new char[len - 1];
                 OFStandard::strlcpy(value, s + 1, len - 1);
-                convertNewlineCharacters(value);
+                (void)convertNewlineCharacters(value);
             }
             else
                 value = NULL;
@@ -450,13 +454,12 @@ putFileContentsIntoElement(DcmElement *elem, const char *filename)
         ec = EC_IllegalCall;
     if (ec.good())
     {
-        OFLOG_INFO(dump2dcmLogger, "reading " << len << " bytes from binary data file: " << filename);
-        OFLOG_DEBUG(dump2dcmLogger, "  and storing it in the element " << elem->getTag());
         /* read binary file into the buffer */
         if (fread(buf, 1, len, f) != len)
         {
+            char errBuf[256];
             OFLOG_ERROR(dump2dcmLogger, "error reading binary data file: " << filename
-                << ": " << OFStandard::getLastSystemErrorCode().message());
+                << ": " << OFStandard::strerror(errno, errBuf, sizeof(errBuf)));
             ec = EC_CorruptedData;
         }
         else if (evr == EVR_OW)
@@ -502,7 +505,7 @@ insertIntoSet(DcmStack &stack, const E_TransferSyntax xfer, const DcmTagKey &tag
            (tagkey != DCM_LUTData || (vr != EVR_US && vr != EVR_SS && vr != EVR_OW)) &&
            (tagkey != DCM_PixelData || (vr != EVR_OB && vr != EVR_OW && vr != EVR_pixelSQ)) &&
            (tagvr != EVR_xs || (vr != EVR_US && vr != EVR_SS)) &&
-           ((tagvr != EVR_ox && tagvr != EVR_px) || (vr != EVR_OB && vr != EVR_OW)) &&
+           (tagvr != EVR_ox || (vr != EVR_OB && vr != EVR_OW)) &&
            (tagvr != EVR_na || vr != EVR_pixelItem))
         {
             OFLOG_WARN(dump2dcmLogger, "Tag " << tag << " with wrong VR '"
@@ -523,9 +526,9 @@ insertIntoSet(DcmStack &stack, const E_TransferSyntax xfer, const DcmTagKey &tag
         if (newTagVR == EVR_pixelSQ)
             newElement = new DcmPixelData(tag);
         else if (newTagVR == EVR_pixelItem)
-            newElement = new DcmPixelItem(DCM_PixelItemTag);
+            newElement = new DcmPixelItem(DcmTag(DCM_Item, EVR_OB));
         else
-            newElementError = DcmItem::newDicomElementWithVR(newElement, tag);
+            newElementError = newDicomElement(newElement, tag);
 
         if (newElementError == EC_Normal)
         {
@@ -573,7 +576,7 @@ insertIntoSet(DcmStack &stack, const E_TransferSyntax xfer, const DcmTagKey &tag
                               // special handling for pixel sequence
                               if (newTagVR == EVR_pixelSQ)
                               {
-                                  DcmPixelSequence *pixelSeq = new DcmPixelSequence(DCM_PixelSequenceTag);
+                                  DcmPixelSequence *pixelSeq = new DcmPixelSequence(DcmTag(DCM_PixelData, EVR_OB));
                                   if (pixelSeq != NULL)
                                   {
                                       OFstatic_cast(DcmPixelData *, newElement)->putOriginalRepresentation(xfer, NULL, pixelSeq);
@@ -739,7 +742,7 @@ readDumpFile(DcmMetaInfo *metaheader, DcmDataset *dataset,
 
             if (value)
             {
-                delete[] value;
+                //delete[] value;
                 value = NULL;
             }
             if (l_error != EC_Normal)
@@ -784,6 +787,10 @@ readDumpFile(DcmMetaInfo *metaheader, DcmDataset *dataset,
 
 int main(int argc, char *argv[])
 {
+#ifdef HAVE_GUSI_H
+    GUSISetup(GUSIwithSIOUXSockets);
+    GUSISetup(GUSIwithInternetSockets);
+#endif
 
     OFConsoleApplication app(OFFIS_CONSOLE_APPLICATION , "Convert ASCII dump to DICOM file", rcsid);
     OFCommandLine cmd;
@@ -847,6 +854,10 @@ int main(int argc, char *argv[])
         cmd.addOption("--padding-off",         "-p",     "no padding (implicit if --write-dataset)");
         cmd.addOption("--padding-create",      "+p",  2, "[f]ile-pad [i]tem-pad: integer",
                                                          "align file on multiple of f bytes\nand items on multiple of i bytes");
+#ifdef TRICE
+      cmd.addSubGroup("trice options:");
+         cmd.addOption("--dict-path",         "-dp",  1, "[p]ath: string", "complete path (including file name) for dicom.dic");
+#endif
 #ifdef WITH_ZLIB
       cmd.addSubGroup("deflate compression level (only with --write-xfer-deflated):");
         cmd.addOption("--compression-level",   "+cl", 1, "[l]evel: integer (default: 6)",
@@ -948,8 +959,20 @@ int main(int argc, char *argv[])
       cmd.endOptionBlock();
 
       cmd.beginOptionBlock();
-      if (cmd.findOption("--enable-new-vr")) dcmEnableGenerationOfNewVRs();
-      if (cmd.findOption("--disable-new-vr")) dcmDisableGenerationOfNewVRs();
+      if (cmd.findOption("--enable-new-vr"))
+      {
+          dcmEnableUnknownVRGeneration.set(OFTrue);
+          dcmEnableUnlimitedTextVRGeneration.set(OFTrue);
+          dcmEnableOtherFloatStringVRGeneration.set(OFTrue);
+          dcmEnableOtherDoubleStringVRGeneration.set(OFTrue);
+      }
+      if (cmd.findOption("--disable-new-vr"))
+      {
+          dcmEnableUnknownVRGeneration.set(OFFalse);
+          dcmEnableUnlimitedTextVRGeneration.set(OFFalse);
+          dcmEnableOtherFloatStringVRGeneration.set(OFFalse);
+          dcmEnableOtherDoubleStringVRGeneration.set(OFFalse);
+      }
       cmd.endOptionBlock();
 
       cmd.beginOptionBlock();
@@ -996,6 +1019,20 @@ int main(int argc, char *argv[])
     DcmFileFormat fileformat;
     DcmMetaInfo *metaheader = (opt_metaInfo) ? fileformat.getMetaInfo() : NULL;
     DcmDataset *dataset = fileformat.getDataset();
+
+#ifdef TRICE
+    static const char* dicomPath;
+    if (cmd.findOption("--dict-path"))
+    {    app.checkValue(cmd.getValue(dicomPath));
+#ifndef __windows__
+         (void)setenv("DCMDICTPATH", dicomPath, 1);
+#else
+         char* envStr = (char*)malloc(strlen(dicomPath)+32);
+         sprintf(envStr, "DCMDICTPATH=%s", dicomPath);
+         (void)putenv(envStr);
+#endif
+    }
+#endif
 
     /* make sure data dictionary is loaded */
     if (!dcmDataDict.isDictionaryLoaded())

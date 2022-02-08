@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2006-2021, OFFIS e.V.
+ *  Copyright (C) 2006-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -29,19 +29,19 @@
 #include "dcmtk/ofstd/ofstring.h"   /* for class OFString */
 #include "dcmtk/ofstd/ofstd.h"      /* for class OFStandard */
 
-#include <cstdio>
-#include <cstdlib>
-#include <cerrno>
+#define INCLUDE_UNISTD
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CSTDARG
+#define INCLUDE_CERRNO
+//#define INCLUDE_CWCHAR    /* not yet implemented in "ofstdinc.h" */
+#include "dcmtk/ofstd/ofstdinc.h"
 
 BEGIN_EXTERN_C
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>       /* needed for struct _stati64 on Win32 */
 #endif
 END_EXTERN_C
-
-#ifdef HAVE_UNIX_H
-#include <unix.h>           /* needed for setlinebuf() on QNX */
-#endif
 
 /* HP-UX has clearerr both as macro and as a function definition. We have to
  * undef the macro so that we can define a function called "clearerr".
@@ -59,58 +59,41 @@ END_EXTERN_C
  * Yes, this is ugly.
  */
 
-/* Find out whether to use explicit LFS function calls to handle
- * large file support
+/* Find out whether current operating system needs explicit function calls
+ * to handle large file support
  */
-#if defined(DCMTK_ENABLE_LFS) && DCMTK_ENABLE_LFS == DCMTK_LFS64
-#define EXPLICIT_LFS_64
-
-// Use POSIX 64 bit file position type when available
-#ifdef HAVE_FPOS64_T
-typedef fpos64_t offile_fpos_t;
-#else // Otherwise this should be sufficient
-typedef fpos_t offile_fpos_t;
+#ifdef _LARGEFILE64_SOURCE
+  // Mac OS X defines _LARGEFILE64_SOURCE but anyhow expects implicit 64 bit calls.
+  // The same is true for current Cygwin versions (tested with version 1.7.7-1).
+  #if !(defined(__MACH__) && defined(__APPLE__)) && !defined(__CYGWIN__)
+    #define EXPLICIT_LFS_64
+  #endif
 #endif
 
-// Use POSIX 64 bit file offset type when available
-#ifdef HAVE_OFF64_T
-typedef off64_t offile_off_t;
-#elif !defined(OF_NO_SINT64) // Otherwise use a 64 bit integer
-typedef Sint64 offile_off_t;
-#else // Cry when 64 LFS is required but no 64 bit integer exists
-#error \
-  Could not find a suitable offset-type for LFS64 support.
-#endif
-
-#else // Implicit LFS or no LFS
-
-#if defined(DCMTK_ENABLE_LFS) && DCMTK_ENABLE_LFS == DCMTK_LFS
-#if defined(SIZEOF_FPOS_T) && (!defined(SIZEOF_OFF_T) || SIZEOF_FPOS_T > SIZEOF_OFF_T)
-// strange Windows LFS where sizeof(fpos_t) == 8 but sizeof(off_t) == 4
-#ifndef OF_NO_SINT64 // Use a 64 bit integer
-typedef Sint64 offile_off_t;
-#else // Cry when LFS is required but no 64 bit integer exists
-#error \
-  Could not find a suitable offset-type for LFS support.
-#endif
+#if defined(_WIN32) && !defined(__MINGW32__)
+  // On Win32 systems except MinGW (where Posix definitions are available)
+  // we use Win32 specific definitions
+  typedef __int64 offile_off_t;
+  typedef fpos_t offile_fpos_t;
 #else
-typedef off_t offile_off_t;
+  #if defined(EXPLICIT_LFS_64) && !defined(__MINGW64__)
+    // Explicit LFS (LFS64)
+    typedef fpos64_t offile_fpos_t;
+    typedef off64_t offile_off_t;
+  #else
+    // Implicit LFS or no LFS
+    #ifdef HAVE_FSEEKO
+      typedef off_t offile_off_t;
+    #else
+      typedef long offile_off_t;
+    #endif
+    typedef fpos_t offile_fpos_t;
+  #endif
 #endif
-#elif defined(HAVE_FSEEKO)
-typedef off_t offile_off_t;
-#else
-typedef long offile_off_t;
-#endif
-typedef fpos_t offile_fpos_t;
-
-#endif // basic type definitions
 
 // the type we use to store the last error.
 typedef int offile_errno_t;
 
-
-// forward declarations
-class OFpath;
 
 /** class for managing filenames consisting either of conventional (8-bit) or
  *  wide (e.g.\ 16-bit) characters.  The wide character support is currently
@@ -127,7 +110,7 @@ public:
   /** constructor expecting a conventional character string
    *  @param filename filename to be stored (8-bit characters, e.g. UTF-8)
    *  @param convert  convert given filename to wide character encoding as an
-   *    alternative representation.  Only works on Windows systems.
+   *    alternative representation
    */
   OFFilename(const char *filename,
              const OFBool convert = OFFalse);
@@ -140,26 +123,14 @@ public:
   OFFilename(const OFString &filename,
              const OFBool convert = OFFalse);
 
-  /** constructor expecting an OFpath instance
-   *  @param path    OFpath instance storing a filename in native format
-   *    (currently, identical to an 8-bit character string)
-   *  @param convert convert given filename to wide character encoding as an
-   *    alternative representation.  Only works on Windows systems.
-   */
-  OFFilename(const OFpath &path,
-             const OFBool convert = OFFalse);
-
 #if (defined(WIDE_CHAR_FILE_IO_FUNCTIONS) || defined(WIDE_CHAR_MAIN_FUNCTION)) && defined(_WIN32)
   /** constructor expecting a wide character string
-   *  @remark This constructor is only available if DCMTK is compiled on Windows
-   *    Operating Systems with wide chars enabled (defining _WIN32 as well as
-   *    WIDE_CHAR_FILE_IO_FUNCTIONS or WIDE_CHAR_MAIN_FUNCTION).
    *  @param filename filename to be stored (e.g. 16-bit characters)
    *  @param convert  convert given filename to UTF-8 encoding as an
    *    alternative representation.  Only works on Windows systems.
    */
   OFFilename(const wchar_t *filename,
-             const OFBool convert = OFTrue);
+             const OFBool convert = OFFalse);
 #endif
 
   /** copy constructor
@@ -187,12 +158,12 @@ public:
    */
   void swap(OFFilename &arg);
 
-  /** check whether this object stores an empty filename
+  /** checks whether this object stores an empty filename
    *  @return OFTrue if the filename is empty, OFFalse otherwise
    */
   OFBool isEmpty() const;
 
-  /** check whether this object stores a wide character filename
+  /** checks whether this object stores a wide character filename
    *  @return OFTrue if the filename uses wide characters, OFFalse otherwise
    */
   inline OFBool usesWideChars() const
@@ -214,9 +185,6 @@ public:
 
 #if (defined(WIDE_CHAR_FILE_IO_FUNCTIONS) || defined(WIDE_CHAR_MAIN_FUNCTION)) && defined(_WIN32)
   /** get stored filename consisting of wide characters
-   *  @remark This method is only available if DCMTK is compiled on Windows
-   *    Operating Systems with wide chars enabled (defining _WIN32 as well as
-   *    WIDE_CHAR_FILE_IO_FUNCTIONS or WIDE_CHAR_MAIN_FUNCTION).
    *  @return wide char filename (might be NULL if none is stored)
    */
   inline const wchar_t *getWideCharPointer() const
@@ -224,26 +192,6 @@ public:
     return wfilename_;
   }
 #endif
-
-  /** check whether the standard input or output streams should be used by
-   *  comparing the filename with "-"
-   *  @return OFTrue if stdin or stdout should be used, OFFalse otherwise
-   */
-  OFBool isStandardStream() const
-  {
-    OFBool result = OFFalse;
-#if defined(WIDE_CHAR_FILE_IO_FUNCTONS) && defined(_WIN32)
-    if (usesWideChars())
-    {
-        result = (wcscmp(getWideCharPointer(), L"-") == 0);
-    } else
-#endif
-    if (getCharPointer() != NULL)
-    {
-        result = (strcmp(getCharPointer(), "-") == 0);
-    }
-    return result;
-  }
 
   /** replace currently stored filename by given value
    *  @param filename filename to be stored (8-bit characters, e.g. UTF-8)
@@ -261,36 +209,21 @@ public:
   void set(const OFString &filename,
            const OFBool convert = OFFalse);
 
-  /** replace currently stored filename by given value
-   *  @param OFpath  OFpath instance storing a filename in native format
-   *    (currently, identical to an 8-bit character string)
-   *  @param convert convert given filename to wide character encoding as an
-   *    alternative representation).  Only works on Windows systems.
-   */
-  void set(const OFpath &path,
-           const OFBool convert = OFFalse);
-
 #if (defined(WIDE_CHAR_FILE_IO_FUNCTIONS) || defined(WIDE_CHAR_MAIN_FUNCTION)) && defined(_WIN32)
   /** replace currently stored filename by given value
-   *  @remark This method is only available if DCMTK is compiled on Windows
-   *    Operating Systems with wide chars enabled (defining _WIN32 as well as
-   *    WIDE_CHAR_FILE_IO_FUNCTIONS or WIDE_CHAR_MAIN_FUNCTION).
    *  @param filename filename to be stored (e.g. 16-bit characters)
    *  @param convert  convert given filename to UTF-8 encoding as an alternative
    *    representation.  Only works on Windows systems.
    */
   void set(const wchar_t *filename,
-           const OFBool convert = OFTrue);
+           const OFBool convert = OFFalse);
 #endif
 
 private:
-  /// filename consisting of conventional characters (8-bit, e.g.\ UTF-8)
+  /// filename consisting of conventional characters (8-bit, e.g. UTF-8)
   char *filename_;
 #if (defined(WIDE_CHAR_FILE_IO_FUNCTIONS) || defined(WIDE_CHAR_MAIN_FUNCTION)) && defined(_WIN32)
   /// filename consisting of wide characters (e.g. 16-bit on Windows)
-  /// @remark This member is only available if DCMTK is compiled on Windows
-  ///   Operating Systems with wide chars enabled (defining _WIN32 as well as
-  ///   WIDE_CHAR_FILE_IO_FUNCTIONS or WIDE_CHAR_MAIN_FUNCTION).
   wchar_t *wfilename_;
 #endif
 };
@@ -328,7 +261,7 @@ DCMTK_OFSTD_EXPORT STD_NAMESPACE ostream &operator<<(STD_NAMESPACE ostream &stre
  *  on Unix platforms are based on errno and strerror/strerror_r, but may be based
  *  on other mechanisms on platforms where errno does not exist.
  */
-class DCMTK_OFSTD_EXPORT OFFile
+class OFFile
 {
 public:
   /// default constructor, creates an object that is not associated with any file.
@@ -366,10 +299,8 @@ public:
 
 #if defined(WIDE_CHAR_FILE_IO_FUNCTIONS) && defined(_WIN32)
   /** opens the file whose name is the wide character string pointed to by path and
-   *  associates a stream with it.
-   *  @remark This member is only available if DCMTK is compiled on Windows
-   *    Operating Systems with wide chars enabled (defining _WIN32 as well as
-   *    WIDE_CHAR_FILE_IO_FUNCTIONS).
+   *  associates a stream with it. This function is Win32 specific and only exists on
+   *  WinNT and newer.
    *  @param filename Unicode filename path to file
    *  @param modes "r", "w" or "a" with possible modifiers "+", "b", as a wide
    *    character string
@@ -447,7 +378,17 @@ public:
    *  @param modes "r" or "w"
    *  @return true if pipe was successfully created, false otherwise
    */
-  OFBool popen(const char *command, const char *modes);
+  OFBool popen(const char *command, const char *modes)
+  {
+    if (file_) fclose();
+#if defined(_WIN32) && !defined(__MINGW64__)
+    file_ = _popen(command, modes);
+#else
+    file_ = :: popen(command, modes);
+#endif
+    if (file_) popened_ = OFTrue; else storeLastError();
+    return (file_ != NULL);
+  }
 
   /** opens the file whose name is the string pointed to by path and associates
    *  the stream pointed maintained by this object with it. The original stream
@@ -497,7 +438,29 @@ public:
    *  maintained by this object results in undefined behaviour.
    *  @return 0 upon success, EOF otherwise, in which case the error code is set.
    */
-  int fclose();
+  int fclose()
+  {
+    int result = 0;
+    if (file_)
+    {
+      if (popened_)
+      {
+#if defined(_WIN32) && !defined(__MINGW64__)
+        result = _pclose(file_);
+#else
+        result = :: pclose(file_);
+#endif
+      }
+      else
+      {
+        result = STDIO_NAMESPACE fclose(file_);
+      }
+      // After calling fclose() once, the FILE* is gone even if fclose() failed.
+      file_ = NULL;
+    }
+    if (result) storeLastError();
+    return result;
+  }
 
   /** waits for the associated process (created with popen) to terminate and
    *  returns the exit status of the command as returned by wait4.
@@ -581,17 +544,7 @@ public:
    *  the beginning of the file. This is equivalent to fseek(0, SEEK_SET)
    *  except that the error indicator for the stream is also cleared.
    */
-  void rewind()
-  {
-#if defined(_WIN32) || defined(__CYGWIN__)
-    /* On these platforms rewind() fails after reading to the end of file
-     * if the file is read-only. Using fseek() instead.
-     */
-    (void) this->fseek(0L, SEEK_SET);
-#else
-    STDIO_NAMESPACE rewind(file_);
-#endif
-  }
+  void rewind() { STDIO_NAMESPACE rewind(file_); }
 
   /** clears the end-of-file and error indicators for the stream
    */
@@ -802,7 +755,7 @@ public:
     }
     result = this->fsetpos(&off2);
 #elif defined(__BEOS__)
-    result = :: _fseek(file_, off, whence);
+    result = :: _fseek(fp, offset, whence);
 #else
 #ifdef HAVE_FSEEKO
 #ifdef EXPLICIT_LFS_64
@@ -823,6 +776,7 @@ public:
    */
   offile_off_t ftell()
   {
+    offile_off_t result;
 #ifdef _WIN32
     // Windows does not have a 64-bit ftell, and _telli64 cannot be used
     // because it operates on file descriptors and ignores FILE buffers.
@@ -834,9 +788,8 @@ public:
       storeLastError();
       return -1;
     }
-    return OFstatic_cast(offile_off_t, pos);
+    return pos;
 #else
-    offile_off_t result;
 #ifdef HAVE_FSEEKO
 #ifdef EXPLICIT_LFS_64
     result = :: ftello64(file_);
@@ -846,9 +799,9 @@ public:
 #else
     result = STDIO_NAMESPACE ftell(file_);
 #endif
+#endif
     if (result < 0) storeLastError();
     return result;
-#endif
   }
 
   /** alternate interface equivalent to ftell, storing the current value of the
@@ -861,8 +814,8 @@ public:
   int fgetpos(offile_fpos_t *pos)
   {
     int result;
-#if defined(EXPLICIT_LFS_64) && ! defined(__MINGW32__) && ! defined(__QNX__)
-    // MinGW and QNX have EXPLICIT_LFS_64 but no fgetpos64()
+#if defined(EXPLICIT_LFS_64) && ! defined(__MINGW32__)
+    // MinGW has EXPLICIT_LFS_64 but no fgetpos64()
     result = :: fgetpos64(file_, pos);
 #else
     result = STDIO_NAMESPACE fgetpos(file_, pos);
@@ -881,8 +834,8 @@ public:
   int fsetpos(offile_fpos_t *pos)
   {
     int result;
-#if defined(EXPLICIT_LFS_64) && ! defined(__MINGW32__) && ! defined(__QNX__)
-    // MinGW and QNX have EXPLICIT_LFS_64 but no fsetpos64()
+#if defined(EXPLICIT_LFS_64) && ! defined(__MINGW32__)
+    // MinGW has EXPLICIT_LFS_64 but no fsetpos64()
     result = :: fsetpos64(file_, pos);
 #else
     result = STDIO_NAMESPACE fsetpos(file_, pos);

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2018, OFFIS e.V.
+ *  Copyright (C) 2000-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRNumTreeNode
@@ -29,53 +29,14 @@
 
 
 DSRNumTreeNode::DSRNumTreeNode(const E_RelationshipType relationshipType)
-  : DSRDocumentTreeNode(relationshipType, VT_Num),
-    DSRNumericMeasurementValue()
-{
-}
-
-
-DSRNumTreeNode::DSRNumTreeNode(const DSRNumTreeNode &node)
-  : DSRDocumentTreeNode(node),
-    DSRNumericMeasurementValue(node)
+ : DSRDocumentTreeNode(relationshipType, VT_Num),
+   DSRNumericMeasurementValue()
 {
 }
 
 
 DSRNumTreeNode::~DSRNumTreeNode()
 {
-}
-
-
-OFBool DSRNumTreeNode::operator==(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator==(node);
-    if (result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRNumericMeasurementValue::operator==(OFstatic_cast(const DSRNumTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-OFBool DSRNumTreeNode::operator!=(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator!=(node);
-    if (!result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRNumericMeasurementValue::operator!=(OFstatic_cast(const DSRNumTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-DSRNumTreeNode *DSRNumTreeNode::clone() const
-{
-    return new DSRNumTreeNode(*this);
 }
 
 
@@ -89,13 +50,7 @@ void DSRNumTreeNode::clear()
 OFBool DSRNumTreeNode::isValid() const
 {
     /* ConceptNameCodeSequence required */
-    return DSRDocumentTreeNode::isValid() && getConceptName().isValid() && hasValidValue();
-}
-
-
-OFBool DSRNumTreeNode::hasValidValue() const
-{
-    return DSRNumericMeasurementValue::isValid();
+    return DSRDocumentTreeNode::isValid() && DSRNumericMeasurementValue::isValid() && getConceptName().isValid();
 }
 
 
@@ -126,10 +81,9 @@ OFCondition DSRNumTreeNode::writeXML(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRNumTreeNode::readContentItem(DcmItem &dataset,
-                                            const size_t flags)
+OFCondition DSRNumTreeNode::readContentItem(DcmItem &dataset)
 {
-    return DSRNumericMeasurementValue::readSequence(dataset, flags);
+    return DSRNumericMeasurementValue::readSequence(dataset);
 }
 
 
@@ -140,10 +94,9 @@ OFCondition DSRNumTreeNode::writeContentItem(DcmItem &dataset) const
 
 
 OFCondition DSRNumTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
-                                               DSRXMLCursor cursor,
-                                               const size_t flags)
+                                               DSRXMLCursor cursor)
 {
-    return DSRNumericMeasurementValue::readXML(doc, cursor, flags);
+    return DSRNumericMeasurementValue::readXML(doc, cursor);
 }
 
 

@@ -1,9 +1,9 @@
 /*
  *
- *  Copyright (C) 2014-2019, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
- *  This software and supporting documentation are maintained by
+ *  This software and supporting documentation were developed by
  *
  *    OFFIS e.V.
  *    R&D Division Health
@@ -16,7 +16,7 @@
  *  Author: Joerg Riesmeier
  *
  *  Purpose:
- *    classes: DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker
+ *    classes: DSRRadiopharmaceuticalRadiationDoseConstraintChecker
  *
  */
 
@@ -33,12 +33,10 @@
  *  class declaration  *
  *---------------------*/
 
-/** Class for checking the relationship content constraints of the Radiopharmaceutical
- *  Radiation Dose SR IOD.
- *  According to DICOM PS 3.3: "The document may be constructed from Baseline TID 10021
- *  (Radiopharmaceutical Radiation Dose) invoked at the root node."
+/** Class for checking the content relationship constraints of the Radiopharmaceutical
+ *  Radiation Dose SR IOD
  */
-class DCMTK_DCMSR_EXPORT DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker
+class DCMTK_DCMSR_EXPORT DSRRadiopharmaceuticalRadiationDoseConstraintChecker
   : public DSRIODConstraintChecker
 {
 
@@ -46,11 +44,11 @@ class DCMTK_DCMSR_EXPORT DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker
 
     /** default constructor
      */
-    DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker();
+    DSRRadiopharmaceuticalRadiationDoseConstraintChecker();
 
     /** destructor
      */
-    virtual ~DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker();
+    virtual ~DSRRadiopharmaceuticalRadiationDoseConstraintChecker();
 
     /** check whether by-reference relationships are allowed for this SR IOD
      ** @return always returns OFFalse, i.e. by-reference relationships are not allowed
@@ -62,14 +60,10 @@ class DCMTK_DCMSR_EXPORT DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker
      */
     virtual OFBool isTemplateSupportRequired() const;
 
-    /** get identifier and mapping resource of the root template (if any)
-     ** @param  templateIdentifier  identifier of the root template (might be empty)
-     *  @param  mappingResource     mapping resource that defines the root template
-     *                              (might be empty)
-     ** @return status, EC_Normal if successful, an error code otherwise
+    /** get identifier of the root template
+     ** @return always returns NULL (no template required)
      */
-    virtual OFCondition getRootTemplateIdentification(OFString &templateIdentifier,
-                                                      OFString &mappingResource) const;
+    virtual const char *getRootTemplateIdentifier() const;
 
     /** get the associated document type of the SR IOD
      ** @return document type (DSRTypes::DT_RadiopharmaceuticalRadiationDoseSR)

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2020, OFFIS e.V.
+ *  Copyright (C) 1994-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,9 +27,6 @@
 
 #include "dcmtk/dcmdata/dcelem.h"
 
-// forward declarations
-class DcmJsonFormat;
-
 
 /** a class representing the DICOM value representation 'Floating Point Double' (FD)
  */
@@ -39,20 +36,18 @@ class DCMTK_DCMDATA_EXPORT DcmFloatingPointDouble
 
  public:
 
-    // Make friend with DcmItem which requires access to protected
-    // constructor allowing construction using an explicit value length.
-    friend class DcmItem;
-
     /** constructor.
-     *  Create new element from given tag.
+     *  Create new element from given tag and length.
      *  @param tag DICOM tag for the new element
+     *  @param len value length for the new element
      */
-    DcmFloatingPointDouble(const DcmTag &tag);
+    DcmFloatingPointDouble(const DcmTag &tag,
+                           const Uint32 len = 0);
 
     /** copy constructor
      *  @param old element to be copied
      */
-    DcmFloatingPointDouble(const DcmFloatingPointDouble &old);
+    DcmFloatingPointDouble( const DcmFloatingPointDouble &old);
 
     /** destructor
      */
@@ -63,24 +58,6 @@ class DCMTK_DCMDATA_EXPORT DcmFloatingPointDouble
      *  @return reference to this object
      */
     DcmFloatingPointDouble &operator=(const DcmFloatingPointDouble &obj);
-
-    /** comparison operator that compares the normalized value of this object
-     *  with a given object of the same type. The tag of the element is also
-     *  considered as the first component that is compared, followed by the
-     *  object types (VR, i.e. DCMTK'S EVR) and the comparison of all value
-     *  components of the object, preferably in the order declared in the
-     *  object (if applicable).
-     *  @param  rhs the right hand side of the comparison
-     *  @return 0 if the object values are equal.
-     *    -1 if either the value of the  first component that does not match
-     *    is lower in this object than in rhs, or all compared components match
-     *    but this object has fewer components than rhs. Also returned if rhs
-     *    cannot be casted to this object type.
-     *    1 if either the value of the first component that does not match
-     *    is greater in this object than in rhs object, or all compared
-     *    components match but the this component is longer.
-     */
-    virtual int compare(const DcmElement& rhs) const;
 
     /** clone method
      *  @return deep copy of this object
@@ -119,14 +96,9 @@ class DCMTK_DCMDATA_EXPORT DcmFloatingPointDouble
                                    const OFBool oldFormat = OFFalse);
 
     /** get value multiplicity
-     *  @return number of values in this element
+     *  @return number of currently stored values
      */
     virtual unsigned long getVM();
-
-    /** get number of values stored in this element
-     *  @return number of values in this element
-     */
-    virtual unsigned long getNumberOfValues();
 
     /** print element to a stream.
      *  The output format of the value is a backslash separated sequence of numbers.
@@ -138,7 +110,7 @@ class DCMTK_DCMDATA_EXPORT DcmFloatingPointDouble
      *  @param pixelFileName not used
      *  @param pixelCounter not used
      */
-    virtual void print(STD_NAMESPACE ostream &out,
+    virtual void print(STD_NAMESPACE ostream&out,
                        const size_t flags = 0,
                        const int level = 0,
                        const char *pixelFileName = NULL,
@@ -171,11 +143,11 @@ class DCMTK_DCMDATA_EXPORT DcmFloatingPointDouble
                                     OFBool normalize = OFTrue);
 
     /** set particular element value to given double
-     *  @param doubleVal double precision floating point value to be set
+     *  @param doubleval double precision floating point value to be set
      *  @param pos index of the value to be set (0 = first position)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual OFCondition putFloat64(const Float64 doubleVal,
+    virtual OFCondition putFloat64(const Float64 doubleval,
                                    const unsigned long pos = 0);
 
     /** set element value to given double array data
@@ -212,35 +184,6 @@ class DCMTK_DCMDATA_EXPORT DcmFloatingPointDouble
      *  @return status, EC_Normal if value length is correct, an error code otherwise
      */
     virtual OFCondition verify(const OFBool autocorrect = OFFalse);
-
-    /// @copydoc DcmElement::matches()
-    virtual OFBool matches(const DcmElement& candidate,
-                           const OFBool enableWildCardMatching = OFTrue) const;
-
-    /** write object in JSON format
-     *  @param out output stream to which the JSON document is written
-     *  @param format used to format and customize the output
-     *  @return status, EC_Normal if successful, an error code otherwise
-     */
-    virtual OFCondition writeJson(STD_NAMESPACE ostream &out,
-                                  DcmJsonFormat &format);
-
-  protected:
-
-    /** constructor. Create new element from given tag and length.
-     *  Only reachable from friend classes since construction with
-     *  length different from 0 leads to a state with length being set but
-     *  the element's value still being uninitialized. This can lead to crashes
-     *  when the value is read or written. Thus the method calling this
-     *  constructor with length > 0 must ensure that the element's value is
-     *  explicitly initialized, too.
-     *  Create new element from given tag and length.
-     *  @param tag DICOM tag for the new element
-     *  @param len value length for the new element
-     */
-    DcmFloatingPointDouble(const DcmTag &tag,
-                           const Uint32 len);
-
 };
 
 

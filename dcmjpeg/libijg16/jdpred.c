@@ -98,57 +98,37 @@
 
 METHODDEF(void)
 jpeg_undifference1(j_decompress_ptr cinfo, int comp_index,
-           const JDIFFROW diff_buf, const JDIFFROW prev_row,
+           JDIFFROW diff_buf, JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
-  (void)cinfo;
-  (void)comp_index;
   UNDIFFERENCE_1D(INITIAL_PREDICTOR2);
 }
 
 METHODDEF(void)
 jpeg_undifference2(j_decompress_ptr cinfo, int comp_index,
-           const JDIFFROW diff_buf, const JDIFFROW prev_row,
+           JDIFFROW diff_buf, JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
-   (void)cinfo;
-  (void)comp_index;
- UNDIFFERENCE_2D(PREDICTOR2);
+  UNDIFFERENCE_2D(PREDICTOR2);
   JPEG_UNUSED(Rc);
   JPEG_UNUSED(Rb);
 }
 
 METHODDEF(void)
 jpeg_undifference3(j_decompress_ptr cinfo, int comp_index,
-           const JDIFFROW diff_buf, const JDIFFROW prev_row,
+           JDIFFROW diff_buf, JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
-  (void)cinfo;
-  (void)comp_index;
   UNDIFFERENCE_2D(PREDICTOR3);
   JPEG_UNUSED(Rc);
   JPEG_UNUSED(Rb);
 }
 
 METHODDEF(void)
-jpeg_undifference4a(j_decompress_ptr cinfo, int comp_index,
-           const JDIFFROW diff_buf, const JDIFFROW prev_row,
-           JDIFFROW undiff_buf, JDIMENSION width)
-{
-  (void)cinfo;
-  (void)comp_index;
-  UNDIFFERENCE_2D(PREDICTOR4A);
-  JPEG_UNUSED(Rc);
-  JPEG_UNUSED(Rb);
-}
-
-METHODDEF(void)
 jpeg_undifference4(j_decompress_ptr cinfo, int comp_index,
-           const JDIFFROW diff_buf, const JDIFFROW prev_row,
+           JDIFFROW diff_buf, JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
-  (void)cinfo;
-  (void)comp_index;
   UNDIFFERENCE_2D(PREDICTOR4);
   JPEG_UNUSED(Rc);
   JPEG_UNUSED(Rb);
@@ -156,11 +136,9 @@ jpeg_undifference4(j_decompress_ptr cinfo, int comp_index,
 
 METHODDEF(void)
 jpeg_undifference5(j_decompress_ptr cinfo, int comp_index,
-           const JDIFFROW diff_buf, const JDIFFROW prev_row,
+           JDIFFROW diff_buf, JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
-  (void)cinfo;
-  (void)comp_index;
   SHIFT_TEMPS
   UNDIFFERENCE_2D(PREDICTOR5);
   JPEG_UNUSED(Rc);
@@ -168,25 +146,10 @@ jpeg_undifference5(j_decompress_ptr cinfo, int comp_index,
 }
 
 METHODDEF(void)
-jpeg_undifference5a(j_decompress_ptr cinfo, int comp_index,
-           const JDIFFROW diff_buf, const JDIFFROW prev_row,
-           JDIFFROW undiff_buf, JDIMENSION width)
-{
-  (void)cinfo;
-  (void)comp_index;
-  SHIFT_TEMPS
-  UNDIFFERENCE_2D(PREDICTOR5A);
-  JPEG_UNUSED(Rc);
-  JPEG_UNUSED(Rb);
-}
-
-METHODDEF(void)
 jpeg_undifference6(j_decompress_ptr cinfo, int comp_index,
-           const JDIFFROW diff_buf, const JDIFFROW prev_row,
+           JDIFFROW diff_buf, JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
-  (void)cinfo;
-  (void)comp_index;
   SHIFT_TEMPS
   UNDIFFERENCE_2D(PREDICTOR6);
   JPEG_UNUSED(Rc);
@@ -195,11 +158,9 @@ jpeg_undifference6(j_decompress_ptr cinfo, int comp_index,
 
 METHODDEF(void)
 jpeg_undifference6a(j_decompress_ptr cinfo, int comp_index,
-           const JDIFFROW diff_buf, const JDIFFROW prev_row,
+           JDIFFROW diff_buf, JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
-  (void)cinfo;
-  (void)comp_index;
   SHIFT_TEMPS
   UNDIFFERENCE_2D(PREDICTOR6A);
   JPEG_UNUSED(Rc);
@@ -208,26 +169,11 @@ jpeg_undifference6a(j_decompress_ptr cinfo, int comp_index,
 
 METHODDEF(void)
 jpeg_undifference7(j_decompress_ptr cinfo, int comp_index,
-           const JDIFFROW diff_buf, const JDIFFROW prev_row,
+           JDIFFROW diff_buf, JDIFFROW prev_row,
            JDIFFROW undiff_buf, JDIMENSION width)
 {
-  (void)cinfo;
-  (void)comp_index;
   SHIFT_TEMPS
   UNDIFFERENCE_2D(PREDICTOR7);
-  JPEG_UNUSED(Rc);
-  JPEG_UNUSED(Rb);
-}
-
-METHODDEF(void)
-jpeg_undifference7a(j_decompress_ptr cinfo, int comp_index,
-           const JDIFFROW diff_buf, const JDIFFROW prev_row,
-           JDIFFROW undiff_buf, JDIMENSION width)
-{
-  (void)cinfo;
-  (void)comp_index;
-  SHIFT_TEMPS
-  UNDIFFERENCE_2D(PREDICTOR7A);
   JPEG_UNUSED(Rc);
   JPEG_UNUSED(Rb);
 }
@@ -242,10 +188,9 @@ jpeg_undifference7a(j_decompress_ptr cinfo, int comp_index,
 
 METHODDEF(void)
 jpeg_undifference_first_row(j_decompress_ptr cinfo, int comp_index,
-                const JDIFFROW diff_buf, JDIFFROW prev_row,
+                JDIFFROW diff_buf, JDIFFROW prev_row,
                 JDIFFROW undiff_buf, JDIMENSION width)
 {
-  (void)prev_row;
   j_lossless_d_ptr losslsd = (j_lossless_d_ptr) cinfo->codec;
 
   UNDIFFERENCE_1D(INITIAL_PREDICTORx);
@@ -266,20 +211,10 @@ jpeg_undifference_first_row(j_decompress_ptr cinfo, int comp_index,
     losslsd->predict_undifference[comp_index] = jpeg_undifference3;
     break;
   case 4:
-    /* DCMTK specific code that is only needed in the 16-bit library.
-     * Enables workaround for faulty images with integer overflow in predictor 6.
-     */
-    if (cinfo->workaround_options & WORKAROUND_PREDICTOR6OVERFLOW)
-      losslsd->predict_undifference[comp_index] = jpeg_undifference4a;
-      else losslsd->predict_undifference[comp_index] = jpeg_undifference4;
+    losslsd->predict_undifference[comp_index] = jpeg_undifference4;
     break;
   case 5:
-    /* DCMTK specific code that is only needed in the 16-bit library.
-     * Enables workaround for faulty images with integer overflow in predictor 6.
-     */
-    if (cinfo->workaround_options & WORKAROUND_PREDICTOR6OVERFLOW)
-      losslsd->predict_undifference[comp_index] = jpeg_undifference5a;
-      else losslsd->predict_undifference[comp_index] = jpeg_undifference5;
+    losslsd->predict_undifference[comp_index] = jpeg_undifference5;
     break;
   case 6:
     /* DCMTK specific code that is only needed in the 16-bit library.
@@ -290,12 +225,7 @@ jpeg_undifference_first_row(j_decompress_ptr cinfo, int comp_index,
       else losslsd->predict_undifference[comp_index] = jpeg_undifference6;
     break;
   case 7:
-    /* DCMTK specific code that is only needed in the 16-bit library.
-     * Enables workaround for faulty images with integer overflow in predictor 6.
-     */
-    if (cinfo->workaround_options & WORKAROUND_PREDICTOR6OVERFLOW)
-      losslsd->predict_undifference[comp_index] = jpeg_undifference7a;
-      else losslsd->predict_undifference[comp_index] = jpeg_undifference7;
+    losslsd->predict_undifference[comp_index] = jpeg_undifference7;
     break;
   }
 }

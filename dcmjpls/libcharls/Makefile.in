@@ -19,7 +19,7 @@ LOCALDEFS =
 
 objs = header.o intrface.o jpegls.o
 
-library = libdcmtkcharls.$(LIBEXT)
+library = libcharls.$(LIBEXT)
 
 all: $(library)
 

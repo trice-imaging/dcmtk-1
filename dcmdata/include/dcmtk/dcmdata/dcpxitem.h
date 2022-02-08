@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2019, OFFIS e.V.
+ *  Copyright (C) 1994-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,14 +28,6 @@
 #include "dcmtk/dcmdata/dcofsetl.h"   /* for class DcmOffsetList */
 
 
-/*
-** Defines
-*/
-
-/// macro for the "pixel item" tag
-#define DCM_PixelItemTag (DcmTag(DCM_Item, EVR_OB))
-
-
 /** this class implements a container for a fragment of compressed pixel data.
  *  Instances of this class use the same attribute tags as sequence items,
  *  but are maintained within a pixel data element (class DcmPixelSequence)
@@ -47,8 +39,7 @@ class DCMTK_DCMDATA_EXPORT DcmPixelItem : public DcmOtherByteOtherWord
 {
   public:
 
-    /** constructor.
-     *  Create new element from given tag.
+    /** constructor
      *  @param tag attribute tag
      *  @param len length of the attribute value
      */
@@ -64,9 +55,8 @@ class DCMTK_DCMDATA_EXPORT DcmPixelItem : public DcmOtherByteOtherWord
 
     /** copy assignment operator
      *  @param obj element to be copied
-     *  @return reference to this object
      */
-    DcmPixelItem &operator=(const DcmPixelItem &obj);
+    DcmPixelItem &operator=(const DcmPixelItem &obj) { DcmOtherByteOtherWord::operator=(obj); return *this; }
 
     /** clone method
      *  @return deep copy of this object
@@ -120,16 +110,10 @@ class DCMTK_DCMDATA_EXPORT DcmPixelItem : public DcmOtherByteOtherWord
                        const char *pixelFileName = NULL,
                        size_t *pixelCounter = NULL);
 
-    /** @copydoc DcmObject::calcElementLength()
-     */
-    virtual Uint32 calcElementLength(const E_TransferSyntax xfer,
-                                     const E_EncodingType enctype);
-
-    /** creates in this object an offset table for a compressed pixel sequence
-     *  @param offsetList list of size entries (i.e. number of bytes) for each
-     *    individual frame, including item header (8 bytes) of all associated
-     *    pixel items. All entries are expected to have an even value (i.e. the
-     *    pixel items are padded).
+    /** creates in this object an offset table for a compressed pixel sequence.
+     *  @param offsetList list of size entries for each individual encoded frame
+     *    provided by the compression codec. All entries are expected to have
+     *    an even value (i.e. the pixel items are padded).
      *  @return EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition createOffsetTable(const DcmOffsetList &offsetList);

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2021, OFFIS e.V.
+ *  Copyright (C) 1996-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,7 +27,6 @@
 #include "dcmtk/dcmdata/dctagkey.h"
 #include "dcmtk/dcmdata/dcpixel.h"
 #include "dcmtk/ofstd/ofbmanip.h"
-#include "dcmtk/ofstd/ofutil.h"
 
 #include "dcmtk/dcmimgle/diovpln.h"
 #include "dcmtk/dcmimgle/didocu.h"
@@ -60,14 +59,13 @@ DiOverlayPlane::DiOverlayPlane(const DiDocument *docu,
     DefaultMode(EMO_Graphic),
     Label(),
     Description(),
-    GroupNumber(OFstatic_cast(Uint16, group)),
+    GroupNumber(group),
     Valid(0),
     Visible(0),
     BitPos(0),
     StartBitPos(0),
     StartLeft(0),
     StartTop(0),
-    MultiframeOverlay(0),
     EmbeddedData(0),
     Ptr(NULL),
     StartPtr(NULL),
@@ -77,8 +75,8 @@ DiOverlayPlane::DiOverlayPlane(const DiDocument *docu,
     {
         /* determine first frame to be processed */
         FirstFrame = docu->getFrameStart();
-        /* specify overlay group number */
-        DcmTagKey tag(OFstatic_cast(Uint16, group), DCM_OverlayRows.getElement() /* dummy */);
+        /* specifiy overlay group number */
+        DcmTagKey tag(group, DCM_OverlayRows.getElement() /* dummy */);
         /* get descriptive data */
         tag.setElement(DCM_OverlayLabel.getElement());
         docu->getValue(tag, Label);
@@ -92,7 +90,6 @@ DiOverlayPlane::DiOverlayPlane(const DiDocument *docu,
         Sint32 sl = 0;
         /* multi-frame overlays */
         tag.setElement(DCM_NumberOfFramesInOverlay.getElement());
-        MultiframeOverlay = (docu->search(tag) != NULL);
         docu->getValue(tag, sl);
         NumberOfFrames = (sl < 1) ? 1 : OFstatic_cast(Uint32, sl);
         tag.setElement(DCM_ImageFrameOrigin.getElement());
@@ -105,8 +102,6 @@ DiOverlayPlane::DiOverlayPlane(const DiDocument *docu,
         if (Valid)
         {
             DCMIMGLE_DEBUG("processing overlay plane in group 0x" << STD_NAMESPACE hex << group);
-            if (MultiframeOverlay)
-                DCMIMGLE_TRACE("  this is a multi-frame overlay with " << NumberOfFrames << " frame(s) starting at frame " << (ImageFrameOrigin + 1));
             if (docu->getValue(tag, Top, 1) < 2)
                 DCMIMGLE_WARN("missing second value for 'OverlayOrigin' ... assuming 'Top' = " << Top);
         }
@@ -115,8 +110,6 @@ DiOverlayPlane::DiOverlayPlane(const DiDocument *docu,
         if (Valid)
         {
             DCMIMGLE_DEBUG("processing overlay plane in group 0x" << STD_NAMESPACE hex << group);
-            if (MultiframeOverlay)
-                DCMIMGLE_TRACE("  this is a multi-frame overlay with " << NumberOfFrames << " frame(s) starting at frame " << (ImageFrameOrigin + 1));
             if (docu->getValue(tag, Left, 1) < 2)
                 DCMIMGLE_WARN("missing second value for 'OverlayOrigin' ... assuming 'Left' = " << Left);
         }
@@ -195,13 +188,6 @@ DiOverlayPlane::DiOverlayPlane(const DiDocument *docu,
                 Data = NULL;
             } else
                 Valid = (Data != NULL);
-            /* check condition for multi-frame overlay */
-            if (NumberOfFrames > 1)
-            {
-                Sint32 numFrames = 0;
-                if (!docu->getValue(DCM_NumberOfFrames, numFrames) || (numFrames == 1))
-                    DCMIMGLE_WARN("found multi-frame overlay in group 0x" << STD_NAMESPACE hex << group << " for single frame image");
-            }
         }
         if (Valid)
         {
@@ -242,14 +228,13 @@ DiOverlayPlane::DiOverlayPlane(const unsigned int group,
     DefaultMode(mode),
     Label(),
     Description(),
-    GroupNumber(OFstatic_cast(Uint16, group)),
+    GroupNumber(group),
     Valid(0),
     Visible((mode == EMO_BitmapShutter) ? 1 : 0),
     BitPos(0),
     StartBitPos(0),
     StartLeft(0),
     StartTop(0),
-    MultiframeOverlay(0),
     EmbeddedData(0),
     Ptr(NULL),
     StartPtr(NULL),
@@ -277,7 +262,7 @@ DiOverlayPlane::DiOverlayPlane(const unsigned int group,
 
 DiOverlayPlane::DiOverlayPlane(DiOverlayPlane *plane,
                                const unsigned int bit,
-                               const Uint16 *data,
+                               Uint16 *data,
                                Uint16 *temp,
                                const Uint16 width,
                                const Uint16 height,
@@ -293,7 +278,7 @@ DiOverlayPlane::DiOverlayPlane(DiOverlayPlane *plane,
     Rows(rows),
     Columns(columns),
     BitsAllocated(16),
-    BitPosition(OFstatic_cast(Uint16, bit)),
+    BitPosition(bit),
     Foreground(plane->Foreground),
     Threshold(plane->Threshold),
     PValue(0),
@@ -308,7 +293,6 @@ DiOverlayPlane::DiOverlayPlane(DiOverlayPlane *plane,
     StartBitPos(0),
     StartLeft(plane->StartLeft),
     StartTop(plane->StartTop),
-    MultiframeOverlay(plane->MultiframeOverlay),
     EmbeddedData(0),
     Ptr(NULL),
     StartPtr(NULL),
@@ -316,10 +300,10 @@ DiOverlayPlane::DiOverlayPlane(DiOverlayPlane *plane,
 {
     if (temp != NULL)
     {
-        Uint16 x;
-        Uint16 y;
-        Uint16 *q = temp;
-        const Uint16 mask = 1 << bit;
+        register Uint16 x;
+        register Uint16 y;
+        register Uint16 *q = temp;
+        register const Uint16 mask = 1 << bit;
         const Uint16 skip_x = width - plane->Columns;
         const unsigned long skip_f = OFstatic_cast(unsigned long, height - plane->Rows) * OFstatic_cast(unsigned long, width);
         for (unsigned long f = 0; f < NumberOfFrames; ++f)
@@ -364,8 +348,7 @@ void *DiOverlayPlane::getData(const unsigned long frame,
                               const Uint16 ymax,
                               const int bits,
                               const Uint16 fore,
-                              const Uint16 back,
-                              const OFBool useOrigin)
+                              const Uint16 back)
 {
     const unsigned long count = OFstatic_cast(unsigned long, xmax - xmin) * OFstatic_cast(unsigned long, ymax - ymin);
     if (Valid && (count > 0))
@@ -380,16 +363,16 @@ void *DiOverlayPlane::getData(const unsigned long frame,
                 if ((fore & mask) != (back & mask))
                 {
                     OFBitmanipTemplate<Uint8>::setMem(data, 0x0, count8);
-                    Uint16 x;
-                    Uint16 y;
-                    Uint8 value = 0;
-                    Uint8 *q = data;
-                    int bit = 0;
+                    register Uint16 x;
+                    register Uint16 y;
+                    register Uint8 value = 0;
+                    register Uint8 *q = data;
+                    register int bit = 0;
                     if (reset(frame + ImageFrameOrigin))
                     {
                         for (y = ymin; y < ymax; ++y)
                         {
-                            setStart(xmin, y, useOrigin);
+                            setStart(xmin, y);
                             for (x = xmin; x < xmax; ++x)
                             {
                                 if (getNextBit())
@@ -427,14 +410,14 @@ void *DiOverlayPlane::getData(const unsigned long frame,
                 OFBitmanipTemplate<Uint8>::setMem(data, back8, count);
                 if (fore8 != back8)                                     // optimization
                 {
-                    Uint16 x;
-                    Uint16 y;
-                    Uint8 *q = data;
+                    register Uint16 x;
+                    register Uint16 y;
+                    register Uint8 *q = data;
                     if (reset(frame + ImageFrameOrigin))
                     {
                         for (y = ymin; y < ymax; ++y)
                         {
-                            setStart(xmin, y, useOrigin);
+                            setStart(xmin, y);
                             for (x = xmin; x < xmax; ++x, ++q)
                             {
                                 if (getNextBit())
@@ -456,14 +439,14 @@ void *DiOverlayPlane::getData(const unsigned long frame,
                 OFBitmanipTemplate<Uint16>::setMem(data, back16, count);
                 if (fore16 != back16)                                   // optimization
                 {
-                    Uint16 x;
-                    Uint16 y;
-                    Uint16 *q = data;
+                    register Uint16 x;
+                    register Uint16 y;
+                    register Uint16 *q = data;
                     if (reset(frame + ImageFrameOrigin))
                     {
                         for (y = ymin; y < ymax; ++y)
                         {
-                            setStart(xmin, y, useOrigin);
+                            setStart(xmin, y);
                             for (x = xmin; x < xmax; ++x, ++q)
                             {
                                 if (getNextBit())
@@ -497,11 +480,11 @@ unsigned long DiOverlayPlane::create6xxx3000Data(Uint8 *&buffer,
         if (buffer != NULL)
         {
             OFBitmanipTemplate<Uint8>::setMem(buffer, 0x0, count8);
-            Uint16 x;
-            Uint16 y;
-            Uint8 value = 0;
-            Uint8 *q = buffer;
-            int bit = 0;
+            register Uint16 x;
+            register Uint16 y;
+            register Uint8 value = 0;
+            register Uint8 *q = buffer;
+            register int bit = 0;
             for (unsigned long f = 0; f < NumberOfFrames; ++f)
             {
                 if (reset(f + ImageFrameOrigin))
@@ -571,8 +554,6 @@ void DiOverlayPlane::setScaling(const double xfactor,
     Top = OFstatic_cast(Sint16, yfactor * Top);
     Width = OFstatic_cast(Uint16, xfactor * Width);
     Height = OFstatic_cast(Uint16, yfactor * Height);
-    StartLeft = OFstatic_cast(unsigned int, xfactor * StartLeft);
-    StartTop = OFstatic_cast(unsigned int, yfactor * StartTop);
 }
 
 
@@ -584,12 +565,12 @@ void DiOverlayPlane::setFlipping(const int horz,
     if (horz)
     {
         Left = OFstatic_cast(Sint16, columns - Width - Left);
-        StartLeft = OFstatic_cast(unsigned int, OFstatic_cast(signed long, Columns) - Width - StartLeft);
+        StartLeft = OFstatic_cast(Uint16, OFstatic_cast(signed long, Columns) - Width - StartLeft);
     }
     if (vert)
     {
         Top = OFstatic_cast(Sint16, rows - Height - Top);
-        StartTop = OFstatic_cast(unsigned int, OFstatic_cast(signed long, Rows) - Height - StartTop);
+        StartTop = OFstatic_cast(Uint16, OFstatic_cast(signed long, Rows) - Height - StartTop);
     }
 }
 
@@ -604,25 +585,29 @@ void DiOverlayPlane::setRotation(const int degree,
         setFlipping(1, 1, left_pos + columns, top_pos + rows);
     else if ((degree == 90) || (degree == 270))
     {
-        OFswap(Width, Height);                  // swap visible width/height
+        Uint16 us = Height;                     // swap visible width/height
+        Height = Width;
+        Width = us;
 /*
-        OFswap(Columns, Rows);                  // swap stored columns/rows -> already done in the constructor !
+        us = Rows;                              // swap stored width/height -> already done in the constructor !
+        Rows = Columns;
+        Columns = us;
 */
         if (degree == 90)                       // rotate right
         {
-            const Sint16 ss = Left;
-            const unsigned int ui = StartLeft;
+            Sint16 ss = Left;
+            us = StartLeft;
             Left = OFstatic_cast(Sint16, OFstatic_cast(signed long, columns) - Width - Top + top_pos);
-            StartLeft = OFstatic_cast(unsigned int, OFstatic_cast(signed long, Columns) - Width - StartTop);
+            StartLeft = OFstatic_cast(Uint16, OFstatic_cast(signed long, Columns) - Width - StartTop);
             Top = OFstatic_cast(Sint16, ss - left_pos);
-            StartTop = ui;
+            StartTop = us;
         } else {                                // rotate left
-            const Sint16 ss = Left;
-            const unsigned int ui = StartLeft;
+            Sint16 ss = Left;
+            us = StartLeft;
             Left = OFstatic_cast(Sint16, Top - top_pos);
             StartLeft = StartTop;
             Top = OFstatic_cast(Sint16, OFstatic_cast(signed long, rows) - Height - ss + left_pos);
-            StartTop = OFstatic_cast(unsigned int, OFstatic_cast(signed long, Rows) - Height - ui);
+            StartTop = OFstatic_cast(Uint16, OFstatic_cast(signed long, Rows) - Height - us);
         }
     }
 }

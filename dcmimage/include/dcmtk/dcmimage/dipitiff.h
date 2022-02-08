@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2001-2018, OFFIS e.V.
+ *  Copyright (C) 2001-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -48,8 +48,6 @@ class DiImage;
 /** describes the different types of compression supported by
  *  the TIFF plugin.  Enumeration depends on capabilities
  *  of underlying TIFF library (libtiff).
- *  @remark this enum is only available if DCMTK is compiled with
- *  TIFF (libtiff) support enabled.
  */
 enum DiTIFFCompression
 {
@@ -64,8 +62,6 @@ enum DiTIFFCompression
 };
 
 /** describes the optional predictor used with TIFF LZW compression
- *  @remark this enum is only available if DCMTK is compiled with
- *  TIFF (libtiff) support enabled.
  */
 enum DiTIFFLZWPredictor
 {
@@ -85,8 +81,6 @@ enum DiTIFFLZWPredictor
  *---------------------*/
 
 /** Implementation of a TIFF plugin for the dcmimgle/dcmimage library
- *  @remark This class is only available if DCMTK is compiled with
- *  TIFF (libtiff) support enabled.
  */
 class DCMTK_DCMIMAGE_EXPORT DiTIFFPlugin
   : public DiPluginFormat

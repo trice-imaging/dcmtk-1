@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2021, OFFIS e.V.
+ *  Copyright (C) 1998-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -30,7 +30,7 @@
 #include "dcmtk/dcmimgle/dcmimage.h"
 #include "dcmtk/dcmimgle/digsdfn.h"
 #include "dcmtk/dcmpstat/dvpscf.h"
-#include "dcmtk/dcmnet/dimse.h"         /* for DICOM_WARNING_STATUS */
+
 #include "dcmtk/dcmpstat/dvpsov.h"      /* for DVPSOverlay, needed by MSVC5 with STL */
 #include "dcmtk/dcmpstat/dvpsgl.h"      /* for DVPSGraphicLayer, needed by MSVC5 with STL */
 #include "dcmtk/dcmpstat/dvpsrs.h"      /* for DVPSReferencedSeries, needed by MSVC5 with STL */
@@ -46,11 +46,9 @@
 #include "dcmtk/dcmpstat/dvpsgr.h"      /* for DVPSGraphicObject, needed by MSVC5 with STL */
 #include "dcmtk/dcmpstat/dvpsri.h"      /* for DVPSReferencedImage, needed by MSVC5 with STL */
 
-#include <cmath>
-
-#define DIMSE_STATUS_OK(status) (((status) == 0) || DICOM_WARNING_STATUS(status))
-#define DIMSE_STATUS_BAD(status) (((status) != 0) && !(DICOM_WARNING_STATUS(status)))
-
+#define INCLUDE_CMATH
+#define INCLUDE_CTIME
+#include "dcmtk/ofstd/ofstdinc.h"
 
 /* --------------- class DVPSStoredPrint --------------- */
 
@@ -69,7 +67,7 @@ DVPSStoredPrint::DVPSStoredPrint(Uint16 illumin, Uint16 reflection, const char *
 , seriesNumber(DCM_SeriesNumber)
 , manufacturer(DCM_Manufacturer)
 , originator(DCM_Originator)
-, destination(DCM_DestinationAE)
+, destination(DCM_RETIRED_DestinationAE)
 , printerName(DCM_PrinterName)
 , instanceNumber(DCM_InstanceNumber)
 , imageDisplayFormat(DCM_ImageDisplayFormat)
@@ -288,7 +286,7 @@ OFCondition DVPSStoredPrint::read(DcmItem &dset)
 
   DcmUniqueIdentifier sopclassuid(DCM_SOPClassUID);
   DcmUniqueIdentifier refsopclassuid(DCM_ReferencedSOPClassUID);
-  READ_FROM_DATASET(DcmUniqueIdentifier, EVR_UI, sopclassuid)
+  READ_FROM_DATASET(DcmUniqueIdentifier, sopclassuid)
   sopclassuid.getOFString(aString,0);
   if (aString != UID_RETIRED_StoredPrintStorage)
   {
@@ -297,31 +295,31 @@ OFCondition DVPSStoredPrint::read(DcmItem &dset)
   }
 
   DcmCodeString modality(DCM_Modality);
-  READ_FROM_DATASET(DcmCodeString, EVR_CS, modality)
+  READ_FROM_DATASET(DcmCodeString, modality)
   if (modality.getLength() == 0)
   {
     result=EC_IllegalCall;
     DCMPSTAT_WARN("Modality missing or empty in Stored Print");
   }
 
-  READ_FROM_DATASET(DcmPersonName, EVR_PN, patientName)
-  READ_FROM_DATASET(DcmLongString, EVR_LO, patientID)
-  READ_FROM_DATASET(DcmDate, EVR_DA, patientBirthDate)
-  READ_FROM_DATASET(DcmCodeString, EVR_CS, patientSex)
-  READ_FROM_DATASET(DcmUniqueIdentifier, EVR_UI, studyInstanceUID)
-  READ_FROM_DATASET(DcmDate, EVR_DA, studyDate)
-  READ_FROM_DATASET(DcmTime, EVR_TM, studyTime)
-  READ_FROM_DATASET(DcmPersonName, EVR_PN, referringPhysicianName)
-  READ_FROM_DATASET(DcmShortString, EVR_SH, studyID)
-  READ_FROM_DATASET(DcmShortString, EVR_SH, accessionNumber)
-  READ_FROM_DATASET(DcmUniqueIdentifier, EVR_UI, seriesInstanceUID)
-  READ_FROM_DATASET(DcmIntegerString, EVR_IS, seriesNumber)
-  READ_FROM_DATASET(DcmLongString, EVR_LO, manufacturer)
-  READ_FROM_DATASET(DcmIntegerString, EVR_IS, instanceNumber)
-  READ_FROM_DATASET(DcmUniqueIdentifier, EVR_UI, sOPInstanceUID)
-  READ_FROM_DATASET(DcmCodeString, EVR_CS, specificCharacterSet)
-  READ_FROM_DATASET(DcmDate, EVR_DA, instanceCreationDate)
-  READ_FROM_DATASET(DcmTime, EVR_TM, instanceCreationTime)
+  READ_FROM_DATASET(DcmPersonName, patientName)
+  READ_FROM_DATASET(DcmLongString, patientID)
+  READ_FROM_DATASET(DcmDate, patientBirthDate)
+  READ_FROM_DATASET(DcmCodeString, patientSex)
+  READ_FROM_DATASET(DcmUniqueIdentifier, studyInstanceUID)
+  READ_FROM_DATASET(DcmDate, studyDate)
+  READ_FROM_DATASET(DcmTime, studyTime)
+  READ_FROM_DATASET(DcmPersonName, referringPhysicianName)
+  READ_FROM_DATASET(DcmShortString, studyID)
+  READ_FROM_DATASET(DcmShortString, accessionNumber)
+  READ_FROM_DATASET(DcmUniqueIdentifier, seriesInstanceUID)
+  READ_FROM_DATASET(DcmIntegerString, seriesNumber)
+  READ_FROM_DATASET(DcmLongString, manufacturer)
+  READ_FROM_DATASET(DcmIntegerString, instanceNumber)
+  READ_FROM_DATASET(DcmUniqueIdentifier, sOPInstanceUID)
+  READ_FROM_DATASET(DcmCodeString, specificCharacterSet)
+  READ_FROM_DATASET(DcmDate, instanceCreationDate)
+  READ_FROM_DATASET(DcmTime, instanceCreationTime)
 
   if (EC_Normal==result) result = presentationLUTList.read(dset);
 
@@ -336,28 +334,28 @@ OFCondition DVPSStoredPrint::read(DcmItem &dset)
          item = seq->getItem(0);
          stack.clear();
 
-         READ_FROM_DATASET2(DcmShortText, EVR_ST, imageDisplayFormat)
-         READ_FROM_DATASET2(DcmCodeString, EVR_CS, annotationDisplayFormatID)
+         READ_FROM_DATASET2(DcmShortText, imageDisplayFormat)
+         READ_FROM_DATASET2(DcmCodeString, annotationDisplayFormatID)
          if (result==EC_TagNotFound) result = EC_Normal;
-         READ_FROM_DATASET2(DcmCodeString, EVR_CS, filmOrientation)
-         READ_FROM_DATASET2(DcmCodeString, EVR_CS, filmSizeID)
-         READ_FROM_DATASET2(DcmCodeString, EVR_CS, magnificationType)
-         READ_FROM_DATASET2(DcmCodeString, EVR_CS, smoothingType)
+         READ_FROM_DATASET2(DcmCodeString, filmOrientation)
+         READ_FROM_DATASET2(DcmCodeString, filmSizeID)
+         READ_FROM_DATASET2(DcmCodeString, magnificationType)
+         READ_FROM_DATASET2(DcmCodeString, smoothingType)
          if (result==EC_TagNotFound) result = EC_Normal;
-         READ_FROM_DATASET2(DcmCodeString, EVR_CS, borderDensity)
+         READ_FROM_DATASET2(DcmCodeString, borderDensity)
          if (result==EC_TagNotFound) result = EC_Normal;
-         READ_FROM_DATASET2(DcmCodeString, EVR_CS, emptyImageDensity)
+         READ_FROM_DATASET2(DcmCodeString, emptyImageDensity)
          if (result==EC_TagNotFound) result = EC_Normal;
-         READ_FROM_DATASET2(DcmUnsignedShort, EVR_US, minDensity)
+         READ_FROM_DATASET2(DcmUnsignedShort, minDensity)
          if (result==EC_TagNotFound) result = EC_Normal;
-         READ_FROM_DATASET2(DcmUnsignedShort, EVR_US, maxDensity)
-         READ_FROM_DATASET2(DcmCodeString, EVR_CS, trim)
-         READ_FROM_DATASET2(DcmShortText, EVR_ST, configurationInformation)
-         READ_FROM_DATASET2(DcmUnsignedShort, EVR_US, illumination)
+         READ_FROM_DATASET2(DcmUnsignedShort, maxDensity)
+         READ_FROM_DATASET2(DcmCodeString, trim)
+         READ_FROM_DATASET2(DcmShortText, configurationInformation)
+         READ_FROM_DATASET2(DcmUnsignedShort, illumination)
          if (result==EC_TagNotFound) result = EC_Normal;
-         READ_FROM_DATASET2(DcmUnsignedShort, EVR_US, reflectedAmbientLight)
+         READ_FROM_DATASET2(DcmUnsignedShort, reflectedAmbientLight)
          if (result==EC_TagNotFound) result = EC_Normal;
-         READ_FROM_DATASET2(DcmCodeString, EVR_CS, requestedResolutionID)
+         READ_FROM_DATASET2(DcmCodeString, requestedResolutionID)
          if (result==EC_TagNotFound) result = EC_Normal;
          // check referenced presentation LUT sequence
          // if there is any reference, it must refer to one of the presentation LUTs we are managing.
@@ -369,7 +367,7 @@ OFCondition DVPSStoredPrint::read(DcmItem &dset)
            {
               item = seq->getItem(0);
               stack.clear();
-              READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, referencedPresentationLUTInstanceUID)
+              READ_FROM_DATASET2(DcmUniqueIdentifier, referencedPresentationLUTInstanceUID)
               if (referencedPresentationLUTInstanceUID.getLength() > 0)
               {
                 referencedPresentationLUTInstanceUID.getOFString(aString,0);
@@ -458,7 +456,7 @@ OFCondition DVPSStoredPrint::read(DcmItem &dset)
          item = seq->getItem(i);
          stack.clear();
          refsopclassuid.clear();
-         READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, refsopclassuid)
+         READ_FROM_DATASET2(DcmUniqueIdentifier, refsopclassuid)
          refsopclassuid.getOFString(aString,0);
          if (aString == UID_BasicFilmBoxSOPClass)
            haveFilmBox=OFTrue;
@@ -518,9 +516,9 @@ OFCondition DVPSStoredPrint::read(DcmItem &dset)
       {
          item = seq->getItem(0);
          stack.clear();
-         READ_FROM_DATASET2(DcmApplicationEntity, EVR_AE, originator)
-         READ_FROM_DATASET2(DcmApplicationEntity, EVR_AE, destination)
-         READ_FROM_DATASET2(DcmLongString, EVR_LO, printerName)
+         READ_FROM_DATASET2(DcmApplicationEntity, originator)
+         READ_FROM_DATASET2(DcmApplicationEntity, destination)
+         READ_FROM_DATASET2(DcmLongString, printerName)
       }
     }
     if (printerName.getLength() == 0)
@@ -1234,14 +1232,14 @@ OFCondition DVPSStoredPrint::deleteSpooledImages()
 {
   OFCondition result = EC_IllegalCall;
   char *c = NULL;
-  size_t deleteImageBoxes=0;
+  unsigned long deleteImageBoxes=0;
 
   updateCache();
   if (currentValuesValid)
   {
         deleteImageBoxes = currentNumCols * currentNumRows;
     if (deleteImageBoxes > imageBoxContentList.size()) deleteImageBoxes = imageBoxContentList.size();
-    result = imageBoxContentList.deleteMultipleImages(deleteImageBoxes);
+    result = imageBoxContentList.deleteMultipleImages((size_t)deleteImageBoxes);
   }
   if (EC_Normal != configurationInformation.getString(c)) c = NULL;
   presentationLUTList.cleanup(c, imageBoxContentList);
@@ -1334,7 +1332,7 @@ OFCondition DVPSStoredPrint::printSCUpreparePresentationLUT(
     if (result==EC_Normal)
     {
       OFCondition cond = printHandler.createRQ(UID_PresentationLUTSOPClass, presentationLUTInstanceUID, &dset, status, attributeListOut);
-      if (cond.good() && DIMSE_STATUS_OK(status))
+      if ((cond.good())&&((status==0)||((status & 0xf000)==0xb000)))
       {
         /* nothing */
       } else {
@@ -1381,15 +1379,8 @@ OFCondition DVPSStoredPrint::addPresentationLUTReference(DcmItem& dset)
   DcmElement *delem=NULL;
   OFCondition result = EC_Normal;
 
-  if (illumination.getLength() > 0)
-  {
-    ADD_TO_DATASET(DcmUnsignedShort, illumination)
-  }
-
-  if (reflectedAmbientLight.getLength() > 0)
-  {
-    ADD_TO_DATASET(DcmUnsignedShort, reflectedAmbientLight)
-  }
+  ADD_TO_DATASET(DcmUnsignedShort, illumination)
+  ADD_TO_DATASET(DcmUnsignedShort, reflectedAmbientLight)
 
   if (presentationLUTInstanceUID.size() > 0)
   {
@@ -1436,16 +1427,10 @@ OFCondition DVPSStoredPrint::printSCUcreateBasicFilmSession(
   // add illumination and reflection, and presentation LUT reference if necessary.
   if ((printHandler.printerSupportsPresentationLUT()) && plutInSession) result = addPresentationLUTReference(dset);
 
-  if (result.good() && (specificCharacterSet.getLength() > 0))
-  {
-    DcmElement *delem=NULL;
-    ADD_TO_DATASET(DcmCodeString, specificCharacterSet)
-  }
-
   if (result==EC_Normal)
   {
     OFCondition cond = printHandler.createRQ(UID_BasicFilmSessionSOPClass, filmSessionInstanceUID, &dset, status, attributeListOut);
-    if (cond.bad() || DIMSE_STATUS_BAD(status))
+    if ((cond.bad())||((status!=0)&&((status & 0xf000)!=0xb000)))
     {
       result = EC_IllegalCall;
       filmSessionInstanceUID.clear();
@@ -1532,7 +1517,7 @@ OFCondition DVPSStoredPrint::printSCUcreateBasicFilmBox(DVPSPrintMessageHandler&
         size_t numItems = 0;
         size_t i;
     OFCondition cond = printHandler.createRQ(UID_BasicFilmBoxSOPClass, filmBoxInstanceUID, &dset, status, attributeListOut);
-    if (cond.good() && DIMSE_STATUS_OK(status) && attributeListOut)
+    if ((cond.good())&&((status==0)||((status & 0xf000)==0xb000))&& attributeListOut)
     {
       // N-CREATE was successful, now evaluate Referenced Image Box SQ
       stack.clear();
@@ -1543,10 +1528,10 @@ OFCondition DVPSStoredPrint::printSCUcreateBasicFilmBox(DVPSPrintMessageHandler&
         if (numItems > imageBoxContentList.size()) numItems = imageBoxContentList.size();
         for (i=0; i<numItems; i++)
         {
-           item = seq->getItem(OFstatic_cast(Uint32, i));
+           item = seq->getItem(i);
            stack.clear();
-           READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, refsopclassuid)
-           READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, refsopinstanceuid)
+           READ_FROM_DATASET2(DcmUniqueIdentifier, refsopclassuid)
+           READ_FROM_DATASET2(DcmUniqueIdentifier, refsopinstanceuid)
            if (EC_Normal==result) result = refsopclassuid.getString(c);
            if ((EC_Normal==result) && c && (grayscaleIB == c))
            {
@@ -1566,10 +1551,10 @@ OFCondition DVPSStoredPrint::printSCUcreateBasicFilmBox(DVPSPrintMessageHandler&
         if (numItems > annotationContentList.size()) numItems = annotationContentList.size();
         for (i=0; i<numItems; i++)
         {
-           item = seq->getItem(OFstatic_cast(Uint32, i));
+           item = seq->getItem(i);
            stack.clear();
-           READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, refsopclassuid)
-           READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, refsopinstanceuid)
+           READ_FROM_DATASET2(DcmUniqueIdentifier, refsopclassuid)
+           READ_FROM_DATASET2(DcmUniqueIdentifier, refsopinstanceuid)
            if (EC_Normal==result) result = refsopclassuid.getString(c);
            if ((EC_Normal==result) && c && (annotationB == c))
            {
@@ -1598,7 +1583,7 @@ OFCondition DVPSStoredPrint::printSCUprintBasicFilmBox(DVPSPrintMessageHandler& 
     1 /* action type ID 1 = print */, NULL /* no action information */, status, attributeListOut);
   delete attributeListOut; // should be empty anyway
 
-  if (cond.good() && DIMSE_STATUS_OK(status)) return EC_Normal;
+  if ((cond.good())&&((status==0)||((status & 0xf000)==0xb000))) return EC_Normal;
   return EC_IllegalCall; // otherwise
 }
 
@@ -1611,7 +1596,7 @@ OFCondition DVPSStoredPrint::printSCUprintBasicFilmSession(DVPSPrintMessageHandl
     1 /* action type ID 1 = print */, NULL /* no action information */, status, attributeListOut);
   delete attributeListOut; // should be empty anyway
 
-  if (cond.good() && DIMSE_STATUS_OK(status)) return EC_Normal;
+  if ((cond.good())&&((status==0)||((status & 0xf000)==0xb000))) return EC_Normal;
   return EC_IllegalCall; // otherwise
 }
 
@@ -1625,7 +1610,7 @@ OFCondition DVPSStoredPrint::printSCUdelete(DVPSPrintMessageHandler& printHandle
   if (filmBoxInstanceUID.size() > 0)
   {
     cond = printHandler.deleteRQ(UID_BasicFilmBoxSOPClass, filmBoxInstanceUID.c_str(), status);
-    if (cond.bad() || DIMSE_STATUS_BAD(status)) result = EC_IllegalCall;
+    if ((cond.bad())||((status!=0)&&((status & 0xf000)!=0xb000))) result = EC_IllegalCall;
     filmBoxInstanceUID.clear();
   }
 
@@ -1633,7 +1618,7 @@ OFCondition DVPSStoredPrint::printSCUdelete(DVPSPrintMessageHandler& printHandle
   if (filmSessionInstanceUID.size() > 0)
   {
     cond = printHandler.deleteRQ(UID_BasicFilmSessionSOPClass, filmSessionInstanceUID.c_str(), status);
-    if (cond.bad() || DIMSE_STATUS_BAD(status)) result = EC_IllegalCall;
+    if ((cond.bad())||((status!=0)&&((status & 0xf000)!=0xb000))) result = EC_IllegalCall;
     filmSessionInstanceUID.clear();
   }
 
@@ -1641,7 +1626,7 @@ OFCondition DVPSStoredPrint::printSCUdelete(DVPSPrintMessageHandler& printHandle
   if ((presentationLUTInstanceUID.size() > 0)&&(printHandler.printerSupportsPresentationLUT()))
   {
     cond = printHandler.deleteRQ(UID_PresentationLUTSOPClass, presentationLUTInstanceUID.c_str(), status);
-    if (cond.bad() || DIMSE_STATUS_BAD(status)) result = EC_IllegalCall;
+    if ((cond.bad())||((status!=0)&&((status & 0xf000)!=0xb000))) result = EC_IllegalCall;
     presentationLUTInstanceUID.clear();
   }
   return result;
@@ -1772,7 +1757,7 @@ OFCondition DVPSStoredPrint::printSCUsetBasicImageBox(
   if (EC_Normal == result)
   {
     OFCondition cond = printHandler.setRQ(UID_BasicGrayscaleImageBoxSOPClass, imageSopInstanceUID, &dataset, status, attributeListOut);
-    if (cond.bad() || DIMSE_STATUS_BAD(status)) result = EC_IllegalCall;
+    if ((cond.bad())||((status!=0)&&((status & 0xf000)!=0xb000))) result = EC_IllegalCall;
   }
   delete attributeListOut;
   return result;
@@ -1801,7 +1786,7 @@ OFCondition DVPSStoredPrint::printSCUsetBasicAnnotationBox(
     if (EC_Normal == result)
     {
       OFCondition cond = printHandler.setRQ(UID_BasicAnnotationBoxSOPClass, annotationSopInstanceUID, &dataset, status, attributeListOut);
-      if (cond.bad() || DIMSE_STATUS_BAD(status)) result = EC_IllegalCall;
+      if ((cond.bad())||((status!=0)&&((status & 0xf000)!=0xb000))) result = EC_IllegalCall;
     }
     delete attributeListOut;
   } else {
@@ -1943,7 +1928,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
   // filmOrientation
   if (result)
   {
-    READ_FROM_PDATASET(DcmCodeString, EVR_CS, filmOrientation)
+    READ_FROM_PDATASET(DcmCodeString, filmOrientation)
     if (filmOrientation.getLength() == 0) filmOrientation.putString(DEFAULT_filmOrientation);
     else
     {
@@ -1961,7 +1946,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
   // imageDisplayFormat
   if (result)
   {
-    READ_FROM_PDATASET(DcmShortText, EVR_ST, imageDisplayFormat)
+    READ_FROM_PDATASET(DcmShortText, imageDisplayFormat)
     if (imageDisplayFormat.getLength() == 0)
     {
         DCMPSTAT_WARN("cannot create Basic Film Box: image display format missing or empty");
@@ -2022,7 +2007,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
   if (result)
   {
     Uint32 numFilmSizes = cfg.getTargetPrinterNumberOfFilmSizeIDs(cfgname);
-    READ_FROM_PDATASET(DcmCodeString, EVR_CS, filmSizeID)
+    READ_FROM_PDATASET(DcmCodeString, filmSizeID)
     if (filmSizeID.getLength() == 0)
     {
       if (numFilmSizes > 0)
@@ -2061,7 +2046,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
   if (result)
   {
     Uint32 numMagnifications = cfg.getTargetPrinterNumberOfMagnificationTypes(cfgname);
-    READ_FROM_PDATASET(DcmCodeString, EVR_CS, magnificationType)
+    READ_FROM_PDATASET(DcmCodeString, magnificationType)
     if (magnificationType.getLength() == 0)
     {
       if (numMagnifications > 0)
@@ -2100,7 +2085,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
   if (result)
   {
     Uint32 numSmoothings = cfg.getTargetPrinterNumberOfSmoothingTypes(cfgname);
-    READ_FROM_PDATASET(DcmCodeString, EVR_CS, smoothingType)
+    READ_FROM_PDATASET(DcmCodeString, smoothingType)
     if (smoothingType.getLength() == 0)
     {
       if (numSmoothings > 0)
@@ -2144,7 +2129,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
   if (result)
   {
     Uint32 numBorderDensities = cfg.getTargetPrinterNumberOfBorderDensities(cfgname);
-    READ_FROM_PDATASET(DcmCodeString, EVR_CS, borderDensity)
+    READ_FROM_PDATASET(DcmCodeString, borderDensity)
     if (borderDensity.getLength() == 0)
     {
       if (numBorderDensities > 0)
@@ -2198,7 +2183,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
   if (result)
   {
     Uint32 numEmptyImageDensities = cfg.getTargetPrinterNumberOfEmptyImageDensities(cfgname);
-    READ_FROM_PDATASET(DcmCodeString, EVR_CS, emptyImageDensity)
+    READ_FROM_PDATASET(DcmCodeString, emptyImageDensity)
     if (emptyImageDensity.getLength() == 0)
     {
       if (numEmptyImageDensities > 0)
@@ -2252,7 +2237,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
   if (result)
   {
     Uint32 numMaxDensities = cfg.getTargetPrinterNumberOfMaxDensities(cfgname);
-    READ_FROM_PDATASET(DcmUnsignedShort, EVR_US, maxDensity)
+    READ_FROM_PDATASET(DcmUnsignedShort, maxDensity)
     if (maxDensity.getLength() == 0)
     {
       if (numMaxDensities > 0)
@@ -2268,7 +2253,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
   if (result)
   {
     Uint32 numMinDensities = cfg.getTargetPrinterNumberOfMinDensities(cfgname);
-    READ_FROM_PDATASET(DcmUnsignedShort, EVR_US, minDensity)
+    READ_FROM_PDATASET(DcmUnsignedShort, minDensity)
     if (minDensity.getLength() == 0)
     {
       if (numMinDensities > 0)
@@ -2291,7 +2276,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
   // trim
   if (result)
   {
-    READ_FROM_PDATASET(DcmCodeString, EVR_CS, trim)
+    READ_FROM_PDATASET(DcmCodeString, trim)
     if (trim.getLength() == 0)
     {
       if (cfg.getTargetPrinterSupportsTrim(cfgname)) trim.putString(DEFAULT_trim);
@@ -2319,7 +2304,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
   // configurationInformation
   if (result)
   {
-    READ_FROM_PDATASET(DcmShortText, EVR_ST, configurationInformation)
+    READ_FROM_PDATASET(DcmShortText, configurationInformation)
     if (configurationInformation.getLength() > 0)
     {
       // check whether we can accept the proposed configuration information
@@ -2355,7 +2340,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
   if (result)
   {
     Uint32 numResolutionIDs = cfg.getTargetPrinterNumberOfPrinterResolutionIDs(cfgname);
-    READ_FROM_PDATASET(DcmCodeString, EVR_CS, requestedResolutionID)
+    READ_FROM_PDATASET(DcmCodeString, requestedResolutionID)
     if (requestedResolutionID.getLength() == 0)
     {
       if (numResolutionIDs > 0)
@@ -2401,7 +2386,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
     // illumination
     if (result)
     {
-      READ_FROM_PDATASET(DcmUnsignedShort, EVR_US, illumination)
+      READ_FROM_PDATASET(DcmUnsignedShort, illumination)
       if (illumination.getLength() == 0) illumination.putUint16(DEFAULT_illumination, 0);
       // we don't check illumination set by the user (for now)
     }
@@ -2409,7 +2394,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
     // reflectedAmbientLight
     if (result)
     {
-      READ_FROM_PDATASET(DcmUnsignedShort, EVR_US, reflectedAmbientLight)
+      READ_FROM_PDATASET(DcmUnsignedShort, reflectedAmbientLight)
       if (reflectedAmbientLight.getLength() == 0) illumination.putUint16(DEFAULT_reflectedAmbientLight, 0);
       // we don't check reflected ambient light set by the user (for now)
     }
@@ -2427,7 +2412,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
            OFString aString;
            DcmItem *item = seq->getItem(0);
            stack.clear();
-           READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, referencedPresentationLUTInstanceUID)
+           READ_FROM_DATASET2(DcmUniqueIdentifier, referencedPresentationLUTInstanceUID)
            if (referencedPresentationLUTInstanceUID.getLength() > 0)
            {
              referencedPresentationLUTInstanceUID.getOFString(aString,0);
@@ -2441,7 +2426,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
                // check referenced SOP class UID
                DcmUniqueIdentifier refClassUID(DCM_ReferencedSOPClassUID);
                stack.clear();
-               READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, refClassUID)
+               READ_FROM_DATASET2(DcmUniqueIdentifier, refClassUID)
                if (refClassUID.getLength() > 0)
                {
                   aString.clear();
@@ -2497,7 +2482,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
          OFString aString;
          DcmItem *item = refFilmSessionSequence->getItem(0);
          stack.clear();
-         READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, instanceUID)
+         READ_FROM_DATASET2(DcmUniqueIdentifier, instanceUID)
          if (instanceUID.getLength() > 0)
          {
            instanceUID.getOFString(aString,0);
@@ -2509,7 +2494,7 @@ OFBool DVPSStoredPrint::printSCPCreate(
            } else {
              // check referenced SOP class UID
              stack.clear();
-             READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, classUID)
+             READ_FROM_DATASET2(DcmUniqueIdentifier, classUID)
              if (classUID.getLength() > 0)
              {
                 aString.clear();
@@ -3020,7 +3005,7 @@ OFBool DVPSStoredPrint::printSCPSet(
            OFString aString;
            DcmItem *item = seq->getItem(0);
            stack.clear();
-           READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, referencedPresentationLUTInstanceUID)
+           READ_FROM_DATASET2(DcmUniqueIdentifier, referencedPresentationLUTInstanceUID)
            if (referencedPresentationLUTInstanceUID.getLength() > 0)
            {
              referencedPresentationLUTInstanceUID.getOFString(aString,0);
@@ -3034,7 +3019,7 @@ OFBool DVPSStoredPrint::printSCPSet(
                // check referenced SOP class UID
                DcmUniqueIdentifier refClassUID(DCM_ReferencedSOPClassUID);
                stack.clear();
-               READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, refClassUID)
+               READ_FROM_DATASET2(DcmUniqueIdentifier, refClassUID)
                if (refClassUID.getLength() > 0)
                {
                   aString.clear();

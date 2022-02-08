@@ -1,8 +1,7 @@
-.TH "dcmquant" 1 "Thu Jan 14 2021" "Version 3.6.6" "OFFIS DCMTK" \" -*- nroff -*-
+.TH "dcmquant" 1 "Tue Jun 17 2014" "Version 3.6.1" "OFFIS DCMTK" \" -*- nroff -*-
 .nh
 .SH NAME
 dcmquant \- Convert DICOM color images to palette color
-
 .SH "SYNOPSIS"
 .PP
 .PP
@@ -85,7 +84,7 @@ input transfer syntax:
          read with implicit VR little endian TS
 .fi
 .PP
-.SS "image processing and encoding options"
+.SS "processing options"
 .PP
 .nf
 frame selection:
@@ -121,15 +120,10 @@ median cut representative color selection:
   +Cc  --mc-color-center
          select center of box
 
-color palette value representation:
+color palette creation:
 
   +pw  --write-ow
-         write Palette LUT as OW (default)
-
-  +pu  --write-us
-         write Palette LUT as US (retired)
-
-color palette creation:
+         write Palette LUT as OW instead of US
 
   +pe  --lut-entries-word
          write Palette LUT with 16-bit entries
@@ -243,4 +237,4 @@ The \fBdcmquant\fP utility will attempt to load DICOM data dictionaries specifie
 The default behavior should be preferred and the \fIDCMDICTPATH\fP environment variable only used when alternative data dictionaries are required\&. The \fIDCMDICTPATH\fP environment variable has the same format as the Unix shell \fIPATH\fP variable in that a colon (':') separates entries\&. On Windows systems, a semicolon (';') is used as a separator\&. The data dictionary code will attempt to load each file specified in the \fIDCMDICTPATH\fP environment variable\&. It is an error if no data dictionary can be loaded\&.
 .SH "COPYRIGHT"
 .PP
-Copyright (C) 2001-2017 by OFFIS e\&.V\&., Escherweg 2, 26121 Oldenburg, Germany\&.
+Copyright (C) 2001-2014 by OFFIS e\&.V\&., Escherweg 2, 26121 Oldenburg, Germany\&.

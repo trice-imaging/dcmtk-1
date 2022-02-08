@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2019, OFFIS e.V.
+ *  Copyright (C) 1998-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -245,8 +245,8 @@ OFCondition DVPSOverlayCurveActivationLayer_PList::createFromImage(
         DcmCodeString typeOfDataValue(DCM_RETIRED_TypeOfData);
         curveDimensionsValue.setGTag(group);
         typeOfDataValue.setGTag(group);
-        READ_FROM_DATASET(DcmUnsignedShort, EVR_US, curveDimensionsValue)
-        READ_FROM_DATASET(DcmCodeString, EVR_CS, typeOfDataValue)
+        READ_FROM_DATASET(DcmUnsignedShort, curveDimensionsValue)
+        READ_FROM_DATASET(DcmCodeString, typeOfDataValue)
 
         /* we can only display POLY and ROI curves */
         aString.clear();
@@ -367,8 +367,7 @@ void DVPSOverlayCurveActivationLayer_PList::renameLayer(const char *oldName, con
   OFListIterator(DVPSOverlayCurveActivationLayer *) last = list_.end();
   while (first != last)
   {
-    const char *activationLayer = (*first)->getActivationLayer();
-    if (activationLayer && (aString == activationLayer))
+    if (aString == (*first)->getActivationLayer())
     {
       (*first)->setActivationLayer(newName);
     }
@@ -386,8 +385,7 @@ void DVPSOverlayCurveActivationLayer_PList::removeLayer(const char *name)
   OFListIterator(DVPSOverlayCurveActivationLayer *) last = list_.end();
   while (first != last)
   {
-    const char *activationLayer = (*first)->getActivationLayer();
-    if (activationLayer && (aString == activationLayer))
+    if (aString == (*first)->getActivationLayer())
     {
       delete (*first);
       first = list_.erase(first);
@@ -405,8 +403,7 @@ OFBool DVPSOverlayCurveActivationLayer_PList::usesLayerName(const char *name)
   OFListIterator(DVPSOverlayCurveActivationLayer *) last = list_.end();
   while (first != last)
   {
-    const char *activationLayer = (*first)->getActivationLayer();
-    if (activationLayer && (aString == activationLayer)) return OFTrue;
+    if (aString == (*first)->getActivationLayer()) return OFTrue;
     ++first;
   }
   return OFFalse;
@@ -423,8 +420,7 @@ size_t DVPSOverlayCurveActivationLayer_PList::getNumberOfActivations(const char 
   OFListIterator(DVPSOverlayCurveActivationLayer *) last = list_.end();
   while (first != last)
   {
-    const char *activationLayer = (*first)->getActivationLayer();
-    if (activationLayer && (aString == activationLayer))
+    if (aString == (*first)->getActivationLayer())
     {
       group = (*first)->getRepeatingGroup();
       if (((isCurve) && (group < 0x6000)) || ((!isCurve) && (group >= 0x6000))) result++;
@@ -445,13 +441,12 @@ Uint16 DVPSOverlayCurveActivationLayer_PList::getActivationGroup(const char *lay
   OFListIterator(DVPSOverlayCurveActivationLayer *) last = list_.end();
   while (first != last)
   {
-    const char *activationLayer = (*first)->getActivationLayer();
-    if (activationLayer && (aString == activationLayer))
+    if (aString == (*first)->getActivationLayer())
     {
       group = (*first)->getRepeatingGroup();
       if (((isCurve) && (group < 0x6000)) || ((!isCurve) && (group >= 0x6000)))
       {
-        if (idx==0) return group; else idx--;
+      	if (idx==0) return group; else idx--;
       }
     }
     ++first;

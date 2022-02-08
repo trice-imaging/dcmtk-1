@@ -1,6 +1,7 @@
+#define TRICE
 /*
  *
- *  Copyright (C) 2001-2020, OFFIS e.V.
+ *  Copyright (C) 2001-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -65,16 +66,9 @@ OFCondition DJCodecDecoder::decode(
     DcmPixelSequence * pixSeq,
     DcmPolymorphOBOW& uncompressedPixelData,
     const DcmCodecParameter * cp,
-    const DcmStack& objStack,
-    OFBool& removeOldRep) const
+    const DcmStack& objStack) const
 {
   OFCondition result = EC_Normal;
-
-  // this codec may modify the DICOM header such that the previous pixel
-  // representation is not valid anymore. Indicate this to the caller
-  // to trigger removal.
-  removeOldRep = OFTrue;
-
   // assume we can cast the codec parameter to what we need
   const DJCodecParameter *djcp = OFreinterpret_cast(const DJCodecParameter*, cp);
 
@@ -133,7 +127,7 @@ OFCondition DJCodecDecoder::decode(
       DcmPixelItem *pixItem = NULL;
       Uint8 * jpegData = NULL;
       result = pixSeq->getItem(pixItem, 1); // first item is offset table, use second item
-      if (result.good() && (pixItem != NULL))
+      if (result.good())
       {
         Uint32 fragmentLength = pixItem->getLength();
         result = pixItem->getUint8Array(jpegData);
@@ -142,7 +136,11 @@ OFCondition DJCodecDecoder::decode(
           if (jpegData == NULL) result = EC_CorruptedData; // JPEG data stream is empty/absent
           else
           {
+#ifndef TRICE
             Uint8 precision = scanJpegDataForBitDepth(jpegData, fragmentLength);
+            result = EJ_Suspension;
+#else
+            Uint8 precision = isJPEG2000() ? imageBitsAllocated : scanJpegDataForBitDepth(jpegData, fragmentLength);
             if (precision == 0) result = EC_CannotChangeRepresentation; // something has gone wrong, bail out
             else
             {
@@ -170,37 +168,71 @@ OFCondition DJCodecDecoder::decode(
                 if (result.good())
                 {
                   Uint8 *imageData8 = OFreinterpret_cast(Uint8*, imageData16);
-                  OFBool forceSingleFragmentPerFrame = djcp->getForceSingleFragmentPerFrame();
 
                   while ((currentFrame < imageFrames)&&(result.good()))
                   {
                     result = jpeg->init();
                     if (result.good())
                     {
-                      result = EJ_Suspension;
-                      while (EJ_Suspension == result)
-                      {
-                        result = pixSeq->getItem(pixItem, OFstatic_cast(Uint32, currentItem++));
-                        if (result.good())
-                        {
-                          fragmentLength = pixItem->getLength();
-                          result = pixItem->getUint8Array(jpegData);
-                          if (result.good())
-                          {
-                            result = jpeg->decode(jpegData, fragmentLength, imageData8, OFstatic_cast(Uint32, frameSize), isSigned);
 
-                            // check if we should enforce "one fragment per frame" while
-                            // decompressing a multi-frame image even if stream suspension occurs
-                            if ((EJ_Suspension == result) && forceSingleFragmentPerFrame)
-                            {
-                              // frame is incomplete. Nevertheless skip to next frame.
-                              // This permits decompression of faulty multi-frame images.
-                              result = EC_Normal;
-                            }
-                          }
-                        }
-                      }
-                      if (result.good())
+                    result = EJ_Suspension;
+
+					// for open jpeg, we need to pack all fragments into a single congiuous buffer
+					if (isJPEG2000() && pixSeq->card() > 2)  {
+
+						struct BufferInfo {
+							Uint8* buf;
+							Uint32 len;
+						};
+						BufferInfo* buffers = new BufferInfo[pixSeq->card()];
+						memset(buffers, 0, sizeof(BufferInfo) * pixSeq->card());
+						Uint32 totalLength =0;
+						int i = 0;
+						while (currentItem < pixSeq->card())
+						{
+							result = pixSeq->getItem(pixItem, currentItem++);
+							if (result.good())
+							{
+								fragmentLength = pixItem->getLength();
+								totalLength += fragmentLength;
+								result = pixItem->getUint8Array(buffers[i].buf);
+								if (result.good())
+								{
+ 									buffers[i].len = fragmentLength;
+								}
+							}
+							i++;
+						}
+
+						jpegData = new Uint8[totalLength];
+						memset(jpegData, 0, totalLength);
+						totalLength =0;
+						for (int i = 0; i < pixSeq->card()-1; ++i) {
+							if (buffers[i].buf) {
+								memcpy(jpegData + totalLength, buffers[i].buf, buffers[i].len);
+								totalLength += buffers[i].len;
+							}
+						}
+						result = jpeg->decode(jpegData, totalLength, imageData8, frameSize, isSigned);
+
+					 } else {
+#endif
+
+						  while (EJ_Suspension == result)
+						  {
+							result = pixSeq->getItem(pixItem, currentItem++);
+							if (result.good())
+							{
+							  fragmentLength = pixItem->getLength();
+							  result = pixItem->getUint8Array(jpegData);
+							  if (result.good())
+							  {
+								result = jpeg->decode(jpegData, fragmentLength, imageData8, frameSize, isSigned);
+							  }
+							}
+						  }
+	  				}
+                     if (result.good())
                       {
                         if (! createPlanarConfigurationInitialized)
                         {
@@ -344,60 +376,15 @@ OFCondition DJCodecDecoder::decode(
     // which should always identify itself as dataset, not as item.
     if (dataset->ident() == EVR_dataset)
     {
-        DcmItem *ditem = OFreinterpret_cast(DcmItem*, dataset);
-
         // create new SOP instance UID if codec parameters require so
         if (result.good() && (djcp->getUIDCreation() == EUC_always))
-          result = DcmCodec::newInstance(ditem, NULL, NULL, NULL);
-
-        // set Lossy Image Compression to "01" (see DICOM part 3, C.7.6.1.1.5)
-        if (result.good() && (! isLosslessProcess())) result = ditem->putAndInsertString(DCM_LossyImageCompression, "01");
+          result = DcmCodec::newInstance(OFreinterpret_cast(DcmItem*, dataset), NULL, NULL, NULL);
     }
 
   }
   return result;
 }
 
-
-// the following macros make the source code more readable and easier to maintain
-
-#define GET_AND_CHECK_UINT16_VALUE(tag, variable)                                                                           \
-  if (result.good())                                                                                                        \
-  {                                                                                                                         \
-    result = dataset->findAndGetUint16(tag, variable);                                                                      \
-    if (result == EC_TagNotFound)                                                                                           \
-    {                                                                                                                       \
-      DCMJPEG_WARN("mandatory element " << DcmTag(tag).getTagName() << " " << tag << " is missing");                        \
-      result = EC_MissingAttribute;                                                                                         \
-    }                                                                                                                       \
-    else if ((result == EC_IllegalCall) || (result == EC_IllegalParameter))                                                 \
-    {                                                                                                                       \
-      DCMJPEG_WARN("no value for mandatory element " << DcmTag(tag).getTagName() << " " << tag);                            \
-      result = EC_MissingValue;                                                                                             \
-    }                                                                                                                       \
-    else if (result.bad())                                                                                                  \
-      DCMJPEG_WARN("cannot retrieve value of element " << DcmTag(tag).getTagName() << " " << tag << ": " << result.text()); \
-  }
-
-#define GET_AND_CHECK_STRING_VALUE(tag, variable)                                                                           \
-  if (result.good())                                                                                                        \
-  {                                                                                                                         \
-    result = dataset->findAndGetOFString(tag, variable);                                                                    \
-    if (result == EC_TagNotFound)                                                                                           \
-    {                                                                                                                       \
-      DCMJPEG_WARN("mandatory element " << DcmTag(tag).getTagName() << " " << tag << " is missing");                        \
-      result = EC_MissingAttribute;                                                                                         \
-    }                                                                                                                       \
-    else if (result.bad())                                                                                                  \
-    {                                                                                                                       \
-      DCMJPEG_WARN("cannot retrieve value of element " << DcmTag(tag).getTagName() << " " << tag << ": " << result.text()); \
-    }                                                                                                                       \
-    else if (variable.empty())                                                                                              \
-    {                                                                                                                       \
-      DCMJPEG_WARN("no value for mandatory element " << DcmTag(tag).getTagName() << " " << tag);                            \
-      result = EC_MissingValue;                                                                                             \
-    }                                                                                                                       \
-  }
 
 OFCondition DJCodecDecoder::decodeFrame(
     const DcmRepresentationParameter *fromParam,
@@ -415,10 +402,7 @@ OFCondition DJCodecDecoder::decodeFrame(
   // assume we can cast the codec parameter to what we need
   const DJCodecParameter *djcp = OFreinterpret_cast(const DJCodecParameter*, cp);
 
-  if (dataset == NULL)
-    result = EC_IllegalParameter;
-  else if ((dataset->ident() != EVR_dataset) && (dataset->ident() != EVR_item))
-    result = EC_CorruptedData;
+  if ((!dataset)||((dataset->ident()!= EVR_dataset) && (dataset->ident()!= EVR_item))) result = EC_InvalidTag;
   else
   {
     Uint16 imageSamplesPerPixel = 0;
@@ -433,18 +417,17 @@ OFCondition DJCodecDecoder::decodeFrame(
     OFBool isSigned = OFFalse;
     Uint16 pixelRep = 0; // needed to decline color conversion of signed pixel data to RGB
 
-    /* retrieve values from dataset (and warn if missing or empty) */
-    GET_AND_CHECK_UINT16_VALUE(DCM_SamplesPerPixel, imageSamplesPerPixel)
-    GET_AND_CHECK_UINT16_VALUE(DCM_Rows, imageRows)
-    GET_AND_CHECK_UINT16_VALUE(DCM_Columns, imageColumns)
-    GET_AND_CHECK_UINT16_VALUE(DCM_BitsAllocated, imageBitsAllocated)
-    GET_AND_CHECK_UINT16_VALUE(DCM_BitsStored, imageBitsStored)
-    GET_AND_CHECK_UINT16_VALUE(DCM_HighBit, imageHighBit)
-    GET_AND_CHECK_UINT16_VALUE(DCM_PixelRepresentation, pixelRep)
-    GET_AND_CHECK_STRING_VALUE(DCM_PhotometricInterpretation, photometricInterpretation)
+    if (result.good()) result = dataset->findAndGetUint16(DCM_SamplesPerPixel, imageSamplesPerPixel);
+    if (result.good()) result = dataset->findAndGetUint16(DCM_Rows, imageRows);
+    if (result.good()) result = dataset->findAndGetUint16(DCM_Columns, imageColumns);
+    if (result.good()) result = dataset->findAndGetUint16(DCM_BitsAllocated, imageBitsAllocated);
+    if (result.good()) result = dataset->findAndGetUint16(DCM_BitsStored, imageBitsStored);
+    if (result.good()) result = dataset->findAndGetUint16(DCM_HighBit, imageHighBit);
+    if (result.good()) result = dataset->findAndGetUint16(DCM_PixelRepresentation, pixelRep);
+    if (result.good()) result = dataset->findAndGetOFString(DCM_PhotometricInterpretation, photometricInterpretation);
     if (imageSamplesPerPixel > 1)
     {
-      GET_AND_CHECK_UINT16_VALUE(DCM_PlanarConfiguration, planarConfig);
+      if (result.good()) result = dataset->findAndGetUint16(DCM_PlanarConfiguration, planarConfig);
     }
 
     isSigned = (pixelRep == 0) ? OFFalse : OFTrue;
@@ -488,7 +471,11 @@ OFCondition DJCodecDecoder::decodeFrame(
           if (jpegData == NULL) result = EC_CorruptedData; // JPEG data stream is empty/absent
           else
           {
-            Uint8 precision = scanJpegDataForBitDepth(jpegData, OFstatic_cast(Uint32, fragmentLength));
+#ifndef TRICE
+            Uint8 precision = scanJpegDataForBitDepth(jpegData, fragmentLength);
+#else
+            Uint8 precision = isJPEG2000() ? imageBitsAllocated : scanJpegDataForBitDepth(jpegData, OFstatic_cast(Uint32, fragmentLength));
+#endif
             if (precision == 0) result = EC_CannotChangeRepresentation; // something has gone wrong, bail out
             else
             {
@@ -601,8 +588,7 @@ OFCondition DJCodecDecoder::encode(
     const DcmRepresentationParameter * /* toRepParam */,
     DcmPixelSequence * & /* pixSeq */,
     const DcmCodecParameter * /* cp */,
-    DcmStack & /* objStack */,
-    OFBool& /* removeOldRep */) const
+    DcmStack & /* objStack */) const
 {
   // we are a decoder only
   return EC_IllegalCall;
@@ -616,8 +602,7 @@ OFCondition DJCodecDecoder::encode(
     const DcmRepresentationParameter * /* toRepParam */,
     DcmPixelSequence * & /* toPixSeq */,
     const DcmCodecParameter * /* cp */,
-    DcmStack & /* objStack */,
-    OFBool& /* removeOldRep */) const
+    DcmStack & /* objStack */) const
 {
   // we don't support re-coding for now
   return EC_IllegalCall;
@@ -795,9 +780,11 @@ Uint8 DJCodecDecoder::scanJpegDataForBitDepth(
       case 0xfffe: // COM
         offset += readUint16(data+offset+2)+2;
         break;
+#ifdef TRICE
       case 0xffff: // fill byte 0xff (skip one byte only)
         offset += 1;
         break;
+#endif
       case 0xff01: // TEM
         break;
       default:
@@ -805,15 +792,7 @@ Uint8 DJCodecDecoder::scanJpegDataForBitDepth(
         {
           offset += 2;
         }
-        else
-        {
-          DCMJPEG_ERROR("found invalid marker in JPEG stream while scanning for bit depth: 0x"
-            << STD_NAMESPACE hex << STD_NAMESPACE setfill('0')
-            << STD_NAMESPACE setw(2) << OFstatic_cast(int, data[offset])
-            << STD_NAMESPACE setw(2) << OFstatic_cast(int, data[offset+1])
-            << STD_NAMESPACE dec << STD_NAMESPACE setfill(' '));
-          return 0; // syntax error, stop parsing
-        }
+        else return 0; // syntax error, stop parsing
         break;
     }
   } // while
@@ -835,11 +814,11 @@ OFCondition DJCodecDecoder::createPlanarConfigurationByte(
   if (buf)
   {
     memcpy(buf, imageFrame, 3*numPixels);
-    Uint8 *s = buf;                        // source
-    Uint8 *r = imageFrame;                 // red plane
-    Uint8 *g = imageFrame + numPixels;     // green plane
-    Uint8 *b = imageFrame + (2*numPixels); // blue plane
-    for (size_t i=numPixels; i; i--)
+    register Uint8 *s = buf;                        // source
+    register Uint8 *r = imageFrame;                 // red plane
+    register Uint8 *g = imageFrame + numPixels;     // green plane
+    register Uint8 *b = imageFrame + (2*numPixels); // blue plane
+    for (register size_t i=numPixels; i; i--)
     {
       *r++ = *s++;
       *g++ = *s++;
@@ -864,11 +843,11 @@ OFCondition DJCodecDecoder::createPlanarConfigurationWord(
   if (buf)
   {
     memcpy(buf, imageFrame, 3*numPixels*sizeof(Uint16));
-    Uint16 *s = buf;                        // source
-    Uint16 *r = imageFrame;                 // red plane
-    Uint16 *g = imageFrame + numPixels;     // green plane
-    Uint16 *b = imageFrame + (2*numPixels); // blue plane
-    for (size_t i=numPixels; i; i--)
+    register Uint16 *s = buf;                        // source
+    register Uint16 *r = imageFrame;                 // red plane
+    register Uint16 *g = imageFrame + numPixels;     // green plane
+    register Uint16 *b = imageFrame + (2*numPixels); // blue plane
+    for (register size_t i=numPixels; i; i--)
     {
       *r++ = *s++;
       *g++ = *s++;

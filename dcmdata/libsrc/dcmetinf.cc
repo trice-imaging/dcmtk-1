@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,7 +22,9 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
-#include <cstring>                    /* for memset() */
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
 
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofstd.h"
@@ -36,7 +38,6 @@
 #include "dcmtk/dcmdata/dcistrma.h"    /* for class DcmInputStream */
 #include "dcmtk/dcmdata/dcistrmf.h"    /* for class DcmInputFileStream */
 #include "dcmtk/dcmdata/dcostrma.h"    /* for class DcmOutputStream */
-#include "dcmtk/dcmdata/dcjson.h"
 
 
 const Uint32 DCM_GroupLengthElementLength = 12;
@@ -46,7 +47,7 @@ const Uint32 DCM_GroupLengthElementLength = 12;
 
 
 DcmMetaInfo::DcmMetaInfo()
-  : DcmItem(DCM_ItemTag),
+  : DcmItem(ItemTag),
     preambleUsed(OFFalse),
     fPreambleTransferState(ERW_init),
     Xfer(META_HEADER_DEFAULT_TRANSFERSYNTAX)
@@ -136,7 +137,7 @@ void DcmMetaInfo::removeInvalidGroups()
 // ********************************
 
 
-void DcmMetaInfo::print(STD_NAMESPACE ostream &out,
+void DcmMetaInfo::print(STD_NAMESPACE ostream&out,
                         const size_t flags,
                         const int level,
                         const char *pixelFileName,
@@ -172,11 +173,10 @@ void DcmMetaInfo::print(STD_NAMESPACE ostream &out,
 OFCondition DcmMetaInfo::writeXML(STD_NAMESPACE ostream &out,
                                   const size_t flags)
 {
-    OFCondition l_error = EC_Normal;
     if (flags & DCMTypes::XF_useNativeModel)
     {
         /* in Native DICOM Model, there is no concept of a "file format" */
-        l_error = makeOFCondition(OFM_dcmdata, EC_CODE_CannotConvertToXML, OF_error,
+        return makeOFCondition(OFM_dcmdata, EC_CODE_CannotConvertToXML, OF_error,
             "Cannot convert File Meta Information to Native DICOM Model");
     } else {
         OFString xmlString;
@@ -193,49 +193,23 @@ OFCondition DcmMetaInfo::writeXML(STD_NAMESPACE ostream &out,
             do
             {
                 dO = elementList->get();
-                l_error = dO->writeXML(out, flags);
-            } while (l_error.good() && elementList->seek(ELP_next));
+                dO->writeXML(out, flags);
+            } while (elementList->seek(ELP_next));
         }
-        if (l_error.good())
-        {
-            /* XML end tag for "meta-header" */
-            out << "</meta-header>" << OFendl;
-        }
+        /* XML end tag for "meta-header" */
+        out << "</meta-header>" << OFendl;
+        /* always report success */
+        return EC_Normal;
     }
-    return l_error;
 }
 
 
 // ********************************
 
-
-OFCondition DcmMetaInfo::writeJson(STD_NAMESPACE ostream &out,
-                                   DcmJsonFormat &format)
-{
-    if (format.printMetaheaderInformation)
-    {
-        // write content of file meta information
-        if (!elementList->empty())
-        {
-            elementList->seek(ELP_first);
-            OFCondition status = EC_Normal;
-            status = elementList->get()->writeJson(out, format);
-            while (status.good() && elementList->seek(ELP_next))
-            {
-                out << "," << format.newline();
-                status = elementList->get()->writeJson(out, format);
-            }
-            return status;
-        }
-    }
-    return EC_Normal;
-}
-
-// ********************************
 
 void DcmMetaInfo::setPreamble()
 {
-    memset(filePreamble, 0, sizeof(filePreamble));
+    memzero(filePreamble, sizeof(filePreamble));
     preambleUsed = OFFalse;
 }
 
@@ -313,7 +287,7 @@ OFBool DcmMetaInfo::checkAndReadPreamble(DcmInputStream &inStream,
         DCMDATA_DEBUG("DcmMetaInfo::checkAndReadPreamble() TransferSyntax=\""
             << DcmXfer(newxfer).getXferName() << "\"");
     } else
-        DCMDATA_TRACE("DcmMetaInfo::checkAndReadPreamble() No Preamble found");
+        DCMDATA_TRACE("DcmMetaInfo::checkAndReadPreamble() No Preambel found");
 
     return hasPreamble;
 }
@@ -378,12 +352,8 @@ OFCondition DcmMetaInfo::readGroupLength(DcmInputStream &inStream,
                 l_error = (OFstatic_cast(DcmUnsignedLong *, elementList->get()))->getUint32(headerLen);
                 DCMDATA_TRACE("DcmMetaInfo::readGroupLength() Group Length of File Meta Header = " << headerLen + bytesRead);
             } else {
+                l_error = EC_CorruptedData;
                 DCMDATA_WARN("DcmMetaInfo: No Group Length available in Meta Information Header");
-                /* missing group length could be ignored (if no other error occurred) */
-                if (l_error == EC_StreamNotifyClient)
-                    l_error = EC_InvalidStream;
-                else if (l_error != EC_InvalidStream)
-                    l_error = EC_CorruptedData;
             }
         }
     }
@@ -504,8 +474,6 @@ OFCondition DcmMetaInfo::read(DcmInputStream &inStream,
             {
                 errorFlag = EC_Normal;      // there is no meta header
                 Xfer = EXS_Unknown;
-                if (preambleUsed)           // ... but a preamble!
-                    DCMDATA_WARN("DcmMetaInfo: Found Preamble but no Meta Information Header");
             } else if (errorFlag == EC_ItemEnd)
                 errorFlag = EC_Normal;
             if (errorFlag.good())

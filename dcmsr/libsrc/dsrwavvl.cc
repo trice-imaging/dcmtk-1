@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2021, OFFIS e.V.
+ *  Copyright (C) 2000-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRWaveformReferenceValue
@@ -25,8 +25,6 @@
 
 #include "dcmtk/dcmsr/dsrwavvl.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
-
-#include "dcmtk/dcmdata/dcuid.h"
 
 
 DSRWaveformReferenceValue::DSRWaveformReferenceValue()
@@ -66,20 +64,6 @@ DSRWaveformReferenceValue &DSRWaveformReferenceValue::operator=(const DSRWavefor
     /* do not check since this would be unexpected to the user */
     ChannelList = referenceValue.ChannelList;
     return *this;
-}
-
-
-OFBool DSRWaveformReferenceValue::operator==(const DSRWaveformReferenceValue &referenceValue) const
-{
-    return DSRCompositeReferenceValue::operator==(referenceValue) &&
-           (ChannelList == referenceValue.ChannelList);
-}
-
-
-OFBool DSRWaveformReferenceValue::operator!=(const DSRWaveformReferenceValue &referenceValue) const
-{
-    return DSRCompositeReferenceValue::operator!=(referenceValue) ||
-           (ChannelList != referenceValue.ChannelList);
 }
 
 
@@ -125,16 +109,15 @@ OFCondition DSRWaveformReferenceValue::print(STD_NAMESPACE ostream &stream,
 
 
 OFCondition DSRWaveformReferenceValue::readXML(const DSRXMLDocument &doc,
-                                               DSRXMLCursor cursor,
-                                               const size_t flags)
+                                               DSRXMLCursor cursor)
 {
     /* first read general composite reference information */
-    OFCondition result = DSRCompositeReferenceValue::readXML(doc, cursor, flags);
+    OFCondition result = DSRCompositeReferenceValue::readXML(doc, cursor);
     /* then read waveform related XML tags */
     if (result.good())
     {
         /* channel list (optional) */
-        cursor = doc.getNamedChildNode(cursor, "channels");
+        cursor = doc.getNamedNode(cursor.getChild(), "channels");
         if (cursor.valid())
         {
             OFString tmpString;
@@ -160,18 +143,13 @@ OFCondition DSRWaveformReferenceValue::writeXML(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRWaveformReferenceValue::readItem(DcmItem &dataset,
-                                                const size_t flags)
+OFCondition DSRWaveformReferenceValue::readItem(DcmItem &dataset)
 {
     /* read ReferencedSOPClassUID and ReferencedSOPInstanceUID */
-    OFCondition result = DSRCompositeReferenceValue::readItem(dataset, flags);
+    OFCondition result = DSRCompositeReferenceValue::readItem(dataset);
     /* read ReferencedWaveformChannels (conditional) */
     if (result.good())
-    {
-        ChannelList.read(dataset, flags);
-        /* check data and report warnings if any */
-        checkCurrentValue(OFTrue /*reportWarnings*/);
-    }
+        ChannelList.read(dataset);
     return result;
 }
 
@@ -185,8 +163,6 @@ OFCondition DSRWaveformReferenceValue::writeItem(DcmItem &dataset) const
     {
         if (!ChannelList.isEmpty())
             result = ChannelList.write(dataset);
-        /* check data and report warnings if any */
-        checkCurrentValue(OFTrue /*reportWarnings*/);
     }
     return result;
 }
@@ -262,16 +238,12 @@ OFBool DSRWaveformReferenceValue::appliesToChannel(const Uint16 multiplexGroupNu
 }
 
 
-// helper macro to avoid annoying check of boolean flag
-#define REPORT_WARNING(msg) { if (reportWarnings) DCMSR_WARN(msg); }
-
-OFCondition DSRWaveformReferenceValue::checkSOPClassUID(const OFString &sopClassUID,
-                                                        const OFBool reportWarnings) const
+OFCondition DSRWaveformReferenceValue::checkSOPClassUID(const OFString &sopClassUID) const
 {
     OFCondition result = DSRCompositeReferenceValue::checkSOPClassUID(sopClassUID);
     if (result.good())
     {
-        /* check for all valid/known SOP classes (according to DICOM PS 3.6-2021c) */
+        /* check for all valid/known SOP classes (according to DICOM PS 3.6-2011) */
         if ((sopClassUID != UID_TwelveLeadECGWaveformStorage) &&
             (sopClassUID != UID_GeneralECGWaveformStorage) &&
             (sopClassUID != UID_AmbulatoryECGWaveformStorage) &&
@@ -280,15 +252,8 @@ OFCondition DSRWaveformReferenceValue::checkSOPClassUID(const OFString &sopClass
             (sopClassUID != UID_BasicVoiceAudioWaveformStorage) &&
             (sopClassUID != UID_GeneralAudioWaveformStorage) &&
             (sopClassUID != UID_ArterialPulseWaveformStorage) &&
-            (sopClassUID != UID_RespiratoryWaveformStorage) &&
-            (sopClassUID != UID_MultichannelRespiratoryWaveformStorage) &&
-            (sopClassUID != UID_RoutineScalpElectroencephalogramWaveformStorage) &&
-            (sopClassUID != UID_ElectromyogramWaveformStorage) &&
-            (sopClassUID != UID_ElectrooculogramWaveformStorage) &&
-            (sopClassUID != UID_SleepElectroencephalogramWaveformStorage) &&
-            (sopClassUID != UID_BodyPositionWaveformStorage))
+            (sopClassUID != UID_RespiratoryWaveformStorage))
         {
-            REPORT_WARNING("Invalid or unknown waveform SOP class referenced from WAVEFORM content item")
             result = SR_EC_InvalidValue;
         }
     }

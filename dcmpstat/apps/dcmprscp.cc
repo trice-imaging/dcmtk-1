@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2021, OFFIS e.V.
+ *  Copyright (C) 2000-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,6 +20,10 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>
+#endif
 
 BEGIN_EXTERN_C
 #ifdef HAVE_FCNTL_H
@@ -66,7 +70,7 @@ static void cleanChildren()
 {
 #ifdef HAVE_WAITPID
     int stat_loc;
-#elif defined(HAVE_WAIT3)
+#elif HAVE_WAIT3
     struct rusage rusage;
 #if defined(__NeXT__)
     /* some systems need a union wait as argument to wait3 */
@@ -104,9 +108,17 @@ static void cleanChildren()
 
 int main(int argc, char *argv[])
 {
-    OFStandard::initializeNetwork();
-#ifdef WITH_OPENSSL
-    DcmTLSTransportLayer::initializeOpenSSL();
+
+#ifdef HAVE_GUSI_H
+    GUSISetup(GUSIwithSIOUXSockets);
+    GUSISetup(GUSIwithInternetSockets);
+#endif
+
+#ifdef HAVE_WINSOCK_H
+    WSAData winSockData;
+    /* we need at least version 1.1 */
+    WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
+    WSAStartup(winSockVersionNeeded, &winSockData);
 #endif
 
     dcmDisableGethostbyaddr.set(OFTrue);  // disable hostname lookup
@@ -149,7 +161,7 @@ int main(int argc, char *argv[])
             COUT << "- ZLIB, Version " << zlibVersion() << OFendl;
 #endif
 #ifdef WITH_OPENSSL
-            COUT << "- " << DcmTLSTransportLayer::getOpenSSLVersionName() << OFendl;
+            COUT << "- " << OPENSSL_VERSION_TEXT << OFendl;
 #endif
             return 0;
          }
@@ -234,11 +246,11 @@ int main(int argc, char *argv[])
       OFString logfilename = logfileprefix;
       logfilename += ".log";
 
-      OFunique_ptr<dcmtk::log4cplus::Layout> layout(new dcmtk::log4cplus::PatternLayout(pattern));
+      OFauto_ptr<dcmtk::log4cplus::Layout> layout(new dcmtk::log4cplus::PatternLayout(pattern));
       dcmtk::log4cplus::SharedAppenderPtr logfile(new dcmtk::log4cplus::FileAppender(logfilename));
       dcmtk::log4cplus::Logger log = dcmtk::log4cplus::Logger::getRoot();
 
-      logfile->setLayout(OFmove(layout));
+      logfile->setLayout(layout);
       log.removeAllAppenders();
       log.addAppender(logfile);
     }
@@ -276,7 +288,10 @@ int main(int argc, char *argv[])
 
     if (targetDisableNewVRs)
     {
-      dcmDisableGenerationOfNewVRs();
+      dcmEnableUnknownVRGeneration.set(OFFalse);
+      dcmEnableUnlimitedTextVRGeneration.set(OFFalse);
+      dcmEnableOtherFloatStringVRGeneration.set(OFFalse);
+      dcmEnableOtherDoubleStringVRGeneration.set(OFFalse);
     }
 
     T_ASC_Network *net = NULL; /* the DICOM network and listen port */
@@ -340,49 +355,51 @@ int main(int argc, char *argv[])
     if (tlsCACertificateFolder==NULL) tlsCACertificateFolder = ".";
 
     /* key file format */
-    DcmKeyFileFormat keyFileFormat = DCF_Filetype_PEM;
-    if (! dvi.getTLSPEMFormat()) keyFileFormat = DCF_Filetype_ASN1;
+    int keyFileFormat = SSL_FILETYPE_PEM;
+    if (! dvi.getTLSPEMFormat()) keyFileFormat = SSL_FILETYPE_ASN1;
+
+    /* ciphersuites */
+#if OPENSSL_VERSION_NUMBER >= 0x0090700fL
+    OFString tlsCiphersuites(TLS1_TXT_RSA_WITH_AES_128_SHA ":" SSL3_TXT_RSA_DES_192_CBC3_SHA);
+#else
+    OFString tlsCiphersuites(SSL3_TXT_RSA_DES_192_CBC3_SHA);
+#endif
+    Uint32 tlsNumberOfCiphersuites = dvi.getTargetNumberOfCipherSuites(opt_printer);
+    if (tlsNumberOfCiphersuites > 0)
+    {
+      tlsCiphersuites.clear();
+      OFString currentSuite;
+      const char *currentOpenSSL;
+      for (Uint32 ui=0; ui<tlsNumberOfCiphersuites; ui++)
+      {
+        dvi.getTargetCipherSuite(opt_printer, ui, currentSuite);
+        if (NULL == (currentOpenSSL = DcmTLSTransportLayer::findOpenSSLCipherSuiteName(currentSuite.c_str())))
+        {
+          OFLOG_WARN(dcmprscpLogger, "ciphersuite '" << currentSuite << "' is unknown. Known ciphersuites are:");
+          unsigned long numSuites = DcmTLSTransportLayer::getNumberOfCipherSuites();
+          for (unsigned long cs=0; cs < numSuites; cs++)
+          {
+            OFLOG_WARN(dcmprscpLogger, "    " << DcmTLSTransportLayer::getTLSCipherSuiteName(cs));
+          }
+          return 1;
+        } else {
+          if (!tlsCiphersuites.empty()) tlsCiphersuites += ":";
+          tlsCiphersuites += currentOpenSSL;
+        }
+      }
+    }
 
     DcmTLSTransportLayer *tLayer = NULL;
     if (targetUseTLS)
     {
-      tLayer = new DcmTLSTransportLayer(NET_ACCEPTOR, tlsRandomSeedFile.c_str(), OFFalse);
+      tLayer = new DcmTLSTransportLayer(DICOM_APPLICATION_ACCEPTOR, tlsRandomSeedFile.c_str());
       if (tLayer == NULL)
       {
         OFLOG_FATAL(dcmprscpLogger, "unable to create TLS transport layer");
         return 1;
       }
 
-      // determine TLS profile
-      OFString profileName;
-      const char *profileNamePtr = dvi.getTargetTLSProfile(opt_printer);
-      if (profileNamePtr) profileName = profileNamePtr;
-      DcmTLSSecurityProfile tlsProfile = TSP_Profile_BCP195;  // default
-      if (profileName == "BCP195") tlsProfile = TSP_Profile_BCP195;
-      else if (profileName == "BCP195-ND") tlsProfile = TSP_Profile_BCP195_ND;
-      else if (profileName == "BCP195-EX") tlsProfile = TSP_Profile_BCP195_Extended;
-      else if (profileName == "AES") tlsProfile = TSP_Profile_AES;
-      else if (profileName == "BASIC") tlsProfile = TSP_Profile_Basic;
-      else if (profileName == "NULL") tlsProfile = TSP_Profile_IHE_ATNA_Unencrypted;
-      else
-      {
-        OFLOG_WARN(dcmprscpLogger, "unknown TLS profile '" << profileName << "', ignoring");
-      }
-
-      if (tLayer->setTLSProfile(tlsProfile).bad())
-      {
-        OFLOG_FATAL(dcmprscpLogger, "unable to select the TLS security profile");
-        return 1;
-      }
-
-      // activate cipher suites
-      if (tLayer->activateCipherSuites().bad())
-      {
-        OFLOG_FATAL(dcmprscpLogger, "unable to activate the selected list of TLS ciphersuites");
-        return 1;
-      }
-
-      if (tlsCACertificateFolder && (tLayer->addTrustedCertificateDir(tlsCACertificateFolder, keyFileFormat).bad()))
+      if (tlsCACertificateFolder && (TCS_ok != tLayer->addTrustedCertificateDir(tlsCACertificateFolder, keyFileFormat)))
       {
         OFLOG_WARN(dcmprscpLogger, "unable to load certificates from directory '" << tlsCACertificateFolder << "', ignoring");
       }
@@ -392,12 +409,12 @@ int main(int argc, char *argv[])
       }
       tLayer->setPrivateKeyPasswd(tlsPrivateKeyPassword); // never prompt on console
 
-      if (tLayer->setPrivateKeyFile(tlsPrivateKeyFile.c_str(), keyFileFormat).bad())
+      if (TCS_ok != tLayer->setPrivateKeyFile(tlsPrivateKeyFile.c_str(), keyFileFormat))
       {
         OFLOG_FATAL(dcmprscpLogger, "unable to load private TLS key from '" << tlsPrivateKeyFile<< "'");
         return 1;
       }
-      if (tLayer->setCertificateFile(tlsCertificateFile.c_str(), keyFileFormat).bad())
+      if (TCS_ok != tLayer->setCertificateFile(tlsCertificateFile.c_str(), keyFileFormat))
       {
         OFLOG_FATAL(dcmprscpLogger, "unable to load certificate from '" << tlsCertificateFile << "'");
         return 1;
@@ -407,6 +424,12 @@ int main(int argc, char *argv[])
         OFLOG_FATAL(dcmprscpLogger, "private key '" << tlsPrivateKeyFile << "' and certificate '" << tlsCertificateFile << "' do not match");
         return 1;
       }
+      if (TCS_ok != tLayer->setCipherSuites(tlsCiphersuites.c_str()))
+      {
+        OFLOG_FATAL(dcmprscpLogger, "unable to set selected cipher suites");
+        return 1;
+      }
+
       tLayer->setCertificateVerification(tlsCertVerification);
 
     }
@@ -495,7 +518,9 @@ int main(int argc, char *argv[])
     } // finished
     cleanChildren();
 
-    OFStandard::shutdownNetwork();
+#ifdef HAVE_WINSOCK_H
+    WSACleanup();
+#endif
 
 #ifdef DEBUG
     dcmDataDict.clear();  /* useful for debugging with dmalloc */

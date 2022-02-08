@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,6 +21,15 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
+
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>
+#endif
+
 #include "dcmtk/dcmdata/dctk.h"
 #include "dcmtk/dcmdata/cmdlnarg.h"
 #include "dcmtk/ofstd/ofconapp.h"
@@ -31,7 +40,7 @@
 #ifdef WITH_ZLIB
 #include <zlib.h>                      /* for zlibVersion() */
 #endif
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
+#ifdef WITH_LIBICONV
 #include "dcmtk/ofstd/ofchrenc.h"      /* for OFCharacterEncoding */
 #endif
 
@@ -60,12 +69,12 @@ static DcmTagKey parseTagKey(const char *tagName)
     const DcmDictEntry *dicent = globalDataDict.findEntry(tagName);
     if (dicent == NULL)
     {
-      OFLOG_ERROR(dcmconvLogger, "unrecognized tag name: '" << tagName << "'");
+      OFLOG_ERROR(dcmconvLogger, "unrecognised tag name: '" << tagName << "'");
       tagKey = DCM_UndefinedTagKey;
     } else {
       tagKey = dicent->getKey();
     }
-    dcmDataDict.rdunlock();
+    dcmDataDict.unlock();
     return tagKey;
   } else     /* tag name has format "gggg,eeee" */
   {
@@ -75,11 +84,17 @@ static DcmTagKey parseTagKey(const char *tagName)
 
 int main(int argc, char *argv[])
 {
+
+#ifdef HAVE_GUSI_H
+  GUSISetup(GUSIwithSIOUXSockets);
+  GUSISetup(GUSIwithInternetSockets);
+#endif
+
   const char *opt_ifname = NULL;
   const char *opt_ofname = NULL;
 
   E_FileReadMode opt_readMode = ERM_autoDetect;
-  E_FileWriteMode opt_writeMode = EWM_createNewMeta;
+  E_FileWriteMode opt_writeMode = EWM_fileformat;
   E_TransferSyntax opt_ixfer = EXS_Unknown;
   E_TransferSyntax opt_oxfer = EXS_Unknown;
   E_GrpLenEncoding opt_oglenc = EGL_recalcGL;
@@ -90,9 +105,10 @@ int main(int argc, char *argv[])
 #ifdef WITH_ZLIB
   OFCmdUnsignedInt opt_compressionLevel = 0;
 #endif
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
+#ifdef WITH_LIBICONV
   const char *opt_convertToCharset = NULL;
-  size_t opt_conversionFlags = 0;
+  OFBool opt_transliterate = OFFalse;
+  OFBool opt_discardIllegal = OFFalse;
 #endif
   OFBool opt_noInvalidGroups = OFFalse;
 
@@ -144,15 +160,6 @@ int main(int argc, char *argv[])
     cmd.addSubGroup("handling of wrong delimitation items:");
       cmd.addOption("--use-delim-items",     "-rd",    "use delimitation items from dataset (default)");
       cmd.addOption("--replace-wrong-delim", "+rd",    "replace wrong sequence/item delimitation items");
-      cmd.addSubGroup("handling of illegal undefined length OB/OW elements:");
-      cmd.addOption("--illegal-obow-rej",    "-oi",    "reject dataset with illegal element (default)");
-      cmd.addOption("--illegal-obow-conv",   "+oi",    "convert undefined length OB/OW element to SQ");
-    cmd.addSubGroup("handling of VOI LUT Sequence with OW VR and explicit length:");
-      cmd.addOption("--illegal-voi-rej",     "-vi",    "reject dataset with illegal VOI LUT (default)");
-      cmd.addOption("--illegal-voi-conv",    "+vi",    "convert illegal VOI LUT to SQ");
-    cmd.addSubGroup("handling of explicit length pixel data for encaps. transfer syntaxes:");
-      cmd.addOption("--abort-expl-pixdata",  "-pe",    "abort on explicit length pixel data (default)");
-      cmd.addOption("--use-expl-pixdata",    "+pe",    "use explicit length pixel data");
     cmd.addSubGroup("general handling of parser errors: ");
       cmd.addOption("--ignore-parse-errors", "+Ep",    "try to recover from parse errors");
       cmd.addOption("--handle-parse-errors", "-Ep",    "handle parse errors and stop parsing (default)");
@@ -169,7 +176,7 @@ int main(int argc, char *argv[])
 #endif
 
   cmd.addGroup("processing options:");
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
+#ifdef WITH_LIBICONV
     cmd.addSubGroup("specific character set:");
       cmd.addOption("--convert-to-utf8",     "+U8",    "convert all element values that are affected\nby Specific Character Set (0008,0005) to UTF-8");
       cmd.addOption("--convert-to-latin1",   "+L1",    "convert affected element values to ISO 8859-1");
@@ -184,8 +191,8 @@ int main(int argc, char *argv[])
 
   cmd.addGroup("output options:");
     cmd.addSubGroup("output file format:");
-      cmd.addOption("--write-new-meta-info", "+Fm",    "write file format\nwith new meta information (default)");
-      cmd.addOption("--write-file",          "+F",     "write file format");
+      cmd.addOption("--write-file",          "+F",     "write file format (default)");
+      cmd.addOption("--write-new-meta-info", "+Fm",    "write file format with new meta information");
       cmd.addOption("--write-dataset",       "-F",     "write data set without file meta information");
     cmd.addSubGroup("output transfer syntax:");
       cmd.addOption("--write-xfer-same",     "+t=",    "write with same TS as input (default)");
@@ -195,7 +202,6 @@ int main(int argc, char *argv[])
 #ifdef WITH_ZLIB
       cmd.addOption("--write-xfer-deflated", "+td",    "write with deflated explicit VR little endian TS");
 #endif
-      cmd.addOption("--write-xfer-ge",       "+tg",    "write private GE LEI with big endian pixel TS\n(non-standard)");
     cmd.addSubGroup("post-1993 value representations:");
       cmd.addOption("--enable-new-vr",       "+u",     "enable support for new VRs (UN/UT) (default)");
       cmd.addOption("--disable-new-vr",      "-u",     "disable support for new VRs, convert to OB");
@@ -230,7 +236,7 @@ int main(int argc, char *argv[])
           {
               app.printHeader(OFTrue /*print host identifier*/);
               COUT << OFendl << "External libraries used:";
-#if !defined(WITH_ZLIB) && !defined(DCMTK_ENABLE_CHARSET_CONVERSION)
+#if !defined(WITH_ZLIB) && !defined(WITH_LIBICONV)
               COUT << " none" << OFendl;
 #else
               COUT << OFendl;
@@ -238,7 +244,7 @@ int main(int argc, char *argv[])
 #ifdef WITH_ZLIB
               COUT << "- ZLIB, Version " << zlibVersion() << OFendl;
 #endif
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
+#ifdef WITH_LIBICONV
               COUT << "- " << OFCharacterEncoding::getLibraryVersionString() << OFendl;
 #endif
               return 0;
@@ -369,38 +375,6 @@ int main(int argc, char *argv[])
       cmd.endOptionBlock();
 
       cmd.beginOptionBlock();
-      if (cmd.findOption("--illegal-obow-rej"))
-      {
-        dcmConvertUndefinedLengthOBOWtoSQ.set(OFFalse);
-      }
-      if (cmd.findOption("--illegal-obow-conv"))
-      {
-        dcmConvertUndefinedLengthOBOWtoSQ.set(OFTrue);
-      }
-      cmd.endOptionBlock();
-
-      cmd.beginOptionBlock();
-      if (cmd.findOption("--illegal-voi-rej"))
-      {
-        dcmConvertVOILUTSequenceOWtoSQ.set(OFFalse);
-      }
-      if (cmd.findOption("--illegal-voi-conv"))
-      {
-        dcmConvertVOILUTSequenceOWtoSQ.set(OFTrue);
-      }
-      cmd.endOptionBlock();
-      cmd.beginOptionBlock();
-      if (cmd.findOption("--abort-expl-pixdata"))
-      {
-        dcmUseExplLengthPixDataForEncTS.set(OFFalse);
-      }
-      if (cmd.findOption("--use-expl-pixdata"))
-      {
-        dcmUseExplLengthPixDataForEncTS.set(OFTrue);
-      }
-      cmd.endOptionBlock();
-
-      cmd.beginOptionBlock();
       if (cmd.findOption("--ignore-parse-errors"))
       {
         dcmIgnoreParsingErrors.set(OFTrue);
@@ -447,7 +421,7 @@ int main(int argc, char *argv[])
 #endif
 
       /* processing options */
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
+#ifdef WITH_LIBICONV
       cmd.beginOptionBlock();
       if (cmd.findOption("--convert-to-utf8")) opt_convertToCharset = "ISO_IR 192";
       if (cmd.findOption("--convert-to-latin1")) opt_convertToCharset = "ISO_IR 100";
@@ -457,12 +431,12 @@ int main(int argc, char *argv[])
       if (cmd.findOption("--transliterate"))
       {
         app.checkDependence("--transliterate", "one of the --convert-to-xxx options", opt_convertToCharset != NULL);
-        opt_conversionFlags |= DCMTypes::CF_transliterate;
+        opt_transliterate = OFTrue;
       }
       if (cmd.findOption("--discard-illegal"))
       {
         app.checkDependence("--discard-illegal", "one of the --convert-to-xxx options", opt_convertToCharset != NULL);
-        opt_conversionFlags |= DCMTypes::CF_discardIllegal;
+        opt_discardIllegal = OFTrue;
       }
 #endif
       if (cmd.findOption("--no-invalid-groups")) opt_noInvalidGroups = OFTrue;
@@ -482,17 +456,22 @@ int main(int argc, char *argv[])
 #ifdef WITH_ZLIB
       if (cmd.findOption("--write-xfer-deflated")) opt_oxfer = EXS_DeflatedLittleEndianExplicit;
 #endif
-      if (cmd.findOption("--write-xfer-ge")) opt_oxfer = EXS_PrivateGE_LEI_WithBigEndianPixelData;
       cmd.endOptionBlock();
 
       cmd.beginOptionBlock();
       if (cmd.findOption("--enable-new-vr"))
       {
-        dcmEnableGenerationOfNewVRs();
+        dcmEnableUnknownVRGeneration.set(OFTrue);
+        dcmEnableUnlimitedTextVRGeneration.set(OFTrue);
+        dcmEnableOtherFloatStringVRGeneration.set(OFTrue);
+        dcmEnableOtherDoubleStringVRGeneration.set(OFTrue);
       }
       if (cmd.findOption("--disable-new-vr"))
       {
-        dcmDisableGenerationOfNewVRs();
+        dcmEnableUnknownVRGeneration.set(OFFalse);
+        dcmEnableUnlimitedTextVRGeneration.set(OFFalse);
+        dcmEnableOtherFloatStringVRGeneration.set(OFFalse);
+        dcmEnableOtherDoubleStringVRGeneration.set(OFFalse);
       }
       cmd.endOptionBlock();
 
@@ -577,7 +556,7 @@ int main(int argc, char *argv[])
         OFLOG_INFO(dcmconvLogger, "remove all elements with an invalid group number");
         fileformat.removeInvalidGroups();
     }
-#ifdef DCMTK_ENABLE_CHARSET_CONVERSION
+#ifdef WITH_LIBICONV
     if (opt_convertToCharset != NULL)
     {
         OFString toCharset(opt_convertToCharset);
@@ -585,7 +564,7 @@ int main(int argc, char *argv[])
         OFLOG_INFO(dcmconvLogger, "converting all element values that are affected by "
             << "Specific Character Set (0008,0005) to '" << opt_convertToCharset << "'"
             << (toCharset.empty() ? " (ASCII)" : ""));
-        error = fileformat.convertCharacterSet(toCharset, opt_conversionFlags);
+        error = fileformat.convertCharacterSet(toCharset, opt_transliterate, opt_discardIllegal);
         if (error.bad())
         {
             OFLOG_FATAL(dcmconvLogger, error.text() << ": processing file: " << opt_ifname);
@@ -604,14 +583,9 @@ int main(int argc, char *argv[])
 
     DcmXfer opt_oxferSyn(opt_oxfer);
 
-    error = dataset->chooseRepresentation(opt_oxfer, NULL);
-    if (error.bad())
-    {
-        OFLOG_ERROR(dcmconvLogger, error.text());
-        /* reporting a fatal error and returning with an error code follows next */
-    }
+    dataset->chooseRepresentation(opt_oxfer, NULL);
 
-    if (error.good() && dataset->canWriteXfer(opt_oxfer))
+    if (dataset->canWriteXfer(opt_oxfer))
     {
         OFLOG_INFO(dcmconvLogger, "output transfer syntax " << opt_oxferSyn.getXferName() << " can be written");
     } else {

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2018, OFFIS e.V.
+ *  Copyright (C) 1994-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -141,7 +141,7 @@ class DCMTK_DCMDATA_EXPORT DcmDateTime
                               const unsigned long pos = 0);
 
     /** get the current element value in ISO date/time format.
-     *  The ISO date/time format supported by this function is "YYYY-MM-DD[ HH:MM[:SS[.FFFFFF]]]
+     *  The ISO date/time format supported by this function is "YYYY-MM-DD HH:MM[:SS[.FFFFFF]]
      *  [&HH:MM]" where the brackets enclose optional parts. Please note that the element value
      *  is expected to be in valid DICOM DT format ("YYYYMMDD[HH[MM[SS[.FFFFFF]]]][&ZZZZ]").
      *  If this function fails or the current element value is empty, the result variable
@@ -169,14 +169,6 @@ class DCMTK_DCMDATA_EXPORT DcmDateTime
                                         const OFBool createMissingPart = OFFalse,
                                         const OFString &dateTimeSeparator = " ",
                                         const OFString &timeZoneSeparator = " ");
-
-    // ensure inherited overloads of matches take part in overload resolution
-    using DcmByteString::matches;
-
-    /// @copydoc DcmByteString::matches(OFString,OFString,OFBool)
-    virtual OFBool matches(const OFString& key,
-                           const OFString& candidate,
-                           const OFBool enableWildCardMatching = OFTrue) const;
 
     /* --- static helper functions --- */
 
@@ -222,12 +214,10 @@ class DCMTK_DCMDATA_EXPORT DcmDateTime
 
     /** get the specified DICOM date and time value in OFDateTime format.
      *  Please note that the element value is expected to be in valid DICOM DT format
-     *  ("YYYY[MM[DD[HH[MM[SS[.FFFFFF]]]]]][&ZZZZ]"). If the "MM" and/or "DD" component from
-     *  the date part is missing, a value of "1" is used for each of them. If the "HH", "MM"
-     *  and/or "SS" component of the time part is missing, a value of "0" is used for each of
-     *  them. If the optional time zone ("&ZZZZ") is missing, the local time zone is used.
+     *  ("YYYYMMDD[HH[MM[SS[.FFFFFF]]]][&ZZZZ]"). If the optional time zone ("&ZZZZ") is
+     *  missing the local time zone is used.
      *  If this function fails, the result variable 'dateTimeValue' is cleared automatically.
-     *  @param dicomDateTime string value in DICOM DT format to be converted to OFDateTime.
+     *  @param dicomDateTime string value in DICOM DT format to be converted to ISO format.
      *    An empty string is not regarded as valid input, since the date/time would be unknown.
      *  @param dateTimeValue reference to OFDateTime variable where the result is stored
      *  @return EC_Normal upon success, an error code otherwise
@@ -235,25 +225,8 @@ class DCMTK_DCMDATA_EXPORT DcmDateTime
     static OFCondition getOFDateTimeFromString(const OFString &dicomDateTime,
                                                OFDateTime &dateTimeValue);
 
-    /** get the specified DICOM date and time value in OFDateTime format.
-     *  Please note that the element value is expected to be in valid DICOM DT format
-     *  ("YYYY[MM[DD[HH[MM[SS[.FFFFFF]]]]]][&ZZZZ]"). If the "MM" and/or "DD" component from
-     *  the date part is missing, a value of "1" is used for each of them. If the "HH", "MM"
-     *  and/or "SS" component of the time part is missing, a value of "0" is used for each of
-     *  them. If the optional time zone ("&ZZZZ") is missing, the local time zone is used.
-     *  If this function fails, the result variable 'dateTimeValue' is cleared automatically.
-     *  @param dicomDateTime string value in DICOM DT format to be converted to OFDateTime.
-     *    An empty string is not regarded as valid input, since the date/time would be unknown.
-     *  @param dicomDateTimeSize the size (in bytes) of the string 'dicomDateTime' refers to
-     *  @param dateTimeValue reference to OFDateTime variable where the result is stored
-     *  @return EC_Normal upon success, an error code otherwise
-     */
-    static OFCondition getOFDateTimeFromString(const char *dicomDateTime,
-                                               const size_t dicomDateTimeSize,
-                                               OFDateTime &dateTimeValue);
-
     /** get the specified DICOM datetime value in ISO format.
-     *  The ISO date/time format supported by this function is "YYYY-MM-DD[ HH:MM[:SS[.FFFFFF]]]
+     *  The ISO date/time format supported by this function is "YYYY-MM-DD HH:MM[:SS[.FFFFFF]]
      *  [&HH:MM]" where the brackets enclose optional parts. Please note that the specified
      *  value is expected to be in valid DICOM DT format ("YYYYMMDD[HH[MM[SS[.FFFFFF]]]][&ZZZZ]").
      *  If this function fails or the specified DICOM datetime value is empty, the result
@@ -281,14 +254,6 @@ class DCMTK_DCMDATA_EXPORT DcmDateTime
                                                          const OFBool createMissingPart = OFFalse,
                                                          const OFString &dateTimeSeparator = " ",
                                                          const OFString &timeZoneSeparator = " ");
-
-    /** check whether the given string conforms to a single value of VR "DT" (Date Time).
-     *  @param dicomDateTime string value to be checked
-     *  @param dicomDateTimeSize the size (in bytes) of the string 'dicomDateTime' refers to
-     *  @return OFTrue if the given string conforms to the Date Time format, OFFalse otherwise
-     */
-    static OFBool check(const char *dicomDateTime,
-                        const size_t dicomDateTimeSize);
 
     /** check whether given string value conforms to the VR "DT" (Date Time)
      *  and to the specified VM.

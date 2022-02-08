@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTToleranceTableSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -29,8 +29,6 @@ DRTToleranceTableSequence::Item::Item(const OFBool emptyDefaultItem)
     TableTopEccentricAngleTolerance(DCM_TableTopEccentricAngleTolerance),
     TableTopLateralPositionTolerance(DCM_TableTopLateralPositionTolerance),
     TableTopLongitudinalPositionTolerance(DCM_TableTopLongitudinalPositionTolerance),
-    TableTopPitchAngleTolerance(DCM_TableTopPitchAngleTolerance),
-    TableTopRollAngleTolerance(DCM_TableTopRollAngleTolerance),
     TableTopVerticalPositionTolerance(DCM_TableTopVerticalPositionTolerance),
     ToleranceTableLabel(DCM_ToleranceTableLabel),
     ToleranceTableNumber(DCM_ToleranceTableNumber)
@@ -48,8 +46,6 @@ DRTToleranceTableSequence::Item::Item(const Item &copy)
     TableTopEccentricAngleTolerance(copy.TableTopEccentricAngleTolerance),
     TableTopLateralPositionTolerance(copy.TableTopLateralPositionTolerance),
     TableTopLongitudinalPositionTolerance(copy.TableTopLongitudinalPositionTolerance),
-    TableTopPitchAngleTolerance(copy.TableTopPitchAngleTolerance),
-    TableTopRollAngleTolerance(copy.TableTopRollAngleTolerance),
     TableTopVerticalPositionTolerance(copy.TableTopVerticalPositionTolerance),
     ToleranceTableLabel(copy.ToleranceTableLabel),
     ToleranceTableNumber(copy.ToleranceTableNumber)
@@ -75,8 +71,6 @@ DRTToleranceTableSequence::Item &DRTToleranceTableSequence::Item::operator=(cons
         TableTopEccentricAngleTolerance = copy.TableTopEccentricAngleTolerance;
         TableTopLateralPositionTolerance = copy.TableTopLateralPositionTolerance;
         TableTopLongitudinalPositionTolerance = copy.TableTopLongitudinalPositionTolerance;
-        TableTopPitchAngleTolerance = copy.TableTopPitchAngleTolerance;
-        TableTopRollAngleTolerance = copy.TableTopRollAngleTolerance;
         TableTopVerticalPositionTolerance = copy.TableTopVerticalPositionTolerance;
         ToleranceTableLabel = copy.ToleranceTableLabel;
         ToleranceTableNumber = copy.ToleranceTableNumber;
@@ -98,8 +92,6 @@ void DRTToleranceTableSequence::Item::clear()
         BeamLimitingDeviceToleranceSequence.clear();
         PatientSupportAngleTolerance.clear();
         TableTopEccentricAngleTolerance.clear();
-        TableTopPitchAngleTolerance.clear();
-        TableTopRollAngleTolerance.clear();
         TableTopVerticalPositionTolerance.clear();
         TableTopLongitudinalPositionTolerance.clear();
         TableTopLateralPositionTolerance.clear();
@@ -117,8 +109,6 @@ OFBool DRTToleranceTableSequence::Item::isEmpty()
            BeamLimitingDeviceToleranceSequence.isEmpty() &&
            PatientSupportAngleTolerance.isEmpty() &&
            TableTopEccentricAngleTolerance.isEmpty() &&
-           TableTopPitchAngleTolerance.isEmpty() &&
-           TableTopRollAngleTolerance.isEmpty() &&
            TableTopVerticalPositionTolerance.isEmpty() &&
            TableTopLongitudinalPositionTolerance.isEmpty() &&
            TableTopLateralPositionTolerance.isEmpty();
@@ -138,7 +128,7 @@ OFCondition DRTToleranceTableSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, ToleranceTableNumber, "1", "1", "ToleranceTableSequence");
+        getAndCheckElementFromDataset(item, ToleranceTableNumber, "1", "1C", "ToleranceTableSequence");
         getAndCheckElementFromDataset(item, ToleranceTableLabel, "1", "3", "ToleranceTableSequence");
         getAndCheckElementFromDataset(item, GantryAngleTolerance, "1", "3", "ToleranceTableSequence");
         getAndCheckElementFromDataset(item, GantryPitchAngleTolerance, "1", "3", "ToleranceTableSequence");
@@ -146,8 +136,6 @@ OFCondition DRTToleranceTableSequence::Item::read(DcmItem &item)
         BeamLimitingDeviceToleranceSequence.read(item, "1-n", "3", "ToleranceTableSequence");
         getAndCheckElementFromDataset(item, PatientSupportAngleTolerance, "1", "3", "ToleranceTableSequence");
         getAndCheckElementFromDataset(item, TableTopEccentricAngleTolerance, "1", "3", "ToleranceTableSequence");
-        getAndCheckElementFromDataset(item, TableTopPitchAngleTolerance, "1", "3", "ToleranceTableSequence");
-        getAndCheckElementFromDataset(item, TableTopRollAngleTolerance, "1", "3", "ToleranceTableSequence");
         getAndCheckElementFromDataset(item, TableTopVerticalPositionTolerance, "1", "3", "ToleranceTableSequence");
         getAndCheckElementFromDataset(item, TableTopLongitudinalPositionTolerance, "1", "3", "ToleranceTableSequence");
         getAndCheckElementFromDataset(item, TableTopLateralPositionTolerance, "1", "3", "ToleranceTableSequence");
@@ -163,7 +151,7 @@ OFCondition DRTToleranceTableSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmIntegerString(ToleranceTableNumber), "1", "1", "ToleranceTableSequence");
+        addElementToDataset(result, item, new DcmIntegerString(ToleranceTableNumber), "1", "1C", "ToleranceTableSequence");
         addElementToDataset(result, item, new DcmShortString(ToleranceTableLabel), "1", "3", "ToleranceTableSequence");
         addElementToDataset(result, item, new DcmDecimalString(GantryAngleTolerance), "1", "3", "ToleranceTableSequence");
         addElementToDataset(result, item, new DcmFloatingPointSingle(GantryPitchAngleTolerance), "1", "3", "ToleranceTableSequence");
@@ -171,8 +159,6 @@ OFCondition DRTToleranceTableSequence::Item::write(DcmItem &item)
         if (result.good()) result = BeamLimitingDeviceToleranceSequence.write(item, "1-n", "3", "ToleranceTableSequence");
         addElementToDataset(result, item, new DcmDecimalString(PatientSupportAngleTolerance), "1", "3", "ToleranceTableSequence");
         addElementToDataset(result, item, new DcmDecimalString(TableTopEccentricAngleTolerance), "1", "3", "ToleranceTableSequence");
-        addElementToDataset(result, item, new DcmFloatingPointSingle(TableTopPitchAngleTolerance), "1", "3", "ToleranceTableSequence");
-        addElementToDataset(result, item, new DcmFloatingPointSingle(TableTopRollAngleTolerance), "1", "3", "ToleranceTableSequence");
         addElementToDataset(result, item, new DcmDecimalString(TableTopVerticalPositionTolerance), "1", "3", "ToleranceTableSequence");
         addElementToDataset(result, item, new DcmDecimalString(TableTopLongitudinalPositionTolerance), "1", "3", "ToleranceTableSequence");
         addElementToDataset(result, item, new DcmDecimalString(TableTopLateralPositionTolerance), "1", "3", "ToleranceTableSequence");
@@ -295,24 +281,6 @@ OFCondition DRTToleranceTableSequence::Item::getTableTopLongitudinalPositionTole
         return EC_IllegalCall;
     else
         return OFconst_cast(DcmDecimalString &, TableTopLongitudinalPositionTolerance).getFloat64(value, pos);
-}
-
-
-OFCondition DRTToleranceTableSequence::Item::getTableTopPitchAngleTolerance(Float32 &value, const unsigned long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return OFconst_cast(DcmFloatingPointSingle &, TableTopPitchAngleTolerance).getFloat32(value, pos);
-}
-
-
-OFCondition DRTToleranceTableSequence::Item::getTableTopRollAngleTolerance(Float32 &value, const unsigned long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return OFconst_cast(DcmFloatingPointSingle &, TableTopRollAngleTolerance).getFloat32(value, pos);
 }
 
 
@@ -445,24 +413,6 @@ OFCondition DRTToleranceTableSequence::Item::setTableTopLongitudinalPositionTole
             result = TableTopLongitudinalPositionTolerance.putOFStringArray(value);
     }
     return result;
-}
-
-
-OFCondition DRTToleranceTableSequence::Item::setTableTopPitchAngleTolerance(const Float32 value, const unsigned long pos)
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return TableTopPitchAngleTolerance.putFloat32(value, pos);
-}
-
-
-OFCondition DRTToleranceTableSequence::Item::setTableTopRollAngleTolerance(const Float32 value, const unsigned long pos)
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return TableTopRollAngleTolerance.putFloat32(value, pos);
 }
 
 
@@ -608,7 +558,7 @@ OFBool DRTToleranceTableSequence::isValid() const
 }
 
 
-size_t DRTToleranceTableSequence::getNumberOfItems() const
+unsigned long DRTToleranceTableSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -638,12 +588,12 @@ OFCondition DRTToleranceTableSequence::gotoNextItem()
 }
 
 
-OFCondition DRTToleranceTableSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTToleranceTableSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -658,12 +608,12 @@ OFCondition DRTToleranceTableSequence::gotoItem(const size_t num, OFListIterator
 }
 
 
-OFCondition DRTToleranceTableSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTToleranceTableSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -678,7 +628,7 @@ OFCondition DRTToleranceTableSequence::gotoItem(const size_t num, OFListConstIte
 }
 
 
-OFCondition DRTToleranceTableSequence::gotoItem(const size_t num)
+OFCondition DRTToleranceTableSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -714,7 +664,7 @@ const DRTToleranceTableSequence::Item &DRTToleranceTableSequence::getCurrentItem
 }
 
 
-OFCondition DRTToleranceTableSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTToleranceTableSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -724,7 +674,7 @@ OFCondition DRTToleranceTableSequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTToleranceTableSequence::Item &DRTToleranceTableSequence::getItem(const size_t num)
+DRTToleranceTableSequence::Item &DRTToleranceTableSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -734,7 +684,7 @@ DRTToleranceTableSequence::Item &DRTToleranceTableSequence::getItem(const size_t
 }
 
 
-const DRTToleranceTableSequence::Item &DRTToleranceTableSequence::getItem(const size_t num) const
+const DRTToleranceTableSequence::Item &DRTToleranceTableSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -744,13 +694,13 @@ const DRTToleranceTableSequence::Item &DRTToleranceTableSequence::getItem(const 
 }
 
 
-DRTToleranceTableSequence::Item &DRTToleranceTableSequence::operator[](const size_t num)
+DRTToleranceTableSequence::Item &DRTToleranceTableSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTToleranceTableSequence::Item &DRTToleranceTableSequence::operator[](const size_t num) const
+const DRTToleranceTableSequence::Item &DRTToleranceTableSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -773,7 +723,7 @@ OFCondition DRTToleranceTableSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTToleranceTableSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTToleranceTableSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -796,7 +746,7 @@ OFCondition DRTToleranceTableSequence::insertItem(const size_t pos, Item *&item)
 }
 
 
-OFCondition DRTToleranceTableSequence::removeItem(const size_t pos)
+OFCondition DRTToleranceTableSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

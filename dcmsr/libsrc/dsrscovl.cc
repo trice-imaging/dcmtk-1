@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2017, OFFIS e.V.
+ *  Copyright (C) 2000-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,9 +25,6 @@
 
 #include "dcmtk/dcmsr/dsrscovl.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
-
-#include "dcmtk/dcmdata/dcdeftag.h"
-#include "dcmtk/dcmdata/dcvrui.h"
 
 
 DSRSpatialCoordinatesValue::DSRSpatialCoordinatesValue()
@@ -68,22 +65,6 @@ DSRSpatialCoordinatesValue &DSRSpatialCoordinatesValue::operator=(const DSRSpati
 }
 
 
-OFBool DSRSpatialCoordinatesValue::operator==(const DSRSpatialCoordinatesValue &coordinatesValue) const
-{
-    return (GraphicType == coordinatesValue.GraphicType) &&
-           (GraphicDataList == coordinatesValue.GraphicDataList) &&
-           (FiducialUID == coordinatesValue.FiducialUID);
-}
-
-
-OFBool DSRSpatialCoordinatesValue::operator!=(const DSRSpatialCoordinatesValue &coordinatesValue) const
-{
-    return (GraphicType != coordinatesValue.GraphicType) ||
-           (GraphicDataList != coordinatesValue.GraphicDataList) ||
-           (FiducialUID != coordinatesValue.FiducialUID);
-}
-
-
 void DSRSpatialCoordinatesValue::clear()
 {
     GraphicType = DSRTypes::GT_invalid;
@@ -121,8 +102,7 @@ OFCondition DSRSpatialCoordinatesValue::print(STD_NAMESPACE ostream &stream,
 
 
 OFCondition DSRSpatialCoordinatesValue::readXML(const DSRXMLDocument &doc,
-                                                DSRXMLCursor cursor,
-                                                const size_t /*flags*/)
+                                                DSRXMLCursor cursor)
 {
     OFCondition result = SR_EC_CorruptedXMLStructure;
     if (cursor.valid())
@@ -161,8 +141,7 @@ OFCondition DSRSpatialCoordinatesValue::writeXML(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRSpatialCoordinatesValue::read(DcmItem &dataset,
-                                             const size_t flags)
+OFCondition DSRSpatialCoordinatesValue::read(DcmItem &dataset)
 {
     /* read GraphicType */
     OFString tmpString;
@@ -174,7 +153,7 @@ OFCondition DSRSpatialCoordinatesValue::read(DcmItem &dataset,
         if (GraphicType == DSRTypes::GT_invalid)
             DSRTypes::printUnknownValueWarningMessage("GraphicType", tmpString.c_str());
         /* read GraphicData */
-        result = GraphicDataList.read(dataset, flags);
+        result = GraphicDataList.read(dataset);
         /* read optional attributes */
         if (result.good())
             DSRTypes::getAndCheckStringValueFromDataset(dataset, DCM_FiducialUID, FiducialUID, "1", "3", "SCOORD content item");
@@ -308,9 +287,9 @@ OFCondition DSRSpatialCoordinatesValue::checkGraphicData(const DSRTypes::E_Graph
     OFCondition result = SR_EC_InvalidValue;
     // check graphic type and data
     if (graphicType == DSRTypes::GT_invalid)
-        REPORT_WARNING("Invalid Graphic Type for SCOORD content item")
+        REPORT_WARNING("Invalid GraphicType for SCOORD content item")
     else if (graphicDataList.isEmpty())
-        REPORT_WARNING("No Graphic Data for SCOORD content item")
+        REPORT_WARNING("No GraphicData for SCOORD content item")
     else
     {
         const size_t count = graphicDataList.getNumberOfItems();
@@ -318,39 +297,39 @@ OFCondition DSRSpatialCoordinatesValue::checkGraphicData(const DSRTypes::E_Graph
         {
             case DSRTypes::GT_Point:
                 if (count > 1)
-                    REPORT_WARNING("Graphic Data has too many entries, only a single entry expected")
+                    REPORT_WARNING("GraphicData has too many entries, only a single entry expected")
                 result = EC_Normal;
                 break;
             case DSRTypes::GT_Multipoint:
                 if (count < 1)
-                    REPORT_WARNING("Graphic Data has too few entries, at least one entry expected")
+                    REPORT_WARNING("GraphicData has too few entries, at least one entry expected")
                 result = EC_Normal;
                 break;
             case DSRTypes::GT_Polyline:
 /*
                 // not required any more according to CP-233
                 if (graphicDataList.getItem(1) != graphicDataList.getItem(count))
-                    REPORT_WARNING("First and last entry in Graphic Data are not equal (POLYLINE)")
+                    REPORT_WARNING("First and last entry in GraphicData are not equal (POLYLINE)")
 */
                 result = EC_Normal;
                 break;
             case DSRTypes::GT_Circle:
                 if (count < 2)
-                    REPORT_WARNING("Graphic Data has too few entries, exactly two entries expected")
+                    REPORT_WARNING("GraphicData has too few entries, exactly two entries expected")
                 else
                 {
                     if (count > 2)
-                        REPORT_WARNING("Graphic Data has too many entries, exactly two entries expected")
+                        REPORT_WARNING("GraphicData has too many entries, exactly two entries expected")
                     result = EC_Normal;
                 }
                 break;
             case DSRTypes::GT_Ellipse:
                 if (count < 4)
-                    REPORT_WARNING("Graphic Data has too few entries, exactly four entries expected")
+                    REPORT_WARNING("GraphicData has too few entries, exactly four entries expected")
                 else
                 {
                     if (count > 4)
-                        REPORT_WARNING("Graphic Data has too many entries, exactly four entries expected")
+                        REPORT_WARNING("GraphicData has too many entries, exactly four entries expected")
                     result = EC_Normal;
                 }
                 break;

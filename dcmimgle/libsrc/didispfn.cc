@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1999-2021, OFFIS e.V.
+ *  Copyright (C) 1999-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,6 +28,11 @@
 #include "dcmtk/dcmimgle/dicrvfit.h"
 #include "dcmtk/dcmimgle/didislut.h"
 #include "dcmtk/ofstd/ofstream.h"
+
+#define INCLUDE_CCTYPE
+#define INCLUDE_CMATH
+#include "dcmtk/ofstd/ofstdinc.h"
+
 
 /*----------------------------*
  *  constant initializations  *
@@ -97,7 +102,7 @@ DiDisplayFunction::DiDisplayFunction(const double *val_tab,             // UNTES
         LODValue = new double[ValueCount];
         if ((DDLValue != NULL) && (LODValue != NULL))
         {
-            unsigned int i;
+            register unsigned int i;
             for (i = 0; i <= MaxDDLValue; ++i)
             {
                 DDLValue[i] = OFstatic_cast(Uint16, i);     // set DDL values
@@ -165,7 +170,7 @@ DiDisplayFunction::DiDisplayFunction(const double val_min,
         LODValue = new double[ValueCount];
         if ((DDLValue != NULL) && (LODValue != NULL))
         {
-            Uint16 i;
+            register Uint16 i;
             const double min = ((DeviceType == EDT_Printer) || (DeviceType == EDT_Scanner)) ? val_max : val_min;
             const double max = ((DeviceType == EDT_Printer) || (DeviceType == EDT_Scanner)) ? val_min : val_max;
             const double val = (max - min) / OFstatic_cast(double, MaxDDLValue);
@@ -192,7 +197,7 @@ DiDisplayFunction::~DiDisplayFunction()
 {
     delete[] DDLValue;
     delete[] LODValue;
-    int i;
+    register int i;
     for (i = 0; i < MAX_NUMBER_OF_TABLES; ++i)
         delete LookupTable[i];
 }
@@ -213,7 +218,7 @@ Uint16 DiDisplayFunction::getDDLforValue(const double value) const
 {
     if ((LODValue != NULL) && (ValueCount > 0))
     {
-        unsigned long j = 0;
+        register unsigned long j = 0;
         /* search for closest index, assuming monotony */
         if ((DeviceType == EDT_Printer) || (DeviceType == EDT_Scanner))
         {
@@ -264,7 +269,7 @@ int DiDisplayFunction::deleteLookupTable(const int bits)
     if (bits == 0)
     {
         /* delete all LUTs */
-        int i;
+        register int i;
         for (i = 0; i < MAX_NUMBER_OF_TABLES; ++i)
         {
             delete LookupTable[i];
@@ -331,7 +336,11 @@ int DiDisplayFunction::readConfigFile(const char *filename)
 {
     if ((filename != NULL) && (strlen(filename) > 0))
     {
-        STD_NAMESPACE ifstream file(filename, OFopenmode_in_nocreate);
+#ifdef HAVE_IOS_NOCREATE
+        STD_NAMESPACE ifstream file(filename, STD_NAMESPACE ios::in | STD_NAMESPACE ios::nocreate);
+#else
+        STD_NAMESPACE ifstream file(filename, STD_NAMESPACE ios::in);
+#endif
         if (file)
         {
             char c;
@@ -466,7 +475,7 @@ int DiDisplayFunction::createSortedTable(const Uint16 *ddl_tab,
         if ((DDLValue != NULL) && (LODValue != NULL) && (sort_tab != NULL))
         {
             OFBitmanipTemplate<Sint32>::setMem(sort_tab, -1, count);                // initialize array
-            unsigned long i;
+            register unsigned long i;
             for (i = 0; i < ValueCount; ++i)
             {
                 if (ddl_tab[i] <= MaxDDLValue)                                      // calculate sort table
@@ -534,7 +543,7 @@ int DiDisplayFunction::interpolateValues()
                 if ((DDLValue != NULL) && (LODValue != NULL))
                 {
                     /* set x values linearly */
-                    unsigned int i;
+                    register unsigned int i;
                     for (i = 0; i <= MaxDDLValue; ++i)
                         DDLValue[i] = OFstatic_cast(Uint16, i);
                     /* compute new y values */
@@ -560,7 +569,7 @@ int DiDisplayFunction::interpolateValues()
                 if ((DDLValue != NULL) && (LODValue != NULL))
                 {
                     /* set x values linearly */
-                    unsigned int i;
+                    register unsigned int i;
                     for (i = 0; i <= MaxDDLValue; ++i)
                         DDLValue[i] = OFstatic_cast(Uint16, i);
                     /* compute new y values */
@@ -585,7 +594,7 @@ int DiDisplayFunction::calculateMinMax()
     {
         MinValue = LODValue[0];
         MaxValue = LODValue[0];
-        unsigned long i;
+        register unsigned long i;
         for (i = 1; i < ValueCount; ++i)
         {
             if (LODValue[i] < MinValue)
@@ -636,7 +645,7 @@ double *DiDisplayFunction::convertODtoLumTable(const double *od_tab,
         if (lum_tab != NULL)
         {
             /* compute luminance values from optical density */
-            unsigned int i;
+            register unsigned int i;
             if (useAmb)
             {
                 for (i = 0; i < count; ++i)

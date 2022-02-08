@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,8 +27,12 @@
 #include "dcmtk/ofstd/ofdefine.h"
 #include "dcmtk/dcmdata/dcdicent.h"
 #include "dcmtk/dcmdata/dctypes.h"
-#include "dcmtk/ofstd/ofstd.h"
-#include "dcmtk/ofstd/offile.h"
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CCTYPE
+#include "dcmtk/ofstd/ofstdinc.h"
 
 /*
 ** The separator character between fields in the data dictionary file(s)
@@ -39,7 +43,6 @@
 ** Comment character for the data dictionary file(s)
 */
 #define DCM_DICT_COMMENT_CHAR '#'
-
 
 /*
 ** THE Global DICOM Data Dictionary
@@ -88,15 +91,15 @@ OFBool DcmDataDictionary::loadSkeletonDictionary()
     ** (and construct) sequences.
     */
     e = makeSkelEntry(0xfffe, 0xe000, 0xfffe, 0xe000,
-                      EVR_na, "Item", 1, 1, "DICOM",
+                      EVR_na, "Item", 1, 1, "DICOM3",
                       DcmDictRange_Unspecified, DcmDictRange_Unspecified, NULL);
     addEntry(e);
     e = makeSkelEntry(0xfffe, 0xe00d, 0xfffe, 0xe00d,
-                      EVR_na, "ItemDelimitationItem", 1, 1, "DICOM",
+                      EVR_na, "ItemDelimitationItem", 1, 1, "DICOM3",
                       DcmDictRange_Unspecified, DcmDictRange_Unspecified, NULL);
     addEntry(e);
     e = makeSkelEntry(0xfffe, 0xe0dd, 0xfffe, 0xe0dd,
-                      EVR_na, "SequenceDelimitationItem", 1, 1, "DICOM",
+                      EVR_na, "SequenceDelimitationItem", 1, 1, "DICOM3",
                       DcmDictRange_Unspecified, DcmDictRange_Unspecified, NULL);
     addEntry(e);
 
@@ -134,11 +137,11 @@ stripWhitespace(char* s)
 {
   if (s)
   {
-    unsigned char c;
-    unsigned char *t;
-    unsigned char *p;
+    register unsigned char c;
+    register unsigned char *t;
+    register unsigned char *p;
     t=p=OFreinterpret_cast(unsigned char *, s);
-    while ((c = *t++) != '\0') if (!isspace(c)) *p++ = c;
+    while ((c = *t++)) if (!isspace(c)) *p++ = c;
     *p = '\0';
   }
 }
@@ -146,13 +149,13 @@ stripWhitespace(char* s)
 static char*
 stripTrailingWhitespace(char* s)
 {
+    size_t i, n;
+
     if (s == NULL) return s;
-    for
-    (
-        char* it = s + strlen(s) - 1;
-        it >= s && isspace(OFstatic_cast(unsigned char, *it));
-        *it-- = '\0'
-    );
+
+    n = strlen(s);
+    for (i = n - 1; i >= 0 && isspace(OFstatic_cast(unsigned char, s[i])); i--)
+        s[i] = '\0';
     return s;
 }
 
@@ -161,12 +164,12 @@ stripLeadingWhitespace(char* s)
 {
   if (s)
   {
-    unsigned char c;
-    unsigned char *t;
-    unsigned char *p;
+    register unsigned char c;
+    register unsigned char *t;
+    register unsigned char *p;
     t=p=OFreinterpret_cast(unsigned char *, s);
     while (isspace(*t)) t++;
-    while ((c = *t++) != '\0') *p++ = c;
+    while ((c = *t++)) *p++ = c;
     *p = '\0';
   }
 }
@@ -240,7 +243,7 @@ splitFields(const char* line, char* fields[], int maxFields, char splitChar)
             len = p - line;
         }
         fields[foundFields] = OFstatic_cast(char *, malloc(len + 1));
-        OFStandard::strlcpy(fields[foundFields], line, len+1);
+        strncpy(fields[foundFields], line, len);
         fields[foundFields][len] = '\0';
         foundFields++;
         line = p + 1;
@@ -357,9 +360,8 @@ parseWholeTagField(char* s, DcmTagKey& key,
     if (pi > 0)
     {
       // copy private creator name
-      size_t buflen = strlen(pc) + 1;
-      privCreator = new char[buflen]; // deleted by caller
-      if (privCreator) OFStandard::strlcpy(privCreator, pc, buflen);
+      privCreator = new char[strlen(pc) + 1]; // deleted by caller
+      if (privCreator) strcpy(privCreator,pc);
     }
 
     key.set(OFstatic_cast(unsigned short, gl), OFstatic_cast(unsigned short, el));
@@ -588,25 +590,15 @@ DcmDataDictionary::loadExternalDictionaries()
     const char* env = NULL;
     size_t len;
     int sepCnt = 0;
+    OFBool msgIfDictAbsent = OFTrue;
     OFBool loadFailed = OFFalse;
 
-    /* if DCMDICTPATH environment variable should be considered, read it */
-#ifdef DCM_DICT_USE_DCMDICTPATH
     env = getenv(DCM_DICT_ENVIRONMENT_VARIABLE);
-#endif
-    /* if DCMDICTPATH environment variable is not set or empty,
-     * and reading of external dictionary is generally permitted,
-     * try to read dictionary from default path
-     */
     if ((env == NULL) || (strlen(env) == 0)) {
-#if DCM_DICT_DEFAULT == DCM_DICT_DEFAULT_USE_EXTERNAL
         env = DCM_DICT_DEFAULT_PATH;
-#endif
+        msgIfDictAbsent = OFFalse;
     }
 
-    /* if any mechanism for external dictionary (environment or default external)
-     * is actually provided it, parse env and load all dictionaries specified therein.
-     */
     if ((env != NULL) && (strlen(env) != 0)) {
         len = strlen(env);
         for (size_t i = 0; i < len; ++i) {
@@ -616,7 +608,7 @@ DcmDataDictionary::loadExternalDictionaries()
         }
 
         if (sepCnt == 0) {
-            if (!loadDictionary(env, OFTrue)) {
+            if (!loadDictionary(env, msgIfDictAbsent)) {
                 return OFFalse;
             }
         } else {
@@ -629,7 +621,7 @@ DcmDataDictionary::loadExternalDictionaries()
 
             for (int ii = 0; ii < ndicts; ii++) {
                 if ((dictArray[ii] != NULL) && (strlen(dictArray[ii]) > 0)) {
-                    if (!loadDictionary(dictArray[ii], OFTrue)) {
+                    if (!loadDictionary(dictArray[ii], msgIfDictAbsent)) {
                         loadFailed = OFTrue;
                     }
                 }
@@ -813,18 +805,17 @@ void GlobalDcmDataDictionary::createDataDict()
 #ifdef WITH_THREADS
   dataDictLock.wrlock();
 #endif
-
-#if (DCM_DICT_DEFAULT == DCM_DICT_DEFAULT_USE_EXTERNAL) || defined(DCM_DICT_USE_DCMDICTPATH)
-  const OFBool loadExternal = OFTrue;
-#else
+#ifdef DONT_LOAD_EXTERNAL_DICTIONARIES
   const OFBool loadExternal = OFFalse;
+#else
+  const OFBool loadExternal = OFTrue;
 #endif
   /* Make sure no other thread managed to create the dictionary
    * before we got our write lock. */
   if (!dataDict)
     dataDict = new DcmDataDictionary(OFTrue /*loadBuiltin*/, loadExternal);
 #ifdef WITH_THREADS
-  dataDictLock.wrunlock();
+  dataDictLock.unlock();
 #endif
 }
 
@@ -837,7 +828,7 @@ const DcmDataDictionary& GlobalDcmDataDictionary::rdlock()
   {
     /* dataDictLock must not be locked during createDataDict() */
 #ifdef WITH_THREADS
-    dataDictLock.rdunlock();
+    dataDictLock.unlock();
 #endif
     createDataDict();
 #ifdef WITH_THREADS
@@ -856,7 +847,7 @@ DcmDataDictionary& GlobalDcmDataDictionary::wrlock()
   {
     /* dataDictLock must not be locked during createDataDict() */
 #ifdef WITH_THREADS
-    dataDictLock.wrunlock();
+    dataDictLock.unlock();
 #endif
     createDataDict();
 #ifdef WITH_THREADS
@@ -866,29 +857,22 @@ DcmDataDictionary& GlobalDcmDataDictionary::wrlock()
   return *dataDict;
 }
 
-void GlobalDcmDataDictionary::rdunlock()
+void GlobalDcmDataDictionary::unlock()
 {
 #ifdef WITH_THREADS
-  dataDictLock.rdunlock();
-#endif
-}
-
-void GlobalDcmDataDictionary::wrunlock()
-{
-#ifdef WITH_THREADS
-  dataDictLock.wrunlock();
+  dataDictLock.unlock();
 #endif
 }
 
 OFBool GlobalDcmDataDictionary::isDictionaryLoaded()
 {
   OFBool result = rdlock().isDictionaryLoaded();
-  rdunlock();
+  unlock();
   return result;
 }
 
 void GlobalDcmDataDictionary::clear()
 {
   wrlock().clear();
-  wrunlock();
+  unlock();
 }

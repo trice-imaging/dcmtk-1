@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2018, OFFIS e.V.
+ *  Copyright (C) 2000-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRContainerTreeNode
@@ -27,58 +27,17 @@
 #include "dcmtk/dcmsr/dsrcontn.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
 
-#include "dcmtk/dcmdata/dcdeftag.h"
-
 
 DSRContainerTreeNode::DSRContainerTreeNode(const E_RelationshipType relationshipType,
                                            const E_ContinuityOfContent continuityOfContent)
-  : DSRDocumentTreeNode(relationshipType, VT_Container),
-    ContinuityOfContent(continuityOfContent)
-{
-}
-
-
-DSRContainerTreeNode::DSRContainerTreeNode(const DSRContainerTreeNode &node)
-  : DSRDocumentTreeNode(node),
-    ContinuityOfContent(node.ContinuityOfContent)
+ : DSRDocumentTreeNode(relationshipType, VT_Container),
+   ContinuityOfContent(continuityOfContent)
 {
 }
 
 
 DSRContainerTreeNode::~DSRContainerTreeNode()
 {
-}
-
-
-OFBool DSRContainerTreeNode::operator==(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator==(node);
-    if (result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = (ContinuityOfContent == OFstatic_cast(const DSRContainerTreeNode &, node).ContinuityOfContent);
-    }
-    return result;
-}
-
-
-OFBool DSRContainerTreeNode::operator!=(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator!=(node);
-    if (!result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = (ContinuityOfContent != OFstatic_cast(const DSRContainerTreeNode &, node).ContinuityOfContent);
-    }
-    return result;
-}
-
-
-DSRContainerTreeNode *DSRContainerTreeNode::clone() const
-{
-    return new DSRContainerTreeNode(*this);
 }
 
 
@@ -91,14 +50,8 @@ void DSRContainerTreeNode::clear()
 OFBool DSRContainerTreeNode::isValid() const
 {
     /* ConceptNameCodeSequence required for root node container */
-    return DSRDocumentTreeNode::isValid() && hasValidValue() &&
+    return DSRDocumentTreeNode::isValid() && (ContinuityOfContent != COC_invalid) &&
         ((getRelationshipType() != RT_isRoot) || getConceptName().isValid());
-}
-
-
-OFBool DSRContainerTreeNode::hasValidValue() const
-{
-    return (ContinuityOfContent != COC_invalid);
 }
 
 
@@ -123,8 +76,7 @@ OFCondition DSRContainerTreeNode::print(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRContainerTreeNode::readContentItem(DcmItem &dataset,
-                                                  const size_t /*flags*/)
+OFCondition DSRContainerTreeNode::readContentItem(DcmItem &dataset)
 {
     OFString tmpString;
     /* read ContinuityOfContent */
@@ -151,8 +103,7 @@ OFCondition DSRContainerTreeNode::writeContentItem(DcmItem &dataset) const
 
 
 OFCondition DSRContainerTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
-                                                     DSRXMLCursor cursor,
-                                                     const size_t /*flags*/)
+                                                     DSRXMLCursor cursor)
 {
     OFCondition result = SR_EC_CorruptedXMLStructure;
     if (cursor.valid())

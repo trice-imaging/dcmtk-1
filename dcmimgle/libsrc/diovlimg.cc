@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2016, OFFIS e.V.
+ *  Copyright (C) 1996-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -42,8 +42,8 @@ DiOverlayImage::DiOverlayImage(const DiDocument *docu,
         if (Overlays[0] != NULL)
         {
             BitsPerSample = 1;
-            unsigned int i;
-            DiOverlayPlane *plane;
+            register unsigned int i;
+            register DiOverlayPlane *plane;
             for (i = 0; i < Overlays[0]->getCount(); ++i)
             {
                 plane = Overlays[0]->getPlane(i);

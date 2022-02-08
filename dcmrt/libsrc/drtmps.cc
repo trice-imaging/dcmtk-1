@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTMACParametersSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -305,7 +305,7 @@ OFBool DRTMACParametersSequence::isValid() const
 }
 
 
-size_t DRTMACParametersSequence::getNumberOfItems() const
+unsigned long DRTMACParametersSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -335,12 +335,12 @@ OFCondition DRTMACParametersSequence::gotoNextItem()
 }
 
 
-OFCondition DRTMACParametersSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTMACParametersSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -355,12 +355,12 @@ OFCondition DRTMACParametersSequence::gotoItem(const size_t num, OFListIterator(
 }
 
 
-OFCondition DRTMACParametersSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTMACParametersSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -375,7 +375,7 @@ OFCondition DRTMACParametersSequence::gotoItem(const size_t num, OFListConstIter
 }
 
 
-OFCondition DRTMACParametersSequence::gotoItem(const size_t num)
+OFCondition DRTMACParametersSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -411,7 +411,7 @@ const DRTMACParametersSequence::Item &DRTMACParametersSequence::getCurrentItem()
 }
 
 
-OFCondition DRTMACParametersSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTMACParametersSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -421,7 +421,7 @@ OFCondition DRTMACParametersSequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTMACParametersSequence::Item &DRTMACParametersSequence::getItem(const size_t num)
+DRTMACParametersSequence::Item &DRTMACParametersSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -431,7 +431,7 @@ DRTMACParametersSequence::Item &DRTMACParametersSequence::getItem(const size_t n
 }
 
 
-const DRTMACParametersSequence::Item &DRTMACParametersSequence::getItem(const size_t num) const
+const DRTMACParametersSequence::Item &DRTMACParametersSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -441,13 +441,13 @@ const DRTMACParametersSequence::Item &DRTMACParametersSequence::getItem(const si
 }
 
 
-DRTMACParametersSequence::Item &DRTMACParametersSequence::operator[](const size_t num)
+DRTMACParametersSequence::Item &DRTMACParametersSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTMACParametersSequence::Item &DRTMACParametersSequence::operator[](const size_t num) const
+const DRTMACParametersSequence::Item &DRTMACParametersSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -470,7 +470,7 @@ OFCondition DRTMACParametersSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTMACParametersSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTMACParametersSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -493,7 +493,7 @@ OFCondition DRTMACParametersSequence::insertItem(const size_t pos, Item *&item)
 }
 
 
-OFCondition DRTMACParametersSequence::removeItem(const size_t pos)
+OFCondition DRTMACParametersSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

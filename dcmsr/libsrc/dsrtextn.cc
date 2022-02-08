@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2019, OFFIS e.V.
+ *  Copyright (C) 2000-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRTextTreeNode
@@ -27,9 +27,6 @@
 #include "dcmtk/dcmsr/dsrtextn.h"
 #include "dcmtk/dcmsr/dsrstrvl.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
-
-#include "dcmtk/dcmdata/dcdeftag.h"
-#include "dcmtk/dcmdata/dcvrut.h"
 
 
 DSRTextTreeNode::DSRTextTreeNode(const E_RelationshipType relationshipType)
@@ -48,47 +45,8 @@ DSRTextTreeNode::DSRTextTreeNode(const E_RelationshipType relationshipType,
 }
 
 
-DSRTextTreeNode::DSRTextTreeNode(const DSRTextTreeNode &node)
-  : DSRDocumentTreeNode(node),
-    DSRStringValue(node)
-{
-}
-
-
 DSRTextTreeNode::~DSRTextTreeNode()
 {
-}
-
-
-OFBool DSRTextTreeNode::operator==(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator==(node);
-    if (result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRStringValue::operator==(OFstatic_cast(const DSRTextTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-OFBool DSRTextTreeNode::operator!=(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator!=(node);
-    if (!result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRStringValue::operator!=(OFstatic_cast(const DSRTextTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-DSRTextTreeNode *DSRTextTreeNode::clone() const
-{
-    return new DSRTextTreeNode(*this);
 }
 
 
@@ -102,13 +60,7 @@ void DSRTextTreeNode::clear()
 OFBool DSRTextTreeNode::isValid() const
 {
     /* ConceptNameCodeSequence required */
-    return DSRDocumentTreeNode::isValid() && getConceptName().isValid() && hasValidValue();
-}
-
-
-OFBool DSRTextTreeNode::hasValidValue() const
-{
-    return checkCurrentValue().good();
+    return DSRDocumentTreeNode::isValid() && getConceptName().isValid() && checkCurrentValue().good();
 }
 
 
@@ -148,11 +100,10 @@ OFCondition DSRTextTreeNode::writeXML(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRTextTreeNode::readContentItem(DcmItem &dataset,
-                                             const size_t flags)
+OFCondition DSRTextTreeNode::readContentItem(DcmItem &dataset)
 {
     /* read TextValue */
-    return DSRStringValue::read(dataset, DCM_TextValue, flags);
+    return DSRStringValue::read(dataset, DCM_TextValue);
 }
 
 
@@ -164,11 +115,10 @@ OFCondition DSRTextTreeNode::writeContentItem(DcmItem &dataset) const
 
 
 OFCondition DSRTextTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
-                                                DSRXMLCursor cursor,
-                                                const size_t flags)
+                                                DSRXMLCursor cursor)
 {
     /* retrieve value from XML element "value" */
-    return DSRStringValue::readXML(doc, doc.getNamedChildNode(cursor, "value"), flags, OFTrue /*encoding*/);
+    return DSRStringValue::readXML(doc, doc.getNamedNode(cursor.gotoChild(), "value"), OFTrue /*encoding*/);
 }
 
 

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2016, OFFIS e.V.
+ *  Copyright (C) 2002-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -63,9 +63,9 @@ public:
    */
   inline void adjust(DcmQuantPixel& px, long col, long maxval)
   {
-    long sr = px.getRed()   + thisrerr[col + 1] / DcmQuantFloydSteinbergScale;
-    long sg = px.getGreen() + thisgerr[col + 1] / DcmQuantFloydSteinbergScale;
-    long sb = px.getBlue()  + thisberr[col + 1] / DcmQuantFloydSteinbergScale;
+    register long sr = px.getRed()   + thisrerr[col + 1] / DcmQuantFloydSteinbergScale;
+    register long sg = px.getGreen() + thisgerr[col + 1] / DcmQuantFloydSteinbergScale;
+    register long sb = px.getBlue()  + thisberr[col + 1] / DcmQuantFloydSteinbergScale;
     if ( sr < 0 ) sr = 0;
     else if ( sr > OFstatic_cast(long, maxval) ) sr = maxval;
     if ( sg < 0 ) sg = 0;
@@ -82,7 +82,7 @@ public:
    */
   inline void propagate(const DcmQuantPixel& px, const DcmQuantPixel& mapped, long col)
   {
-    long err;
+    register long err;
 
     /* Propagate Floyd-Steinberg error terms. */
     if ( fs_direction )

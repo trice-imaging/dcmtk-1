@@ -1,0 +1,13 @@
+(6301,"KRETZ_PRIVATE",10)	LO	GE Voluson Patient Email	1	PrivateTag
+(6301,"KRETZ_PRIVATE",11)	LO	GE Voluson Referring Physician Email	1	PrivateTag
+(6301,"KRETZ_PRIVATE",12)	LO	GE Voluson Performing Physician Email	1	PrivateTag
+(6301,"KRETZ_PRIVATE",13)	LO	GE Voluson Sonographer Email	1	PrivateTag
+(6301,"KRETZ_PRIVATE",22)	LO	GE Voluson Performing Physician Phone	1	PrivateTag
+(6301,"KRETZ_PRIVATE",23)	LO	GE Voluson Sonographer Phone	1	PrivateTag
+(6301,"KRETZ_PRIVATE",24)	LO	GE Patient Phone	1	PrivateTag
+(6301,"KRETZ_PRIVATE",25)	LO	GE Referring Physician Phone	1	PrivateTag
+(7fe1,"KRETZ_US",01)	OB	GE Volume Data	1	PrivateTag
+(8001,"KRETZ_US",01)	OB	GE Raw Data	1	PrivateTag
+(0035,"TRICEFY_PRIVATE",11)	OB	TriceConsumerFormat	1	PrivateTag
+(0035,"TRICEFY_PRIVATE",13)	LO	TriceConsumerFormatOdd	1	PrivateTag
+(0035,"TRICEFY_PRIVATE",15)	LO	TricePixelDataToo	1	PrivateTag

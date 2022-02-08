@@ -5,39 +5,33 @@
 # MESSAGE - Description of the thing that we are checking for
 # SOURCE - Code to compile
 #
-# All extra arguments are passed to try_compile().
+# All extra arguments are passed to TRY_COMPILE().
 #
 
-macro(DCMTK_TRY_COMPILE VAR MESSAGE SOURCE)
-    set(DCMTK_TRY_COMPILE_FILE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src.cxx")
+MACRO(DCMTK_TRY_COMPILE VAR MESSAGE SOURCE)
+    SET(DCMTK_TRY_COMPILE_FILE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src.cxx")
 
     # Do nothing if the variable is already set
-    if(NOT DEFINED "${VAR}")
-        message(STATUS "Checking whether ${MESSAGE}")
-        file(WRITE "${DCMTK_TRY_COMPILE_FILE}" "${SOURCE}\n")
-        if(DCMTK_TRY_COMPILE_REQUIRED_CMAKE_FLAGS)
-            set(DCMTK_TRY_COMPILE_CMAKE_FLAGS CMAKE_FLAGS ${DCMTK_TRY_COMPILE_REQUIRED_CMAKE_FLAGS})
-        else()
-            DCMTK_UNSET(DCMTK_TRY_COMPILE_CMAKE_FLAGS)
-        endif()
-        try_compile(${VAR}
-                    "${CMAKE_BINARY_DIR}"
-                    "${DCMTK_TRY_COMPILE_FILE}"
-                    ${DCMTK_TRY_COMPILE_CMAKE_FLAGS}
+    IF("${VAR}" MATCHES "^${VAR}$")
+        MESSAGE(STATUS "Checking whether ${MESSAGE}")
+        FILE(WRITE "${DCMTK_TRY_COMPILE_FILE}" "${SOURCE}\n")
+        TRY_COMPILE(${VAR}
+                    ${CMAKE_BINARY_DIR}
+                    ${DCMTK_TRY_COMPILE_FILE}
                     OUTPUT_VARIABLE OUTPUT
                     ${ARGN})
-        if(${VAR})
-            message(STATUS "Checking whether ${MESSAGE} -- yes")
-            set(${VAR} 1 CACHE INTERNAL "${MESSAGE}")
-            file(APPEND "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log"
+        IF(${VAR})
+            MESSAGE(STATUS "Checking whether ${MESSAGE} -- yes")
+            SET(${VAR} 1 CACHE INTERNAL "${MESSAGE}")
+            FILE(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
                  "${MESSAGE} passed with the following output:\n"
                  "${OUTPUT}\n")
-        else()
-            message(STATUS "Checking whether ${MESSAGE} -- no")
-            set(${VAR} 0 CACHE INTERNAL "${MESSAGE}")
-            file(APPEND "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log"
+        ELSE(${VAR})
+            MESSAGE(STATUS "Checking whether ${MESSAGE} -- no")
+            SET(${VAR} 0 CACHE INTERNAL "${MESSAGE}")
+            FILE(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
                  "${MESSAGE} failed with the following output:\n"
                  "${OUTPUT}\n")
-        endif()
-    endif()
-endmacro()
+        ENDIF(${VAR})
+    ENDIF("${VAR}" MATCHES "^${VAR}$")
+ENDMACRO(DCMTK_TRY_COMPILE)

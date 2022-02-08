@@ -21,7 +21,7 @@
 #include "dcmtk/oflog/config.h"
 
 #include <cstring>
-#if defined (DCMTK_OFLOG_UNICODE)
+#if defined (UNICODE)
 #  include <cwctype>
 #else
 #  include <cctype>
@@ -58,7 +58,7 @@ static
 int
 is_space (tchar ch)
 {
-#if defined (DCMTK_OFLOG_UNICODE)
+#if defined (UNICODE)
     return STD_NAMESPACE iswspace (ch);
 #else
     return isspace (OFstatic_cast(unsigned char, ch));
@@ -133,7 +133,7 @@ Properties::Properties(const tstring& inputFile, unsigned flags) : data()
 
     switch (flags & fEncodingMask)
     {
-#if defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF8_FACET) && defined (DCMTK_OFLOG_UNICODE)
+#if defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF8_FACET) && defined (UNICODE)
     case fUTF8:
         file.imbue (
             STD_NAMESPACE locale (file.getloc (),
@@ -142,7 +142,7 @@ Properties::Properties(const tstring& inputFile, unsigned flags) : data()
         break;
 #endif
 
-#if defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF16_FACET) && defined (DCMTK_OFLOG_UNICODE)
+#if defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF16_FACET) && defined (UNICODE)
     case fUTF16:
         file.imbue (
             STD_NAMESPACE locale (file.getloc (),
@@ -150,7 +150,7 @@ Properties::Properties(const tstring& inputFile, unsigned flags) : data()
                     OFstatic_cast(STD_NAMESPACE codecvt_mode, STD_NAMESPACE consume_header | STD_NAMESPACE little_endian)>));
         break;
 
-#elif defined (DCMTK_OFLOG_UNICODE) && defined (WIN32)
+#elif defined (UNICODE) && defined (WIN32)
     case fUTF16:
         file.imbue (
             STD_NAMESPACE locale (file.getloc (),
@@ -159,7 +159,7 @@ Properties::Properties(const tstring& inputFile, unsigned flags) : data()
 
 #endif
 
-#if defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF32_FACET) && defined (DCMTK_OFLOG_UNICODE)
+#if defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF32_FACET) && defined (UNICODE)
     case fUTF32:
         file.imbue (
             STD_NAMESPACE locale (file.getloc (),

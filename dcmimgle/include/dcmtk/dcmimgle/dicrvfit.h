@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2021, OFFIS e.V.
+ *  Copyright (C) 1996-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -27,7 +27,10 @@
 #include "dcmtk/ofstd/oftypes.h"
 #include "dcmtk/ofstd/ofcast.h"
 
-#include <cmath>
+#define INCLUDE_CMATH
+#define INCLUDE_CSTDDEF               /* For NULL */
+#include "dcmtk/ofstd/ofstdinc.h"
+
 
 /*---------------------*
  *  macro definitions  *
@@ -78,9 +81,9 @@ class DiCurveFitting
             T3_ *beta = new T3_[order];
             if ((basis != NULL) && (alpha != NULL) && (beta != NULL))
             {
-                unsigned int i;
-                unsigned int j;
-                unsigned int k;
+                register unsigned int i;
+                register unsigned int j;
+                register unsigned int k;
                 for (i = 0; i < order; ++i)
                 {
                     for (j = 0; j < n; ++j)
@@ -153,8 +156,8 @@ class DiCurveFitting
         int result = 0;
         if ((y != NULL) && (c != NULL) && (n > 0) && (xe > xs))
         {
-            unsigned int i;
-            unsigned int j;
+            register unsigned int i;
+            register unsigned int j;
             T3_ x;
             T3_ x2;
             T3_ w;
@@ -256,9 +259,9 @@ class DiCurveFitting
         int result = 0;
         if ((a != NULL) && (b != NULL) && (n > 0))
         {
-            unsigned int i;
-            unsigned int j;
-            unsigned int k;
+            register unsigned int i;
+            register unsigned int j;
+            register unsigned int k;
             signed int pivot;
             T3_ mag;
             T3_ mag2;

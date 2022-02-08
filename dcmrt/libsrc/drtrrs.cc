@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTRTRelatedROISequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -83,7 +83,7 @@ OFCondition DRTRTRelatedROISequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, ReferencedROINumber, "1", "1", "RTRelatedROISequence");
+        getAndCheckElementFromDataset(item, ReferencedROINumber, "1", "1C", "RTRelatedROISequence");
         getAndCheckElementFromDataset(item, RTROIRelationship, "1", "3", "RTRelatedROISequence");
         result = EC_Normal;
     }
@@ -97,7 +97,7 @@ OFCondition DRTRTRelatedROISequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmIntegerString(ReferencedROINumber), "1", "1", "RTRelatedROISequence");
+        addElementToDataset(result, item, new DcmIntegerString(ReferencedROINumber), "1", "1C", "RTRelatedROISequence");
         addElementToDataset(result, item, new DcmCodeString(RTROIRelationship), "1", "3", "RTRelatedROISequence");
     }
     return result;
@@ -260,7 +260,7 @@ OFBool DRTRTRelatedROISequence::isValid() const
 }
 
 
-size_t DRTRTRelatedROISequence::getNumberOfItems() const
+unsigned long DRTRTRelatedROISequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -290,12 +290,12 @@ OFCondition DRTRTRelatedROISequence::gotoNextItem()
 }
 
 
-OFCondition DRTRTRelatedROISequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTRTRelatedROISequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -310,12 +310,12 @@ OFCondition DRTRTRelatedROISequence::gotoItem(const size_t num, OFListIterator(I
 }
 
 
-OFCondition DRTRTRelatedROISequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTRTRelatedROISequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -330,7 +330,7 @@ OFCondition DRTRTRelatedROISequence::gotoItem(const size_t num, OFListConstItera
 }
 
 
-OFCondition DRTRTRelatedROISequence::gotoItem(const size_t num)
+OFCondition DRTRTRelatedROISequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -366,7 +366,7 @@ const DRTRTRelatedROISequence::Item &DRTRTRelatedROISequence::getCurrentItem() c
 }
 
 
-OFCondition DRTRTRelatedROISequence::getItem(const size_t num, Item *&item)
+OFCondition DRTRTRelatedROISequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -376,7 +376,7 @@ OFCondition DRTRTRelatedROISequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTRTRelatedROISequence::Item &DRTRTRelatedROISequence::getItem(const size_t num)
+DRTRTRelatedROISequence::Item &DRTRTRelatedROISequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -386,7 +386,7 @@ DRTRTRelatedROISequence::Item &DRTRTRelatedROISequence::getItem(const size_t num
 }
 
 
-const DRTRTRelatedROISequence::Item &DRTRTRelatedROISequence::getItem(const size_t num) const
+const DRTRTRelatedROISequence::Item &DRTRTRelatedROISequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -396,13 +396,13 @@ const DRTRTRelatedROISequence::Item &DRTRTRelatedROISequence::getItem(const size
 }
 
 
-DRTRTRelatedROISequence::Item &DRTRTRelatedROISequence::operator[](const size_t num)
+DRTRTRelatedROISequence::Item &DRTRTRelatedROISequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTRTRelatedROISequence::Item &DRTRTRelatedROISequence::operator[](const size_t num) const
+const DRTRTRelatedROISequence::Item &DRTRTRelatedROISequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -425,7 +425,7 @@ OFCondition DRTRTRelatedROISequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTRTRelatedROISequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTRTRelatedROISequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -448,7 +448,7 @@ OFCondition DRTRTRelatedROISequence::insertItem(const size_t pos, Item *&item)
 }
 
 
-OFCondition DRTRTRelatedROISequence::removeItem(const size_t pos)
+OFCondition DRTRTRelatedROISequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2018, OFFIS e.V.
+ *  Copyright (C) 1994-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,11 +20,34 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CCTYPE
+#define INCLUDE_LIBC
+#include "dcmtk/ofstd/ofstdinc.h"
+
+#ifdef HAVE_SYS_UTSNAME_H
+#include <sys/utsname.h>
+#endif
+
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>  /* this includes either winsock.h or winsock2.h */
+#else
+#ifdef HAVE_WINSOCK_H
+#include <winsock.h>  /* include winsock.h directly i.e. on MacOS */
+#endif
+#endif
+
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>
+#endif
+
 #include "dcmtk/dcmdata/dcdict.h"
 #include "dcmtk/dcmdata/cmdlnarg.h"
 #include "dcmtk/ofstd/ofstring.h"
 #include "dcmtk/ofstd/ofdatime.h"
-#include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/dcmdata/dcdicent.h"
 
 static char*
@@ -70,7 +93,7 @@ printDefined(FILE* fout, const DcmDictEntry* e)
     if (e == NULL || e->getTagName() == NULL)
         return;
 
-    OFStandard::strlcpy(buf, e->getTagName(), DCM_MAXDICTLINESIZE+1);
+    strcpy(buf, e->getTagName());
 
     convertToIdentifier(buf);
 
@@ -107,6 +130,80 @@ printDefined(FILE* fout, const DcmDictEntry* e)
     fputs("\n", fout);
 }
 
+#ifdef HAVE_CUSERID
+static char*
+getUserName(char* userString, int /* maxLen */)
+{
+    return cuserid(userString); // thread safe, maxLen >= L_cuserid ?
+}
+#elif HAVE_GETLOGIN
+static char*
+getUserName(char* userString, int maxLen)
+{
+#if defined(_REENTRANT) && !defined(_WIN32) && !defined(__CYGWIN__)
+    // use getlogin_r instead of getlogin
+    if (getlogin_r(userString, maxLen) != 0)
+        strncpy(userString, "<no-utmp-entry>", maxLen);
+    return userString;
+#else
+    char* s;
+    s = getlogin(); // thread unsafe?
+    if (s == NULL) s = "<no-utmp-entry>";
+    return strncpy(userString, s, maxLen);
+#endif
+}
+
+#elif defined(_WIN32)
+
+#include <lm.h>
+
+static char*
+getUserName(char* userString, int maxLen)
+{
+    WKSTA_USER_INFO_0 *userinfo;
+    if (NetWkstaUserGetInfo(NULL, 0, (LPBYTE*)&userinfo) == NERR_Success)
+    {
+        // Convert the Unicode full name to ANSI.
+        WideCharToMultiByte( CP_ACP, 0, (WCHAR*)userinfo->wkui0_username, -1,
+            userString, maxLen, NULL, NULL );
+    } else {
+        strncpy(userString, "<no-user-information-available>", maxLen);
+    }
+    return userString;
+}
+#else
+
+static char*
+getUserName(char* userString, int maxLen)
+{
+    return strncpy(userString, "<unknown-user>", maxLen);
+}
+#endif
+
+#ifdef HAVE_UNAME
+static char*
+getHostName(char* hostString, int maxLen)
+{
+    struct utsname n;
+    uname(&n);
+    strncpy(hostString, n.nodename, maxLen);
+    return hostString;
+}
+#elif HAVE_GETHOSTNAME
+static char*
+getHostName(char* userString, int maxLen)
+{
+    gethostname(userString, maxLen);
+    return userString;
+}
+#else
+static char*
+getHostName(char* hostString, int maxLen)
+{
+    return strncpy(hostString, "localhost", maxLen);
+}
+#endif
+
 int main(int argc, char* argv[])
 {
     const char* progname = "mkdeftag";
@@ -115,7 +212,17 @@ int main(int argc, char* argv[])
     int i = 0;
     FILE* fout = NULL;
 
-    OFStandard::initializeNetwork();
+#ifdef HAVE_GUSI_H
+    GUSISetup(GUSIwithSIOUXSockets);
+    GUSISetup(GUSIwithInternetSockets);
+#endif
+
+#ifdef HAVE_WINSOCK_H
+    WSAData winSockData;
+    /* we need at least version 1.1 */
+    WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
+    WSAStartup(winSockVersionNeeded, &winSockData);
+#endif
 
     prepareCmdLineArgs(argc, argv, "mkdeftag");
 
@@ -154,14 +261,17 @@ int main(int argc, char* argv[])
     fputs("** It was generated automatically by:\n", fout);
 #ifndef SUPPRESS_CREATE_STAMP
     /*
-     * Putting the date in the file will confuse version control
-     * systems if nothing has changed except the generation date.
+     * Putting the date in the file will confuse CVS/RCS
+     * if nothing has changed except the generation date.
      * This is only an issue if the header file is continually
      * generated new.
      */
     fputs("**\n", fout);
-    fprintf(fout, "**   User: %s\n", OFStandard::getUserName().c_str());
-    fprintf(fout, "**   Host: %s\n", OFStandard::getHostName().c_str());
+    char tmpString[512];
+    getUserName(tmpString, 512);
+    fprintf(fout, "**   User: %s\n", tmpString);
+    getHostName(tmpString, 512);
+    fprintf(fout, "**   Host: %s\n", tmpString);
     fprintf(fout, "**   Date: %s\n", dateString.c_str());
 #endif
     fprintf(fout, "**   Prog: %s\n", progname);
@@ -238,17 +348,6 @@ int main(int argc, char* argv[])
     }
     fputs("\n#endif /* !DCDEFTAG_H */\n", fout);
 
-    dcmDataDict.wrunlock();
+    dcmDataDict.unlock();
     return 0;
-}
-
-void
-DcmDataDictionary::loadBuiltinDictionary()
-{
-  /*
-   * * Empty Stub.
-   **
-   ** Used to keep compiler happy when building mkdictbi since it links itself
-   ** against dcdict.cc.
-   */
 }

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2016, OFFIS e.V.
+ *  Copyright (C) 2011-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -60,7 +60,7 @@ class DCMTK_DCMSR_EXPORT DSRReferencedInstanceList
     /** check whether list is empty
      ** @return OFTrue if list is empty, OFFalse otherwise
      */
-    OFBool isEmpty() const;
+    OFBool empty() const;
 
     /** get number of items stored in the list
      ** @return number of items
@@ -69,11 +69,9 @@ class DCMTK_DCMSR_EXPORT DSRReferencedInstanceList
 
     /** read list of items from the referenced instance sequence
      ** @param  dataset  DICOM dataset from which the data should be read
-     *  @param  flags    flag used to customize the reading process (see DSRTypes::RF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition read(DcmItem &dataset,
-                     const size_t flags);
+    OFCondition read(DcmItem &dataset);
 
     /** write list of items to the referenced instance sequence.
      *  Does nothing if list is empty.
@@ -85,7 +83,8 @@ class DCMTK_DCMSR_EXPORT DSRReferencedInstanceList
     /** read list of items from XML document
      ** @param  doc     document containing the XML file content
      *  @param  cursor  cursor pointing to the starting node
-     *  @param  flags   flag used to customize the reading process (see DSRTypes::XF_xxx)
+     *  @param  flags   optional flag used to customize the reading process (see
+     *                  DSRTypes::XF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     OFCondition readXML(const DSRXMLDocument &doc,
@@ -94,11 +93,11 @@ class DCMTK_DCMSR_EXPORT DSRReferencedInstanceList
 
     /** write current list in XML format
      ** @param  stream  output stream to which the XML data is written
-     *  @param  flags   flag used to customize the output (see DSRTypes::XF_xxx)
+     *  @param  flags   optional flag used to customize the output (see DSRTypes::XF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     OFCondition writeXML(STD_NAMESPACE ostream &stream,
-                         const size_t flags) const;
+                         const size_t flags = 0) const;
 
     /** add new entry to the list of instances (if not already existent).
      *  Before adding (or searching for) the entry, the given UID values are usually

@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTOverrideSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -21,26 +21,22 @@
 
 DRTOverrideSequence::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
-    OperatorIdentificationSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     OperatorsName(DCM_OperatorsName),
     OverrideParameterPointer(DCM_OverrideParameterPointer),
     OverrideReason(DCM_OverrideReason),
     ParameterItemIndex(DCM_ParameterItemIndex),
-    ParameterSequencePointer(DCM_ParameterSequencePointer),
-    ParameterValueNumber(DCM_ParameterValueNumber)
+    ParameterSequencePointer(DCM_ParameterSequencePointer)
 {
 }
 
 
 DRTOverrideSequence::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
-    OperatorIdentificationSequence(copy.OperatorIdentificationSequence),
     OperatorsName(copy.OperatorsName),
     OverrideParameterPointer(copy.OverrideParameterPointer),
     OverrideReason(copy.OverrideReason),
     ParameterItemIndex(copy.ParameterItemIndex),
-    ParameterSequencePointer(copy.ParameterSequencePointer),
-    ParameterValueNumber(copy.ParameterValueNumber)
+    ParameterSequencePointer(copy.ParameterSequencePointer)
 {
 }
 
@@ -55,13 +51,11 @@ DRTOverrideSequence::Item &DRTOverrideSequence::Item::operator=(const Item &copy
     if (this != &copy)
     {
         EmptyDefaultItem = copy.EmptyDefaultItem;
-        OperatorIdentificationSequence = copy.OperatorIdentificationSequence;
         OperatorsName = copy.OperatorsName;
         OverrideParameterPointer = copy.OverrideParameterPointer;
         OverrideReason = copy.OverrideReason;
         ParameterItemIndex = copy.ParameterItemIndex;
         ParameterSequencePointer = copy.ParameterSequencePointer;
-        ParameterValueNumber = copy.ParameterValueNumber;
     }
     return *this;
 }
@@ -75,9 +69,7 @@ void DRTOverrideSequence::Item::clear()
         ParameterSequencePointer.clear();
         OverrideParameterPointer.clear();
         ParameterItemIndex.clear();
-        ParameterValueNumber.clear();
         OperatorsName.clear();
-        OperatorIdentificationSequence.clear();
         OverrideReason.clear();
     }
 }
@@ -88,9 +80,7 @@ OFBool DRTOverrideSequence::Item::isEmpty()
     return ParameterSequencePointer.isEmpty() &&
            OverrideParameterPointer.isEmpty() &&
            ParameterItemIndex.isEmpty() &&
-           ParameterValueNumber.isEmpty() &&
            OperatorsName.isEmpty() &&
-           OperatorIdentificationSequence.isEmpty() &&
            OverrideReason.isEmpty();
 }
 
@@ -111,9 +101,7 @@ OFCondition DRTOverrideSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, ParameterSequencePointer, "1", "1", "OverrideSequence");
         getAndCheckElementFromDataset(item, OverrideParameterPointer, "1", "1", "OverrideSequence");
         getAndCheckElementFromDataset(item, ParameterItemIndex, "1", "1", "OverrideSequence");
-        getAndCheckElementFromDataset(item, ParameterValueNumber, "1", "3", "OverrideSequence");
         getAndCheckElementFromDataset(item, OperatorsName, "1-n", "2", "OverrideSequence");
-        OperatorIdentificationSequence.read(item, "1-n", "3", "OverrideSequence");
         getAndCheckElementFromDataset(item, OverrideReason, "1", "3", "OverrideSequence");
         result = EC_Normal;
     }
@@ -130,9 +118,7 @@ OFCondition DRTOverrideSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmAttributeTag(ParameterSequencePointer), "1", "1", "OverrideSequence");
         addElementToDataset(result, item, new DcmAttributeTag(OverrideParameterPointer), "1", "1", "OverrideSequence");
         addElementToDataset(result, item, new DcmIntegerString(ParameterItemIndex), "1", "1", "OverrideSequence");
-        addElementToDataset(result, item, new DcmUnsignedShort(ParameterValueNumber), "1", "3", "OverrideSequence");
         addElementToDataset(result, item, new DcmPersonName(OperatorsName), "1-n", "2", "OverrideSequence");
-        if (result.good()) result = OperatorIdentificationSequence.write(item, "1-n", "3", "OverrideSequence");
         addElementToDataset(result, item, new DcmShortText(OverrideReason), "1", "3", "OverrideSequence");
     }
     return result;
@@ -190,15 +176,6 @@ OFCondition DRTOverrideSequence::Item::getParameterSequencePointer(OFString &val
         return EC_IllegalCall;
     else
         return getStringValueFromElement(ParameterSequencePointer, value, pos);
-}
-
-
-OFCondition DRTOverrideSequence::Item::getParameterValueNumber(Uint16 &value, const unsigned long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return OFconst_cast(DcmUnsignedShort &, ParameterValueNumber).getUint16(value, pos);
 }
 
 
@@ -264,15 +241,6 @@ OFCondition DRTOverrideSequence::Item::setParameterSequencePointer(const OFStrin
             result = ParameterSequencePointer.putOFStringArray(value);
     }
     return result;
-}
-
-
-OFCondition DRTOverrideSequence::Item::setParameterValueNumber(const Uint16 value, const unsigned long pos)
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return ParameterValueNumber.putUint16(value, pos);
 }
 
 
@@ -379,7 +347,7 @@ OFBool DRTOverrideSequence::isValid() const
 }
 
 
-size_t DRTOverrideSequence::getNumberOfItems() const
+unsigned long DRTOverrideSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -409,12 +377,12 @@ OFCondition DRTOverrideSequence::gotoNextItem()
 }
 
 
-OFCondition DRTOverrideSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTOverrideSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -429,12 +397,12 @@ OFCondition DRTOverrideSequence::gotoItem(const size_t num, OFListIterator(Item 
 }
 
 
-OFCondition DRTOverrideSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTOverrideSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -449,7 +417,7 @@ OFCondition DRTOverrideSequence::gotoItem(const size_t num, OFListConstIterator(
 }
 
 
-OFCondition DRTOverrideSequence::gotoItem(const size_t num)
+OFCondition DRTOverrideSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -485,7 +453,7 @@ const DRTOverrideSequence::Item &DRTOverrideSequence::getCurrentItem() const
 }
 
 
-OFCondition DRTOverrideSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTOverrideSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -495,7 +463,7 @@ OFCondition DRTOverrideSequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTOverrideSequence::Item &DRTOverrideSequence::getItem(const size_t num)
+DRTOverrideSequence::Item &DRTOverrideSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -505,7 +473,7 @@ DRTOverrideSequence::Item &DRTOverrideSequence::getItem(const size_t num)
 }
 
 
-const DRTOverrideSequence::Item &DRTOverrideSequence::getItem(const size_t num) const
+const DRTOverrideSequence::Item &DRTOverrideSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -515,13 +483,13 @@ const DRTOverrideSequence::Item &DRTOverrideSequence::getItem(const size_t num) 
 }
 
 
-DRTOverrideSequence::Item &DRTOverrideSequence::operator[](const size_t num)
+DRTOverrideSequence::Item &DRTOverrideSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTOverrideSequence::Item &DRTOverrideSequence::operator[](const size_t num) const
+const DRTOverrideSequence::Item &DRTOverrideSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -544,7 +512,7 @@ OFCondition DRTOverrideSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTOverrideSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTOverrideSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -567,7 +535,7 @@ OFCondition DRTOverrideSequence::insertItem(const size_t pos, Item *&item)
 }
 
 
-OFCondition DRTOverrideSequence::removeItem(const size_t pos)
+OFCondition DRTOverrideSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

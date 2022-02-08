@@ -1,3 +1,4 @@
+#define TRICE
 /*
  *
  *  Copyright (C) 1996-2014, OFFIS e.V.
@@ -19,6 +20,27 @@
  *
  */
 
+
+#include <sys/file.h>
+#ifdef TRICE
+#include <util.h>
+class Memory;
+class Util  {  public: static char* replace(char* str, char* replace, char* with, Memory* x=NULL, bool y=true); } ;
+bool isDicom(char* dir, char* file="");
+#endif
+#ifdef _WIN32
+#define O_SYNC 0
+#ifdef TRICE
+const char* delimiter="\\";
+const char* lineTerm="\r\n";
+#endif
+#else
+#define O_BINARY 0
+#ifdef TRICE
+const char* delimiter="/";
+const char* lineTerm="\n";
+#endif
+#endif
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
@@ -71,10 +93,10 @@
 
 #define OFFIS_OUTFILE_DESCRIPTION "output filename to be written (default: stdout)"
 
-#ifdef BUILD_DCM2PNM_AS_DCML2PNM
-# define OFFIS_CONSOLE_APPLICATION "dcml2pnm"
-#elif defined(BUILD_DCM2PNM_AS_DCMJ2PNM)
+#if defined(BUILD_DCM2PNM_AS_DCMJ2PNM)
 # define OFFIS_CONSOLE_APPLICATION "dcmj2pnm"
+#elif defined(BUILD_DCM2PNM_AS_DCML2PNM)
+# define OFFIS_CONSOLE_APPLICATION "dcml2pnm"
 #else
 # define OFFIS_CONSOLE_APPLICATION "dcm2pnm"
 #endif
@@ -141,6 +163,8 @@ int main(int argc, char *argv[])
     int                 opt_useAspectRatio = 1;           /* default: use aspect ratio for scaling */
     OFCmdUnsignedInt    opt_useInterpolation = 1;         /* default: use interpolation method '1' for scaling */
     int                 opt_useClip = 0;                  /* default: don't clip */
+    static const char*  opt_regionDef = "";               /* clip region, possibly in percents x1|y1|x2|y2 */
+    OFString            opt_processDir = "";              // Where to find processes, it nullstring, use PATH
     OFCmdSignedInt      opt_left = 0, opt_top = 0;        /* clip region (origin) */
     OFCmdUnsignedInt    opt_width = 0, opt_height = 0;    /* clip region (extension) */
     int                 opt_rotateDegree = 0;             /* default: no rotation */
@@ -204,6 +228,10 @@ int main(int argc, char *argv[])
     OFCmdUnsignedInt    opt_fileBits = 0;                 /* default: 0 */
     const char *        opt_ifname = NULL;
     const char *        opt_ofname = NULL;
+    const char *        opt_dimname = NULL;               /* where to put dimensions if requested */
+#ifdef TRICE
+    char*               opt_dir = (char*)"";                     // directory with files
+#endif
 
     unsigned long i;
     for (i = 0; i < 16; i++)
@@ -380,7 +408,6 @@ int main(int argc, char *argv[])
       cmd.addOption("--change-polarity",    "+P",      "change polarity (invert pixel output)");
       cmd.addOption("--clip-region",        "+C",   4, "[l]eft [t]op [w]idth [h]eight: integer",
                                                        "clip image region (l, t, w, h)");
-
     cmd.addGroup("output options:");
      cmd.addSubGroup("general:");
       cmd.addOption("--image-info",         "-im",     "print image details (requires verbose mode)");
@@ -411,6 +438,13 @@ int main(int argc, char *argv[])
 #ifdef PASTEL_COLOR_OUTPUT
       cmd.addOption("--write-pastel-pnm",   "+op",     "write 8-bit binary PPM with pastel colors\n(early experimental version)");
 #endif
+    cmd.addGroup("trice options:");
+      cmd.addOption("--process-dir",        "-pr",  1, "[p]ath: string", "where to find the processes needed (dcmdump, dump2dcm)");
+      cmd.addOption("--dict-path",          "-dp",  1, "[p]ath: string", "complete path (including file name) for dicom.dic");
+      cmd.addOption("--clip-percent",       "+CP",  1, "[P]ipe delimited region definition: string",
+                                                       "clip image region x1|y1|x2|y2");
+      cmd.addOption("--drop-dim",           "-di",  1, "[f]ilename: string",
+                                                       "File to put the dimensions as width x height");
 
     if (app.parseCommandLine(cmd, argc, argv))
     {
@@ -536,6 +570,20 @@ int main(int argc, char *argv[])
             app.checkValue(cmd.getValue(opt_width));
             app.checkValue(cmd.getValue(opt_height));
             opt_useClip = 1;
+        }
+        if (cmd.findOption("--clip-percent"))
+        {   app.checkValue(cmd.getValue(opt_regionDef));
+               //**Check to ensure 3 pipes
+            bool ok = true;  char* p = (char*)opt_regionDef;
+            for (int i = 0; i < 3; i++)
+            {  char* pp = strchr(p, '|');
+               if (pp == NULL)  {  ok = false;  break; }
+               p = pp+1;
+            }
+            if (!ok)
+            {   OFLOG_FATAL(dcm2pnmLogger, "Format of --clip-percent incorrect (x1|y1|x2|y2)\n");
+                return 1;
+            }
         }
 
         /* image processing options: rotation */
@@ -825,6 +873,9 @@ int main(int argc, char *argv[])
 
         /* output options */
 
+        if (cmd.findOption("--drop-dim"))
+            app.checkValue(cmd.getValue(opt_dimname));
+             
         if (cmd.findOption("--image-info"))
         {
             app.checkDependence("--image-info", "verbose mode", dcm2pnmLogger.isEnabledFor(OFLogger::INFO_LOG_LEVEL));
@@ -890,6 +941,26 @@ int main(int argc, char *argv[])
     /* print resource identifier */
     OFLOG_DEBUG(dcm2pnmLogger, rcsid << OFendl);
 
+    if (cmd.findOption("--process-dir"))
+    {   app.checkValue(cmd.getValue(opt_processDir));
+        if (!OFStandard::dirExists(opt_processDir))
+        {   fprintf(stderr, "Process Directory %s does not exist\n", opt_processDir.c_str());
+            exit(1);
+        }
+    }
+
+    static const char* dicomPath="";
+    if (cmd.findOption("--dict-path"))
+    {    app.checkValue(cmd.getValue(dicomPath));
+#ifndef __windows__
+         (void)setenv("DCMDICTPATH", dicomPath, 1);
+#else
+         char* envStr = (char*)malloc(strlen(dicomPath)+32);
+         sprintf(envStr, "DCMDICTPATH=%s", dicomPath);
+         (void)putenv(envStr);
+#endif
+    }
+
     /* make sure data dictionary is loaded */
     if (!dcmDataDict.isDictionaryLoaded())
     {
@@ -898,6 +969,24 @@ int main(int argc, char *argv[])
     }
 
     OFLOG_INFO(dcm2pnmLogger, "reading DICOM file: " << opt_ifname);
+#ifdef TRICE
+    opt_dir = new char[strlen(opt_ifname)+1];   strcpy(opt_dir, opt_ifname);
+    char* slash = strrchr(opt_dir, delimiter[0]);
+    if (slash != NULL)
+        *slash = '\0';
+    else 
+        strcpy(opt_dir, "");
+    if (isnull(opt_dir))
+    {   char cwd[350];  
+#ifdef _WIN32
+        GetCurrentDirectory(sizeof(cwd), cwd);
+#else
+        getcwd(cwd, sizeof(cwd));
+#endif
+        delete[] opt_dir;
+        opt_dir = new char[strlen(cwd)+1];  strcpy(opt_dir, cwd);
+    }
+#endif
 
     // register RLE decompression codec
     DcmRLEDecoderRegistration::registerCodecs();
@@ -912,6 +1001,36 @@ int main(int argc, char *argv[])
 
     DcmFileFormat *dfile = new DcmFileFormat();
     OFCondition cond = dfile->loadFile(opt_ifname, opt_transferSyntax, EGL_withoutGL, DCM_MaxReadLength, opt_readMode);
+#ifdef TRICE
+    OFString ifnameIn, ifname1;
+    if (!cond.good() && isDicom((char*)opt_ifname))
+    {    OFString pgm;  OFString command = "dcmdump -q +E -vr -ml +uc +Ep +rd --convert-to-utf8 +L --write-pixel ";
+         command.append(opt_dir).append(" ");
+         OFStandard::combineDirAndFilename(pgm, opt_processDir, command, true);
+         if (!isnull(dicomPath))
+            pgm.append(" --dict-path ").append(dicomPath);
+         ifnameIn.append(opt_ifname).append(".dump");
+         pgm.append(opt_ifname).append(" > ").append(ifnameIn);
+         if (system(pgm.c_str()) == 0 || nonZeroFile((char*)ifnameIn.c_str()))  //**Worked
+         {    OFString command1 = "dump2dcm -q +E --update-meta-info";
+              OFStandard::combineDirAndFilename(pgm, opt_processDir, command1, true);
+              if (strcmp(dicomPath, "") != 0)
+                  pgm.append(" --dict-path ").append(dicomPath);
+              ifname1.append(opt_ifname).append(".OUT");
+              pgm.append(" ").append(ifnameIn);
+              pgm.append(" ").append(ifname1);
+              if (system(pgm.c_str()) == 0)  //**Worked 
+              {   OFString ifname1(opt_ifname);  ifname1.append(".OUT");
+                  cond = dfile->loadFile(ifname1.c_str(), opt_transferSyntax, EGL_noChange, DCM_MaxReadLength, opt_readMode);
+                  mvFile((char*)ifname1.c_str(), (char*)opt_ifname);
+#ifndef __windows__
+                  fprintf(stderr, "Repairing the file and continuing to anonymize...\n");
+#endif
+              }
+         }
+         rmFile(ifnameIn.c_str());
+    }
+#endif
 
     if (cond.bad())
     {
@@ -925,7 +1044,7 @@ int main(int argc, char *argv[])
     E_TransferSyntax xfer = dataset->getOriginalXfer();
 
     Sint32 frameCount;
-    if (dataset->findAndGetSint32(DCM_NumberOfFrames, frameCount).bad())
+    if (dataset->findAndGetSint32(DCM_NumberOfFrames, frameCount).bad() || frameCount < 1)
         frameCount = 1;
     Sint32 realFrameCount = frameCount;
     if ((opt_frameCount == 0) || ((opt_frame == 1) && (opt_frameCount == OFstatic_cast(Uint32, frameCount))))
@@ -942,18 +1061,73 @@ int main(int argc, char *argv[])
         opt_compatibilityMode |= CIF_UsePartialAccessToPixelData;
     }
 
-unsigned int FrameCount = opt_frameCount;  opt_frameCount = 1;
-for ( ;  opt_frame <= FrameCount; opt_frame++)
+bool regionDefCheck = false;
+   //**Calculate the frame count
+unsigned usedFrameCount = 1;
+if (realFrameCount < 128)
+   usedFrameCount = realFrameCount;
+else
+   usedFrameCount = 128;  //*Do 128 frames at a time
+if (opt_frameCount < usedFrameCount)
+   usedFrameCount = opt_frameCount;
+
+unsigned int FrameCount = opt_frameCount;  opt_frameCount = usedFrameCount;
+for ( ;  opt_frame <= FrameCount; opt_frame += usedFrameCount)
 {
+    if (opt_frame + usedFrameCount > (unsigned)realFrameCount)
+        opt_frameCount = usedFrameCount = realFrameCount - opt_frame + 1;
+    if (usedFrameCount < 1)  usedFrameCount = 1;
+
     DcmFileFormat* dfileSV = new DcmFileFormat(*dfile);
     DcmDataset* datasetSV = dfileSV->getDataset();
     E_TransferSyntax xferSV = datasetSV->getOriginalXfer();
 
-    DicomImage *di = new DicomImage(dfileSV, xferSV, opt_compatibilityMode, opt_frame - 1, 1);
+    DicomImage *di = new DicomImage(dfileSV, xferSV, opt_compatibilityMode, opt_frame - 1, usedFrameCount);
     if (di == NULL)
     {
         OFLOG_FATAL(dcm2pnmLogger, "Out of memory");
         return 1;
+    }
+    if (!regionDefCheck && strcmp(opt_regionDef, "") != 0)  //**Convert region definition to clip definition
+    {    unsigned int width = di->getWidth();
+         unsigned int height = di->getHeight();
+         unsigned int wSV = width;  unsigned int hSV = height;
+         char* coord = (char*)opt_regionDef;
+         char* pipe = strchr(coord, '|');  *pipe = '\0';
+         opt_left = (strchr(coord, '%') != NULL) ? width * atof(coord) * .01 + .5 : atof(coord) + .5;
+         if (opt_left > width)  opt_left = 0;
+         coord = pipe+1; pipe = strchr(coord, '|');  *pipe = '\0';
+         opt_top = (strchr(coord, '%') != NULL) ? height * atof(coord) * .01  + .5 : atof(coord) + .5;
+         if (opt_top > height)  opt_top = height * .1 + .5;
+         coord = pipe+1; pipe = strchr(coord, '|');  *pipe = '\0';
+         opt_width = (strchr(coord, '%') != NULL) ? width * atof(coord) * .01 - opt_left: atof(coord) - opt_left;
+         if (opt_width > width)  opt_width = width - opt_left;
+         coord = pipe+1; 
+         opt_height = (strchr(coord, '%') != NULL) ? height * atof(coord) * .01 - opt_top: atof(coord) - opt_top;
+         if (opt_height > height)  opt_height = height - opt_top;
+           //**Even width and height
+         if (opt_width % 2 == 1)
+            opt_width--;  
+         if (opt_height % 2 == 1)
+            opt_height--;  
+         opt_useClip = 1;
+           //**Disable if nothing changed
+         if (opt_left == 0 && opt_top == 0 && opt_height == hSV && opt_width == wSV)
+            opt_useClip = 0;
+         regionDefCheck = true;
+    }
+
+    if (opt_dimname != NULL)
+    {    unsigned int width = (opt_width > 0) ? opt_width : di->getWidth();
+         unsigned int height = (opt_height > 0) ? opt_height : di->getHeight();
+         char buffer[64];  sprintf(buffer, "%dx%d", width, height);
+         
+         int fd = open(opt_dimname, O_RDWR | O_CREAT | O_TRUNC | O_SYNC | O_BINARY, 0664);
+         if (fd >= 0)
+         {   (void)write(fd, buffer, strlen(buffer));
+             close(fd);
+         }
+         opt_dimname = NULL;
     }
 
     if (di->getStatus() != EIS_Normal)
@@ -1450,6 +1624,9 @@ for ( ;  opt_frame <= FrameCount; opt_frame++)
             } else {
                 /* output to stdout */
                 ofile = stdout;
+#ifdef __windows__
+                setmode(fileno(stdout), O_BINARY);  //**No extra carriage returns
+#endif
                 OFLOG_INFO(dcm2pnmLogger, "writing frame " << (opt_frame + frame) << " to stdout");
             }
 
@@ -1546,6 +1723,7 @@ for ( ;  opt_frame <= FrameCount; opt_frame++)
     OFLOG_INFO(dcm2pnmLogger, "cleaning up memory");
     delete di;
     delete disp;
+    //delete dfileSV; //CIF_TakeOverExternalDataset causes the space to be freed when we delete the image
 }
 
     // deregister RLE decompression codec
@@ -1557,6 +1735,20 @@ for ( ;  opt_frame <= FrameCount; opt_frame++)
 #ifdef BUILD_DCM2PNM_AS_DCML2PNM
     // deregister JPEG-LS decompression codecs
     DJLSDecoderRegistration::cleanup();
+#endif
+
+#ifdef TRICE
+   rmFile(ifnameIn.c_str());
+   rmFile(ifname1.c_str());
+   char cmd1[strlen(opt_dir)+100];
+#ifdef __windows__
+   sprintf(cmd1, "del /q /F %s\\*.raw* 2> NUL", opt_dir);
+   char* c = Util::replace(cmd1, "\\\\", "\\");   strcpy(cmd1, c);
+#else
+   sprintf(cmd1, "rm -f %s/*.raw*", opt_dir);
+#endif
+   system(cmd1);
+
 #endif
 
     return 0;

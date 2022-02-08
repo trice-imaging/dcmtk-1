@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTChannelShieldSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -108,13 +108,13 @@ OFCondition DRTChannelShieldSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, ChannelShieldNumber, "1", "1", "ChannelShieldSequence");
-        getAndCheckElementFromDataset(item, ChannelShieldID, "1", "2", "ChannelShieldSequence");
+        getAndCheckElementFromDataset(item, ChannelShieldNumber, "1", "1C", "ChannelShieldSequence");
+        getAndCheckElementFromDataset(item, ChannelShieldID, "1", "2C", "ChannelShieldSequence");
         getAndCheckElementFromDataset(item, ChannelShieldName, "1", "3", "ChannelShieldSequence");
         getAndCheckElementFromDataset(item, MaterialID, "1", "3", "ChannelShieldSequence");
         getAndCheckElementFromDataset(item, ChannelShieldNominalThickness, "1", "3", "ChannelShieldSequence");
         getAndCheckElementFromDataset(item, ChannelShieldNominalTransmission, "1", "3", "ChannelShieldSequence");
-        getAndCheckElementFromDataset(item, ReferencedROINumber, "1", "2", "ChannelShieldSequence");
+        getAndCheckElementFromDataset(item, ReferencedROINumber, "1", "2C", "ChannelShieldSequence");
         result = EC_Normal;
     }
     return result;
@@ -127,13 +127,13 @@ OFCondition DRTChannelShieldSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmIntegerString(ChannelShieldNumber), "1", "1", "ChannelShieldSequence");
-        addElementToDataset(result, item, new DcmShortString(ChannelShieldID), "1", "2", "ChannelShieldSequence");
+        addElementToDataset(result, item, new DcmIntegerString(ChannelShieldNumber), "1", "1C", "ChannelShieldSequence");
+        addElementToDataset(result, item, new DcmShortString(ChannelShieldID), "1", "2C", "ChannelShieldSequence");
         addElementToDataset(result, item, new DcmLongString(ChannelShieldName), "1", "3", "ChannelShieldSequence");
         addElementToDataset(result, item, new DcmShortString(MaterialID), "1", "3", "ChannelShieldSequence");
         addElementToDataset(result, item, new DcmDecimalString(ChannelShieldNominalThickness), "1", "3", "ChannelShieldSequence");
         addElementToDataset(result, item, new DcmDecimalString(ChannelShieldNominalTransmission), "1", "3", "ChannelShieldSequence");
-        addElementToDataset(result, item, new DcmIntegerString(ReferencedROINumber), "1", "2", "ChannelShieldSequence");
+        addElementToDataset(result, item, new DcmIntegerString(ReferencedROINumber), "1", "2C", "ChannelShieldSequence");
     }
     return result;
 }
@@ -432,7 +432,7 @@ OFBool DRTChannelShieldSequence::isValid() const
 }
 
 
-size_t DRTChannelShieldSequence::getNumberOfItems() const
+unsigned long DRTChannelShieldSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -462,12 +462,12 @@ OFCondition DRTChannelShieldSequence::gotoNextItem()
 }
 
 
-OFCondition DRTChannelShieldSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTChannelShieldSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -482,12 +482,12 @@ OFCondition DRTChannelShieldSequence::gotoItem(const size_t num, OFListIterator(
 }
 
 
-OFCondition DRTChannelShieldSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTChannelShieldSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -502,7 +502,7 @@ OFCondition DRTChannelShieldSequence::gotoItem(const size_t num, OFListConstIter
 }
 
 
-OFCondition DRTChannelShieldSequence::gotoItem(const size_t num)
+OFCondition DRTChannelShieldSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -538,7 +538,7 @@ const DRTChannelShieldSequence::Item &DRTChannelShieldSequence::getCurrentItem()
 }
 
 
-OFCondition DRTChannelShieldSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTChannelShieldSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -548,7 +548,7 @@ OFCondition DRTChannelShieldSequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTChannelShieldSequence::Item &DRTChannelShieldSequence::getItem(const size_t num)
+DRTChannelShieldSequence::Item &DRTChannelShieldSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -558,7 +558,7 @@ DRTChannelShieldSequence::Item &DRTChannelShieldSequence::getItem(const size_t n
 }
 
 
-const DRTChannelShieldSequence::Item &DRTChannelShieldSequence::getItem(const size_t num) const
+const DRTChannelShieldSequence::Item &DRTChannelShieldSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -568,13 +568,13 @@ const DRTChannelShieldSequence::Item &DRTChannelShieldSequence::getItem(const si
 }
 
 
-DRTChannelShieldSequence::Item &DRTChannelShieldSequence::operator[](const size_t num)
+DRTChannelShieldSequence::Item &DRTChannelShieldSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTChannelShieldSequence::Item &DRTChannelShieldSequence::operator[](const size_t num) const
+const DRTChannelShieldSequence::Item &DRTChannelShieldSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -597,7 +597,7 @@ OFCondition DRTChannelShieldSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTChannelShieldSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTChannelShieldSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -620,7 +620,7 @@ OFCondition DRTChannelShieldSequence::insertItem(const size_t pos, Item *&item)
 }
 
 
-OFCondition DRTChannelShieldSequence::removeItem(const size_t pos)
+OFCondition DRTChannelShieldSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

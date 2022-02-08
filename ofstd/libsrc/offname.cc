@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1997-2021, OFFIS e.V.
+ *  Copyright (C) 1997-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,10 +24,12 @@
 #include "dcmtk/ofstd/offname.h"
 #include "dcmtk/ofstd/ofcast.h"
 #include "dcmtk/ofstd/ofstd.h"        /* for OFString::myrand_r */
-#include "dcmtk/ofstd/ofstdinc.h"
-#include <cerrno>
-#include <ctime>
 
+#define INCLUDE_CERRNO
+#define INCLUDE_CSTRING
+#define INCLUDE_CTIME
+#define INCLUDE_CSTDLIB
+#include "dcmtk/ofstd/ofstdinc.h"
 
 BEGIN_EXTERN_C
 #ifdef HAVE_SYS_TYPES_H
@@ -80,9 +82,7 @@ OFBool OFFilenameCreator::makeFilename(unsigned int &seed, const char *dir, cons
     }
     if (prefix) filename += prefix;
     addLongToString(creation_time, filename);
-    // on some systems OFrand_r may produce only 16-bit random numbers.
-    // To be on the safe side, we use two random numbers for the upper and the lower 16 bits.
-    addLongToString((((OFrand_r(seed) & 0xFFFF) << 16) | (OFrand_r(seed) & 0xFFFF)), filename);
+    addLongToString(((OFrand_r(seed) << 16) | OFrand_r(seed)), filename);
     if (postfix) filename += postfix;
 
     // check if filename exists
@@ -110,7 +110,7 @@ void OFFilenameCreator::addLongToString(unsigned long l, OFString &s)
   unsigned long m;
   int idx=7;
   char chr_array[9];
-  OFStandard::strlcpy(chr_array, "00000000", 9);
+  strcpy(chr_array, "00000000");
   while (l)
   {
     m = l & 0x0FL;

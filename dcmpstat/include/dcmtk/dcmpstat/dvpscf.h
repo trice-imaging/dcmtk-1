@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2018, OFFIS e.V.
+ *  Copyright (C) 1998-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -191,13 +191,24 @@ class DCMTK_DCMPSTAT_EXPORT DVConfiguration
    */
   const char *getTargetPrivateKeyPassword(const char *targetID);
 
-  /** returns the TLSPROFILE entry for the storage peer with the given
+  /** returns the number of distinct values (separated by backslash characters)
+   *  in the CIPHERSUITES entry for the storage peer with the given
    *  target ID from the configuration file.
    *  @param targetID communication target ID, must be one of the target
    *    identifiers returned by getTargetID().
-   *  @return entry if present in the config file, NULL otherwise.
+   *  @return number of values if entry present in the config file, 0 otherwise.
    */
-  const char *getTargetTLSProfile(const char *targetID);
+  Uint32 getTargetNumberOfCipherSuites(const char *targetID);
+
+  /** returns one value from the CIPHERSUITES entry for the storage peer
+   *  with the given target ID from the configuration file.
+   *  @param targetID communication target ID, must be one of the target
+   *    identifiers returned by getTargetID().
+   *  @param idx index of the value, must be < getTargetNumberOfCipherSuites(targetID)
+   *  @param value the result is both stored in this object and returned as return value.
+   *  @return value if present, NULL otherwise.
+   */
+  const char *getTargetCipherSuite(const char *targetID, Uint32 idx, OFString& value);
 
   /** returns the PEERAUTHENTICATION entry for the communication partner with the given
    *  target ID from the configuration file.

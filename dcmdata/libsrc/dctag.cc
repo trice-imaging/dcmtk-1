@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,7 +24,11 @@
 #include "dcmtk/dcmdata/dcerror.h"    /* for dcmdata error constants */
 #include "dcmtk/dcmdata/dcdict.h"
 #include "dcmtk/dcmdata/dcdicent.h"
-#include "dcmtk/ofstd/ofstd.h"
+
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
+
 
 DcmTag::DcmTag()
   : vr(EVR_UNKNOWN),
@@ -125,7 +129,7 @@ void DcmTag::lookupVRinDictionary()
         vr = dictRef->getVR();
         errorFlag = EC_Normal;
     }
-    dcmDataDict.rdunlock();
+    dcmDataDict.unlock();
 }
 
 // ********************************
@@ -158,7 +162,7 @@ const char *DcmTag::getTagName()
     if (newTagName == NULL)
         newTagName = DcmTag_ERROR_TagName;
     updateTagName(newTagName);
-    dcmDataDict.rdunlock();
+    dcmDataDict.unlock();
 
     if (tagName)
         return tagName;
@@ -218,7 +222,7 @@ OFCondition DcmTag::findTagFromName(const char *name, DcmTag &value)
             }
             else
                 result = EC_TagNotFound;
-            dcmDataDict.rdunlock();
+            dcmDataDict.unlock();
         }
     }
     return result;
@@ -244,10 +248,9 @@ void DcmTag::updateTagName(const char *c)
     delete[] tagName;
     if (c)
     {
-        size_t buflen = strlen(c) + 1;
-        tagName = new char[buflen];
+        tagName = new char[strlen(c) + 1];
         if (tagName)
-            OFStandard::strlcpy(tagName, c, buflen);
+            strcpy(tagName, c);
     } else
         tagName = NULL;
 }
@@ -257,10 +260,9 @@ void DcmTag::updatePrivateCreator(const char *c)
     delete[] privateCreator;
     if (c)
     {
-        size_t buflen = strlen(c) + 1;
-        privateCreator = new char[buflen];
+        privateCreator = new char[strlen(c) + 1];
         if (privateCreator)
-            OFStandard::strlcpy(privateCreator, c, buflen);
+            strcpy(privateCreator, c);
     } else
         privateCreator = NULL;
 }

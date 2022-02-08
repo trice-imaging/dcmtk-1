@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1997-2021, OFFIS e.V.
+ *  Copyright (C) 1997-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,9 +26,9 @@
 #include "dcmtk/config/osconfig.h"
 #include "dcmtk/ofstd/ofcast.h"
 #include "dcmtk/ofstd/ofdefine.h"
-#include "dcmtk/ofstd/oftypes.h"
 
-#include <cstring>
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
 
 /*---------------------*
  *  class declaration  *
@@ -58,9 +58,9 @@ class OFBitmanipTemplate
 #ifdef HAVE_MEMCPY
         memcpy(OFstatic_cast(void *, dest), OFstatic_cast(const void *, src), count * sizeof(T));
 #else
-        size_t i;
-        const T *p = src;
-        T *q = dest;
+        register size_t i;
+        register const T *p = src;
+        register T *q = dest;
         for (i = count; i != 0; --i)
             *q++ = *p++;
 #endif
@@ -80,30 +80,15 @@ class OFBitmanipTemplate
                         T *dest,
                         const size_t count)
     {
-#if defined(HAVE_MEMMOVE) && !defined(PTRDIFF_MAX)
-        // some platforms have memmove() but not PTRDIFF_MAX.
-        // In this case, just call memmove().
-        memmove(OFstatic_cast(void *, dest), OFstatic_cast(const void *, src), count * sizeof(T));
-#else
-
 #ifdef HAVE_MEMMOVE
-        // On some platforms (such as MinGW), memmove cannot move buffers
-        // larger than PTRDIFF_MAX. In the rare case of such huge buffers,
-        // fall back to our own implementation.
-        const size_t c = count * sizeof(T);
-        if (c <= PTRDIFF_MAX)
-        {
-            memmove(OFstatic_cast(void *, dest), OFstatic_cast(const void *, src), c);
-            return;
-        }
-#endif /* HAVE_MEMMOVE */
-
+        memmove(OFstatic_cast(void *, dest), OFstatic_cast(const void *, src), OFstatic_cast(size_t, count) * sizeof(T));
+#else
         if (src == dest)
             return;
 
-        size_t i;
-        const T *p = src;
-        T *q = dest;
+        register size_t i;
+        register const T *p = src;
+        register T *q = dest;
         if (src > dest)
         {
             // src is above dest in memory, we start copying from the start
@@ -134,12 +119,12 @@ class OFBitmanipTemplate
     {
 #ifdef HAVE_MEMSET
         if ((value == 0) || (sizeof(T) == sizeof(unsigned char)))
-            memset(OFstatic_cast(void *, dest), OFstatic_cast(int, value), count * sizeof(T));
+            memset(OFstatic_cast(void *, dest), OFstatic_cast(int, value), OFstatic_cast(size_t, count) * sizeof(T));
         else
 #endif
         {
-            size_t i;
-            T *q = dest;
+            register size_t i;
+            register T *q = dest;
             for (i = count; i != 0; --i)
                 *q++ = value;
         }
@@ -154,7 +139,14 @@ class OFBitmanipTemplate
     static void zeroMem(T *dest,
                         const size_t count)
     {
-        memset(dest, 0, count * sizeof(T));
+#ifdef HAVE_MEMZERO
+        memzero(dest, OFstatic_cast(size_t, count) * sizeof(T));
+#else
+        register size_t i;
+        register T *q = dest;
+        for (i = count; i != 0; --i)
+            *q++ = 0;
+#endif
     }
 };
 

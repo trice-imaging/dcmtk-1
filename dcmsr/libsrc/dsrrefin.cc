@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2019, OFFIS e.V.
+ *  Copyright (C) 2011-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,10 +25,6 @@
 
 #include "dcmtk/dcmsr/dsrrefin.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
-
-#include "dcmtk/dcmdata/dcdeftag.h"
-#include "dcmtk/dcmdata/dcuid.h"
-#include "dcmtk/dcmdata/dcvrui.h"
 
 
 DSRReferencedInstanceList::DSRReferencedInstanceList()
@@ -63,7 +59,7 @@ void DSRReferencedInstanceList::clear()
 }
 
 
-OFBool DSRReferencedInstanceList::isEmpty() const
+OFBool DSRReferencedInstanceList::empty() const
 {
     return ItemList.empty();
 }
@@ -75,8 +71,7 @@ size_t DSRReferencedInstanceList::getNumberOfItems() const
 }
 
 
-OFCondition DSRReferencedInstanceList::read(DcmItem &dataset,
-                                            const size_t flags)
+OFCondition DSRReferencedInstanceList::read(DcmItem &dataset)
 {
     /* first, check whether sequence is present and non-empty */
     DcmSequenceOfItems sequence(DCM_ReferencedInstanceSequence);
@@ -99,7 +94,7 @@ OFCondition DSRReferencedInstanceList::read(DcmItem &dataset,
                 if (addItem(sopClassUID, instanceUID, item).good())
                 {
                     /* read additional information */
-                    item->PurposeOfReference.readSequence(*ditem, DCM_PurposeOfReferenceCodeSequence, "1", flags);
+                    item->PurposeOfReference.readSequence(*ditem, DCM_PurposeOfReferenceCodeSequence, "1");
                 }
             }
         }
@@ -140,7 +135,7 @@ OFCondition DSRReferencedInstanceList::write(DcmItem &dataset) const
 
 OFCondition DSRReferencedInstanceList::readXML(const DSRXMLDocument &doc,
                                                DSRXMLCursor cursor,
-                                               const size_t flags)
+                                               const size_t /*flags*/)
 {
     OFCondition result = SR_EC_InvalidDocument;
     ItemStruct *item = NULL;
@@ -152,8 +147,8 @@ OFCondition DSRReferencedInstanceList::readXML(const DSRXMLDocument &doc,
         if (doc.checkNode(cursor, "value").good())
         {
             /* retrieve SOP class and instance UID */
-            if (!doc.getStringFromAttribute(doc.getNamedChildNode(cursor, "sopclass"), sopClassUID, "uid").empty() &&
-                !doc.getStringFromAttribute(doc.getNamedChildNode(cursor, "instance"), instanceUID, "uid").empty())
+            if (!doc.getStringFromAttribute(doc.getNamedNode(cursor.getChild(), "sopclass"), sopClassUID, "uid").empty() &&
+                !doc.getStringFromAttribute(doc.getNamedNode(cursor.getChild(), "instance"), instanceUID, "uid").empty())
             {
                 result = addItem(sopClassUID, instanceUID, item);
                 if (result.good())
@@ -165,7 +160,7 @@ OFCondition DSRReferencedInstanceList::readXML(const DSRXMLDocument &doc,
                     {
                         /* check for known element tags */
                         if (doc.matchNode(childCursor, "purpose"))
-                            item->PurposeOfReference.readXML(doc, childCursor, flags);
+                            item->PurposeOfReference.readXML(doc, childCursor);
                         /* proceed with next node */
                         childCursor.gotoNext();
                     }

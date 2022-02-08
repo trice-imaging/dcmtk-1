@@ -21,9 +21,9 @@ LOCALINCLUDES = -I$(ofstddir)/include -I$(oflogdir)/include \
 LIBDIRS = -L$(top_srcdir)/libsrc -L$(ofstddir)/libsrc -L$(oflogdir)/libsrc \
 	-L$(dcmdatadir)/libsrc -L$(dcmtlsdir)/libsrc $(compr_libdirs)
 LOCALLIBS = -ldcmnet -ldcmdata -loflog -lofstd $(ZLIBLIBS) $(TCPWRAPPERLIBS) \
-	$(CHARCONVLIBS) $(MATHLIBS)
+	$(ICONVLIBS)
 
-objs = tests.o tdump.o tdimse.o tpool.o tscuscp.o tscusession.o
+objs = tests.o tdump.o tpool.o
 progs = tests
 
 
@@ -33,10 +33,7 @@ tests: $(objs)
 	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $(objs) $(I2DLIBS) $(LOCALLIBS) $(LIBS)
 
 check: tests
-	DCMDICTPATH=../../dcmdata/data/dicom.dic ./tests
-
-check-exhaustive: tests
-	DCMDICTPATH=../../dcmdata/data/dicom.dic ./tests -x
+	./tests
 
 install:
 

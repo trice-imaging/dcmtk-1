@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1993-2021, OFFIS e.V.
+ *  Copyright (C) 1993-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,11 +26,9 @@
 #include "dcmtk/dcmdata/dcdeftag.h"
 #include "dcmtk/dcmqrdb/dcmqropt.h"
 #include "dcmtk/dcmnet/diutil.h"
-#include "dcmtk/dcmnet/dimse.h"       /* for DICOM_WARNING_STATUS */
 #include "dcmtk/dcmdata/dcfilefo.h"
 #include "dcmtk/dcmqrdb/dcmqrdbs.h"
 #include "dcmtk/dcmqrdb/dcmqrdbi.h"
-#include "dcmtk/ofstd/ofstd.h"
 
 BEGIN_EXTERN_C
 #ifdef HAVE_FCNTL_H
@@ -142,24 +140,24 @@ void DcmQueryRetrieveGetContext::callbackHandler(
 
 void DcmQueryRetrieveGetContext::addFailedUIDInstance(const char *sopInstance)
 {
-    size_t len;
-    size_t buflen = DIC_UI_LEN+1;
+    int len;
+
     if (failedUIDs == NULL) {
-        if ((failedUIDs = (char*)malloc(buflen)) == NULL) {
+        if ((failedUIDs = (char*)malloc(DIC_UI_LEN+1)) == NULL) {
             DCMQRDB_ERROR("malloc failure: addFailedUIDInstance");
             return;
         }
-        OFStandard::strlcpy(failedUIDs, sopInstance, buflen);
+        strcpy(failedUIDs, sopInstance);
     } else {
         len = strlen(failedUIDs);
-        buflen = len+strlen(sopInstance)+2;
-        if ((failedUIDs = (char*)realloc(failedUIDs, buflen)) == NULL) {
+        if ((failedUIDs = (char*)realloc(failedUIDs,
+            (len+strlen(sopInstance)+2))) == NULL) {
             DCMQRDB_ERROR("realloc failure: addFailedUIDInstance");
             return;
         }
         /* tag sopInstance onto end of old with '\' between */
-        OFStandard::strlcat(failedUIDs, "\\", buflen);
-        OFStandard::strlcat(failedUIDs, sopInstance, buflen);
+        strcat(failedUIDs, "\\");
+        strcat(failedUIDs, sopInstance);
     }
 }
 
@@ -181,8 +179,9 @@ OFCondition DcmQueryRetrieveGetContext::performGetSubOp(DIC_UI sopClass, DIC_UI 
     lockfd = open(fname, O_RDONLY , 0666);
 #endif
     if (lockfd < 0) {
+        char buf[256];
         /* due to quota system the file could have been deleted */
-        DCMQRDB_ERROR("Get SCP: storeSCU: [file: " << fname << "]: " << OFStandard::getLastSystemErrorCode().message());
+        DCMQRDB_ERROR("Get SCP: storeSCU: [file: " << fname << "]: " << OFStandard::strerror(errno, buf, sizeof(buf)));
         nFailed++;
         addFailedUIDInstance(sopInstance);
         return EC_Normal;
@@ -217,8 +216,8 @@ OFCondition DcmQueryRetrieveGetContext::performGetSubOp(DIC_UI sopClass, DIC_UI 
     }
 
     req.MessageID = msgId;
-    OFStandard::strlcpy(req.AffectedSOPClassUID, sopClass, DIC_UI_LEN + 1);
-    OFStandard::strlcpy(req.AffectedSOPInstanceUID, sopInstance, DIC_UI_LEN + 1);
+    strcpy(req.AffectedSOPClassUID, sopClass);
+    strcpy(req.AffectedSOPInstanceUID, sopInstance);
     req.DataSetType = DIMSE_DATASET_PRESENT;
     req.Priority = priority;
     req.opts = 0;
@@ -253,7 +252,7 @@ OFCondition DcmQueryRetrieveGetContext::performGetSubOp(DIC_UI sopClass, DIC_UI 
         if (rsp.DimseStatus == STATUS_Success) {
             /* everything ok */
             nCompleted++;
-        } else if (DICOM_WARNING_STATUS(rsp.DimseStatus)) {
+        } else if ((rsp.DimseStatus & 0xf000) == 0xb000) {
             /* a warning status message */
             nWarning++;
             DCMQRDB_ERROR("Get SCP: Store Warning: Response Status: " <<
@@ -287,13 +286,13 @@ void DcmQueryRetrieveGetContext::getNextImage(DcmQueryRetrieveDatabaseStatus * d
     char subImgFileName[MAXPATHLEN + 1];    /* sub-operation image file */
 
     /* clear out strings */
-    memset(subImgFileName, 0, sizeof(subImgFileName));
-    memset(subImgSOPClass, 0, sizeof(subImgSOPClass));
-    memset(subImgSOPInstance, 0, sizeof(subImgSOPInstance));
+    bzero(subImgFileName, sizeof(subImgFileName));
+    bzero(subImgSOPClass, sizeof(subImgSOPClass));
+    bzero(subImgSOPInstance, sizeof(subImgSOPInstance));
 
     /* get DB response */
     dbcond = dbHandle.nextMoveResponse(
-        subImgSOPClass, sizeof(subImgSOPClass), subImgSOPInstance, sizeof(subImgSOPInstance), subImgFileName, sizeof(subImgFileName), &nRemaining, dbStatus);
+        subImgSOPClass, subImgSOPInstance, subImgFileName, &nRemaining, dbStatus);
     if (dbcond.bad()) {
         DCMQRDB_ERROR("getSCP: Database: nextMoveResponse Failed ("
             << DU_cmoveStatusString(dbStatus->status()) << "):");

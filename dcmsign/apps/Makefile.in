@@ -17,10 +17,8 @@ oflogdir = $(top_srcdir)/../oflog
 dcmdatadir = $(top_srcdir)/../dcmdata
 
 LOCALINCLUDES = -I$(ofstddir)/include -I$(oflogdir)/include -I$(dcmdatadir)/include
-LIBDIRS = -L$(top_srcdir)/libsrc -L$(ofstddir)/libsrc -L$(oflogdir)/libsrc \
-	-L$(dcmdatadir)/libsrc
-LOCALLIBS = -ldcmdsig -ldcmdata -loflog -lofstd $(ZLIBLIBS) $(OPENSSLLIBS) \
-	$(CHARCONVLIBS) $(MATHLIBS)
+LIBDIRS = -L$(top_srcdir)/libsrc -L$(ofstddir)/libsrc -L$(oflogdir)/libsrc -L$(dcmdatadir)/libsrc
+LOCALLIBS = -ldcmdsig -ldcmdata -loflog -lofstd $(ZLIBLIBS) $(OPENSSLLIBS) $(ICONVLIBS)
 
 objs = dcmsign.o
 progs = dcmsign
@@ -29,7 +27,7 @@ progs = dcmsign
 all: $(progs)
 
 dcmsign: dcmsign.o
-	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
 
 
 install: all

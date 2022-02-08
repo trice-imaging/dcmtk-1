@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 1999-2021, OFFIS e.V.
+ *  Copyright (C) 1999-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -19,8 +19,14 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
-
 #include "dcmtk/dcmnet/dcompat.h"     /* compatibility code, needs to be included before dirent.h */
+
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>
+#endif
+
+#define INCLUDE_CCTYPE
+#include "dcmtk/ofstd/ofstdinc.h"
 
 BEGIN_EXTERN_C
 /* This #if code is suggested by the gnu autoconf documentation */
@@ -51,16 +57,16 @@ END_EXTERN_C
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/dcmpstat/dvpsdef.h"    /* for constants */
 #include "dcmtk/dcmpstat/dviface.h"    /* for DVInterface */
-#include "dcmtk/ofstd/ofstring.h"      /* for OFString */
-#include "dcmtk/ofstd/ofbmanip.h"      /* for OFBitmanipTemplate */
-#include "dcmtk/ofstd/ofdatime.h"      /* for OFDateTime */
-#include "dcmtk/dcmdata/dcuid.h"       /* for dcmtk version name */
-#include "dcmtk/dcmdata/cmdlnarg.h"    /* for prepareCmdLineArgs */
-#include "dcmtk/ofstd/ofconapp.h"      /* for OFConsoleApplication */
+#include "dcmtk/ofstd/ofstring.h"   /* for OFString */
+#include "dcmtk/ofstd/ofbmanip.h"   /* for OFBitmanipTemplate */
+#include "dcmtk/ofstd/ofdatime.h"   /* for OFDateTime */
+#include "dcmtk/dcmdata/dcuid.h"      /* for dcmtk version name */
+#include "dcmtk/dcmdata/cmdlnarg.h"   /* for prepareCmdLineArgs */
+#include "dcmtk/ofstd/ofconapp.h"   /* for OFConsoleApplication */
 #include "dcmtk/dcmimgle/dcmimage.h"
 #include "dcmtk/dcmpstat/dvpspr.h"
 #include "dcmtk/dcmpstat/dvpssp.h"
-#include "dcmtk/dcmpstat/dvpshlp.h"    /* for class DVPSHelper */
+#include "dcmtk/dcmpstat/dvpshlp.h"     /* for class DVPSHelper */
 #include "dcmtk/ofstd/ofstd.h"
 
 #ifdef WITH_OPENSSL
@@ -366,7 +372,7 @@ static OFCondition spoolJobList(
       result2 = spoolStoredPrintFile(currentJob->storedPrintFilename.c_str(), dvi, tlayer);
       if (result2 != EC_Normal)
       {
-        OFLOG_ERROR(dcmprscuLogger, "spooler: error occurred during spooling of Stored Print object '" << currentJob->storedPrintFilename << "'");
+        OFLOG_ERROR(dcmprscuLogger, "spooler: error occured during spooling of Stored Print object '" << currentJob->storedPrintFilename << "'");
       }
       if (result == EC_Normal) result = result2; // forward error codes, but do not erase
     } else {
@@ -384,7 +390,7 @@ static OFCondition spoolJobList(
  */
 static OFBool readValuePair(FILE *infile, OFString& key, OFString& value)
 {
-  int c = 0;
+  int c;
   int mode = 0;
   key.clear();
   value.clear();
@@ -540,11 +546,11 @@ static OFCondition updateJobList(
   const char *spoolFolder = dvi.getSpoolFolder();
 
 #ifdef HAVE_WINDOWS_H
-  WIN32_FIND_DATAA stWin32FindData;
+  WIN32_FIND_DATA stWin32FindData;
   OFString currentdir = spoolFolder;
   currentdir += "\\*";
 
-  HANDLE hFile = FindFirstFileA(currentdir.c_str(), &stWin32FindData);
+  HANDLE hFile = FindFirstFile(currentdir.c_str(), &stWin32FindData);
   int ret = (hFile != INVALID_HANDLE_VALUE);
   while (ret)
   {
@@ -558,13 +564,9 @@ static OFCondition updateJobList(
     {
       currentName = dp->d_name;
 #endif
-      if
-      (
-        currentName.size() > (prefixSize + postfixSize) &&
-        prefix == currentName.substr(0, prefixSize) &&
-        postfix == currentName.substr(currentName.size()-postfixSize) &&
-        currentName.find_first_not_of("1234567890",prefixSize) == (currentName.size() - postfixSize)
-      )
+      if ((prefix == currentName.substr(0, prefixSize)) &&
+          (currentName.size() > postfixSize) &&
+          (postfix == currentName.substr(currentName.size()-postfixSize)))
       {
         // name matches pattern
         jobName = spoolFolder;
@@ -592,7 +594,7 @@ static OFCondition updateJobList(
       }
 
 #ifdef HAVE_WINDOWS_H
-      ret = FindNextFileA(hFile, &stWin32FindData);
+      ret = FindNextFile(hFile, &stWin32FindData);
   } /* while */
   if(hFile != INVALID_HANDLE_VALUE)
   {
@@ -613,9 +615,17 @@ static OFCondition updateJobList(
 
 int main(int argc, char *argv[])
 {
-    OFStandard::initializeNetwork();
-#ifdef WITH_OPENSSL
-    DcmTLSTransportLayer::initializeOpenSSL();
+
+#ifdef HAVE_GUSI_H
+    GUSISetup(GUSIwithSIOUXSockets);
+    GUSISetup(GUSIwithInternetSockets);
+#endif
+
+#ifdef HAVE_WINSOCK_H
+    WSAData winSockData;
+    /* we need at least version 1.1 */
+    WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
+    WSAStartup(winSockVersionNeeded, &winSockData);
 #endif
 
     OFConsoleApplication app(OFFIS_CONSOLE_APPLICATION , "Print spooler for presentation state viewer", rcsid);
@@ -680,7 +690,7 @@ int main(int argc, char *argv[])
             COUT << "- ZLIB, Version " << zlibVersion() << OFendl;
 #endif
 #ifdef WITH_OPENSSL
-            COUT << "- " << DcmTLSTransportLayer::getOpenSSLVersionName() << OFendl;
+            COUT << "- " << OPENSSL_VERSION_TEXT << OFendl;
 #endif
             return 0;
          }
@@ -865,49 +875,51 @@ int main(int argc, char *argv[])
     if (tlsCACertificateFolder==NULL) tlsCACertificateFolder = ".";
 
     /* key file format */
-    DcmKeyFileFormat keyFileFormat = DCF_Filetype_PEM;
-    if (! dvi.getTLSPEMFormat()) keyFileFormat = DCF_Filetype_ASN1;
+    int keyFileFormat = SSL_FILETYPE_PEM;
+    if (! dvi.getTLSPEMFormat()) keyFileFormat = SSL_FILETYPE_ASN1;
+
+    /* ciphersuites */
+#if OPENSSL_VERSION_NUMBER >= 0x0090700fL
+    OFString tlsCiphersuites(TLS1_TXT_RSA_WITH_AES_128_SHA ":" SSL3_TXT_RSA_DES_192_CBC3_SHA);
+#else
+    OFString tlsCiphersuites(SSL3_TXT_RSA_DES_192_CBC3_SHA);
+#endif
+    Uint32 tlsNumberOfCiphersuites = dvi.getTargetNumberOfCipherSuites(opt_printer);
+    if (tlsNumberOfCiphersuites > 0)
+    {
+      tlsCiphersuites.clear();
+      OFString currentSuite;
+      const char *currentOpenSSL;
+      for (Uint32 ui=0; ui<tlsNumberOfCiphersuites; ui++)
+      {
+        dvi.getTargetCipherSuite(opt_printer, ui, currentSuite);
+        if (NULL == (currentOpenSSL = DcmTLSTransportLayer::findOpenSSLCipherSuiteName(currentSuite.c_str())))
+        {
+          OFLOG_FATAL(dcmprscuLogger, "ciphersuite '" << currentSuite << "' is unknown. Known ciphersuites are:");
+          unsigned long numSuites = DcmTLSTransportLayer::getNumberOfCipherSuites();
+          for (unsigned long cs=0; cs < numSuites; cs++)
+          {
+            OFLOG_FATAL(dcmprscuLogger, "    " << DcmTLSTransportLayer::getTLSCipherSuiteName(cs));
+          }
+          return 1;
+        } else {
+          if (!tlsCiphersuites.empty()) tlsCiphersuites += ":";
+          tlsCiphersuites += currentOpenSSL;
+        }
+      }
+    }
 
     DcmTLSTransportLayer *tLayer = NULL;
     if (useTLS)
     {
-      tLayer = new DcmTLSTransportLayer(NET_REQUESTOR, tlsRandomSeedFile.c_str(), OFFalse);
+      tLayer = new DcmTLSTransportLayer(DICOM_APPLICATION_REQUESTOR, tlsRandomSeedFile.c_str());
       if (tLayer == NULL)
       {
         OFLOG_FATAL(dcmprscuLogger, "unable to create TLS transport layer");
         return 1;
       }
 
-      // determine TLS profile
-      OFString profileName;
-      const char *profileNamePtr = dvi.getTargetTLSProfile(opt_printer);
-      if (profileNamePtr) profileName = profileNamePtr;
-      DcmTLSSecurityProfile tlsProfile = TSP_Profile_BCP195;  // default
-      if (profileName == "BCP195") tlsProfile = TSP_Profile_BCP195;
-      else if (profileName == "BCP195-ND") tlsProfile = TSP_Profile_BCP195_ND;
-      else if (profileName == "BCP195-EX") tlsProfile = TSP_Profile_BCP195_Extended;
-      else if (profileName == "AES") tlsProfile = TSP_Profile_AES;
-      else if (profileName == "BASIC") tlsProfile = TSP_Profile_Basic;
-      else if (profileName == "NULL") tlsProfile = TSP_Profile_IHE_ATNA_Unencrypted;
-      else
-      {
-        OFLOG_WARN(dcmprscuLogger, "unknown TLS profile '" << profileName << "', ignoring");
-      }
-
-      if (tLayer->setTLSProfile(tlsProfile).bad())
-      {
-        OFLOG_FATAL(dcmprscuLogger, "unable to select the TLS security profile");
-        return 1;
-      }
-
-      // activate cipher suites
-      if (tLayer->activateCipherSuites().bad())
-      {
-        OFLOG_FATAL(dcmprscuLogger, "unable to activate the selected list of TLS ciphersuites");
-        return 1;
-      }
-
-      if (tlsCACertificateFolder && (tLayer->addTrustedCertificateDir(tlsCACertificateFolder, keyFileFormat).bad()))
+      if (tlsCACertificateFolder && (TCS_ok != tLayer->addTrustedCertificateDir(tlsCACertificateFolder, keyFileFormat)))
       {
         OFLOG_WARN(dcmprscuLogger, "unable to load certificates from directory '" << tlsCACertificateFolder << "', ignoring");
       }
@@ -919,12 +931,12 @@ int main(int argc, char *argv[])
 
       if (!tlsPrivateKeyFile.empty() && !tlsCertificateFile.empty())
       {
-        if (tLayer->setPrivateKeyFile(tlsPrivateKeyFile.c_str(), keyFileFormat).bad())
+        if (TCS_ok != tLayer->setPrivateKeyFile(tlsPrivateKeyFile.c_str(), keyFileFormat))
         {
           OFLOG_FATAL(dcmprscuLogger, "unable to load private TLS key from '" << tlsPrivateKeyFile<< "'");
           return 1;
         }
-        if (tLayer->setCertificateFile(tlsCertificateFile.c_str(), keyFileFormat).bad())
+        if (TCS_ok != tLayer->setCertificateFile(tlsCertificateFile.c_str(), keyFileFormat))
         {
           OFLOG_FATAL(dcmprscuLogger, "unable to load certificate from '" << tlsCertificateFile << "'");
           return 1;
@@ -934,6 +946,11 @@ int main(int argc, char *argv[])
           OFLOG_FATAL(dcmprscuLogger, "private key '" << tlsPrivateKeyFile << "' and certificate '" << tlsCertificateFile << "' do not match");
           return 1;
         }
+      }
+      if (TCS_ok != tLayer->setCipherSuites(tlsCiphersuites.c_str()))
+      {
+        OFLOG_FATAL(dcmprscuLogger, "unable to set selected cipher suites");
+        return 1;
       }
 
       tLayer->setCertificateVerification(tlsCertVerification);
@@ -978,7 +995,10 @@ int main(int argc, char *argv[])
     }
     if (targetDisableNewVRs)
     {
-        dcmDisableGenerationOfNewVRs();
+        dcmEnableUnknownVRGeneration.set(OFFalse);
+        dcmEnableUnlimitedTextVRGeneration.set(OFFalse);
+        dcmEnableOtherFloatStringVRGeneration.set(OFFalse);
+        dcmEnableOtherDoubleStringVRGeneration.set(OFFalse);
     }
 
     OFLOG_INFO(dcmprscuLogger, "Printer parameters for '" <<  opt_printer << "':");
@@ -1018,15 +1038,13 @@ int main(int argc, char *argv[])
 #ifdef WITH_OPENSSL
     if (useTLS)
     {
-      OFString cslist;
-      if (tLayer) tLayer->getListOfCipherSuitesForOpenSSL(cslist);
       OFLOG_INFO(dcmprscuLogger, "  certificate   : " << tlsCertificateFile);
       OFLOG_INFO(dcmprscuLogger, "  key file      : " << tlsPrivateKeyFile);
       OFLOG_INFO(dcmprscuLogger, "  DH params     : " << tlsDHParametersFile);
       OFLOG_INFO(dcmprscuLogger, "  PRNG seed     : " << tlsRandomSeedFile);
       OFLOG_INFO(dcmprscuLogger, "  CA directory  : " << tlsCACertificateFolder);
-      OFLOG_INFO(dcmprscuLogger, "  ciphersuites  : " << cslist);
-      OFLOG_INFO(dcmprscuLogger, "  key format    : " << (keyFileFormat == DCF_Filetype_PEM ? "PEM" : "DER"));
+      OFLOG_INFO(dcmprscuLogger, "  ciphersuites  : " << tlsCiphersuites);
+      OFLOG_INFO(dcmprscuLogger, "  key format    : " << (keyFileFormat == SSL_FILETYPE_PEM ? "PEM" : "DER"));
       const char *verification;
       switch (tlsCertVerification)
       {
@@ -1064,7 +1082,7 @@ int main(int argc, char *argv[])
         OFStandard::sleep((unsigned int)opt_sleep);
         if (EC_Normal != updateJobList(jobList, dvi, terminateFlag, jobNamePrefix.c_str()))
         {
-          OFLOG_FATAL(dcmprscuLogger, "spooler: non recoverable error occurred, terminating");
+          OFLOG_FATAL(dcmprscuLogger, "spooler: non recoverable error occured, terminating");
           return 10;
         }
         // static OFCondition updateJobList(jobList, dvi, terminateFlag, jobNamePrefix.c_str());
@@ -1120,7 +1138,9 @@ int main(int argc, char *argv[])
   delete tLayer;
 #endif
 
-  OFStandard::shutdownNetwork();
+#ifdef HAVE_WINSOCK_H
+    WSACleanup();
+#endif
 
 #ifdef DEBUG
     dcmDataDict.clear();  /* useful for debugging with dmalloc */

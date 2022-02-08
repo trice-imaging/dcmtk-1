@@ -52,11 +52,10 @@ DEBUG = @DEBUG@
 #
 
 # We want the old behavior of OFString(NULL) for now, no crashes.
-GLOBALDEFS = @DEFS@ -DUSE_NULL_SAFE_OFSTRING -DDCMTK_BUILD_IN_PROGRESS
-# -DDCMTK_BUILD_DATE=\"YYYY-MM-DD\"
+GLOBALDEFS = @DEFS@ -DDCMTK_BUILD_DATE=\"2014-06-17\" -DUSE_NULL_SAFE_OFSTRING -DDCMTK_BUILD_IN_PROGRESS
 
 #
-# ARCH defines special machine architecture compiler settings
+# ARCH defines special machine archtecture compiler settings
 # (e.g. -arch i386 on NeXT)
 #
 
@@ -80,7 +79,7 @@ ZLIBLIBS = @ZLIBLIBS@
 XMLLIBS = @XMLLIBS@
 TCPWRAPPERLIBS = @TCPWRAPPERLIBS@
 SNDFILELIBS = @SNDFILELIBS@
-CHARCONVLIBS = @CHARCONVLIBS@
+ICONVLIBS = @ICONVLIBS@
 LIBEXT = @LIBEXT@
 BINEXT = @BINEXT@
 STRIP = @STRIP@
@@ -91,7 +90,7 @@ STRIP = @STRIP@
 TRASH = *~ "\#*\#" *.bak core
 DISTTRASH = $(TRASH) Makefile *.cache *.log *.status
 
-includes = -I. -I$(srcdir) -I$(top_srcdir)/include -I$(configdir)/include $(LOCALINCLUDES) @CHARCONVINCLUDES@
+includes = -I. -I$(srcdir) -I$(top_srcdir)/include -I$(configdir)/include $(LOCALINCLUDES)
 defines = $(GLOBALDEFS) $(LOCALDEFS) $(DEBUG) $(LOCALDEBUG)
 
 

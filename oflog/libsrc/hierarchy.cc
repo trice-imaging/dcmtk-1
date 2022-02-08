@@ -221,9 +221,9 @@ Hierarchy::resetConfiguration()
 
 
 void 
-Hierarchy::setLoggerFactory(OFunique_ptr<spi::LoggerFactory> factory) 
+Hierarchy::setLoggerFactory(OFauto_ptr<spi::LoggerFactory> factory) 
 { 
-    defaultFactory = OFmove(factory); 
+    defaultFactory = factory; 
 }
 
 

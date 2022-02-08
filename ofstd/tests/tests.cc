@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2019, OFFIS e.V.
+ *  Copyright (C) 2011-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,7 +23,6 @@
 
 #define OFTEST_OFSTD_ONLY
 #include "dcmtk/ofstd/oftest.h"
-#include "dcmtk/ofstd/ofxml.h"
 
 OFTEST_REGISTER(ofstd_OFCharacterEncoding_1);
 OFTEST_REGISTER(ofstd_OFCharacterEncoding_2);
@@ -73,18 +72,7 @@ OFTEST_REGISTER(ofstd_testPaths_2);
 #ifdef WITH_THREADS
 OFTEST_REGISTER(ofstd_thread);
 #endif // WITH_THREADS
-#ifndef _XMLWIDECHAR
 OFTEST_REGISTER(ofstd_xmlParser);
-#endif
 OFTEST_REGISTER(ofstd_memory);
 OFTEST_REGISTER(ofstd_optional);
-OFTEST_REGISTER(ofstd_tuple);
-OFTEST_REGISTER(ofstd_limits);
-OFTEST_REGISTER(ofstd_safeSubtractAddMult);
-OFTEST_REGISTER(ofstd_variant);
-OFTEST_REGISTER(ofstd_error);
-OFTEST_REGISTER(ofstd_filesystem);
-OFTEST_REGISTER(ofstd_snprintf);
-OFTEST_REGISTER(ofstd_OFStringUtil_replace_all);
-
 OFTEST_MAIN("ofstd")

@@ -17,11 +17,11 @@ oflogdir = $(top_srcdir)/../oflog
 dcmdatadir = $(top_srcdir)/../dcmdata
 dcmimgledir = $(top_srcdir)/../dcmimgle
 
-LOCALINCLUDES = -I$(dcmdatadir)/include -I$(oflogdir)/include -I$(ofstddir)/include
-LIBDIRS = -L$(top_srcdir)/libsrc -L$(dcmimgledir)/libsrc -L$(dcmdatadir)/libsrc \
-	-L$(oflogdir)/libsrc -L$(ofstddir)/libsrc
-LOCALLIBS = -ldcmrt -ldcmimgle -ldcmdata -loflog -lofstd \
-	$(TIFFLIBS) $(PNGLIBS) $(ZLIBLIBS) $(CHARCONVLIBS) $(MATHLIBS)
+LOCALINCLUDES = -I$(ofstddir)/include -I$(dcmdatadir)/include -I$(oflogdir)/include
+LIBDIRS = -L$(top_srcdir)/libsrc -L$(dcmimgledir)/libsrc -L$(oflogdir)/libsrc \
+	-L$(ofstddir)/libsrc -L$(dcmdatadir)/libsrc -L$(oflogdir)/libsrc
+LOCALLIBS = -ldcmrt -ldcmimgle -ldcmdata -loflog -lofstd  \
+	$(TIFFLIBS) $(PNGLIBS) $(ZLIBLIBS) $(ICONVLIBS)
 
 objs = drtdump.o
 progs = drtdump
@@ -30,7 +30,7 @@ progs = drtdump
 all: $(progs)
 
 drtdump: drtdump.o
-	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
 
 
 install: install-bin

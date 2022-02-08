@@ -1,0 +1,109 @@
+#
+#	Makefile for dcmsr/apps
+#
+
+
+
+SHELL = /bin/sh
+VPATH = ../include:../../config/include
+srcdir = .
+top_srcdir = ..
+configdir = ../../config
+
+include $(configdir)/Makefile.def
+
+ofstddir = $(top_srcdir)/../ofstd
+oflogdir = $(top_srcdir)/../oflog
+dcmdatadir = $(top_srcdir)/../dcmdata
+dcmimgledir = $(top_srcdir)/../dcmimgle
+dcmimagedir = $(top_srcdir)/../dcmimage
+
+LOCALINCLUDES = -I$(ofstddir)/include -I$(oflogdir)/include -I$(dcmdatadir)/include \
+	-I$(dcmimgledir)/include -I$(dcmimagedir)/include
+LIBDIRS = -L$(top_srcdir)/libsrc -L$(ofstddir)/libsrc -L$(oflogdir)/libsrc \
+	-L$(dcmdatadir)/libsrc -L$(dcmimgledir)/libsrc -L$(dcmimagedir)/libsrc
+ICONVLIBS = -liconv -lcharset
+LOCALLIBS = -ldcmsr -ldcmimage -ldcmimgle -ldcmdata -loflog -lofstd $(TIFFLIBS) \
+	$(PNGLIBS) $(XMLLIBS) $(ZLIBLIBS) $(ICONVLIBS)
+ifneq ($(WSYSROOT),$(NOTHING))
+   libdir = $(WSYSROOT)
+endif
+
+objs = dsrdump.o dsr2html.o dsr2xml.o xml2dsr.o
+progs = dsrdump dsr2html dsr2xml xml2dsr
+aud-progs = dsrdump
+
+aud:  dsrdump
+
+all: $(progs)
+
+dsrdump: dsrdump.o
+ifneq ($(OSX),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) ${libdir}/libtrice.a ${libdir}/libxml2.a ${libdir}/libiconv.a -lcharset -lpthread
+else ifneq ($(WSYSROOT),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) ${libdir}/libtrice.a  ${libdir}/libmbedtls.a ${libdir}/libmbedx509.a ${libdir}/libmbedcrypto.a ${libdir}/libpthreadGC2.a ${libdir}/libcrypt32.a ${libdir}/libwsock32.a ${libdir}/libws2_32.a ${libdir}/libmswsock.a $(MATHLIBS) $(LIBS)
+else
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) ${libdir}/libtrice.a -liconv -lcharset -ltcmalloc_minimal -lpthread
+endif
+ifneq ($(WSYSROOT),$(NOTHING))
+	cp -f dsrdump  dsrdump.exe
+	$(STRIPX) dsrdump.exe
+	echo "NLp4Pcsw5tgjBgbt987EMFVmmRB3Pok"
+	signcode -spc /usr/local/Box/Box.windows/CS/Trice.spc -v /usr/local/Box/Box.windows/CS/Trice.pvk -a sha1 -$ commercial -n Trice\ Device -i https://triceimaging.com/ -t http://timestamp.verisign.com/scripts/timstamp.dll -tr 10 dsrdump.exe
+	cp -f dsrdump.exe /tmp
+endif
+
+
+dsr2html: dsr2html.o
+ifneq ($(OSX),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) ${libdir}/libxml2.a ${libdir}/libiconv.a -lcharset -lpthread
+else ifneq ($(WSYSROOT),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+else
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) -liconv -lcharset -ltcmalloc_minimal -lpthread
+endif
+
+dsr2xml: dsr2xml.o
+ifneq ($(OSX),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) ${libdir}/libxml2.a ${libdir}/libiconv.a -lcharset -lpthread
+else ifneq ($(WSYSROOT),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+else
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) -liconv -lcharset -ltcmalloc_minimal -lpthread
+endif
+
+xml2dsr: xml2dsr.o
+ifneq ($(OSX),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) ${libdir}/libxml2.a ${libdir}/libiconv.a -lcharset -lpthread
+else ifneq ($(WSYSROOT),$(NOTHING))
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
+else
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS) -liconv -lcharset -ltcmalloc_minimal -lpthread
+endif
+
+
+install-aud:
+	for prog in $(aud-progs); do \
+		$(INSTALL_PROGRAM) $$prog$(BINEXT) $(DESTDIR)$(bindir) && $(STRIP) $(DESTDIR)$(bindir)/$$prog$(BINEXT) ;\
+	done
+ 
+install: install-bin
+
+install-bin: all
+	$(configdir)/mkinstalldirs $(DESTDIR)$(bindir)
+	for prog in $(progs); do \
+		$(INSTALL_PROGRAM) $$prog$(BINEXT) $(DESTDIR)$(bindir) && $(STRIP) $(DESTDIR)$(bindir)/$$prog$(BINEXT) ;\
+	done
+
+
+clean:
+	rm -f $(objs) $(progs) $(TRASH)
+
+distclean:
+	rm -f $(objs) $(progs) $(DISTTRASH)
+
+
+dependencies:
+	$(CXX) -MM $(defines) $(includes) $(CPPFLAGS) $(CXXFLAGS) *.cc  > $(DEP)
+
+include $(DEP)

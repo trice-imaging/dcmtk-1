@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1993-2021, OFFIS e.V.
+ *  Copyright (C) 1993-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,6 +21,14 @@
 
 #include "dcmtk/config/osconfig.h"
 
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CSTDARG
+#define INCLUDE_CERRNO
+#define INCLUDE_CTIME
+#define INCLUDE_CSIGNAL
+#include "dcmtk/ofstd/ofstdinc.h"
 BEGIN_EXTERN_C
 #ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
@@ -86,7 +94,18 @@ int main( int argc, char *argv[] )
   char tempstr[20];
   OFString temp_str;
 
-  OFStandard::initializeNetwork();
+#ifdef HAVE_GUSI_H
+  // needed for Macintosh
+  GUSISetup( GUSIwithSIOUXSockets );
+  GUSISetup( GUSIwithInternetSockets );
+#endif
+
+#ifdef HAVE_WINSOCK_H
+  WSAData winSockData;
+  // we need at least version 1.1
+  WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
+  WSAStartup( winSockVersionNeeded, &winSockData );
+#endif
 
   // initialize conf structure
   conf.setAETitle(APPLICATIONTITLE);
@@ -174,8 +193,8 @@ int main( int argc, char *argv[] )
     const char *myAE = NULL;
     if( cmd.findOption("--aetitle") )
     {
-      app.checkValue( cmd.getValue( myAE ) );
-      conf.setAETitle(myAE);
+        app.checkValue( cmd.getValue( myAE ) );
+        conf.setAETitle(myAE);
     }
     if( cmd.findOption("--max-pdu") )
     {
@@ -206,9 +225,12 @@ int main( int argc, char *argv[] )
       conf.setBlockMode(DIMSE_NONBLOCKING, OFstatic_cast(int, opt_timeout));
     }
 
-    if (cmd.findOption("--disable-new-vr"))
+    if( cmd.findOption("--disable-new-vr") )
     {
-      dcmDisableGenerationOfNewVRs();
+      dcmEnableUnknownVRGeneration.set( OFFalse );
+      dcmEnableUnlimitedTextVRGeneration.set( OFFalse );
+      dcmEnableOtherFloatStringVRGeneration.set( OFFalse );
+      dcmEnableOtherDoubleStringVRGeneration.set( OFFalse );
     }
 
     if (cmd.findOption("--remote", 0, OFCommandLine::FOM_First))
@@ -371,7 +393,9 @@ int main( int argc, char *argv[] )
     returnValue = 1;
   }
 
-  OFStandard::shutdownNetwork();
+#ifdef HAVE_WINSOCK_H
+  WSACleanup();
+#endif
 
   // return result
   return( returnValue );

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2021, OFFIS e.V.
+ *  Copyright (C) 2000-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,6 +21,18 @@
  */
 
 #include "dcmtk/config/osconfig.h"     /* make sure OS specific configuration is included first */
+
+#define INCLUDE_CSTDLIB
+#include "dcmtk/ofstd/ofstdinc.h"
+
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>                   /* this includes either winsock.h or winsock2.h */
+#endif
+
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>                      /* needed for Macintosh */
+#include <SIOUX.h>
+#endif
 
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofstring.h"      /* for class OFString */
@@ -207,7 +219,7 @@ static int splitFields(
 {
     char* p;
     Uint32 foundFields = 0;
-    size_t len;
+    int len;
 
     do {
         p = strchr(line, splitChar);
@@ -242,7 +254,7 @@ static OFBool isaKnownPointer(DcmTag& t)
 
     if (dictRef && (t.getEVR() == EVR_up) && (t.getEVR() == dictRef->getEVR())) result = OFTrue;
 
-    dcmDataDict.rdunlock();
+    dcmDataDict.unlock();
     return result;
 }
 
@@ -333,7 +345,7 @@ static int checkelem(
                }
                for (i=0; (Uint32)i<vm; i++) {
                    char* s = fields[i];
-                   size_t slen = strlen(s);
+                   int slen = strlen(s);
                    if ((Uint32)slen > vr.getMaxValueLength()) {
                        OFLOG_WARN(dcmpschkLogger, MSG_lengthtoolarge << OFendl
                            << "   Affected length   : " << slen << " bytes, should be "
@@ -554,7 +566,7 @@ static int checkelem(
       } //end of if (isaStringVR(vr))
 
     }
-    dcmDataDict.rdunlock();
+    dcmDataDict.unlock();
     return 0;
 }
 
@@ -886,8 +898,15 @@ static int checkfile(const char *filename)
           << "Pass 3 - Semantic Check of Presentation State Object         " << OFendl
           << "-------------------------------------------------------------");
 
+    DcmUniqueIdentifier sopclassuid(DCM_SOPClassUID);
+    DcmStack stack;
+    if (EC_Normal == DataSet->search(DCM_SOPClassUID, stack, ESM_fromHere, OFFalse))
+    {
+      sopclassuid = *((DcmUniqueIdentifier *)(stack.top()));
+    }
     OFString aString;
-    if ((DataSet->findAndGetOFString(DCM_SOPClassUID, aString).good()) && (aString == UID_GrayscaleSoftcopyPresentationStateStorage))
+    sopclassuid.getOFString(aString,0);
+    if (aString == UID_GrayscaleSoftcopyPresentationStateStorage)
     {
       DcmPresentationState pState;
       if (pState.read(*DataSet).bad())
@@ -911,13 +930,24 @@ static int checkfile(const char *filename)
 
 int main(int argc, char *argv[])
 {
-    OFStandard::initializeNetwork();
+
+#ifdef HAVE_GUSI_H
+    GUSISetup(GUSIwithSIOUXSockets);
+    GUSISetup(GUSIwithInternetSockets);
+#endif
 
 #ifdef WITH_TCPWRAPPER
     // this code makes sure that the linker cannot optimize away
     // the DUL part of the network module where the external flags
     // for libwrap are defined. Needed on OpenBSD.
     dcmTCPWrapperDaemonName.set(NULL);
+#endif
+
+#ifdef HAVE_WINSOCK_H
+    WSAData winSockData;
+    /* we need at least version 1.1 */
+    WORD winSockVersionNeeded = MAKEWORD( 1, 1 );
+    WSAStartup(winSockVersionNeeded, &winSockData);
 #endif
 
     OFConsoleApplication app(OFFIS_CONSOLE_APPLICATION , "Checking tool for presentation states", rcsid);

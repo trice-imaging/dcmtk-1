@@ -1,9 +1,9 @@
 /*
  *
- *  Copyright (C) 2013-2015, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
- *  This software and supporting documentation are maintained by
+ *  This software and supporting documentation were developed by
  *
  *    OFFIS e.V.
  *    R&D Division Health
@@ -74,11 +74,9 @@ class DCMTK_DCMSR_EXPORT DSRImageSegmentList
 
     /** read list of referenced segment numbers
      ** @param  dataset  DICOM dataset from which the list should be read
-     *  @param  flags    flag used to customize the reading process (see DSRTypes::RF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition read(DcmItem &dataset,
-                     const size_t flags);
+    OFCondition read(DcmItem &dataset);
 
     /** write list of referenced segment numbers
      ** @param  dataset  DICOM dataset to which the list should be written

@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTIonBeamSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -26,13 +26,10 @@ DRTIonBeamSequence::Item::Item(const OFBool emptyDefaultItem)
     BeamName(DCM_BeamName),
     BeamNumber(DCM_BeamNumber),
     BeamType(DCM_BeamType),
-    DepthDoseParametersSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     DeviceSerialNumber(DCM_DeviceSerialNumber),
     FinalCumulativeMetersetWeight(DCM_FinalCumulativeMetersetWeight),
-    FixationEye(DCM_FixationEye),
     FixationLightAzimuthalAngle(DCM_FixationLightAzimuthalAngle),
     FixationLightPolarAngle(DCM_FixationLightPolarAngle),
-    GeneralAccessorySequence(emptyDefaultItem /*emptyDefaultSequence*/),
     InstitutionAddress(DCM_InstitutionAddress),
     InstitutionName(DCM_InstitutionName),
     InstitutionalDepartmentName(DCM_InstitutionalDepartmentName),
@@ -44,7 +41,6 @@ DRTIonBeamSequence::Item::Item(const OFBool emptyDefaultItem)
     LateralSpreadingDeviceSequence(emptyDefaultItem /*emptyDefaultSequence*/),
     Manufacturer(DCM_Manufacturer),
     ManufacturerModelName(DCM_ManufacturerModelName),
-    ModulatedScanModeType(DCM_ModulatedScanModeType),
     NumberOfBlocks(DCM_NumberOfBlocks),
     NumberOfBoli(DCM_NumberOfBoli),
     NumberOfCompensators(DCM_NumberOfCompensators),
@@ -87,13 +83,10 @@ DRTIonBeamSequence::Item::Item(const Item &copy)
     BeamName(copy.BeamName),
     BeamNumber(copy.BeamNumber),
     BeamType(copy.BeamType),
-    DepthDoseParametersSequence(copy.DepthDoseParametersSequence),
     DeviceSerialNumber(copy.DeviceSerialNumber),
     FinalCumulativeMetersetWeight(copy.FinalCumulativeMetersetWeight),
-    FixationEye(copy.FixationEye),
     FixationLightAzimuthalAngle(copy.FixationLightAzimuthalAngle),
     FixationLightPolarAngle(copy.FixationLightPolarAngle),
-    GeneralAccessorySequence(copy.GeneralAccessorySequence),
     InstitutionAddress(copy.InstitutionAddress),
     InstitutionName(copy.InstitutionName),
     InstitutionalDepartmentName(copy.InstitutionalDepartmentName),
@@ -105,7 +98,6 @@ DRTIonBeamSequence::Item::Item(const Item &copy)
     LateralSpreadingDeviceSequence(copy.LateralSpreadingDeviceSequence),
     Manufacturer(copy.Manufacturer),
     ManufacturerModelName(copy.ManufacturerModelName),
-    ModulatedScanModeType(copy.ModulatedScanModeType),
     NumberOfBlocks(copy.NumberOfBlocks),
     NumberOfBoli(copy.NumberOfBoli),
     NumberOfCompensators(copy.NumberOfCompensators),
@@ -156,13 +148,10 @@ DRTIonBeamSequence::Item &DRTIonBeamSequence::Item::operator=(const Item &copy)
         BeamName = copy.BeamName;
         BeamNumber = copy.BeamNumber;
         BeamType = copy.BeamType;
-        DepthDoseParametersSequence = copy.DepthDoseParametersSequence;
         DeviceSerialNumber = copy.DeviceSerialNumber;
         FinalCumulativeMetersetWeight = copy.FinalCumulativeMetersetWeight;
-        FixationEye = copy.FixationEye;
         FixationLightAzimuthalAngle = copy.FixationLightAzimuthalAngle;
         FixationLightPolarAngle = copy.FixationLightPolarAngle;
-        GeneralAccessorySequence = copy.GeneralAccessorySequence;
         InstitutionAddress = copy.InstitutionAddress;
         InstitutionName = copy.InstitutionName;
         InstitutionalDepartmentName = copy.InstitutionalDepartmentName;
@@ -174,7 +163,6 @@ DRTIonBeamSequence::Item &DRTIonBeamSequence::Item::operator=(const Item &copy)
         LateralSpreadingDeviceSequence = copy.LateralSpreadingDeviceSequence;
         Manufacturer = copy.Manufacturer;
         ManufacturerModelName = copy.ManufacturerModelName;
-        ModulatedScanModeType = copy.ModulatedScanModeType;
         NumberOfBlocks = copy.NumberOfBlocks;
         NumberOfBoli = copy.NumberOfBoli;
         NumberOfCompensators = copy.NumberOfCompensators;
@@ -225,7 +213,6 @@ void DRTIonBeamSequence::Item::clear()
         RadiationAtomicNumber.clear();
         RadiationChargeState.clear();
         ScanMode.clear();
-        ModulatedScanModeType.clear();
         TreatmentMachineName.clear();
         Manufacturer.clear();
         InstitutionName.clear();
@@ -236,7 +223,6 @@ void DRTIonBeamSequence::Item::clear()
         PrimaryDosimeterUnit.clear();
         ReferencedToleranceTableNumber.clear();
         VirtualSourceAxisDistances.clear();
-        DepthDoseParametersSequence.clear();
         IonBeamLimitingDeviceSequence.clear();
         ReferencedPatientSetupNumber.clear();
         ReferencedReferenceImageSequence.clear();
@@ -255,7 +241,6 @@ void DRTIonBeamSequence::Item::clear()
         IonBlockSequence.clear();
         SnoutSequence.clear();
         ApplicatorSequence.clear();
-        GeneralAccessorySequence.clear();
         NumberOfRangeShifters.clear();
         RangeShifterSequence.clear();
         NumberOfLateralSpreadingDevices.clear();
@@ -267,7 +252,6 @@ void DRTIonBeamSequence::Item::clear()
         PatientSupportAccessoryCode.clear();
         FixationLightAzimuthalAngle.clear();
         FixationLightPolarAngle.clear();
-        FixationEye.clear();
         FinalCumulativeMetersetWeight.clear();
         NumberOfControlPoints.clear();
         IonControlPointSequence.clear();
@@ -286,7 +270,6 @@ OFBool DRTIonBeamSequence::Item::isEmpty()
            RadiationAtomicNumber.isEmpty() &&
            RadiationChargeState.isEmpty() &&
            ScanMode.isEmpty() &&
-           ModulatedScanModeType.isEmpty() &&
            TreatmentMachineName.isEmpty() &&
            Manufacturer.isEmpty() &&
            InstitutionName.isEmpty() &&
@@ -297,7 +280,6 @@ OFBool DRTIonBeamSequence::Item::isEmpty()
            PrimaryDosimeterUnit.isEmpty() &&
            ReferencedToleranceTableNumber.isEmpty() &&
            VirtualSourceAxisDistances.isEmpty() &&
-           DepthDoseParametersSequence.isEmpty() &&
            IonBeamLimitingDeviceSequence.isEmpty() &&
            ReferencedPatientSetupNumber.isEmpty() &&
            ReferencedReferenceImageSequence.isEmpty() &&
@@ -316,7 +298,6 @@ OFBool DRTIonBeamSequence::Item::isEmpty()
            IonBlockSequence.isEmpty() &&
            SnoutSequence.isEmpty() &&
            ApplicatorSequence.isEmpty() &&
-           GeneralAccessorySequence.isEmpty() &&
            NumberOfRangeShifters.isEmpty() &&
            RangeShifterSequence.isEmpty() &&
            NumberOfLateralSpreadingDevices.isEmpty() &&
@@ -328,7 +309,6 @@ OFBool DRTIonBeamSequence::Item::isEmpty()
            PatientSupportAccessoryCode.isEmpty() &&
            FixationLightAzimuthalAngle.isEmpty() &&
            FixationLightPolarAngle.isEmpty() &&
-           FixationEye.isEmpty() &&
            FinalCumulativeMetersetWeight.isEmpty() &&
            NumberOfControlPoints.isEmpty() &&
            IonControlPointSequence.isEmpty();
@@ -357,7 +337,6 @@ OFCondition DRTIonBeamSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, RadiationAtomicNumber, "1", "1C", "IonBeamSequence");
         getAndCheckElementFromDataset(item, RadiationChargeState, "1", "1C", "IonBeamSequence");
         getAndCheckElementFromDataset(item, ScanMode, "1", "1", "IonBeamSequence");
-        getAndCheckElementFromDataset(item, ModulatedScanModeType, "1", "1C", "IonBeamSequence");
         getAndCheckElementFromDataset(item, TreatmentMachineName, "1", "2", "IonBeamSequence");
         getAndCheckElementFromDataset(item, Manufacturer, "1", "3", "IonBeamSequence");
         getAndCheckElementFromDataset(item, InstitutionName, "1", "3", "IonBeamSequence");
@@ -368,7 +347,6 @@ OFCondition DRTIonBeamSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, PrimaryDosimeterUnit, "1", "1", "IonBeamSequence");
         getAndCheckElementFromDataset(item, ReferencedToleranceTableNumber, "1", "3", "IonBeamSequence");
         getAndCheckElementFromDataset(item, VirtualSourceAxisDistances, "2", "1", "IonBeamSequence");
-        DepthDoseParametersSequence.read(item, "1-n", "3", "IonBeamSequence");
         IonBeamLimitingDeviceSequence.read(item, "1-n", "3", "IonBeamSequence");
         getAndCheckElementFromDataset(item, ReferencedPatientSetupNumber, "1", "3", "IonBeamSequence");
         ReferencedReferenceImageSequence.read(item, "1-n", "3", "IonBeamSequence");
@@ -387,7 +365,6 @@ OFCondition DRTIonBeamSequence::Item::read(DcmItem &item)
         IonBlockSequence.read(item, "1-n", "1C", "IonBeamSequence");
         SnoutSequence.read(item, "1-n", "3", "IonBeamSequence");
         ApplicatorSequence.read(item, "1-n", "3", "IonBeamSequence");
-        GeneralAccessorySequence.read(item, "1-n", "3", "IonBeamSequence");
         getAndCheckElementFromDataset(item, NumberOfRangeShifters, "1", "1", "IonBeamSequence");
         RangeShifterSequence.read(item, "1-n", "1C", "IonBeamSequence");
         getAndCheckElementFromDataset(item, NumberOfLateralSpreadingDevices, "1", "1", "IonBeamSequence");
@@ -399,7 +376,6 @@ OFCondition DRTIonBeamSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, PatientSupportAccessoryCode, "1", "3", "IonBeamSequence");
         getAndCheckElementFromDataset(item, FixationLightAzimuthalAngle, "1", "3", "IonBeamSequence");
         getAndCheckElementFromDataset(item, FixationLightPolarAngle, "1", "3", "IonBeamSequence");
-        getAndCheckElementFromDataset(item, FixationEye, "1", "3", "IonBeamSequence");
         getAndCheckElementFromDataset(item, FinalCumulativeMetersetWeight, "1", "1C", "IonBeamSequence");
         getAndCheckElementFromDataset(item, NumberOfControlPoints, "1", "1", "IonBeamSequence");
         IonControlPointSequence.read(item, "1-n", "1", "IonBeamSequence");
@@ -424,7 +400,6 @@ OFCondition DRTIonBeamSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmIntegerString(RadiationAtomicNumber), "1", "1C", "IonBeamSequence");
         addElementToDataset(result, item, new DcmSignedShort(RadiationChargeState), "1", "1C", "IonBeamSequence");
         addElementToDataset(result, item, new DcmCodeString(ScanMode), "1", "1", "IonBeamSequence");
-        addElementToDataset(result, item, new DcmCodeString(ModulatedScanModeType), "1", "1C", "IonBeamSequence");
         addElementToDataset(result, item, new DcmShortString(TreatmentMachineName), "1", "2", "IonBeamSequence");
         addElementToDataset(result, item, new DcmLongString(Manufacturer), "1", "3", "IonBeamSequence");
         addElementToDataset(result, item, new DcmLongString(InstitutionName), "1", "3", "IonBeamSequence");
@@ -435,7 +410,6 @@ OFCondition DRTIonBeamSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmCodeString(PrimaryDosimeterUnit), "1", "1", "IonBeamSequence");
         addElementToDataset(result, item, new DcmIntegerString(ReferencedToleranceTableNumber), "1", "3", "IonBeamSequence");
         addElementToDataset(result, item, new DcmFloatingPointSingle(VirtualSourceAxisDistances), "2", "1", "IonBeamSequence");
-        if (result.good()) result = DepthDoseParametersSequence.write(item, "1-n", "3", "IonBeamSequence");
         if (result.good()) result = IonBeamLimitingDeviceSequence.write(item, "1-n", "3", "IonBeamSequence");
         addElementToDataset(result, item, new DcmIntegerString(ReferencedPatientSetupNumber), "1", "3", "IonBeamSequence");
         if (result.good()) result = ReferencedReferenceImageSequence.write(item, "1-n", "3", "IonBeamSequence");
@@ -454,7 +428,6 @@ OFCondition DRTIonBeamSequence::Item::write(DcmItem &item)
         if (result.good()) result = IonBlockSequence.write(item, "1-n", "1C", "IonBeamSequence");
         if (result.good()) result = SnoutSequence.write(item, "1-n", "3", "IonBeamSequence");
         if (result.good()) result = ApplicatorSequence.write(item, "1-n", "3", "IonBeamSequence");
-        if (result.good()) result = GeneralAccessorySequence.write(item, "1-n", "3", "IonBeamSequence");
         addElementToDataset(result, item, new DcmIntegerString(NumberOfRangeShifters), "1", "1", "IonBeamSequence");
         if (result.good()) result = RangeShifterSequence.write(item, "1-n", "1C", "IonBeamSequence");
         addElementToDataset(result, item, new DcmIntegerString(NumberOfLateralSpreadingDevices), "1", "1", "IonBeamSequence");
@@ -466,7 +439,6 @@ OFCondition DRTIonBeamSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmLongString(PatientSupportAccessoryCode), "1", "3", "IonBeamSequence");
         addElementToDataset(result, item, new DcmFloatingPointSingle(FixationLightAzimuthalAngle), "1", "3", "IonBeamSequence");
         addElementToDataset(result, item, new DcmFloatingPointSingle(FixationLightPolarAngle), "1", "3", "IonBeamSequence");
-        addElementToDataset(result, item, new DcmCodeString(FixationEye), "1", "3", "IonBeamSequence");
         addElementToDataset(result, item, new DcmDecimalString(FinalCumulativeMetersetWeight), "1", "1C", "IonBeamSequence");
         addElementToDataset(result, item, new DcmIntegerString(NumberOfControlPoints), "1", "1", "IonBeamSequence");
         if (result.good()) result = IonControlPointSequence.write(item, "1-n", "1", "IonBeamSequence");
@@ -547,15 +519,6 @@ OFCondition DRTIonBeamSequence::Item::getFinalCumulativeMetersetWeight(Float64 &
 }
 
 
-OFCondition DRTIonBeamSequence::Item::getFixationEye(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(FixationEye, value, pos);
-}
-
-
 OFCondition DRTIonBeamSequence::Item::getFixationLightAzimuthalAngle(Float32 &value, const unsigned long pos) const
 {
     if (EmptyDefaultItem)
@@ -616,15 +579,6 @@ OFCondition DRTIonBeamSequence::Item::getManufacturerModelName(OFString &value, 
         return EC_IllegalCall;
     else
         return getStringValueFromElement(ManufacturerModelName, value, pos);
-}
-
-
-OFCondition DRTIonBeamSequence::Item::getModulatedScanModeType(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(ModulatedScanModeType, value, pos);
 }
 
 
@@ -1039,19 +993,6 @@ OFCondition DRTIonBeamSequence::Item::setFinalCumulativeMetersetWeight(const OFS
 }
 
 
-OFCondition DRTIonBeamSequence::Item::setFixationEye(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = FixationEye.putOFStringArray(value);
-    }
-    return result;
-}
-
-
 OFCondition DRTIonBeamSequence::Item::setFixationLightAzimuthalAngle(const Float32 value, const unsigned long pos)
 {
     if (EmptyDefaultItem)
@@ -1130,19 +1071,6 @@ OFCondition DRTIonBeamSequence::Item::setManufacturerModelName(const OFString &v
         result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
             result = ManufacturerModelName.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTIonBeamSequence::Item::setModulatedScanModeType(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = ModulatedScanModeType.putOFStringArray(value);
     }
     return result;
 }
@@ -1556,7 +1484,7 @@ OFBool DRTIonBeamSequence::isValid() const
 }
 
 
-size_t DRTIonBeamSequence::getNumberOfItems() const
+unsigned long DRTIonBeamSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -1586,12 +1514,12 @@ OFCondition DRTIonBeamSequence::gotoNextItem()
 }
 
 
-OFCondition DRTIonBeamSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTIonBeamSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -1606,12 +1534,12 @@ OFCondition DRTIonBeamSequence::gotoItem(const size_t num, OFListIterator(Item *
 }
 
 
-OFCondition DRTIonBeamSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTIonBeamSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -1626,7 +1554,7 @@ OFCondition DRTIonBeamSequence::gotoItem(const size_t num, OFListConstIterator(I
 }
 
 
-OFCondition DRTIonBeamSequence::gotoItem(const size_t num)
+OFCondition DRTIonBeamSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -1662,7 +1590,7 @@ const DRTIonBeamSequence::Item &DRTIonBeamSequence::getCurrentItem() const
 }
 
 
-OFCondition DRTIonBeamSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTIonBeamSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -1672,7 +1600,7 @@ OFCondition DRTIonBeamSequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTIonBeamSequence::Item &DRTIonBeamSequence::getItem(const size_t num)
+DRTIonBeamSequence::Item &DRTIonBeamSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -1682,7 +1610,7 @@ DRTIonBeamSequence::Item &DRTIonBeamSequence::getItem(const size_t num)
 }
 
 
-const DRTIonBeamSequence::Item &DRTIonBeamSequence::getItem(const size_t num) const
+const DRTIonBeamSequence::Item &DRTIonBeamSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -1692,13 +1620,13 @@ const DRTIonBeamSequence::Item &DRTIonBeamSequence::getItem(const size_t num) co
 }
 
 
-DRTIonBeamSequence::Item &DRTIonBeamSequence::operator[](const size_t num)
+DRTIonBeamSequence::Item &DRTIonBeamSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTIonBeamSequence::Item &DRTIonBeamSequence::operator[](const size_t num) const
+const DRTIonBeamSequence::Item &DRTIonBeamSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -1721,7 +1649,7 @@ OFCondition DRTIonBeamSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTIonBeamSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTIonBeamSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -1744,7 +1672,7 @@ OFCondition DRTIonBeamSequence::insertItem(const size_t pos, Item *&item)
 }
 
 
-OFCondition DRTIonBeamSequence::removeItem(const size_t pos)
+OFCondition DRTIonBeamSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

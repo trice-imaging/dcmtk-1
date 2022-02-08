@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2003-2017, OFFIS e.V.
+ *  Copyright (C) 2003-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -60,7 +60,7 @@ class DCMTK_DCMSR_EXPORT DSRCodingSchemeIdentificationList
     /** check whether list is empty
      ** @return OFTrue if list is empty, OFFalse otherwise
      */
-    OFBool isEmpty() const;
+    OFBool empty() const;
 
     /** get number of items stored in the list
      ** @return number of items
@@ -69,11 +69,9 @@ class DCMTK_DCMSR_EXPORT DSRCodingSchemeIdentificationList
 
     /** read list of items from the coding scheme identification sequence
      ** @param  dataset  DICOM dataset from which the data should be read
-     *  @param  flags    flag used to customize the reading process (see DSRTypes::RF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition read(DcmItem &dataset,
-                     const size_t flags);
+    OFCondition read(DcmItem &dataset);
 
     /** write list of items to the coding scheme identification sequence.
      *  Does nothing if list is empty.
@@ -85,7 +83,7 @@ class DCMTK_DCMSR_EXPORT DSRCodingSchemeIdentificationList
     /** read list of items from XML document
      ** @param  doc     document containing the XML file content
      *  @param  cursor  cursor pointing to the starting node
-     *  @param  flags   flag used to customize the reading process (see DSRTypes::XF_xxx)
+     *  @param  flags   optional flag used to customize the reading process (see DSRTypes::XF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     OFCondition readXML(const DSRXMLDocument &doc,
@@ -94,21 +92,11 @@ class DCMTK_DCMSR_EXPORT DSRCodingSchemeIdentificationList
 
     /** write current list in XML format
      ** @param  stream  output stream to which the XML data is written
-     *  @param  flags   flag used to customize the output (see DSRTypes::XF_xxx)
+     *  @param  flags   optional flag used to customize the output (see DSRTypes::XF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     OFCondition writeXML(STD_NAMESPACE ostream &stream,
-                         const size_t flags) const;
-
-    /** set specific character set, which is used for checking the affected element values.
-     *  Please note that this method does not return an error if the given 'value' is not
-     *  defined by the DICOM standard or not supported by this implementation.
-     ** @param  value  value to be set (single or multiple values) or "" for no value
-     *  @param  check  check 'value' for conformance with VR (CS) and VM (1-n) if enabled
-     ** @return status, EC_Normal if successful, an error code otherwise
-     */
-    OFCondition setSpecificCharacterSet(const OFString &value,
-                                        const OFBool check = OFTrue);
+                         const size_t flags = 0) const;
 
     /** add private OFFIS DCMTK coding scheme entry to the list.
      *  Please note that any information previously stored under the defined coding scheme
@@ -120,7 +108,7 @@ class DCMTK_DCMSR_EXPORT DSRCodingSchemeIdentificationList
     /** add the specified coding scheme to the list.
      *  Internally, the item is inserted into the list of coding scheme designators if
      *  not already contained in the list.  In any case, the specified item is selected as
-     *  the current one.  Additional information can be set using the below setXXX() methods.
+     *  the current one.
      ** @param  codingSchemeDesignator  coding scheme designator of the item to be added.
      *                                  Designators beginning with "99" and the designator
      *                                  "L" are defined to be private or local coding schemes.
@@ -130,34 +118,6 @@ class DCMTK_DCMSR_EXPORT DSRCodingSchemeIdentificationList
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     OFCondition addItem(const OFString &codingSchemeDesignator,
-                        const OFBool check = OFTrue);
-
-    /** add the specified coding scheme (with additional information) to the list.
-     *  Internally, the item is inserted into the list of coding scheme designators if not
-     *  already contained in the list, and the additional information is set.  In any case,
-     *  the specified item is selected as the current one.  Further information can be set
-     *  using the below setXXX() methods.
-     *  Please note that any information previously stored under the given coding scheme
-     *  designator is replaced!
-     ** @param  codingSchemeDesignator   coding scheme designator of the item to be added.
-     *                                   (VR=SH, mandatory).  Designators beginning with "99"
-     *                                   and the designator "L" are defined to be private or
-     *                                   local coding schemes.
-     *  @param  codingSchemeUID          coding scheme UID of the item to be added.  (VR=UI,
-     *                                   conditional)
-     *  @param  codingSchemeName         coding scheme name of the item to be added.  (VR=ST,
-     *                                   optional)
-     *  @param  responsibleOrganization  coding scheme responsible organization of the item to
-     *                                   be added.  (VR=ST, optional)
-     *  @param  check                    check given values for conformance with associated VR
-     *                                   and VM if enabled.  An empty 'codingSchemeDesignator'
-     *                                   is never accepted.
-     ** @return status, EC_Normal if successful, an error code otherwise
-     */
-    OFCondition addItem(const OFString &codingSchemeDesignator,
-                        const OFString &codingSchemeUID,
-                        const OFString &codingSchemeName,
-                        const OFString &responsibleOrganization = "",
                         const OFBool check = OFTrue);
 
     /** remove the current item from the list.
@@ -195,7 +155,7 @@ class DCMTK_DCMSR_EXPORT DSRCodingSchemeIdentificationList
      *  Designators beginning with "99" and the designator "L" are defined to be private
      *  or local coding schemes.
      ** @param  stringValue  reference to string variable in which the result is stored
-     ** @return reference to the resulting string (might be empty if no item is selected)
+     ** @return reference to the resulting string (might be empty)
      */
     const OFString &getCodingSchemeDesignator(OFString &stringValue) const;
 
@@ -329,8 +289,6 @@ class DCMTK_DCMSR_EXPORT DSRCodingSchemeIdentificationList
         OFString CodingSchemeVersion;
         /// Coding Scheme Responsible Organization (VR=ST, type 3)
         OFString CodingSchemeResponsibleOrganization;
-        /// Coding Scheme Resources Sequence (VR=SQ, type 3)
-         // - tbd: optional attribute not yet supported
     };
 
     /** add the specified coding scheme to the list (if not existent)
@@ -353,8 +311,6 @@ class DCMTK_DCMSR_EXPORT DSRCodingSchemeIdentificationList
     OFList<ItemStruct *> ItemList;
     /// internal cursor to current (selected) list item
     OFListIterator(ItemStruct *) Iterator;
-    /// specific character set used for checking purposes
-    OFString SpecificCharacterSet;
 
     // copy constructor - not implemented!
     DSRCodingSchemeIdentificationList(const DSRCodingSchemeIdentificationList &);

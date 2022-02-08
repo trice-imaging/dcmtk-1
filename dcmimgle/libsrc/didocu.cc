@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2021, OFFIS e.V.
+ *  Copyright (C) 1996-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -114,7 +114,6 @@ DiDocument::DiDocument(DcmObject *object,
 void DiDocument::convertPixelData()
 {
     DcmStack pstack;
-    OFCondition status;
     DcmXfer xfer(Xfer);
     DCMIMGLE_DEBUG("transfer syntax of DICOM dataset: " << xfer.getXferName() << " (" << xfer.getXferID() << ")");
     // only search on main dataset level
@@ -143,23 +142,12 @@ void DiDocument::convertPixelData()
                 // convert pixel data to uncompressed format (if required)
                 if ((Flags & CIF_DecompressCompletePixelData) || !(Flags & CIF_UsePartialAccessToPixelData))
                 {
-                    if (Object->ident() == EVR_dataset)
-                    {
-                        // Call DcmDataset::chooseRepresentation() to enable an update
-                        // of the transfer syntax attributes of the dataset instance
-                        status = OFstatic_cast(DcmDataset *, Object)->chooseRepresentation(EXS_LittleEndianExplicit, NULL);
-                    }
-                    else
-                    {
-                        // Object is a DcmItem instance. Directly call DcmPixelData::chooseRepresentation().
-                        pstack.clear();
-                        // push reference to DICOM dataset on the stack (required for decompression process)
-                        pstack.push(Object);
-                        // dummy stack entry
-                        pstack.push(PixelData);
-                        status = PixelData->chooseRepresentation(EXS_LittleEndianExplicit, NULL, pstack);
-                    }
-                    if (status.good())
+                    pstack.clear();
+                    // push reference to DICOM dataset on the stack (required for decompression process)
+                    pstack.push(Object);
+                    // dummy stack entry
+                    pstack.push(PixelData);
+                    if (PixelData->chooseRepresentation(EXS_LittleEndianExplicit, NULL, pstack).good())
                     {
                         // set transfer syntax to unencapsulated/uncompressed
                         if (xfer.isEncapsulated())
@@ -167,13 +155,11 @@ void DiDocument::convertPixelData()
                             Xfer = EXS_LittleEndianExplicit;
                             DCMIMGLE_DEBUG("decompressed complete pixel data in memory: " << PixelData->getLength(Xfer) << " bytes");
                         }
-                    } else {
+                    } else
                         DCMIMGLE_ERROR("can't change to unencapsulated representation for pixel data");
-                        DCMIMGLE_DEBUG("DcmPixelData::chooseRepresentation() returned: " << status.text());
-                    }
                 }
                 // determine color model of the decompressed image
-                status = PixelData->getDecompressedColorModel(OFstatic_cast(DcmItem *, Object), PhotometricInterpretation);
+                OFCondition status = PixelData->getDecompressedColorModel(OFstatic_cast(DcmItem *, Object), PhotometricInterpretation);
                 if (status.bad())
                 {
                     DCMIMGLE_ERROR("can't determine 'PhotometricInterpretation' of decompressed image");

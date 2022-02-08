@@ -1,6 +1,7 @@
+#define TRICE
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,6 +23,13 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CTIME
+#define INCLUDE_UNISTD
+#include "dcmtk/ofstd/ofstdinc.h"
+
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/dcmdata/dcfilefo.h"
 #include "dcmtk/dcmdata/dcitem.h"
@@ -32,26 +40,22 @@
 #include "dcmtk/dcmdata/dcvrus.h"
 #include "dcmtk/dcmdata/dcvrae.h"
 #include "dcmtk/dcmdata/dcvrsh.h"
-#include "dcmtk/dcmdata/dcvrur.h"
 #include "dcmtk/dcmdata/dcmetinf.h"
 
 #include "dcmtk/dcmdata/dcdeftag.h"
 #include "dcmtk/dcmdata/dcuid.h"
-#include "dcmtk/dcmdata/dcistrma.h"    /* for class DcmInputStream */
-#include "dcmtk/dcmdata/dcistrmf.h"    /* for class DcmInputFileStream */
-#include "dcmtk/dcmdata/dcistrms.h"    /* for class DcmStdinStream */
 #include "dcmtk/dcmdata/dcostrma.h"    /* for class DcmOutputStream */
 #include "dcmtk/dcmdata/dcostrmf.h"    /* for class DcmOutputFileStream */
-#include "dcmtk/dcmdata/dcostrms.h"    /* for class DcmStdoutStream */
+#include "dcmtk/dcmdata/dcistrma.h"    /* for class DcmInputStream */
+#include "dcmtk/dcmdata/dcistrmf.h"    /* for class DcmInputFileStream */
 #include "dcmtk/dcmdata/dcwcache.h"    /* for class DcmWriteCache */
-#include "dcmtk/dcmdata/dcjson.h"
 
 
 // ********************************
 
 
 DcmFileFormat::DcmFileFormat()
-  : DcmSequenceOfItems(DCM_InternalUseTag),
+  : DcmSequenceOfItems(InternalUseTag),
     FileReadMode(ERM_autoDetect)
 {
     DcmMetaInfo *MetaInfo = new DcmMetaInfo();
@@ -66,7 +70,7 @@ DcmFileFormat::DcmFileFormat()
 
 DcmFileFormat::DcmFileFormat(DcmDataset *dataset,
                              OFBool deepCopy)
-  : DcmSequenceOfItems(DCM_InternalUseTag),
+  : DcmSequenceOfItems(InternalUseTag),
     FileReadMode(ERM_autoDetect)
 {
     DcmMetaInfo *MetaInfo = new DcmMetaInfo();
@@ -178,7 +182,6 @@ void DcmFileFormat::print(STD_NAMESPACE ostream &out,
 OFCondition DcmFileFormat::writeXML(STD_NAMESPACE ostream &out,
                                     const size_t flags)
 {
-    OFCondition l_error = EC_Normal;
     if (flags & DCMTypes::XF_useNativeModel)
     {
         /* in Native DICOM Model, there is no concept of a "file format" */
@@ -186,12 +189,13 @@ OFCondition DcmFileFormat::writeXML(STD_NAMESPACE ostream &out,
         if (dset != NULL)
         {
             /* write content of dataset */
-            l_error = dset->writeXML(out, flags);
+            return dset->writeXML(out, flags);
         } else {
-            l_error = makeOFCondition(OFM_dcmdata, EC_CODE_CannotConvertToXML, OF_error,
-                "Cannot convert to Native DICOM Model: No data set present");
+            return makeOFCondition(OFM_dcmdata, EC_CODE_CannotConvertToXML, OF_error,
+                "Cannot convert to Native DICOM Model: No dataset present");
         }
     } else {
+        OFCondition result = EC_CorruptedData;
         /* XML start tag for "file-format" */
         out << "<file-format";
         if (flags & DCMTypes::XF_useXMLNamespace)
@@ -205,60 +209,14 @@ OFCondition DcmFileFormat::writeXML(STD_NAMESPACE ostream &out,
             itemList->seek(ELP_first);
             do {
                 dO = itemList->get();
-                l_error = dO->writeXML(out, flags & ~DCMTypes::XF_useXMLNamespace);
-            } while (l_error.good() && itemList->seek(ELP_next));
-        } else {
-            /* a file format should never be empty */
-            l_error = EC_CorruptedData;
+                dO->writeXML(out, flags & ~DCMTypes::XF_useXMLNamespace);
+            } while (itemList->seek(ELP_next));
+            result = EC_Normal;
         }
-        if (l_error.good())
-        {
-            /* XML end tag for "file-format" */
-            out << "</file-format>" << OFendl;
-        }
+        /* XML end tag for "file-format" */
+        out << "</file-format>" << OFendl;
+        return result;
     }
-    return l_error;
-}
-
-
-// ********************************
-
-
-OFCondition DcmFileFormat::writeJson(STD_NAMESPACE ostream &out,
-                                     DcmJsonFormat &format)
-{
-    OFBool meta = format.printMetaheaderInformation;
-    DcmDataset *dset = getDataset();
-    OFCondition status = EC_Normal;
-    if (meta)
-    {
-        // print out meta-header elements and dataset (non-standard)
-        DcmMetaInfo *metinf = getMetaInfo();
-        out << format.indent() << "{" << format.newline();
-        if (metinf)
-        {
-          status = metinf->writeJsonExt(out, format, OFFalse, OFFalse);
-        }
-        if (dset && status.good())
-        {
-            if (metinf && (metinf->card() > 0) && (dset->card() > 0)) out << "," << format.newline();
-            status = dset->writeJsonExt(out, format, OFFalse, OFFalse);
-        }
-        out << format.newline() << format.indent() << "}" << format.newline();
-    }
-    else
-    {
-        // standard case: only print dataset
-        if (dset)
-        {
-            status = dset->writeJsonExt(out, format, OFTrue, OFTrue);
-        }
-        else
-        {
-            out << format.indent() << "{}" << format.newline();
-        }
-    }
-    return status;
 }
 
 
@@ -292,7 +250,7 @@ OFCondition DcmFileFormat::checkMetaHeaderValue(DcmMetaInfo *metainfo,
     /* if there is meta header information and also data set information, do something */
     if ((metainfo != NULL) && (dataset != NULL))
     {
-        /* initialize variables */
+        /* intitialize variables */
         DcmStack stack;
         DcmTag tag(atagkey);
         if (obj != NULL)
@@ -301,7 +259,7 @@ OFCondition DcmFileFormat::checkMetaHeaderValue(DcmMetaInfo *metainfo,
         DcmTagKey xtag = tag.getXTag();
         DcmElement *elem = OFstatic_cast(DcmElement *, obj);
 
-        /* go ahead and scrutinize one particular data element (depending on xtag) */
+        /* go ahaed and scrutinize one particular data element (depending on xtag) */
         if (xtag == DCM_FileMetaInformationGroupLength)     // (0002,0000)
         {
             if (elem == NULL)
@@ -472,6 +430,7 @@ OFCondition DcmFileFormat::checkMetaHeaderValue(DcmMetaInfo *metainfo,
                 const char *uid = OFFIS_IMPLEMENTATION_CLASS_UID;
                 OFstatic_cast(DcmUniqueIdentifier *, elem)->putString(uid);
             }
+
         }
         else if (xtag == DCM_ImplementationVersionName)     // (0002,0013)
         {
@@ -485,28 +444,16 @@ OFCondition DcmFileFormat::checkMetaHeaderValue(DcmMetaInfo *metainfo,
                 const char *uid = OFFIS_DTK_IMPLEMENTATION_VERSION_NAME;
                 OFstatic_cast(DcmShortString *, elem)->putString(uid);
             }
+
         }
-        else if ((xtag == DCM_SourceApplicationEntityTitle) ||  // (0002,0016)
-                 (xtag == DCM_SendingApplicationEntityTitle) || // (0002,0017)
-                 (xtag == DCM_ReceivingApplicationEntityTitle)) // (0002,0018)
+        else if (xtag == DCM_SourceApplicationEntityTitle)  // (0002,0016)
         {
             if (elem == NULL)
             {
                 elem = new DcmApplicationEntity(tag);
                 metainfo->insert(elem, OFTrue);
             }
-            DCMDATA_WARN("DcmFileFormat: Don't know how to handle " << tag.getTagName());
-        }
-        else if ((xtag == DCM_SourcePresentationAddress) ||  // (0002,0026)
-                 (xtag == DCM_SendingPresentationAddress) || // (0002,0027)
-                 (xtag == DCM_ReceivingPresentationAddress)) // (0002,0028)
-        {
-            if (elem == NULL)
-            {
-                elem = new DcmUniversalResourceIdentifierOrLocator(tag);
-                metainfo->insert(elem, OFTrue);
-            }
-            DCMDATA_WARN("DcmFileFormat: Don't know how to handle " << tag.getTagName());
+            DCMDATA_ERROR("DcmFileFormat: Don't know how to handle SourceApplicationEntityTitle");
         }
         else if (xtag == DCM_PrivateInformationCreatorUID)  // (0002,0100)
         {
@@ -515,7 +462,7 @@ OFCondition DcmFileFormat::checkMetaHeaderValue(DcmMetaInfo *metainfo,
                 elem = new DcmUniqueIdentifier(tag);
                 metainfo->insert(elem, OFTrue);
             }
-            DCMDATA_WARN("DcmFileFormat: Don't know how to handle PrivateInformationCreatorUID");
+            DCMDATA_ERROR("DcmFileFormat: Don't know how to handle PrivateInformationCreatorUID");
         }
         else if (xtag == DCM_PrivateInformation)            // (0002,0102)
         {
@@ -525,8 +472,9 @@ OFCondition DcmFileFormat::checkMetaHeaderValue(DcmMetaInfo *metainfo,
                 metainfo->insert(elem, OFTrue);
             }
             DCMDATA_WARN("DcmFileFormat: Don't know how to handle PrivateInformation");
-        } else
-            DCMDATA_ERROR("DcmFileFormat: Don't know how to handle " << tag.getTagName());
+        } else {
+            DCMDATA_WARN("DcmFileFormat: Don't know how to handle " << tag.getTagName());
+        }
 
         /* if at this point elem still equals NULL, something is fishy */
         if (elem == NULL)
@@ -691,15 +639,7 @@ OFCondition DcmFileFormat::read(DcmInputStream &inStream,
                                 const E_TransferSyntax xfer,
                                 const E_GrpLenEncoding glenc,
                                 const Uint32 maxReadLength)
-{
-  return DcmFileFormat::readUntilTag(inStream,xfer,glenc,maxReadLength,DCM_UndefinedTagKey);
-}
 
-OFCondition DcmFileFormat::readUntilTag(DcmInputStream &inStream,
-                                        const E_TransferSyntax xfer,
-                                        const E_GrpLenEncoding glenc,
-                                        const Uint32 maxReadLength,
-                                        const DcmTagKey &stopParsingAtElement)
 {
     if (getTransferState() == ERW_notInitialized)
         errorFlag = EC_IllegalCall;
@@ -755,7 +695,7 @@ OFCondition DcmFileFormat::readUntilTag(DcmInputStream &inStream,
                 {
                     if (dataset && dataset->transferState() != ERW_ready)
                     {
-                        errorFlag = dataset->readUntilTag(inStream, newxfer, glenc, maxReadLength, stopParsingAtElement);
+                        errorFlag = dataset->read(inStream, newxfer, glenc, maxReadLength);
                     }
                 }
             }
@@ -767,7 +707,7 @@ OFCondition DcmFileFormat::readUntilTag(DcmInputStream &inStream,
             setTransferState(ERW_ready);
     }
     return errorFlag;
-}  // DcmFileFormat::readUntilTag()
+}  // DcmFileFormat::read()
 
 
 // ********************************
@@ -826,7 +766,7 @@ OFCondition DcmFileFormat::write(DcmOutputStream &outStream,
         DcmDataset *dataset = getDataset();
         DcmMetaInfo *metainfo = getMetaInfo();
         /* Determine the transfer syntax which shall be used. Either we use the one which was passed, */
-        /* or (if it's an unknown transfer syntax) we use the data set's original transfer syntax. */
+        /* or (if it's an unknown tranfer syntax) we use the data set's original transfer syntax. */
         E_TransferSyntax outxfer = oxfer;
         if (outxfer == EXS_Unknown && dataset)
             outxfer = dataset->getOriginalXfer();
@@ -879,36 +819,26 @@ OFCondition DcmFileFormat::write(DcmOutputStream &outStream,
 
 // ********************************
 
+
 OFCondition DcmFileFormat::loadFile(const OFFilename &fileName,
                                     const E_TransferSyntax readXfer,
                                     const E_GrpLenEncoding groupLength,
                                     const Uint32 maxReadLength,
                                     const E_FileReadMode readMode)
 {
-  return DcmFileFormat::loadFileUntilTag(fileName, readXfer, groupLength, maxReadLength, readMode, DCM_UndefinedTagKey);
-}
-
-
-OFCondition DcmFileFormat::loadFileUntilTag(
-                                    const OFFilename &fileName,
-                                    const E_TransferSyntax readXfer,
-                                    const E_GrpLenEncoding groupLength,
-                                    const Uint32 maxReadLength,
-                                    const E_FileReadMode readMode,
-                                    const DcmTagKey &stopParsingAtElement)
-{
     if (readMode == ERM_dataset)
-        return getDataset()->loadFileUntilTag(fileName, readXfer, groupLength, maxReadLength, stopParsingAtElement);
+        return getDataset()->loadFile(fileName, readXfer, groupLength, maxReadLength);
 
     OFCondition l_error = EC_InvalidFilename;
     /* check parameters first */
     if (!fileName.isEmpty())
     {
-        if (fileName.isStandardStream())
+        /* open file for input */
+        DcmInputFileStream fileStream(fileName);
+        /* check stream status */
+        l_error = fileStream.status();
+        if (l_error.good())
         {
-            /* use stdin stream */
-            DcmStdinStream inStream;
-
             /* clear this object */
             l_error = clear();
             if (l_error.good())
@@ -916,47 +846,12 @@ OFCondition DcmFileFormat::loadFileUntilTag(
                 /* save old value */
                 const E_FileReadMode oldMode = FileReadMode;
                 FileReadMode = readMode;
-
-                /* initialize transfer */
+                /* read data from file */
                 transferInit();
-
-                do
-                {
-                  /* fill the buffer from stdin */
-                  inStream.fillBuffer();
-                  /* and read the buffer content into the DICOM dataset */
-                  l_error = readUntilTag(inStream, readXfer, groupLength, maxReadLength, stopParsingAtElement);
-                } while (l_error == EC_StreamNotifyClient); /* repeat until we're at the end of the stream, or an error occurs */
-
-                /* end transfer */
+                l_error = read(fileStream, readXfer, groupLength, maxReadLength);
                 transferEnd();
-
                 /* restore old value */
                 FileReadMode = oldMode;
-            }
-
-        } else {
-            /* open file for output */
-            DcmInputFileStream fileStream(fileName);
-
-            /* check stream status */
-            l_error = fileStream.status();
-            if (l_error.good())
-            {
-                /* clear this object */
-                l_error = clear();
-                if (l_error.good())
-                {
-                    /* save old value */
-                    const E_FileReadMode oldMode = FileReadMode;
-                    FileReadMode = readMode;
-                    /* read data from file */
-                    transferInit();
-                    l_error = readUntilTag(fileStream, readXfer, groupLength, maxReadLength, stopParsingAtElement);
-                    transferEnd();
-                    /* restore old value */
-                    FileReadMode = oldMode;
-                }
             }
         }
     }
@@ -983,28 +878,20 @@ OFCondition DcmFileFormat::saveFile(const OFFilename &fileName,
     if (!fileName.isEmpty())
     {
         DcmWriteCache wcache;
-        DcmOutputStream *fileStream;
 
-        if (fileName.isStandardStream())
-        {
-            /* use stdout stream */
-            fileStream = new DcmStdoutStream(fileName);
-        } else {
-            /* open file for output */
-            fileStream = new DcmOutputFileStream(fileName);
-        }
+        /* open file for output */
+        DcmOutputFileStream fileStream(fileName);
 
         /* check stream status */
-        l_error = fileStream->status();
+        l_error = fileStream.status();
         if (l_error.good())
         {
             /* write data to file */
             transferInit();
-            l_error = write(*fileStream, writeXfer, encodingType, &wcache, groupLength,
+            l_error = write(fileStream, writeXfer, encodingType, &wcache, groupLength,
                 padEncoding, padLength, subPadLength, 0 /*instanceLength*/, writeMode);
             transferEnd();
         }
-        delete fileStream;
     }
     return l_error;
 }
@@ -1122,15 +1009,17 @@ DcmDataset *DcmFileFormat::getAndRemoveDataset()
 
 OFCondition DcmFileFormat::convertCharacterSet(const OFString &fromCharset,
                                                const OFString &toCharset,
-                                               const size_t flags)
+                                               const OFBool transliterate,
+                                               const OFBool discardIllegal)
 {
     // convert the dataset associated with this object
-    return getDataset()->convertCharacterSet(fromCharset, toCharset, flags);
+    return getDataset()->convertCharacterSet(fromCharset, toCharset, transliterate, discardIllegal);
 }
 
 
 OFCondition DcmFileFormat::convertCharacterSet(const OFString &toCharset,
-                                               const size_t flags)
+                                               const OFBool transliterate,
+                                               const OFBool discardIllegal)
 {
     OFString sopClass;
     OFBool ignoreCharset = OFFalse;
@@ -1144,7 +1033,7 @@ OFCondition DcmFileFormat::convertCharacterSet(const OFString &toCharset,
         ignoreCharset = OFTrue;
     }
     // usually, we check for Specific Character Set (0008,0005) element in the dataset
-    return getDataset()->convertCharacterSet(toCharset, flags, ignoreCharset);
+    return getDataset()->convertCharacterSet(toCharset, transliterate, ignoreCharset, discardIllegal);
 }
 
 
@@ -1158,5 +1047,9 @@ OFCondition DcmFileFormat::convertCharacterSet(DcmSpecificCharacterSet &converte
 OFCondition DcmFileFormat::convertToUTF8()
 {
     // the DICOM defined term "ISO_IR 192" is used for "UTF-8"
-    return convertCharacterSet("ISO_IR 192", 0 /*flags*/);
+#ifdef TRICE
+    return getDataset()->convertToUTF8();
+#else
+    return convertCharacterSet("ISO_IR 192", OFFalse /*transliterate*/);
+#endif
 }

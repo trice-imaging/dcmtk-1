@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTRelatedRTROIObservationsSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -78,7 +78,7 @@ OFCondition DRTRelatedRTROIObservationsSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, ObservationNumber, "1", "1", "RelatedRTROIObservationsSequence");
+        getAndCheckElementFromDataset(item, ObservationNumber, "1", "1C", "RelatedRTROIObservationsSequence");
         result = EC_Normal;
     }
     return result;
@@ -91,7 +91,7 @@ OFCondition DRTRelatedRTROIObservationsSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmIntegerString(ObservationNumber), "1", "1", "RelatedRTROIObservationsSequence");
+        addElementToDataset(result, item, new DcmIntegerString(ObservationNumber), "1", "1C", "RelatedRTROIObservationsSequence");
     }
     return result;
 }
@@ -231,7 +231,7 @@ OFBool DRTRelatedRTROIObservationsSequence::isValid() const
 }
 
 
-size_t DRTRelatedRTROIObservationsSequence::getNumberOfItems() const
+unsigned long DRTRelatedRTROIObservationsSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -261,12 +261,12 @@ OFCondition DRTRelatedRTROIObservationsSequence::gotoNextItem()
 }
 
 
-OFCondition DRTRelatedRTROIObservationsSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTRelatedRTROIObservationsSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -281,12 +281,12 @@ OFCondition DRTRelatedRTROIObservationsSequence::gotoItem(const size_t num, OFLi
 }
 
 
-OFCondition DRTRelatedRTROIObservationsSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTRelatedRTROIObservationsSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -301,7 +301,7 @@ OFCondition DRTRelatedRTROIObservationsSequence::gotoItem(const size_t num, OFLi
 }
 
 
-OFCondition DRTRelatedRTROIObservationsSequence::gotoItem(const size_t num)
+OFCondition DRTRelatedRTROIObservationsSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -337,7 +337,7 @@ const DRTRelatedRTROIObservationsSequence::Item &DRTRelatedRTROIObservationsSequ
 }
 
 
-OFCondition DRTRelatedRTROIObservationsSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTRelatedRTROIObservationsSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -347,7 +347,7 @@ OFCondition DRTRelatedRTROIObservationsSequence::getItem(const size_t num, Item 
 }
 
 
-DRTRelatedRTROIObservationsSequence::Item &DRTRelatedRTROIObservationsSequence::getItem(const size_t num)
+DRTRelatedRTROIObservationsSequence::Item &DRTRelatedRTROIObservationsSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -357,7 +357,7 @@ DRTRelatedRTROIObservationsSequence::Item &DRTRelatedRTROIObservationsSequence::
 }
 
 
-const DRTRelatedRTROIObservationsSequence::Item &DRTRelatedRTROIObservationsSequence::getItem(const size_t num) const
+const DRTRelatedRTROIObservationsSequence::Item &DRTRelatedRTROIObservationsSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -367,13 +367,13 @@ const DRTRelatedRTROIObservationsSequence::Item &DRTRelatedRTROIObservationsSequ
 }
 
 
-DRTRelatedRTROIObservationsSequence::Item &DRTRelatedRTROIObservationsSequence::operator[](const size_t num)
+DRTRelatedRTROIObservationsSequence::Item &DRTRelatedRTROIObservationsSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTRelatedRTROIObservationsSequence::Item &DRTRelatedRTROIObservationsSequence::operator[](const size_t num) const
+const DRTRelatedRTROIObservationsSequence::Item &DRTRelatedRTROIObservationsSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -396,7 +396,7 @@ OFCondition DRTRelatedRTROIObservationsSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTRelatedRTROIObservationsSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTRelatedRTROIObservationsSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -419,7 +419,7 @@ OFCondition DRTRelatedRTROIObservationsSequence::insertItem(const size_t pos, It
 }
 
 
-OFCondition DRTRelatedRTROIObservationsSequence::removeItem(const size_t pos)
+OFCondition DRTRelatedRTROIObservationsSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
