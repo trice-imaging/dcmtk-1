@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2012-2020, OFFIS e.V.
+ *  Copyright (C) 2012-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,16 +28,13 @@
 #include "dcmtk/dcmnet/dimse.h"
 #include "dcmtk/ofstd/ofmem.h"      /* For OFshared_ptr */
 
-class DcmTransportLayer;
-
 /** Class that encapsulates an SCP configuration that is needed in order to
- *  configure the service negotiation behavior (presentation contexts, AE
+ *  configure the service negotiation behaviour (presentation contexts, AE
  *  title, listening port, etc) as well as some runtime configuration like
  *  the DIMSE timeout. The configuration, however, is not updated to reflect
  *  any runtime connection information, e.g. information about the current
  *  SCU connected or the like.
- *  The presentation context configuration is held in profiles. Per default, the
- *  name of the active association configuration is DEFAULT.
+ *
  */
 class DCMTK_DCMNET_EXPORT DcmSCPConfig
 {
@@ -56,8 +53,7 @@ public:
   DcmSCPConfig(const DcmSCPConfig &old);
 
   /** assignment operator, performs deep copy.
-   *  @param  obj the config to copy from
-   *  @return Reference to "this" object
+   *  @param obj the config to copy from
    */
   DcmSCPConfig &operator=(const DcmSCPConfig &obj);
 
@@ -69,7 +65,7 @@ public:
   OFCondition evaluateIncomingAssociation(T_ASC_Association &assoc) const;
 
   /* ************************************************************* */
-  /*             Set methods for configuring SCP behavior          */
+  /*             Set methods for configuring SCP behaviour         */
   /* ************************************************************* */
 
   /** Add abstract syntax to presentation contexts the SCP is able to negotiate with SCUs.
@@ -83,7 +79,7 @@ public:
    *  @return EC_Normal if adding was successful, an error code otherwise
    */
   OFCondition addPresentationContext(const OFString &abstractSyntax,
-                                     const OFList<OFString> &xferSyntaxes,
+                                     const OFList<OFString> xferSyntaxes,
                                      const T_ASC_SC_ROLE role = ASC_SC_ROLE_DEFAULT,
                                      const OFString &profile = "DEFAULT");
 
@@ -95,7 +91,7 @@ public:
 
   /** Set AE title of the server
    *  @param aetitle [in] The AE title of the server. By default, all SCU association requests
-   *                      calling another AE title will be rejected. This behavior can be
+   *                      calling another AE title will be rejected. This behaviour can be
    *                      changed by using the setRespondWithCalledAETitle() method.
    */
   void setAETitle(const OFString &aetitle);
@@ -116,26 +112,13 @@ public:
   OFCondition loadAssociationCfgFile(const OFString &assocFile);
 
   /** If an association profile should be selected, either by loading an association
-   *  configuration file or using the addPresentationContext() function, one of those can
-   *  be selected and checked for validity using this method.
+   *  configuration file or using the addAbstractSyntax() function, one of those can be
+   *  selected and checked for validity using this method.
    *  @param profileName [in] The name of the association profile which must be configured
    *                          before being selected here
    *  @return EC_Normal if selecting/checking was successful, an error code otherwise
    */
   OFCondition setAndCheckAssociationProfile(const OFString &profileName);
-
-  /** Returns the name of the currently active association profile
-   *  @return The name of the association profile that is currently active
-   */
-  OFString getActiveAssociationProfile() const;
-
-  /** The profile with the given name is checked for validity using this method.
-   *  @param profileName [in] The name of the association profile which should be checked
-   *  @param mangledName [out] The mangled profile name
-   *  @return EC_Normal if profile is a valid SCP profile, error otherwise
-   */
-  OFCondition checkAssociationProfile(const OFString &profileName,
-                                      OFString& mangledName) const;
 
   /** Force every association request to be refused by SCP, no matter what the SCU is
    *  offering
@@ -196,9 +179,9 @@ public:
   void setVerbosePCMode(const OFBool mode);
 
   /** Enables or disables looking up the host name from a connecting system.
-   *  Note that this sets a GLOBAL flag in DCMTK, i.e. the behavior changes
+   *  Note that this sets a GLOBAL flag in DCMTK, i.e. the behaviour changes
    *  for all servers. This should be changed in the future.
-   *  @param mode [in] OFTrue, if host name lookup should be enabled,
+   *  @param mode [in] OFTrue, if hostname lookup should be enabled,
    *              OFFalse for disabling it.
    */
   void setHostLookupEnabled(const OFBool mode);
@@ -209,19 +192,6 @@ public:
    *  @param mode [in] Disable progress notification if OFFalse
    */
   void setProgressNotificationMode(const OFBool mode);
-
-  /** Option to always accept a default role as association acceptor.
-   *  If OFFalse (default) the acceptor will reject a presentation context proposed
-   *  with Default role (no role selection at all) when it is configured for role
-   *  SCP only. If this option is set to OFTrue then such presentation contexts will
-   *  be accepted in Default role (i.e. acceptor does not return role selection for
-   *  this presentation context at all). Overall, if set to OFTrue, there are no
-   *  requestor proposals possible that lead to a complete rejection of a presentation
-   *  context. See also role documentation in dul.h.
-   *  @param  enabled If OFTrue, do not reject Default role proposals when configured
-   *          for SCP role. OFFalse (default behaviour): Reject such proposals.
-   */
-  void setAlwaysAcceptDefaultRole(const OFBool enabled);
 
   /* Get methods for SCP settings */
 
@@ -276,7 +246,7 @@ public:
   /** Returns connection timeout
    *  @return TCP/IP connection timeout in seconds
    */
-  Uint32 getConnectionTimeout() const;
+  Uint32 getConnnectionTimeout() const;
 
   /** Returns the verbose presentation context mode configured specifying whether details on
    *  the presentation contexts (negotiated during association setup) should be shown in
@@ -286,7 +256,7 @@ public:
   OFBool getVerbosePCMode() const;
 
   /** Returns whether a connecting system's host name is looked up.
-   *  @return OFTrue, if host name lookup is enabled, OFFalse otherwise
+   *  @return OFTrue, if hostname lookup is enabled, OFFalse otherwise
    */
   OFBool getHostLookupEnabled() const;
 
@@ -298,56 +268,7 @@ public:
    */
   OFBool getProgressNotificationMode() const;
 
-  /** Returns true if an external transport layer (e.g. TLS) is enabled,
-   *  false if the default, transparent layer is used.
-   *  @return true if an external transport layer is enabled
-   */
-  OFBool transportLayerEnabled() const;
-
-  /** Returns pointer to the transport layer object in use
-   *  @return pointer to the transport layer object in use, may be NULL.
-   */
-  DcmTransportLayer * getTransportLayer() const;
-
-  /** set an explicit transport layer (e.g. for TLS communication) to use
-   *  @param tlayer [in] The transport layer object.
-   *                     This function does not take ownership of tlayer.
-   */
-  void setTransportLayer(DcmTransportLayer *tlayer);
-
-  /** Dump presentation contexts to given output stream, useful for debugging.
-   *  @param out [out] The output stream
-   *  @param profileName [in] The profile to dump. If empty (default), the currently
-   *                     selected profile is dumped.
-   */
-  void dumpPresentationContexts(STD_NAMESPACE ostream &out,
-                                OFString profileName = "");
-
 protected:
-
-  /** Mangles a given string into valid profile name.
-   *  Removes all spaces, and converts lower case to upper case
-   *  characters.
-   *  @param profile [in] The unmangled profile name
-   *  @return The mangled profile name
-   */
-  OFString mangleProfileName(const OFString& profile) const;
-
-  /** Convert number to string
-   *  @param num [in] The integer number to convert
-   *  @return The string representing the given number
-   */
-  OFString numToString(const size_t num) const;
-
-  /** Add given list of transfers syntaxes under given name to SCP's
-   *  association configuration.
-   *  @param tsListName [in] The name of the transfer syntax list
-   *                    to create
-   *  @param ts [in] The list of transfer snytaxes to add
-   *  @return EC_Normal if adding was successful, error otherwise
-   */
-  OFCondition addNewTSList(const OFString& tsListName,
-                           const OFList<OFString>& ts);
 
   /// Association configuration. May be filled from association configuration file or by
   /// adding presentation contexts by calling addPresentationContext() (or both)
@@ -362,7 +283,7 @@ protected:
 
   /// AE title to be used for responding to SCU (default: DCMTK_SCP). This value is not
   /// evaluated if the the SCP is configured to respond to any association requests with the
-  /// name the SCU used as called AE title (which is the SCP's default behavior); see
+  /// name the SCU used as called AE title (which is the SCP's default behaviour); see
   /// setRespondWithCalledAETitle().
   OFString m_aetitle;
 
@@ -412,10 +333,6 @@ protected:
 
   /// Progress notification mode (default: OFTrue)
   OFBool m_progressNotificationMode;
-
-  /// The transport layer in use for communication (e.g. for TLS). 
-  /// Default is NULL for the normal TCP layer.
-  DcmTransportLayer *m_tLayer; /// Doesn't have ownership
 };
 
 /** Enables sharing configurations by multiple DcmSCPs.

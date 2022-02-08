@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2003-2021, OFFIS e.V.
+ *  Copyright (C) 2003-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRXMLDocument
@@ -25,6 +25,9 @@
 
 #include "dcmtk/dcmsr/dsrxmld.h"
 
+#define INCLUDE_CSTDARG
+#include "dcmtk/ofstd/ofstdinc.h"
+
 #ifdef WITH_LIBXML
 #include <libxml/xmlversion.h>
 
@@ -33,12 +36,9 @@
 #endif /* LIBXML_SCHEMAS_ENABLED */
 
 // This function is also used in xml2dcm, try to stay in sync!
-#if defined(HAVE_VSNPRINTF) && defined(HAVE_PROTOTYPE_VSNPRINTF)
 extern "C" void errorFunction(void * ctx, const char *msg, ...)
-#else
-extern "C" void errorFunction(void * /* ctx */, const char *msg, ...)
-#endif
 {
+    OFString &buffer = *OFstatic_cast(OFString*, ctx);
     OFLogger xmlLogger = OFLog::getLogger("dcmtk.dcmsr.libxml");
 
     if (!xmlLogger.isEnabledFor(OFLogger::DEBUG_LOG_LEVEL))
@@ -49,7 +49,6 @@ extern "C" void errorFunction(void * /* ctx */, const char *msg, ...)
     // result in garbled output. To avoid this, we buffer the output in a local
     // string in the caller which we get through our 'ctx' parameter. Then, we
     // output this string on one go when we receive a newline.
-    OFString &buffer = *OFstatic_cast(OFString*, ctx);
     va_list ap;
     char buf[1024];
 
@@ -144,8 +143,8 @@ OFCondition DSRXMLDocument::read(const OFString &filename,
     OFString tmpErrorString;
     /* first remove any possibly existing document from memory */
     clear();
-    /* do not substitute entities (other than the standard ones) */
-    xmlSubstituteEntitiesDefault(0);
+    /* substitute default entities (XML mnenonics) */
+    xmlSubstituteEntitiesDefault(1);
     /* add line number to debug messages */
     xmlLineNumbersDefault(1);
     /* enable libxml warnings and error messages */
@@ -301,7 +300,7 @@ DSRXMLCursor DSRXMLDocument::getNamedNode(const DSRXMLCursor &cursor,
             {
                 OFString tmpString;
                 DCMSR_ERROR("Document of the wrong type, '" << name
-                    << "' expected at " << getFullNodePath(cursor, tmpString, OFTrue /*omitCurrent*/));
+                    << "' expected at " << getFullNodePath(cursor, tmpString, OFFalse /*omitCurrent*/));
             }
         } else {
             /* return new node position */
@@ -314,35 +313,6 @@ DSRXMLCursor DSRXMLDocument::getNamedNode(const DSRXMLCursor &cursor,
 DSRXMLCursor DSRXMLDocument::getNamedNode(const DSRXMLCursor &,
                                           const char *,
                                           const OFBool) const
-{
-    DSRXMLCursor result;
-    return result;
-}
-#endif
-
-
-#ifdef WITH_LIBXML
-DSRXMLCursor DSRXMLDocument::getNamedChildNode(const DSRXMLCursor &cursor,
-                                               const char *name,
-                                               const OFBool required) const
-{
-    DSRXMLCursor result;
-    const DSRXMLCursor childCursor = cursor.getChild();
-    /* check whether child node is valid */
-    if (childCursor.valid())
-        result = getNamedNode(childCursor, name, required);
-    else if (required)
-    {
-        OFString tmpString;
-        DCMSR_ERROR("Document of the wrong type, '" << name
-            << "' expected at " << getFullNodePath(cursor, tmpString, OFFalse /*omitCurrent*/));
-    }
-    return result;
-}
-#else /* WITH_LIBXML */
-DSRXMLCursor DSRXMLDocument::getNamedChildNode(const DSRXMLCursor &,
-                                               const char *,
-                                               const OFBool) const
 {
     DSRXMLCursor result;
     return result;
@@ -714,21 +684,8 @@ DSRTypes::E_RelationshipType DSRXMLDocument::getRelationshipTypeFromNode(const D
 
 void DSRXMLDocument::printUnexpectedNodeWarning(const DSRXMLCursor &cursor) const
 {
-    /* report warning message */
     OFString tmpString;
     DCMSR_WARN("Unexpected node '" << getFullNodePath(cursor, tmpString) << "', skipping");
-}
-
-
-void DSRXMLDocument::printMissingAttributeWarning(const DSRXMLCursor &cursor,
-                                                  const char *name) const
-{
-    /* report warning message */
-    if (name != NULL)
-    {
-        OFString tmpString;
-        DCMSR_WARN("XML attribute '" << name << "' missing/empty in " << getFullNodePath(cursor, tmpString));
-    }
 }
 
 

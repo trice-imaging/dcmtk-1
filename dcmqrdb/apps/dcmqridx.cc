@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1993-2021, OFFIS e.V.
+ *  Copyright (C) 1993-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,6 +20,11 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
 
 #include "dcmtk/ofstd/ofconapp.h"
 #include "dcmtk/ofstd/ofcmdln.h"
@@ -87,6 +92,12 @@ int main (int argc, char *argv[])
      cmd.addOption("--print",   "-p", "list contents of database index file");
      cmd.addOption("--not-new", "-n", "set instance reviewed status to 'not new'");
 
+#ifdef HAVE_GUSI_H
+    /* needed for Macintosh */
+    GUSISetup(GUSIwithSIOUXSockets);
+    GUSISetup(GUSIwithInternetSockets);
+#endif
+
     /* evaluate command line */
     prepareCmdLineArgs(argc, argv, OFFIS_CONSOLE_APPLICATION);
     if (app.parseCommandLine(cmd, argc, argv))
@@ -150,11 +161,11 @@ int main (int argc, char *argv[])
             else
             {
                 OFLOG_INFO(dcmqridxLogger, "registering: " << opt_imageFile);
-                if (DU_findSOPClassAndInstanceInFile(opt_imageFile, sclass, sizeof(sclass), sinst, sizeof(sinst)))
+                if (DU_findSOPClassAndInstanceInFile(opt_imageFile, sclass, sinst))
                 {
 #ifdef DEBUG
                     /*** Test what filename is recommended by DB_Module **/
-                    hdl.makeNewStoreFileName (sclass, sinst, fname, sizeof(fname));
+                    hdl.makeNewStoreFileName (sclass, sinst, fname) ;
                     OFLOG_DEBUG(dcmqridxLogger, "DB_Module recommends " << fname << " for filename");
 #endif
                     hdl.storeRequest(sclass, sinst, opt_imageFile, &status, opt_isNewFlag) ;

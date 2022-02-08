@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2011, OFFIS e.V.
+ *  Copyright (C) 1994-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,6 +22,10 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#include "dcmtk/ofstd/ofstdinc.h"
+
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofuuid.h"
 
@@ -34,15 +38,6 @@
 
 
 // ********************************
-
-
-DcmPixelSequence::DcmPixelSequence(const DcmTag &tag)
-  : DcmSequenceOfItems(tag, 0),
-    Xfer(EXS_Unknown)
-{
-    setTagVR(EVR_OB);
-    setLengthField(DCM_UndefinedLength); // pixel sequences always use undefined length
-}
 
 
 DcmPixelSequence::DcmPixelSequence(const DcmTag &tag,
@@ -134,7 +129,7 @@ void DcmPixelSequence::print(STD_NAMESPACE ostream &out,
             } while (itemList->seek(ELP_next));
         }
         /* print pixel sequence end line */
-        DcmTag delimItemTag(DCM_SequenceDelimitationItemTag);
+        DcmTag delimItemTag(DCM_SequenceDelimitationItem);
         if (getLengthField() == DCM_UndefinedLength)
             printInfoLine(out, flags, level, "(SequenceDelimitationItem)", &delimItemTag);
         else
@@ -236,18 +231,12 @@ OFCondition DcmPixelSequence::insert(DcmPixelItem *item,
     errorFlag = EC_Normal;
     if (item != NULL)
     {
-        // special case: last position
-        if (where == DCM_EndOfListIndex)
-        {
-            // insert at end of list (avoid seeking)
-            itemList->append(item);
-            DCMDATA_TRACE("DcmPixelSequence::insert() Item at last position inserted");
-        } else {
-            // insert after "where"
-            itemList->seek_to(where);
-            itemList->insert(item);
+        itemList->seek_to(where);
+        itemList->insert(item);
+        if (where < itemList->card())
             DCMDATA_TRACE("DcmPixelSequence::insert() Item at position " << where << " inserted");
-        }
+        if (where >= itemList->card())
+            DCMDATA_TRACE("DcmPixelSequence::insert() Item at last position inserted");
         // check whether the new item already has a parent
         if (item->getParent() != NULL)
         {
@@ -416,7 +405,7 @@ OFCondition DcmPixelSequence::storeCompressedFrame(DcmOffsetList &offsetList,
 
     while ((offset < compressedLen) && (result.good()))
     {
-        fragment = new DcmPixelItem(DCM_PixelItemTag);
+        fragment = new DcmPixelItem(DcmTag(DCM_Item, EVR_OB));
         if (fragment == NULL)
             result = EC_MemoryExhausted;
         else

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2021, OFFIS e.V.
+ *  Copyright (C) 2002-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,15 +22,18 @@
 
 #include "dcmtk/config/osconfig.h"
 
-#ifdef HAVE_SYS_TYPES_H
+#define INCLUDE_CTIME
+#define INCLUDE_CCTYPE
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
+
 BEGIN_EXTERN_C
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>    /* for struct time_t */
-END_EXTERN_C
 #endif
+END_EXTERN_C
 
 #include "dcmtk/ofstd/ofdatime.h"
-#include "dcmtk/ofstd/ofstdinc.h"
-#include <ctime>
 
 
 /*------------------*
@@ -96,32 +99,6 @@ OFBool OFDateTime::operator!=(const OFDateTime &dateTime) const
 {
     /* note that the "overflow" from one day to another is currently not handled */
     return (Date != dateTime.Date) || (Time != dateTime.Time);
-}
-
-
-OFBool OFDateTime::operator<(const OFDateTime &dateTime) const
-{
-    /* note that the "overflow" from one day to another is currently not handled */
-    return (Date < dateTime.Date) || ((Date == dateTime.Date) && (Time < dateTime.Time));
-}
-
-
-OFBool OFDateTime::operator<=(const OFDateTime &dateTime) const
-{
-    /* note that the "overflow" from one day to another is currently not handled */
-    return (Date < dateTime.Date) || ((Date == dateTime.Date) && (Time <= dateTime.Time));
-}
-
-
-OFBool OFDateTime::operator>(const OFDateTime &dateTime) const
-{
-    return (dateTime < *this);
-}
-
-
-OFBool OFDateTime::operator>=(const OFDateTime &dateTime) const
-{
-    return (dateTime <= *this);
 }
 
 

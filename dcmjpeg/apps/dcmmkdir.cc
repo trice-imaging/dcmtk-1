@@ -44,4 +44,5 @@
 #define BUILD_DCMGPDIR_AS_DCMMKDIR
 
 // include full implementation of "dcmgpdir"
-#include "../../dcmdata/apps/dcmgpdir.cc"
+//#include "../../dcmdata/apps/dcmgpdir.cc"
+#include "dcmgpdir.cc"

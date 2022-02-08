@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2021, OFFIS e.V.
+ *  Copyright (C) 2011-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,6 +23,7 @@
 #include "dcmtk/config/osconfig.h"
 
 #include "dcmtk/ofstd/ofuuid.h"
+
 #include "dcmtk/ofstd/ofdefine.h"
 #include "dcmtk/ofstd/ofthread.h"
 #include "dcmtk/ofstd/ofstd.h"
@@ -47,22 +48,27 @@ static Uint8 last_node[6];
 static OFBool initialized = OFFalse;
 
 
-static void get_random(OFRandom &rnd, void *dest, size_t num)
+static void get_random(void *dest, size_t num)
 {
+    /* FIXME: We are supposed to use a cryptographic-quality random number
+     * generator. However, finding a portable one is a little hard, so
+     * rand() will do for now.
+     */
     Uint8* ptr = OFreinterpret_cast(Uint8*, dest);
     while (num > 0) {
-        *ptr++ = OFstatic_cast(Uint8, rnd.getRND16());
+        *ptr = OFstatic_cast(Uint8, rand());
         num--;
+        ptr++;
     }
 }
 
-static void get_node(OFRandom &rnd)
+static void get_node()
 {
     /* FIXME: This is supposed to be a MAC address and we are supposed to
      * re-check the MAC address each time we generate a UUID and do some stuff
      * if the MAC changes.
      */
-    get_random(rnd, &last_node[0], sizeof(last_node));
+    get_random(&last_node[0], sizeof(last_node));
 }
 
 #ifdef _WIN32
@@ -154,8 +160,8 @@ void OFUUID::generate()
     UUIDMutex.lock();
 
     if (!initialized) {
-        get_node(rnd);
-        get_random(rnd, &last_clock_sequence, sizeof(last_clock_sequence));
+        get_node();
+        get_random(&last_clock_sequence, sizeof(last_clock_sequence));
         initialized = OFTrue;
     }
 
@@ -195,8 +201,7 @@ OFUUID::OFUUID()
   version_and_time_high(0),
   variant_and_clock_seq_high(0),
   clock_seq_low(0),
-  node(),
-  rnd()
+  node()
 {
     generate();
 }
@@ -288,7 +293,7 @@ void OFUUID::printHex(STD_NAMESPACE ostream& stream) const
     stream.fill(fill_char);
 }
 
-static void divide_by_10(Uint32 n, Uint32& res, Uint32& rem)
+static void divide_by(Uint32 n, Uint32 d, Uint32& res, Uint32& rem)
 {
     // This calculates res = m / d and rem = m % d where m = n + rem * 2^32
 
@@ -334,10 +339,10 @@ void OFUUID::printInteger(STD_NAMESPACE ostream& stream) const
     // As long as the result isn't 0, divide by 10 and print the remainder
     while (data[0] != 0 || data[1] != 0 || data[2] != 0 || data[3] != 0) {
         Uint32 rem = 0;
-        divide_by_10(data[0], data[0], rem);
-        divide_by_10(data[1], data[1], rem);
-        divide_by_10(data[2], data[2], rem);
-        divide_by_10(data[3], data[3], rem);
+        divide_by(data[0], 10, data[0], rem);
+        divide_by(data[1], 10, data[1], rem);
+        divide_by(data[2], 10, data[2], rem);
+        divide_by(data[3], 10, data[3], rem);
 
         assert(rem <= 9);
         buffer[--idx] = OFstatic_cast(char, rem + '0');

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2016, OFFIS e.V.
+ *  Copyright (C) 2002-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRSOPInstanceReferenceList
@@ -28,11 +28,6 @@
 #include "dcmtk/dcmsr/dsrxmld.h"
 
 #include "dcmtk/dcmdata/dcdeftag.h"
-#include "dcmtk/dcmdata/dcuid.h"
-#include "dcmtk/dcmdata/dcvrae.h"
-#include "dcmtk/dcmdata/dcvrcs.h"
-#include "dcmtk/dcmdata/dcvrsh.h"
-#include "dcmtk/dcmdata/dcvrui.h"
 
 
 // --- DSRSOPInstanceReferenceList::InstanceStruct ---
@@ -88,8 +83,7 @@ size_t DSRSOPInstanceReferenceList::SeriesStruct::getNumberOfInstances() const
 }
 
 
-OFCondition DSRSOPInstanceReferenceList::SeriesStruct::read(DcmItem &dataset,
-                                                            const size_t flags)
+OFCondition DSRSOPInstanceReferenceList::SeriesStruct::read(DcmItem &dataset)
 {
     /* first, read optional attributes on series level */
     getAndCheckStringValueFromDataset(dataset, DCM_RetrieveAETitle, RetrieveAETitle, "1-n", "3", "ReferencedSeriesSequence");
@@ -125,7 +119,7 @@ OFCondition DSRSOPInstanceReferenceList::SeriesStruct::read(DcmItem &dataset,
                         /* set cursor to new position */
                         Iterator = --InstanceList.end();
                         /* read additional information */
-                        instance->PurposeOfReference.readSequence(*item, DCM_PurposeOfReferenceCodeSequence, "3", flags);
+                        instance->PurposeOfReference.readSequence(*item, DCM_PurposeOfReferenceCodeSequence, "3");
                     } else {
                         result = EC_MemoryExhausted;
                         break;
@@ -183,8 +177,7 @@ OFCondition DSRSOPInstanceReferenceList::SeriesStruct::write(DcmItem &dataset) c
 
 
 OFCondition DSRSOPInstanceReferenceList::SeriesStruct::readXML(const DSRXMLDocument &doc,
-                                                               DSRXMLCursor cursor,
-                                                               const size_t flags)
+                                                               DSRXMLCursor cursor)
 {
     OFCondition result = SR_EC_InvalidDocument;
     if (cursor.valid())
@@ -228,7 +221,7 @@ OFCondition DSRSOPInstanceReferenceList::SeriesStruct::readXML(const DSRXMLDocum
                             {
                                 /* check for known element tags */
                                 if (doc.matchNode(instanceCursor, "purpose"))
-                                    instance->PurposeOfReference.readXML(doc, instanceCursor, flags);
+                                    instance->PurposeOfReference.readXML(doc, instanceCursor);
                                 /* proceed with next node */
                                 instanceCursor.gotoNext();
                             }
@@ -450,8 +443,7 @@ size_t DSRSOPInstanceReferenceList::StudyStruct::getNumberOfInstances() const
 }
 
 
-OFCondition DSRSOPInstanceReferenceList::StudyStruct::read(DcmItem &dataset,
-                                                           const size_t flags)
+OFCondition DSRSOPInstanceReferenceList::StudyStruct::read(DcmItem &dataset)
 {
     /* first, check whether sequence is present and non-empty */
     DcmSequenceOfItems *sequence = NULL;
@@ -489,7 +481,7 @@ OFCondition DSRSOPInstanceReferenceList::StudyStruct::read(DcmItem &dataset,
                     /* set cursor to new position */
                     Iterator = --SeriesList.end();
                     /* read further attributes on series level and the instance level */
-                    result = series->read(*item, flags);
+                    result = series->read(*item);
                 }
             }
         }
@@ -526,8 +518,7 @@ OFCondition DSRSOPInstanceReferenceList::StudyStruct::write(DcmItem &dataset) co
 
 
 OFCondition DSRSOPInstanceReferenceList::StudyStruct::readXML(const DSRXMLDocument &doc,
-                                                              DSRXMLCursor cursor,
-                                                              const size_t flags)
+                                                              DSRXMLCursor cursor)
 {
     OFCondition result = SR_EC_InvalidDocument;
     if (cursor.valid())
@@ -561,7 +552,7 @@ OFCondition DSRSOPInstanceReferenceList::StudyStruct::readXML(const DSRXMLDocume
                         /* set cursor to new position */
                         Iterator = --SeriesList.end();
                         /* read further attributes on series level and the instance level */
-                        result = series->readXML(doc, cursor.getChild(), flags);
+                        result = series->readXML(doc, cursor.getChild());
                     }
                 }
             }
@@ -772,8 +763,7 @@ void DSRSOPInstanceReferenceList::StudyStruct::removeIncompleteItems()
 DSRSOPInstanceReferenceList::DSRSOPInstanceReferenceList(const DcmTagKey &sequence)
   : SequenceTag(sequence),
     StudyList(),
-    Iterator(),
-    SpecificCharacterSet()
+    Iterator()
 {
     /* initialize list cursor */
     Iterator = StudyList.end();
@@ -800,12 +790,10 @@ void DSRSOPInstanceReferenceList::clear()
     /* make sure that the list is empty */
     StudyList.clear();
     Iterator = StudyList.end();
-    /* also clear other members */
-    SpecificCharacterSet.clear();
 }
 
 
-OFBool DSRSOPInstanceReferenceList::isEmpty() const
+OFBool DSRSOPInstanceReferenceList::empty() const
 {
     return StudyList.empty();
 }
@@ -828,8 +816,7 @@ size_t DSRSOPInstanceReferenceList::getNumberOfInstances() const
 }
 
 
-OFCondition DSRSOPInstanceReferenceList::read(DcmItem &dataset,
-                                              const size_t flags)
+OFCondition DSRSOPInstanceReferenceList::read(DcmItem &dataset)
 {
     /* first, check whether sequence is present and non-empty */
     DcmSequenceOfItems *sequence = NULL;
@@ -868,7 +855,7 @@ OFCondition DSRSOPInstanceReferenceList::read(DcmItem &dataset,
                     /* set cursor to new position */
                     Iterator = --StudyList.end();
                     /* read attributes on series and instance level */
-                    result = study->read(*item, flags);
+                    result = study->read(*item);
                 }
             }
         }
@@ -906,7 +893,7 @@ OFCondition DSRSOPInstanceReferenceList::write(DcmItem &dataset) const
 
 OFCondition DSRSOPInstanceReferenceList::readXML(const DSRXMLDocument &doc,
                                                  DSRXMLCursor cursor,
-                                                 const size_t flags)
+                                                 const size_t /*flags*/)
 {
     /* default: no error, e.g. for empty list of references */
     OFCondition result = EC_Normal;
@@ -941,7 +928,7 @@ OFCondition DSRSOPInstanceReferenceList::readXML(const DSRXMLDocument &doc,
                         /* set cursor to new position */
                         Iterator = --StudyList.end();
                         /* read attributes on series and instance level */
-                        result = study->readXML(doc, cursor.getChild(), flags);
+                        result = study->readXML(doc, cursor.getChild());
                     }
                 }
             }
@@ -973,16 +960,6 @@ OFCondition DSRSOPInstanceReferenceList::writeXML(STD_NAMESPACE ostream &stream,
         }
         iter++;
     }
-    return result;
-}
-
-
-OFCondition DSRSOPInstanceReferenceList::setSpecificCharacterSet(const OFString &value,
-                                                                 const OFBool check)
-{
-    OFCondition result = (check) ? DcmCodeString::checkStringValue(value, "1-n") : EC_Normal;
-    if (result.good())
-        SpecificCharacterSet = value;
     return result;
 }
 
@@ -1055,10 +1032,10 @@ OFCondition DSRSOPInstanceReferenceList::addItem(DcmItem &dataset,
 {
     OFString studyUID, seriesUID, sopClassUID, instanceUID;
     /* retrieve element values from dataset */
-    getStringValueFromDataset(dataset, DCM_StudyInstanceUID, studyUID);
-    getStringValueFromDataset(dataset, DCM_SeriesInstanceUID, seriesUID);
-    getStringValueFromDataset(dataset, DCM_SOPClassUID, sopClassUID);
-    getStringValueFromDataset(dataset, DCM_SOPInstanceUID, instanceUID);
+    dataset.findAndGetOFString(DCM_StudyInstanceUID, studyUID);
+    dataset.findAndGetOFString(DCM_SeriesInstanceUID, seriesUID);
+    dataset.findAndGetOFString(DCM_SOPClassUID, sopClassUID);
+    dataset.findAndGetOFString(DCM_SOPInstanceUID, instanceUID);
     /* add new item to the list of references (if valid) */
     return addItem(studyUID, seriesUID, sopClassUID, instanceUID, check);
 }
@@ -1337,21 +1314,6 @@ const OFString &DSRSOPInstanceReferenceList::getSOPClassUID(OFString &stringValu
 }
 
 
-const OFString &DSRSOPInstanceReferenceList::getSOPClassName(OFString &stringValue,
-                                                             const OFString &defaultName) const
-{
-    OFString sopClassUID;
-    /* retrieve SOP class UID of current entry */
-    if (!getSOPClassUID(sopClassUID).empty())
-    {
-        /* lookup name associated with the SOP class UID */
-        stringValue = dcmFindNameOfUID(sopClassUID.c_str(), defaultName.c_str());
-    } else
-        stringValue.clear();
-    return stringValue;
-}
-
-
 const OFString &DSRSOPInstanceReferenceList::getRetrieveAETitle(OFString &stringValue) const
 {
     /* check whether current series is valid */
@@ -1462,7 +1424,7 @@ OFCondition DSRSOPInstanceReferenceList::setStorageMediaFileSetID(const OFString
     if (series != NULL)
     {
         /* set the value (if valid) */
-        result = (check) ? DcmShortString::checkStringValue(value, "1", SpecificCharacterSet) : EC_Normal;
+        result = (check) ? DcmShortString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
             series->StorageMediaFileSetID = value;
     }

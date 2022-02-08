@@ -6,8 +6,7 @@
 #ifndef CHARLS_HEADER
 #define CHARLS_HEADER
 
-#include "dcmtk/ofstd/ofmem.h"
-#undef NEAR
+#include "dcmtk/ofstd/ofaptr.h"
 #include "streams.h"
 
 #define JPEG_SOI  0xD8
@@ -40,7 +39,7 @@ template<class STRATEGY>
 class JlsCodecFactory 
 {
 public:	
-	OFrvalue<OFunique_ptr<STRATEGY> > GetCodec(const JlsParameters& info, const JlsCustomParameters&);
+	OFauto_ptr<STRATEGY> GetCodec(const JlsParameters& info, const JlsCustomParameters&);
 private:
 	STRATEGY* GetCodecImpl(const JlsParameters& info);
 };

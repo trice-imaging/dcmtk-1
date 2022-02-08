@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2003-2021, OFFIS e.V.
+ *  Copyright (C) 2003-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRKeyObjectSelectionDocumentConstraintChecker
@@ -49,12 +49,9 @@ OFBool DSRKeyObjectSelectionDocumentConstraintChecker::isTemplateSupportRequired
 }
 
 
-OFCondition DSRKeyObjectSelectionDocumentConstraintChecker::getRootTemplateIdentification(OFString &templateIdentifier,
-                                                                                          OFString &mappingResource) const
+const char *DSRKeyObjectSelectionDocumentConstraintChecker::getRootTemplateIdentifier() const
 {
-    templateIdentifier = "2010";
-    mappingResource = "DCMR";
-    return EC_Normal;
+    return "2010";
 }
 
 
@@ -77,14 +74,14 @@ OFBool DSRKeyObjectSelectionDocumentConstraintChecker::checkContentRelationship(
         /* row 1 of the table */
         if ((relationshipType == RT_contains) && (sourceValueType == VT_Container))
         {
-            result = (targetValueType == VT_Text) || (targetValueType == VT_Image) || (targetValueType == VT_Waveform) ||
-                     (targetValueType == VT_Composite);
+            result = (targetValueType == VT_Text) || (targetValueType == VT_Image) ||
+                     (targetValueType == VT_Waveform) || (targetValueType == VT_Composite);
         }
         /* row 2 of the table */
         else if ((relationshipType == RT_hasObsContext) && (sourceValueType == VT_Container))
         {
-            result = (targetValueType == VT_Text)  || (targetValueType == VT_Code) || (targetValueType == VT_UIDRef) ||
-                     (targetValueType == VT_PName) || (targetValueType == VT_Container) /* see CP-2084 */;
+            result = (targetValueType == VT_Text) || (targetValueType == VT_Code) ||
+                     (targetValueType == VT_UIDRef) || (targetValueType == VT_PName);
         }
         /* row 3 of the table */
         else if ((relationshipType == RT_hasConceptMod) && (sourceValueType == VT_Container))

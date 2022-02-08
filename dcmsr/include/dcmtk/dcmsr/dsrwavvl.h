@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2021, OFFIS e.V.
+ *  Copyright (C) 2000-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -77,18 +77,6 @@ class DCMTK_DCMSR_EXPORT DSRWaveformReferenceValue
      */
     DSRWaveformReferenceValue &operator=(const DSRWaveformReferenceValue &referenceValue);
 
-    /** comparison operator "equal"
-     ** @param  referenceValue  waveform reference value that should be compared to the current one
-     ** @return OFTrue if both waveform reference values are equal, OFFalse otherwise
-     */
-    OFBool operator==(const DSRWaveformReferenceValue &referenceValue) const;
-
-    /** comparison operator "not equal"
-     ** @param  referenceValue  waveform reference value that should be compared to the current one
-     ** @return OFTrue if both waveform reference values are not equal, OFFalse otherwise
-     */
-    OFBool operator!=(const DSRWaveformReferenceValue &referenceValue) const;
-
     /** clear all internal variables.
      *  Since an empty waveform reference is invalid the reference becomes invalid afterwards.
      */
@@ -103,8 +91,8 @@ class DCMTK_DCMSR_EXPORT DSRWaveformReferenceValue
     virtual OFBool isShort(const size_t flags) const;
 
     /** print waveform reference.
-     *  The output of a typical waveform reference value looks like this:
-     *  (HemodynamicWaveformStorage,"1.2.3")
+     *  The output of a typical waveform reference value looks like this: (HemodynamicWaveform
+     *  Storage,"1.2.3")
      *  If the SOP class UID is unknown, the UID is printed instead of the related name.
      ** @param  stream  output stream to which the image reference value should be printed
      *  @param  flags   flag used to customize the output (see DSRTypes::PF_xxx)
@@ -116,12 +104,10 @@ class DCMTK_DCMSR_EXPORT DSRWaveformReferenceValue
     /** read waveform reference from XML document
      ** @param  doc     document containing the XML file content
      *  @param  cursor  cursor pointing to the starting node
-     *  @param  flags   flag used to customize the reading process (see DSRTypes::XF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition readXML(const DSRXMLDocument &doc,
-                                DSRXMLCursor cursor,
-                                const size_t flags);
+                                DSRXMLCursor cursor);
 
     /** write waveform reference in XML format
      ** @param  stream  output stream to which the XML document is written
@@ -201,11 +187,9 @@ class DCMTK_DCMSR_EXPORT DSRWaveformReferenceValue
 
     /** read waveform reference value from dataset
      ** @param  dataset  DICOM dataset from which the value should be read
-     *  @param  flags    flag used to customize the reading process (see DSRTypes::RF_xxx)
      ** @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual OFCondition readItem(DcmItem &dataset,
-                                 const size_t flags);
+    virtual OFCondition readItem(DcmItem &dataset);
 
     /** write waveform reference value to dataset
      ** @param  dataset  DICOM dataset to which the value should be written
@@ -215,14 +199,12 @@ class DCMTK_DCMSR_EXPORT DSRWaveformReferenceValue
 
     /** check the specified SOP class UID for validity.
      *  This method further specializes the checks performed in the base class
-     *  DSRCompositeReferenceValue.  All waveform SOP classes that are defined
-     *  in DICOM PS 3.6-2020c are allowed.
-     ** @param  sopClassUID     SOP class UID to be checked
-     *  @param  reportWarnings  if enabled, report warning messages to the logger
+     *  DSRCompositeReferenceValue.  Currently, all waveform SOP classes that are defined
+     *  in DICOM PS 3.6-2011 are allowed.
+     ** @param  sopClassUID  SOP class UID to be checked
      ** @return status, EC_Normal if value is valid, an error code otherwise
      */
-    virtual OFCondition checkSOPClassUID(const OFString &sopClassUID,
-                                         const OFBool reportWarnings = OFFalse) const;
+    virtual OFCondition checkSOPClassUID(const OFString &sopClassUID) const;
 
 
   private:

@@ -1,6 +1,7 @@
+#define TRICE 1  //**Set of Aud's changes are needed
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were partly developed by
@@ -71,15 +72,20 @@
 
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
-
-#ifdef HAVE_WINDOWS_H
-#include <winsock2.h>  /* for SO_EXCLUSIVEADDRUSE */
-#include <ws2tcpip.h>  /* for socklen_t */
-#endif
-
 #include "dcmtk/dcmnet/diutil.h"
 
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CERRNO
+#define INCLUDE_CSIGNAL
+#define INCLUDE_CTIME
+#include "dcmtk/ofstd/ofstdinc.h"
+
 BEGIN_EXTERN_C
+#ifdef HAVE_SYS_ERRNO_H
+#include <sys/errno.h>
+#endif
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
@@ -101,20 +107,29 @@ BEGIN_EXTERN_C
 #endif
 #ifdef WITH_TCPWRAPPER
 #include <tcpd.h>               /* for hosts_ctl */
+
+BEGIN_EXTERN_C
 int dcmtk_hosts_access(struct request_info *req);
+END_EXTERN_C
 #endif
-/* declare extern "C" typedef for signal handler function pointer */
-#ifdef SIGNAL_HANDLER_WITH_ELLIPSE
-typedef void(*mySIG_TYP)(...);
-#else
-typedef void(*mySIG_TYP)(int);
+#ifdef HAVE_SIGNAL_H
+// On Solaris with Sun Workshop 11, <signal.h> declares signal() but <csignal> does not
+#include <signal.h>
 #endif
 END_EXTERN_C
 
-#ifdef DCMTK_HAVE_POLL
-#include <poll.h>
+BEGIN_EXTERN_C
+/* declare extern "C" typedef for signal handler function pointer */
+#ifdef SIGNAL_HANDLER_WITH_ELLIPSE
+typedef void (*mySIG_TYP)(...);
+#else
+typedef void (*mySIG_TYP)(int);
 #endif
+END_EXTERN_C
 
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>       /* Use the Grand Unified Sockets Interface (GUSI) on Macintosh */
+#endif
 
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/dcmnet/dcompat.h"
@@ -122,22 +137,28 @@ END_EXTERN_C
 #include "dcmtk/dcmnet/cond.h"
 #include "dcmtk/dcmnet/lst.h"
 #include "dcmtk/ofstd/ofconsol.h"
-#include "dcmtk/ofstd/ofstd.h"
 
 #include "dcmtk/dcmnet/dul.h"
-#include "dcmtk/dcmnet/dulstruc.h"
+#include "dulstruc.h"
 #include "dulpriv.h"
 #include "dulfsm.h"
 #include "dcmtk/dcmnet/dcmtrans.h"
 #include "dcmtk/dcmnet/dcmlayer.h"
 #include "dcmtk/ofstd/ofstd.h"
+#include "dcmtk/ofstd/ofnetdb.h"
 
 OFGlobal<OFBool> dcmDisableGethostbyaddr(OFFalse);
+OFGlobal<OFBool> dcmStrictRoleSelection(OFFalse);
 OFGlobal<Sint32> dcmConnectionTimeout(-1);
-OFGlobal<DcmNativeSocketType> dcmExternalSocketHandle(DCMNET_INVALID_SOCKET);
+OFGlobal<int>    dcmExternalSocketHandle(-1);
 OFGlobal<const char *> dcmTCPWrapperDaemonName((const char *)NULL);
 OFGlobal<unsigned long> dcmEnableBackwardCompatibility(0);
-OFGlobal<size_t> dcmAssociatePDUSizeLimit(0x100000);
+
+#ifdef TRICE
+static bool Remote = true;
+void setLocalConnection()  {  Remote = false;  }
+char client_ip_address[20];   //**Global variable for client ip address
+#endif
 
 static int networkInitialized = 0;
 
@@ -172,13 +193,7 @@ static OFCondition
 get_association_parameter(void *paramAddress,
   DUL_DATA_TYPE paramType, size_t paramLength,
   DUL_DATA_TYPE outputType, void *outputAddress, size_t outputLength);
-
-#ifdef _WIN32
-static void setTCPBufferLength(SOCKET sock);
-#else
 static void setTCPBufferLength(int sock);
-#endif
-
 static OFCondition checkNetwork(PRIVATE_NETWORKKEY ** networkKey);
 static OFCondition checkAssociation(PRIVATE_ASSOCIATIONKEY ** association);
 static OFString dump_presentation_ctx(LST_HEAD ** l);
@@ -206,44 +221,6 @@ void DUL_markProcessAsForkedChild()
 {
   processIsForkedChild = OFTrue;
 }
-
-OFCondition DUL_readSocketHandleAsForkedChild()
-{
-  OFCondition result = EC_Normal;
-
-#ifdef _WIN32
-  // we are a child process
-  DUL_markProcessAsForkedChild();
-
-  char buf[256];
-  DWORD bytesRead = 0;
-  HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
-
-  // read socket handle number from stdin, i.e. the anonymous pipe
-  // to which our parent process has written the handle number.
-  if (ReadFile(hStdIn, buf, sizeof(buf) - 1, &bytesRead, NULL))
-  {
-    // make sure buffer is zero terminated
-    buf[bytesRead] = '\0';
-    unsigned __int64 socketHandle = 0;
-    sscanf(buf, "%llu", &socketHandle);
-    // socketHandle is always 64-bit because we always use this type to
-    // pass the handle between parent and chile. Type DcmNativeSocketType
-    // can be 32-bit on a 32-bit Windows, however. We, therefore, cast to the
-    // appropriate type. This is safe because the handle in the parent
-    // also had type DcmNativeSocketType.
-    dcmExternalSocketHandle.set(OFstatic_cast(DcmNativeSocketType, socketHandle));
-  }
-  else
-  {
-    DCMNET_ERROR("cannot read socket handle: " << GetLastError());
-    result = DUL_CANNOTREADSOCKETHANDLE;
-  }
-#endif
-
-  return result;
-}
-
 
 void DUL_requestForkOnTransportConnectionReceipt(int argc, char *argv[])
 {
@@ -410,7 +387,7 @@ DUL_InitializeNetwork(const char *mode,
 **
 **
 ** Algorithm:
-**      Close the socket and free the memory occupied by the network key
+**      Close the socket and free the memeory occupied by the network key
 */
 OFCondition
 DUL_DropNetwork(DUL_NETWORKKEY ** callerNetworkKey)
@@ -508,9 +485,6 @@ DUL_RequestAssociation(
     if (cond.bad())
         return cond;
 
-    if (block == DUL_NOBLOCK)
-        DCMNET_TRACE("setting association request timeout to " << timeout << " seconds");
-
     if (activatePDUStorage) DUL_activateAssociatePDUStorage(*association);
 
     /* send a request primitive */
@@ -525,7 +499,7 @@ DUL_RequestAssociation(
          */
         OFCondition cond2 = PRV_StateMachine(network, association, TRANS_CONN_CLOSED, (*association)->protocolState, NULL);
         destroyAssociationKey(association);
-        return cond;
+        return makeDcmnetSubCondition(DULC_REQUESTASSOCIATIONFAILED, OF_error, "Failed to establish association", DimseCondition::push(cond2, cond));
     }
     cond = PRV_StateMachine(network, association,
       TRANS_CONN_CONFIRM_LOCAL_USER, (*association)->protocolState, params);
@@ -533,17 +507,8 @@ DUL_RequestAssociation(
         destroyAssociationKey(association);
         return cond;
     }
-
-    /* if no timeout is passed, use the default one (do not wait forever) */
-    if ((block == DUL_BLOCK) && ((*association)->timeout > 0))
-    {
-        block = DUL_NOBLOCK;
-        timeout = (*association)->timeout;
-        DCMNET_TRACE("setting timeout for first PDU to be read to " << timeout << " seconds");
-    }
     /* Find the next event */
     cond = PRV_NextPDUType(association, block, timeout, &pduType);
-
     if (cond == DUL_NETWORKCLOSED)
         event = TRANS_CONN_CLOSED;
     else if (cond == DUL_READTIMEOUT)
@@ -652,9 +617,6 @@ DUL_ReceiveAssociationRQ(
     if (cond.bad())
         return cond;
 
-    if (block == DUL_NOBLOCK)
-        DCMNET_TRACE("setting association receive timeout to " << timeout << " seconds");
-
     if (activatePDUStorage) DUL_activateAssociatePDUStorage(*association);
     clearRequestorsParams(params);
 
@@ -675,8 +637,7 @@ DUL_ReceiveAssociationRQ(
     /* This is the first time we read from this new connection, so in case it
      * doesn't speak DICOM, we shouldn't wait forever (= DUL_NOBLOCK).
      */
-    DCMNET_TRACE("setting timeout for first PDU to be read to " << (*association)->timeout << " seconds");
-    cond = PRV_NextPDUType(association, DUL_NOBLOCK, (*association)->timeout, &pduType);
+    cond = PRV_NextPDUType(association, DUL_NOBLOCK, PRV_DEFAULTTIMEOUT, &pduType);
 
     if (cond == DUL_NETWORKCLOSED)
         event = TRANS_CONN_CLOSED;
@@ -920,40 +881,6 @@ DUL_DropAssociation(DUL_ASSOCIATIONKEY ** callerAssociation)
 }
 
 
-/* DUL_CloseTransportConnection
-**
-** Purpose:
-**      This function closes the transport connection of an Association
-**      without notifying the peer application. This routine should only
-**      be used by the parent process after an association has been
-**      delegated to a forked child.
-**
-** Parameter Dictionary:
-**      callerAssociation  Caller's handle to the Association that is to
-**                         be dropped.
-**
-** Return Values:
-**
-**
-*/
-OFCondition
-DUL_CloseTransportConnection(DUL_ASSOCIATIONKEY ** callerAssociation)
-{
-    PRIVATE_ASSOCIATIONKEY ** association = (PRIVATE_ASSOCIATIONKEY **) callerAssociation;
-    OFCondition cond = checkAssociation(association);
-    if (cond.bad()) return cond;
-
-    if ((*association)->connection)
-    {
-     (*association)->connection->closeTransportConnection();
-     delete (*association)->connection;
-     (*association)->connection = NULL;
-    }
-    destroyAssociationKey(association);
-    return EC_Normal;
-}
-
-
 /* DUL_ReleaseAssociation
 **
 ** Purpose:
@@ -1082,7 +1009,6 @@ DUL_AbortAssociation(DUL_ASSOCIATIONKEY ** callerAssociation)
     DUL_ABORTITEMS abortItems = { 0, DUL_SCU_INITIATED_ABORT, 0 };
     int event = 0;
     unsigned char pduType = 0;
-    OFCondition tcpError = makeDcmnetCondition(DULC_TCPIOERROR, OF_error, "");
 
     PRIVATE_ASSOCIATIONKEY ** association = (PRIVATE_ASSOCIATIONKEY **) callerAssociation;
     OFCondition cond = checkAssociation(association);
@@ -1137,9 +1063,7 @@ DUL_AbortAssociation(DUL_ASSOCIATIONKEY ** callerAssociation)
           else event = INVALID_PDU;
           cond = PRV_StateMachine(NULL, association, event, (*association)->protocolState, NULL);
         }
-        // the comparison with tcpError prevents a potential infinite loop if
-        // we are receiving garbage over the network connection.
-        if (cond.good() || (cond == tcpError)) done = OFTrue;
+        if (cond.good()) done = OFTrue;
     }
     return EC_Normal;
 }
@@ -1492,6 +1416,58 @@ DUL_ClearServiceParameters(DUL_ASSOCIATESERVICEPARAMETERS * params)
 }
 
 
+/* DUL_DefaultServiceParameters
+**
+** Purpose:
+**      DUL_DefaultServiceParameters is used to set a number of default
+**      parameters in a DUL_ASSOCIATESERVICEPARAMETERS structure.  These
+**      parameters are the default MIR parameters (which should be
+**      adequate for most Unix installations).
+**
+** Parameter Dictionary:
+**      params  Pointer to a DUL_ASSOCIATESERVICEPARAMETERS structure
+**              to be set.
+**
+** Return Values:
+**      none
+** Notes:
+**
+** Algorithm:
+*/
+void
+DUL_DefaultServiceParameters(DUL_ASSOCIATESERVICEPARAMETERS * params)
+{
+    static DUL_ASSOCIATESERVICEPARAMETERS p = {
+        DICOM_STDAPPLICATIONCONTEXT,    /* Application Ctx Name */
+        "Calling AP Title",     /* Calling AP Title */
+        "Called AP Title",      /* Called AP Title */
+        "",                     /* Responding AP Title */
+        16384,                  /* Max PDU */
+        0,                      /* result */
+        0,                      /* result source */
+        0,                      /* diagnostic */
+        "localhost",            /* Calling presentation addr */
+        "localhost:104",        /* Called presentation addr */
+        NULL,                   /* Requested presentation ctx list */
+        NULL,                   /* Accepted presentation ctx list */
+        0,                      /* Maximum operations invoked */
+        0,                      /* Maximum operations performed */
+        DICOM_NET_IMPLEMENTATIONCLASSUID, /* Calling implementation class UID */
+        DICOM_NET_IMPLEMENTATIONVERSIONNAME, /* Calling implementation vers name */
+        "",                     /* Called implementation class UID */
+        "",                     /* Called implementation vers name */
+        0,                      /* peer max pdu */
+        NULL,                   /* Requested Extended Negotation List */
+        NULL,                   /* Accepted Extended Negotation List */
+        NULL,                   /* Requested User Identify Negotiation */
+        NULL,                   /* Accepted User Identify Negotiation */
+        OFFalse                 /* don't use Secure Transport Layer */
+    };
+
+    *params = p;
+}
+
+
 /*  ========================================================================
  *  Private functions not meant for users of the package are included below.
  */
@@ -1559,9 +1535,8 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
                               DUL_ASSOCIATESERVICEPARAMETERS * params,
                               PRIVATE_ASSOCIATIONKEY ** association)
 {
-#ifndef DCMTK_HAVE_POLL
-    fd_set fdset;
-#endif
+    fd_set
+    fdset;
     struct timeval timeout_val;
 #ifdef HAVE_DECLARATION_SOCKLEN_T
     socklen_t len;
@@ -1572,6 +1547,7 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
 #endif
     int nfound, connected;
     struct sockaddr from;
+    OFStandard::OFHostent remote;
     struct linger sockarg;
 
 #ifdef HAVE_FORK
@@ -1582,13 +1558,8 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
 
     int reuse = 1;
 
-#ifdef _WIN32
-    SOCKET sock = dcmExternalSocketHandle.get();
-    if (sock != INVALID_SOCKET)
-#else
     int sock = dcmExternalSocketHandle.get();
     if (sock > 0)
-#endif
     {
       // use the socket file descriptor provided to us externally
       // instead of calling accept().
@@ -1597,8 +1568,9 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
       len = sizeof(from);
       if (getpeername(sock, &from, &len))
       {
+          char buf[256];
           OFOStringStream stream;
-          stream << "TCP Initialization Error: " << OFStandard::getLastNetworkErrorCode().message()
+          stream << "TCP Initialization Error: " << OFStandard::strerror(errno, buf, sizeof(buf))
                  << ", getpeername failed on socket " << sock << OFStringStream_ends;
           OFSTRINGSTREAM_GETOFSTRING(stream, msg)
           return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
@@ -1609,52 +1581,26 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
         if (block == DUL_NOBLOCK)
         {
             connected = 0;
-#ifdef DCMTK_HAVE_POLL
-            struct pollfd pfd[] =
-            {
-                { (*network)->networkSpecific.TCP.listenSocket, POLLIN, 0 }
-            };
-#else
-             FD_ZERO(&fdset);
+            FD_ZERO(&fdset);
 #ifdef __MINGW32__
             // on MinGW, FD_SET expects an unsigned first argument
             FD_SET((unsigned int)((*network)->networkSpecific.TCP.listenSocket), &fdset);
 #else
             FD_SET((*network)->networkSpecific.TCP.listenSocket, &fdset);
-#endif /* __MINGW32__ */
-#endif /* DCMTK_HAVE_POLL */
+#endif
 
             timeout_val.tv_sec = timeout;
             timeout_val.tv_usec = 0;
-
-#ifdef DCMTK_HAVE_POLL
-            nfound = poll(pfd, 1, timeout_val.tv_sec*1000+(timeout_val.tv_usec/1000));
-#else
 #ifdef HAVE_INTP_SELECT
-            nfound = select(
-              OFstatic_cast(int, (*network)->networkSpecific.TCP.listenSocket + 1),
-                           (int *)(&fdset), NULL, NULL, &timeout_val);
+            nfound = select((*network)->networkSpecific.TCP.listenSocket + 1,
+                            (int *)(&fdset), NULL, NULL, &timeout_val);
 #else
-            // On Win32, it is safe to cast the first parameter to int
-            // because Windows ignores this parameter anyway.
-            nfound = select(
-              OFstatic_cast(int, (*network)->networkSpecific.TCP.listenSocket + 1),
-                           &fdset, NULL, NULL, &timeout_val);
-#endif /* HAVE_INTP_SELECT */
-#endif /* DCMTK_HAVE_POLL*/
-
-            if (DCM_dcmnetLogger.isEnabledFor(OFLogger::DEBUG_LOG_LEVEL))
-            {
-                DU_logSelectResult(nfound);
-            }
+            nfound = select((*network)->networkSpecific.TCP.listenSocket + 1,
+                            &fdset, NULL, NULL, &timeout_val);
+#endif
             if (nfound > 0) {
-#ifdef DCMTK_HAVE_POLL
-                if (pfd[0].revents & POLLIN)
-                    connected++;
-#else
                 if (FD_ISSET((*network)->networkSpecific.TCP.listenSocket, &fdset))
                     connected++;
-#endif
             }
             if (!connected) return DUL_NOASSOCIATIONREQUEST;
         }
@@ -1662,49 +1608,27 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
         {
             connected = 0;
             do {
-#ifdef DCMTK_HAVE_POLL
-                struct pollfd pfd[]=
-                {
-                    { (*network)->networkSpecific.TCP.listenSocket, POLLIN, 0 }
-                };
-#else
                 FD_ZERO(&fdset);
 #ifdef __MINGW32__
                 // on MinGW, FD_SET expects an unsigned first argument
                 FD_SET((unsigned int)((*network)->networkSpecific.TCP.listenSocket), &fdset);
 #else
                 FD_SET((*network)->networkSpecific.TCP.listenSocket, &fdset);
-#endif /* __MINGW32__ */
-#endif /* DCMTK_HAVE_POLL */
+#endif
+
                 timeout_val.tv_sec = 5;
                 timeout_val.tv_usec = 0;
-#ifdef DCMTK_HAVE_POLL
-                nfound = poll(pfd, 1, timeout_val.tv_sec*1000+(timeout_val.tv_usec/1000));
-#else
 #ifdef HAVE_INTP_SELECT
-                nfound = select(
-                  OFstatic_cast(int, (*network)->networkSpecific.TCP.listenSocket + 1),
+                nfound = select((*network)->networkSpecific.TCP.listenSocket + 1,
                                 (int *)(&fdset), NULL, NULL, &timeout_val);
 #else
-                // On Win32, it is safe to cast the first parameter to int
-                // because Windows ignores this parameter anyway.
-                nfound = select(
-                  OFstatic_cast(int, (*network)->networkSpecific.TCP.listenSocket + 1),
+                nfound = select((*network)->networkSpecific.TCP.listenSocket + 1,
                                 &fdset, NULL, NULL, &timeout_val);
-#endif /* HAVE_INTP_SELECT */
-#endif /* DCMTK_HAVE_POLL */
-                if (DCM_dcmnetLogger.isEnabledFor(OFLogger::DEBUG_LOG_LEVEL))
-                {
-                    DU_logSelectResult(nfound);
-                }
-                if (nfound > 0) {
-#ifdef DCMTK_HAVE_POLL
-                    if (pfd[0].revents & POLLIN)
-                        connected++;
-#else
-                    if (FD_ISSET((*network)->networkSpecific.TCP.listenSocket, &fdset))
-                        connected++;
 #endif
+                if (nfound > 0) {
+                    if (FD_ISSET((*network)->networkSpecific.TCP.listenSocket,
+                                 &fdset))
+                        connected++;
                 }
             } while (!connected);
         }
@@ -1713,16 +1637,13 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
         do
         {
             sock = accept((*network)->networkSpecific.TCP.listenSocket, &from, &len);
-#ifdef _WIN32
-        } while (sock == INVALID_SOCKET && WSAGetLastError() == WSAEINTR);
-        if (sock == INVALID_SOCKET)
-#else
         } while (sock == -1 && errno == EINTR);
+
         if (sock < 0)
-#endif
         {
+            char buf[256];
             OFOStringStream stream;
-            stream << "TCP Initialization Error: " << OFStandard::getLastNetworkErrorCode().message()
+            stream << "TCP Initialization Error: " << OFStandard::strerror(errno, buf, sizeof(buf))
                    << ", accept failed on socket " << sock << OFStringStream_ends;
             OFSTRINGSTREAM_GETOFSTRING(stream, msg)
             return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
@@ -1749,8 +1670,9 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
             // fork failed, return error code
             close(sock);
 
+            char buf[256];
             OFString msg = "Multi-Process Error: ";
-            msg += OFStandard::getLastSystemErrorCode().message();
+            msg += OFStandard::strerror(errno, buf, sizeof(buf));
             msg += ", fork failed";
             return makeDcmnetCondition(DULC_CANNOTFORK, OF_error, msg.c_str());
         }
@@ -1776,6 +1698,9 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
 
         // prepare the command line
         OFString cmdLine = command_argv[0];
+#ifdef TRICE
+        cmdLine += "1";  //*Different process name for TRICE - so we can update the forked .exe separate from the base .exe (storescp1)
+#endif
         cmdLine += " --forked-child";
         for (int i=1; i < command_argc; ++i)
         {
@@ -1784,17 +1709,6 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
              */
             cmdLine += " \"";
             cmdLine += command_argv[i];
-            /* if last character in argument value is a backslash, escape it
-             * since otherwise it would escape the quote appended in the following
-             * step, i.e. make sure that something like '\my\dir\' does not become
-             * '"\my\dir\"' but instead ends up as '"\my\dir\\"' (single quotes for
-             *  demonstration purposes). Make sure nobody passes a zero length string.
-             */
-            size_t len2 = strlen(command_argv[i]);
-            if ((len2 > 0) && (command_argv[i][len2 - 1] == '\\'))
-            {
-	            cmdLine += "\\";
-            }
             cmdLine += "\"";
         }
 
@@ -1820,7 +1734,7 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
         CloseHandle(hChildStdInWrite);
 
         // we need a STARTUPINFO and a PROCESS_INFORMATION structure for CreateProcess.
-        STARTUPINFOA si;
+        STARTUPINFO si;
         PROCESS_INFORMATION pi;
         memset(&pi,0,sizeof(pi));
         memset(&si,0,sizeof(si));
@@ -1835,7 +1749,7 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
         si.hStdInput = hChildStdInRead;
 
         // create child process.
-        if (!CreateProcessA(NULL,OFconst_cast(char *, cmdLine.c_str()), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))
+        if (!CreateProcess(NULL,OFconst_cast(char *, cmdLine.c_str()), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))
         {
             OFOStringStream stream;
             stream << "Multi-Process Error: Creating process failed with error code "
@@ -1880,10 +1794,9 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
 
                 // send number of socket handle in child process over anonymous pipe
                 DWORD bytesWritten;
-                char buf[30];
-                // we pass the socket handle as a 64-bit unsigned integer, which should work for 32 and 64 bit Windows
-                sprintf(buf, "%llu", OFreinterpret_cast(unsigned __int64, childSocketHandle));
-                if (!WriteFile(hChildStdInWriteDup, buf, OFstatic_cast(DWORD, strlen(buf) + 1), &bytesWritten, NULL))
+                char buf[20];
+                sprintf(buf, "%i", OFstatic_cast(int, OFreinterpret_cast(size_t, childSocketHandle)));
+                if (!WriteFile(hChildStdInWriteDup, buf, strlen(buf) + 1, &bytesWritten, NULL))
                 {
                     CloseHandle(hChildStdInWriteDup);
                     return makeDcmnetCondition(DULC_CANNOTFORK, OF_error, "Multi-Process Error: Writing to anonymous pipe failed");
@@ -1909,80 +1822,60 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
     }
 #endif
 
+#ifndef HAVE_GUSI_H
+    /* GUSI always returns an error for setsockopt() */
     sockarg.l_onoff = 0;
     if (setsockopt(sock, SOL_SOCKET, SO_LINGER, (char *) &sockarg, sizeof(sockarg)) < 0)
     {
+        char buf[256];
         OFOStringStream stream;
-        stream << "TCP Initialization Error: " << OFStandard::getLastNetworkErrorCode().message()
+        stream << "TCP Initialization Error: " << OFStandard::strerror(errno, buf, sizeof(buf))
                << ", setsockopt failed on socket " << sock << OFStringStream_ends;
         OFSTRINGSTREAM_GETOFSTRING(stream, msg)
         return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
     }
     reuse = 1;
-
-#ifdef _WIN32
-    if (setsockopt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (char *) &reuse, sizeof(reuse)) < 0)
-#else
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(reuse)) < 0)
-#endif
     {
+        char buf[256];
         OFString msg = "TCP Initialization Error: ";
-        msg += OFStandard::getLastNetworkErrorCode().message();
+        msg += OFStandard::strerror(errno, buf, sizeof(buf));
         return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
     }
+#endif
     setTCPBufferLength(sock);
 
+#ifndef DONT_DISABLE_NAGLE_ALGORITHM
     /*
-     * Disable the so-called Nagle algorithm (if requested).
-     * This might provide a better network performance on some systems/environments.
-     * By default, the algorithm is not disabled unless DISABLE_NAGLE_ALGORITHM is defined.
-     * The default behavior can be changed by setting the environment variable TCP_NODELAY.
+     * Disable the Nagle algorithm.
+     * This provides a 2-4 times performance improvement (WinNT4/SP4, 100Mbit/s Ethernet).
+     * Effects on other environments are unknown.
+     * The code below allows the Nagle algorithm to be enabled by setting the TCP_NODELAY environment
+     * variable to have value 0.
      */
-
-#ifdef DONT_DISABLE_NAGLE_ALGORITHM
-#ifdef _MSC_VER
-#pragma message("The macro DONT_DISABLE_NAGLE_ALGORITHM is not supported anymore. See 'macros.txt' for details.")
-#else
-#warning The macro DONT_DISABLE_NAGLE_ALGORITHM is not supported anymore. See "macros.txt" for details.
-#endif
-#endif
-
-#ifdef DISABLE_NAGLE_ALGORITHM
     int tcpNoDelay = 1; // disable
-#else
-    int tcpNoDelay = 0; // don't disable
-#endif
     char* tcpNoDelayString = NULL;
-    DCMNET_TRACE("checking whether environment variable TCP_NODELAY is set");
-    if ((tcpNoDelayString = getenv("TCP_NODELAY")) != NULL)
-    {
-      if (sscanf(tcpNoDelayString, "%d", &tcpNoDelay) != 1)
-      {
-        DCMNET_WARN("DUL: cannot parse environment variable TCP_NODELAY=" << tcpNoDelayString);
-      }
-    } else
-      DCMNET_TRACE("  environment variable TCP_NODELAY not set, using the default value (" << tcpNoDelay << ")");
-    if (tcpNoDelay) {
-#ifdef DISABLE_NAGLE_ALGORITHM
-      DCMNET_DEBUG("DUL: disabling Nagle algorithm as defined at compilation time (DISABLE_NAGLE_ALGORITHM)");
-#else
-      DCMNET_DEBUG("DUL: disabling Nagle algorithm as requested at runtime (TCP_NODELAY=" << tcpNoDelayString << ")");
-#endif
-      if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*)&tcpNoDelay, sizeof(tcpNoDelay)) < 0)
-      {
-        OFString msg = "TCP Initialization Error: ";
-        msg += OFStandard::getLastNetworkErrorCode().message();
-        return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
-      }
-#ifdef DISABLE_NAGLE_ALGORITHM
-    } else {
-      DCMNET_DEBUG("DUL: do not disable Nagle algorithm as requested at runtime (TCP_NODELAY=" << tcpNoDelayString << ")");
-#endif
+    if ((tcpNoDelayString = getenv("TCP_NODELAY")) != NULL) {
+        if (sscanf(tcpNoDelayString, "%d", &tcpNoDelay) != 1) {
+            DCMNET_WARN("DUL: cannot parse environment variable TCP_NODELAY=" << tcpNoDelayString);
+        }
     }
+    if (tcpNoDelay) {
+        if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*)&tcpNoDelay, sizeof(tcpNoDelay)) < 0)
+        {
+            char buf[256];
+            OFString msg = "TCP Initialization Error: ";
+            msg += OFStandard::strerror(errno, buf, sizeof(buf));
+            return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
+        }
+    }
+#endif // DONT_DISABLE_NAGLE_ALGORITHM
 
     // create string containing numerical IP address.
     OFString client_dns_name;
+#ifndef TRICE
     char client_ip_address[20];
+#endif
     sprintf(client_ip_address, "%-d.%-d.%-d.%-d",  // this code is ugly but thread safe
        ((int) from.sa_data[2]) & 0xff,
        ((int) from.sa_data[3]) & 0xff,
@@ -1990,28 +1883,28 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
        ((int) from.sa_data[5]) & 0xff);
 
     if (! dcmDisableGethostbyaddr.get())
-       client_dns_name = OFStandard::getHostnameByAddress(&from.sa_data[2], sizeof(struct in_addr), AF_INET);
-
-    if (client_dns_name.length() == 0)
+       remote = OFStandard::getHostByAddr(&from.sa_data[2], 4, 2);
+    if (!remote)
     {
         // reverse DNS lookup disabled or host not found, use numerical address
         OFStandard::strlcpy(params->callingPresentationAddress, client_ip_address,
           sizeof(params->callingPresentationAddress));
         OFStandard::strlcpy((*association)->remoteNode, client_ip_address, sizeof((*association)->remoteNode));
-        DCMNET_DEBUG("Association Received: " << params->callingPresentationAddress );
     }
     else
     {
-        char node[260];
+        client_dns_name = remote.h_name.c_str();
+
+        char node[128];
         if ((*network)->options & DUL_FULLDOMAINNAME)
-            OFStandard::strlcpy(node, client_dns_name.c_str(), sizeof(node));
+            OFStandard::strlcpy(node, remote.h_name.c_str(), sizeof(node));
         else {
-            if (sscanf(client_dns_name.c_str(), "%[^.]", node) != 1)
+            if (sscanf(remote.h_name.c_str(), "%[^.]", node) != 1)
                 node[0] = '\0';
         }
+
         OFStandard::strlcpy((*association)->remoteNode, node, sizeof((*association)->remoteNode));
         OFStandard::strlcpy(params->callingPresentationAddress, node, sizeof(params->callingPresentationAddress));
-        DCMNET_DEBUG("Association Received: " << params->callingPresentationAddress );
     }
 
 #ifdef WITH_TCPWRAPPER
@@ -2062,12 +1955,21 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
 #else
       (void) close(sock);
 #endif
+      char buf[256];
       OFString msg = "TCP Initialization Error: ";
-      msg += OFStandard::getLastNetworkErrorCode().message();
+      msg += OFStandard::strerror(errno, buf, sizeof(buf));
       return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
     }
 
-    return (*association)->connection->serverSideHandshake();
+    DcmTransportLayerStatus tcsStatus;
+    if (TCS_ok != (tcsStatus = (*association)->connection->serverSideHandshake()))
+    {
+      OFString msg = "DUL secure transport layer: ";
+      msg += (*association)->connection->errorString(tcsStatus);
+      return makeDcmnetCondition(DULC_TLSERROR, OF_error, msg.c_str());
+    }
+
+    return EC_Normal;
 }
 
 
@@ -2106,7 +2008,7 @@ createNetworkKey(const char *mode,
     }
     *key = (PRIVATE_NETWORKKEY *) malloc(sizeof(PRIVATE_NETWORKKEY));
     if (*key == NULL) return EC_MemoryExhausted;
-    OFStandard::strlcpy((*key)->keyType, KEY_NETWORK, sizeof((*key)->keyType));
+    (void) strcpy((*key)->keyType, KEY_NETWORK);
 
     (*key)->applicationFunction = 0;
 
@@ -2161,21 +2063,13 @@ initializeNetworkTCP(PRIVATE_NETWORKKEY ** key, void *parameter)
     (*key)->networkSpecific.TCP.tLayer = NULL;
     (*key)->networkSpecific.TCP.tLayerOwned = 0;
     (*key)->networkSpecific.TCP.port = -1;
-#ifdef _WIN32
-    (*key)->networkSpecific.TCP.listenSocket = INVALID_SOCKET;
-#else
     (*key)->networkSpecific.TCP.listenSocket = -1;
-#endif
 
     // Create listen socket if we're an application acceptor,
     // unless the socket handle has already been passed to us or
     // we are a forked child of an application acceptor, in which
     // case the socket also already exists.
-#ifdef _WIN32
-    if ((dcmExternalSocketHandle.get() == INVALID_SOCKET) &&
-#else
     if ((dcmExternalSocketHandle.get() < 0) &&
-#endif
         ((*key)->applicationFunction & DICOM_APPLICATION_ACCEPTOR) &&
         (! processIsForkedChild))
     {
@@ -2187,77 +2081,72 @@ initializeNetworkTCP(PRIVATE_NETWORKKEY ** key, void *parameter)
 #else
       size_t length;
 #endif
-
-#ifdef _WIN32
-      SOCKET sock;
-#else
       int sock;
-#endif
       struct sockaddr_in server;
 
-      /* Create socket for Internet type communication */
+      /* Create socket for internet type communication */
       (*key)->networkSpecific.TCP.port = *(int *) parameter;
       (*key)->networkSpecific.TCP.listenSocket = socket(AF_INET, SOCK_STREAM, 0);
       sock = (*key)->networkSpecific.TCP.listenSocket;
-
-#ifdef _WIN32
-      if (sock == INVALID_SOCKET)
-#else
       if (sock < 0)
-#endif
       {
+        char buf[256];
         OFString msg = "TCP Initialization Error: ";
-        msg += OFStandard::getLastNetworkErrorCode().message();
+        msg += OFStandard::strerror(errno, buf, sizeof(buf));
         return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
       }
       reuse = 1;
-#ifdef _WIN32
-      if (setsockopt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (char *) &reuse, sizeof(reuse)) < 0)
+#ifdef HAVE_GUSI_H
+      /* GUSI always returns an error for setsockopt(...) */
 #else
       if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(reuse)) < 0)
-#endif
       {
+        char buf[256];
         OFString msg = "TCP Initialization Error: ";
-        msg += OFStandard::getLastNetworkErrorCode().message();
+        msg += OFStandard::strerror(errno, buf, sizeof(buf));
           return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
       }
-
+#endif
       /* Name socket using wildcards */
       server.sin_family = AF_INET;
+#ifdef TRICE
+      server.sin_addr.s_addr = Remote ? INADDR_ANY : inet_addr("127.0.0.1");
+#else
       server.sin_addr.s_addr = INADDR_ANY;
-      server.sin_port = (unsigned short) htons(OFstatic_cast(u_short, ((*key)->networkSpecific.TCP.port)));
+#endif
+      server.sin_port = (unsigned short) htons((*key)->networkSpecific.TCP.port);
       if (bind(sock, (struct sockaddr *) & server, sizeof(server)))
       {
+        char buf[256];
         OFString msg = "TCP Initialization Error: ";
-        msg += OFStandard::getLastNetworkErrorCode().message();
+        msg += OFStandard::strerror(errno, buf, sizeof(buf));
         return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
       }
       /* Find out assigned port number and print it out */
       length = sizeof(server);
       if (getsockname(sock, (struct sockaddr *) &server, &length))
       {
+        char buf[256];
         OFString msg = "TCP Initialization Error: ";
-        msg += OFStandard::getLastNetworkErrorCode().message();
+        msg += OFStandard::strerror(errno, buf, sizeof(buf));
         return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
       }
+#ifdef HAVE_GUSI_H
+      /* GUSI always returns an error for setsockopt(...) */
+#else
       sockarg.l_onoff = 0;
       if (setsockopt(sock, SOL_SOCKET, SO_LINGER, (char *) &sockarg, sizeof(sockarg)) < 0)
       {
+        char buf[256];
         OFString msg = "TCP Initialization Error: ";
-        msg += OFStandard::getLastNetworkErrorCode().message();
+        msg += OFStandard::strerror(errno, buf, sizeof(buf));
         return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
       }
-
-      /* Listen on the socket */
-      if (listen(sock, PRV_LISTENBACKLOG) < 0)
-      {
-        OFString msg = "TCP Initialization Error: ";
-        msg += OFStandard::getLastNetworkErrorCode().message();
-        return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
-      }
+#endif
+      listen(sock, PRV_LISTENBACKLOG);
     }
 
-    (*key)->networkSpecific.TCP.tLayer = new DcmTransportLayer();
+    (*key)->networkSpecific.TCP.tLayer = new DcmTransportLayer((*key)->applicationFunction);
     (*key)->networkSpecific.TCP.tLayerOwned = 1;
     if (NULL == (*key)->networkSpecific.TCP.tLayer)
     {
@@ -2301,10 +2190,10 @@ createAssociationKey(PRIVATE_NETWORKKEY ** networkKey,
     if (key == NULL) return EC_MemoryExhausted;
     key->receivePDUQueue = NULL;
 
-    OFStandard::strlcpy(key->keyType, KEY_ASSOCIATION, sizeof(key->keyType));
+    (void) strcpy(key->keyType, KEY_ASSOCIATION);
     key->applicationFunction = (*networkKey)->applicationFunction;
 
-    OFStandard::strlcpy(key->remoteNode, remoteNode, sizeof(key->remoteNode));
+    (void) strcpy(key->remoteNode, remoteNode);
     key->presentationContextID = 0;
     key->timeout = (*networkKey)->timeout;
     key->timerStart = 0;
@@ -2398,11 +2287,11 @@ get_association_parameter(void *paramAddress,
     if ((paramType == DUL_K_STRING) && (outputLength < strlen((char*)paramAddress))) return DUL_INSUFFICIENTBUFFERLENGTH;
 
     switch (paramType) {
-      case DUL_K_INTEGER:
+    case DUL_K_INTEGER:
         (void) memcpy(outputAddress, paramAddress, paramLength);
         break;
-      case DUL_K_STRING:
-        OFStandard::strlcpy((char*)outputAddress, (char*)paramAddress, outputLength);
+    case DUL_K_STRING:
+        strcpy((char*)outputAddress, (char*)paramAddress);
         break;
     }
     return EC_Normal;
@@ -2426,37 +2315,36 @@ get_association_parameter(void *paramAddress,
 ** Algorithm:
 **      Description of the algorithm (optional) and any other notes.
 */
-#ifdef _WIN32
-static void setTCPBufferLength(SOCKET sock)
-#else
-static void setTCPBufferLength(int sock)
-#endif
+static void
+setTCPBufferLength(int sock)
 {
     char *TCPBufferLength;
     int bufLen;
 
     /*
-     * check whether environment variable TCP_BUFFER_LENGTH is set.
-     * If not, the the operating system is responsible for selecting
-     * appropriate values for the TCP send and receive buffer lengths.
+     * Use a 32K default socket buffer length.
+     * This value has provided optimal throughput during performance testing.
+     * Test environment: Windows NT 4 (SP4), 100Mbit/s Fast Ethernet.
+     * Other environments, particularly slower networks may require different values for optimal performance.
      */
-    DCMNET_TRACE("checking whether environment variable TCP_BUFFER_LENGTH is set");
-    if ((TCPBufferLength = getenv("TCP_BUFFER_LENGTH")) != NULL) {
-        if (sscanf(TCPBufferLength, "%d", &bufLen) == 1) {
-#if defined(SO_SNDBUF) && defined(SO_RCVBUF)
-            if (bufLen == 0)
-                bufLen = 65536; // a socket buffer size of 64K gives good throughput for image transmission
-            DCMNET_DEBUG("DUL: setting TCP buffer length to " << bufLen << " bytes");
-            (void) setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *) &bufLen, sizeof(bufLen));
-            (void) setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *) &bufLen, sizeof(bufLen));
+#ifdef HAVE_GUSI_H
+    /* GUSI always returns an error for setsockopt(...) */
 #else
-            DCMNET_WARN("DUL: setTCPBufferLength: cannot set TCP buffer length socket option: "
-                << "code disabled because SO_SNDBUF and SO_RCVBUF constants are unknown");
-#endif // SO_SNDBUF and SO_RCVBUF
-        } else
+    bufLen = 32768; // a socket buffer size of 32K gives best throughput for image transmission
+    if ((TCPBufferLength = getenv("TCP_BUFFER_LENGTH")) != NULL) {
+        if (sscanf(TCPBufferLength, "%d", &bufLen) != 1) {
             DCMNET_WARN("DUL: cannot parse environment variable TCP_BUFFER_LENGTH=" << TCPBufferLength);
-    } else
-        DCMNET_TRACE("  environment variable TCP_BUFFER_LENGTH not set, using the system defaults");
+        }
+    }
+#if defined(SO_SNDBUF) && defined(SO_RCVBUF)
+    (void) setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *) &bufLen, sizeof(bufLen));
+    (void) setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *) &bufLen, sizeof(bufLen));
+#else
+    DCMNET_WARN("DULFSM: setTCPBufferLength: "
+        "cannot set TCP buffer length socket option: "
+        "code disabled because SO_SNDBUF and SO_RCVBUF constants are unknown");
+#endif // SO_SNDBUF and SO_RCVBUF
+#endif // HAVE_GUSI_H
 }
 
 
@@ -2483,8 +2371,8 @@ DUL_DumpParams(OFString& ret_str, DUL_ASSOCIATESERVICEPARAMETERS * params)
     OFOStringStream str;
     OFString temp_str;
 
-    str << "APP CTX NAME: " << params->applicationContextName << OFendl;
-    str << dump_uid(params->applicationContextName, "%14s") << OFendl;
+    str << "APP CTX NAME:" << params->applicationContextName << OFendl;
+    str << dump_uid(params->applicationContextName, "%13s");
     str << "AP TITLE:     " << params->callingAPTitle << OFendl
         << "AP TITLE:     " << params->calledAPTitle << OFendl
         << "AP TITLE:     " << params->respondingAPTitle << OFendl
@@ -2493,10 +2381,10 @@ DUL_DumpParams(OFString& ret_str, DUL_ASSOCIATESERVICEPARAMETERS * params)
         << "PRES ADDR:    " << params->callingPresentationAddress << OFendl
         << "PRES ADDR:    " << params->calledPresentationAddress << OFendl
         << "REQ IMP UID:  " << params->callingImplementationClassUID << OFendl;
-    str << dump_uid(params->callingImplementationClassUID, "%14s") << OFendl;
+    str << dump_uid(params->callingImplementationClassUID, "%13s");
     str << "REQ VERSION:  " << params->callingImplementationVersionName << OFendl
         << "ACC IMP UID:  " << params->calledImplementationClassUID << OFendl;
-    str << dump_uid(params->calledImplementationClassUID, "%14s") << OFendl;
+    str << dump_uid(params->calledImplementationClassUID, "%13s");
     str << "ACC VERSION:  " << params->calledImplementationVersionName << OFendl
         << "Requested Presentation Ctx" << OFendl;
     str << dump_presentation_ctx(&params->requestedPresentationContext);
@@ -2539,7 +2427,7 @@ static SC_MAP scMap[] = {
 **      Display the contents of the presentation context list
 **
 ** Parameter Dictionary:
-**      l  Head of the list of various presentation contexts.
+**      l  Head of the list of various presentation conmtexts.
 **
 ** Return Values:
 **
@@ -2571,17 +2459,17 @@ dump_presentation_ctx(LST_HEAD ** l)
     (void) LST_Position(l, (LST_NODE*)ctx);
 
     while (ctx != NULL) {
-        str << "  Context ID:            " << (int)ctx->presentationContextID << OFendl
-            << "  Abstract Syntax:       " << ctx->abstractSyntax << OFendl;
-        str << dump_uid(ctx->abstractSyntax, "%25s") << OFendl;
-        str << "  Result field:          " << (int) ctx->result << OFendl;
+        str << "  Context ID:           " << ctx->presentationContextID << OFendl
+            << "  Abstract Syntax:      " << ctx->abstractSyntax << OFendl;
+        str << dump_uid(ctx->abstractSyntax, "%24s");
+        str << "  Result field:         " << (int) ctx->result << OFendl;
         for (l_index = 0; l_index < (int) DIM_OF(scMap); l_index++) {
             if (ctx->proposedSCRole == scMap[l_index].role)
-                str << "  Proposed SCU/SCP Role: " << scMap[l_index].text << OFendl;
+                str << "  Proposed SCU/SCP Role:  " << scMap[l_index].text << OFendl;
         }
         for (l_index = 0; l_index < (int) DIM_OF(scMap); l_index++) {
             if (ctx->acceptedSCRole == scMap[l_index].role)
-                str << "  Accepted SCU/SCP Role: " << scMap[l_index].text << OFendl;
+                str << "  Accepted SCU/SCP Role:  " << scMap[l_index].text << OFendl;
         }
         str << "  Proposed Xfer Syntax(es)" << OFendl;
         if (ctx->proposedTransferSyntax != NULL) {
@@ -2590,13 +2478,13 @@ dump_presentation_ctx(LST_HEAD ** l)
                 (void) LST_Position(&ctx->proposedTransferSyntax, (LST_NODE*)transfer);
 
             while (transfer != NULL) {
-                str << "                         " << transfer->transferSyntax << OFendl;
-                str << dump_uid(transfer->transferSyntax, "%25s") << OFendl;
+                str << "                  " << transfer->transferSyntax << OFendl;
+                str << dump_uid(transfer->transferSyntax, "%18s");
                 transfer = (DUL_TRANSFERSYNTAX*)LST_Next(&ctx->proposedTransferSyntax);
             }
         }
-        str << "  Accepted Xfer Syntax:  " << ctx->acceptedTransferSyntax << OFendl;
-        str << dump_uid(ctx->acceptedTransferSyntax, "%25s") << OFendl;
+        str << "  Accepted Xfer Syntax: " << ctx->acceptedTransferSyntax << OFendl;
+        str << dump_uid(ctx->acceptedTransferSyntax, "%24s");
         ctx = (DUL_PRESENTATIONCONTEXT*)LST_Next(l);
     }
 
@@ -2778,7 +2666,7 @@ clearRequestorsParams(DUL_ASSOCIATESERVICEPARAMETERS * params)
 /* clearPresentationContext
 **
 ** Purpose:
-**      Free the memory occupied by the given presentation context.
+**      Free the memory oocupied by the given presentation context.
 **
 ** Parameter Dictionary:
 **      l  Head of list of the presentation contexts to be freed.

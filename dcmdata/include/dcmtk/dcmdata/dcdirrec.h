@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -105,7 +105,7 @@ typedef enum {
     ERT_HangingProtocol = 35,
     /// stereometric relationships
     ERT_Stereometric = 36,
-    /// HL7 structured document (retired)
+    /// HL7 structured document
     ERT_HL7StrucDoc = 37,
     /// palette
     ERT_Palette = 38,
@@ -122,15 +122,7 @@ typedef enum {
     /// plan
     ERT_Plan = 44,
     /// surface scan
-    ERT_SurfaceScan = 45,
-    /// tractography
-    ERT_Tract = 46,
-    /// assessment
-    ERT_Assessment = 47,
-    /// radiotherapy
-    ERT_Radiotherapy = 48,
-    /// annotation
-    ERT_Annotation = 49
+    ERT_SurfaceScan = 45
 } E_DirRecType;
 
 
@@ -147,8 +139,7 @@ public:
     /// default constructor
     DcmDirectoryRecord();
 
-    /** constructor.
-     *  Create new element from given tag and length.
+    /** constructor
      *  @param tag attribute tag
      *  @param len length of the attribute value
      */
@@ -242,17 +233,22 @@ public:
      *  @param fromCharset name of the source character set(s) used for the conversion
      *  @param toCharset name of the destination character set used for the conversion.
      *    Only a single value is permitted (i.e. no code extensions).
-     *  @param flags optional flag used to customize the conversion (see DCMTypes::CF_xxx)
+     *  @param transliterate mode specifying whether a character that cannot be
+     *    represented in the destination character encoding is approximated through one
+     *    or more characters that look similar to the original one
      *  @param updateCharset if OFTrue, the SpecificCharacterSet (0008,0005) element is
      *    updated, i.e.\ the current value is either replaced or a new element is inserted
      *    or the existing element is deleted. If OFFalse the SpecificCharacterSet element
      *    remains unchanged.
+     *  @param discardIllegal mode specifying whether characters that cannot be represented
+     *    in the destination character encoding will be silently discarded
      *  @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition convertCharacterSet(const OFString &fromCharset,
                                             const OFString &toCharset,
-                                            const size_t flags = 0,
-                                            const OFBool updateCharset = OFFalse);
+                                            const OFBool transliterate = OFFalse,
+                                            const OFBool updateCharset = OFFalse,
+                                            const OFBool discardIllegal = OFFalse);
 
     /** convert all element values that are contained in this record and that are
      *  affected by SpecificCharacterSet to the given destination character set. If not
@@ -263,14 +259,19 @@ public:
      *  denotes the default character repertoire, which is ASCII (7-bit).
      *  @param toCharset name of the destination character set used for the conversion.
      *    Only a single value is permitted (i.e. no code extensions).
-     *  @param flags optional flag used to customize the conversion (see DCMTypes::CF_xxx)
+     *  @param transliterate mode specifying whether a character that cannot be
+     *    represented in the destination character encoding is approximated through one
+     *    or more characters that look similar to the original one
      *  @param ignoreCharset if OFTrue, the value of SpecificCharacterSet is ignored.
      *    Also see checkForSpecificCharacterSet().
+     *  @param discardIllegal mode specifying whether characters that cannot be represented
+     *    in the destination character encoding will be silently discarded
      *  @return status, EC_Normal if successful, an error code otherwise
      */
     virtual OFCondition convertCharacterSet(const OFString &toCharset,
-                                            const size_t flags = 0,
-                                            const OFBool ignoreCharset = OFFalse);
+                                            const OFBool transliterate = OFFalse,
+                                            const OFBool ignoreCharset = OFFalse,
+                                            const OFBool discardIllegal = OFFalse);
 
     /** convert all element values that are contained in this record and that are
      *  affected by SpecificCharacterSet from the currently selected source character
@@ -291,7 +292,7 @@ public:
      *  @param pixelFileName not used
      *  @param pixelCounter not used
      */
-    virtual void print(STD_NAMESPACE ostream &out,
+    virtual void print(STD_NAMESPACE ostream&out,
                        const size_t flags = 0,
                        const int level = 0,
                        const char *pixelFileName = NULL,
@@ -310,7 +311,7 @@ public:
      *  @param maxReadLength Maximum read length for reading an attribute value.
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual OFCondition read(DcmInputStream &inStream,
+    virtual OFCondition read(DcmInputStream & inStream,
                              const E_TransferSyntax xfer,
                              const E_GrpLenEncoding glenc = EGL_noChange,
                              const Uint32 maxReadLength = DCM_MaxReadLength);
@@ -320,7 +321,7 @@ public:
      *  @param flags optional flag used to customize the output (see DCMTypes::XF_xxx)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual OFCondition writeXML(STD_NAMESPACE ostream &out,
+    virtual OFCondition writeXML(STD_NAMESPACE ostream&out,
                                  const size_t flags = 0);
 
 
@@ -466,7 +467,7 @@ protected:
 
     // side-effect-free conversion routines:
     E_DirRecType        recordNameToType(const char *recordTypeName);
-    char*               buildFileName(const char *origName, char *destName, size_t len) const;
+    char*               buildFileName(const char *origName, char *destName);
     OFCondition         checkHierarchy(const E_DirRecType upperRecord,
                                        const E_DirRecType lowerRecord);
 

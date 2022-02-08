@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2017, OFFIS e.V.
+ *  Copyright (C) 1994-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -29,9 +29,6 @@
  *  - General Purpose BD Interchange with MPEG2 MP@HL (STD-GEN-BD-MPEG2-MPHL)
  *  - General Purpose BD Interchange with MPEG-4 AVC/H.264 HiP@Level4.1 (STD-GEN-BD-MPEG4-HPLV41)
  *  - General Purpose BD Interchange with MPEG-4 AVC/H.264 BD-Compatible HiP@Level4.1 (STD-GEN-BD-MPEG4-HPLV41BD)
- *  - General Purpose BD Interchange with MPEG-4 AVC/H.264 HiP\@Level4.2 for 2D video (STD-GEN-BD-MPEG4-HPLV42-2D)
- *  - General Purpose BD Interchange with MPEG-4 AVC/H.264 HiP\@Level4.2 for 3D video (STD-GEN-BD-MPEG4-HPLV42-3D)
- *  - General Purpose BD Interchange with MPEG-4 AVC/H.264 Stereo HiP\@Level4.2 (STD-GEN-BD-MPEG4-SHPLV42)
  *  - General Purpose USB and Flash Memory Interchange with JPEG (STD-GEN-USB/MMC/CF/SD-JPEG)
  *  - General Purpose USB and Flash Memory Interchange with JPEG 2000 (STD-GEN-USB/MMC/CF/SD-J2K)
  *  - General Purpose MIME Interchange (STD-GEN-MIME)
@@ -201,9 +198,6 @@ DCMTK_MAIN_FUNCTION
         cmd.addOption("--general-bd-mpeg2-mphl", "-Pbh",   "General Purpose BD Interchange with MPEG2\nMP@HL (STD-GEN-BD-MPEG2-MPHL)");
         cmd.addOption("--general-bd-mpeg4-hp",   "-Pba",   "General Purpose BD Interchange with MPEG-4\nAVC/H.264 HiP@Level4.1\n(STD-GEN-BD-MPEG4-HPLV41)");
         cmd.addOption("--general-bd-mpeg4-hpbd", "-Pbb",   "General Purpose BD Interchange with MPEG-4\nAVC/H.264 BD-Compatible HiP@Level4.1\n(STD-GEN-BD-MPEG4-HPLV41BD)");
-        cmd.addOption("--general-bd-mpeg4-hp2d",           "General Purpose BD Interchange with MPEG-4\nAVC/H.264 HiP@Level4.2 for 2D video\n(STD-GEN-BD-MPEG4-HPLV42-2D)");
-        cmd.addOption("--general-bd-mpeg4-hp3d",           "General Purpose BD Interchange with MPEG-4\nAVC/H.264 HiP@Level4.2 for 3D video\n(STD-GEN-BD-MPEG4-HPLV42-3D)");
-        cmd.addOption("--general-bd-mpeg4-hpst",           "General Purpose BD Interchange with MPEG-4\nAVC/H.264 Stereo HiP@Level4.2\n(STD-GEN-BD-MPEG4-SHPLV42)");
         cmd.addOption("--usb-and-flash-jpeg",    "-Pfl",   "General Purpose USB/Flash Memory Interchange\nwith JPEG (STD-GEN-USB/MMC/CF/SD-JPEG)");
         cmd.addOption("--usb-and-flash-j2k",     "-Pf2",   "General Purpose USB/Flash Memory Interchange\nwith JPEG 2000 (STD-GEN-USB/MMC/CF/SD-J2K)");
         cmd.addOption("--general-mime",          "-Pmi",   "General Purpose MIME Interchange\n(STD-GEN-MIME)");
@@ -386,12 +380,6 @@ DCMTK_MAIN_FUNCTION
             opt_profile = DicomDirInterface::AP_GeneralPurposeBDMPEG4HPatLV41;
         if (cmd.findOption("--general-bd-mpeg4-hpbd"))
             opt_profile = DicomDirInterface::AP_GeneralPurposeBDMPEG4HPatLV41BD;
-        if (cmd.findOption("--general-bd-mpeg4-hp2d"))
-            opt_profile = DicomDirInterface::AP_GeneralPurposeBDMPEG4HPatLV42_2D;
-        if (cmd.findOption("--general-bd-mpeg4-hp3d"))
-            opt_profile = DicomDirInterface::AP_GeneralPurposeBDMPEG4HPatLV42_3D;
-        if (cmd.findOption("--general-bd-mpeg4-hpst"))
-            opt_profile = DicomDirInterface::AP_GeneralPurposeBDMPEG4StereoHPatLV42;
         if (cmd.findOption("--usb-and-flash-jpeg"))
             opt_profile = DicomDirInterface::AP_USBandFlashJPEG;
         if (cmd.findOption("--usb-and-flash-j2k"))
@@ -465,9 +453,19 @@ DCMTK_MAIN_FUNCTION
 
         cmd.beginOptionBlock();
         if (cmd.findOption("--enable-new-vr"))
-            dcmEnableGenerationOfNewVRs();
+        {
+            dcmEnableUnknownVRGeneration.set(OFTrue);
+            dcmEnableUnlimitedTextVRGeneration.set(OFTrue);
+            dcmEnableOtherFloatStringVRGeneration.set(OFTrue);
+            dcmEnableOtherDoubleStringVRGeneration.set(OFTrue);
+        }
         if (cmd.findOption("--disable-new-vr"))
-            dcmDisableGenerationOfNewVRs();
+        {
+            dcmEnableUnknownVRGeneration.set(OFFalse);
+            dcmEnableUnlimitedTextVRGeneration.set(OFFalse);
+            dcmEnableOtherFloatStringVRGeneration.set(OFFalse);
+            dcmEnableOtherDoubleStringVRGeneration.set(OFFalse);
+        }
         cmd.endOptionBlock();
 
         cmd.beginOptionBlock();
@@ -509,7 +507,7 @@ DCMTK_MAIN_FUNCTION
     {
         if (!OFStandard::dirExists(opt_directory))
         {
-            OFLOG_FATAL(dcmgpdirLogger, OFFIS_CONSOLE_APPLICATION << ": specified input directory does not exist");
+            OFLOG_FATAL(dcmgpdirLogger, "specified input directory does not exist");
             return 1;
         }
     }
@@ -560,21 +558,13 @@ DCMTK_MAIN_FUNCTION
 #endif
 
     OFCondition result;
-    const char *action = "";
     /* create new general purpose DICOMDIR, append to or update existing one */
     if (opt_append)
-    {
-        action = "appending";
         result = ddir.appendToDicomDir(opt_profile, opt_output);
-    }
     else if (opt_update)
-    {
-        action = "updating";
         result = ddir.updateDicomDir(opt_profile, opt_output);
-    } else {
-        action = "creating";
+    else
         result = ddir.createNewDicomDir(opt_profile, opt_output, opt_fileset);
-    }
     if (result.good())
     {
         /* set fileset descriptor and character set */
@@ -627,18 +617,8 @@ DCMTK_MAIN_FUNCTION
             }
             /* write DICOMDIR file */
             if (result.good() && opt_write)
-            {
-                action = "writing";
                 result = ddir.writeDicomDir(opt_enctype, opt_glenc);
-            }
         }
-    }
-
-    /* some final error reporting */
-    if (result.bad() && (result != EC_IllegalCall))
-    {
-        OFLOG_FATAL(dcmgpdirLogger, OFFIS_CONSOLE_APPLICATION << ": error ("
-            << result.text() << ") " << action << " file: " << opt_output);
     }
 
 #ifdef BUILD_DCMGPDIR_AS_DCMMKDIR

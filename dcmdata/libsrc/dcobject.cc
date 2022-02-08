@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,7 +26,6 @@
 
 #include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/ofstd/ofstream.h"
-#include "dcmtk/dcmdata/dcjson.h"
 #include "dcmtk/dcmdata/dcobject.h"
 #include "dcmtk/dcmdata/dcdeftag.h"
 #include "dcmtk/dcmdata/dcvr.h"
@@ -34,6 +33,11 @@
 #include "dcmtk/dcmdata/dcswap.h"
 #include "dcmtk/dcmdata/dcistrma.h"    /* for class DcmInputStream */
 #include "dcmtk/dcmdata/dcostrma.h"    /* for class DcmOutputStream */
+
+#define INCLUDE_CSTDIO
+#define INCLUDE_IOMANIP
+#include "dcmtk/ofstd/ofstdinc.h"
+
 
 // global flags
 
@@ -51,9 +55,7 @@ OFGlobal<DcmTagKey> dcmStopParsingAfterElement(DCM_UndefinedTagKey); // (0xffff,
 OFGlobal<OFBool>    dcmWriteOversizedSeqsAndItemsUndefined(OFTrue);
 OFGlobal<OFBool>    dcmIgnoreFileMetaInformationGroupLength(OFFalse);
 OFGlobal<OFBool>    dcmReplaceWrongDelimitationItem(OFFalse);
-OFGlobal<OFBool>    dcmConvertUndefinedLengthOBOWtoSQ(OFFalse);
-OFGlobal<OFBool>    dcmConvertVOILUTSequenceOWtoSQ(OFFalse);
-OFGlobal<OFBool>    dcmUseExplLengthPixDataForEncTS(OFFalse);
+
 
 // ****** public methods **********************************
 
@@ -240,23 +242,12 @@ OFCondition DcmObject::writeXML(STD_NAMESPACE ostream& /*out*/,
     return EC_IllegalCall;
 }
 
-
-// ********************************
-
-
-OFCondition DcmObject::writeJson(STD_NAMESPACE ostream& /*out*/,
-                                 DcmJsonFormat& /*format*/)
-{
-    return EC_IllegalCall;
-}
-
-
 // ***********************************************************
 // ****** protected methods **********************************
 // ***********************************************************
 
 
-void DcmObject::printNestingLevel(STD_NAMESPACE ostream &out,
+void DcmObject::printNestingLevel(STD_NAMESPACE ostream&out,
                                   const size_t flags,
                                   const int level)
 {
@@ -459,18 +450,13 @@ Uint32 DcmObject::getTagAndLengthSize(const E_TransferSyntax oxfer) const
 
     if (oxferSyn.isExplicitVR())
     {
-        /* map "UN" to "OB" if generation of "UN" is disabled */
-        DcmVR outvr(getTag().getVR().getValidEVR());
+       /* map "UN" to "OB" if generation of "UN" is disabled */
+       DcmVR outvr(getTag().getVR().getValidEVR());
 
-        if (Length > 0xffff || outvr.usesExtendedLengthEncoding())
-        {
-            /* We are either using extended length encoding or the */
-            /* element length is > 64k (i.e. we have to convert to OB/UN). */
-            /* In any case we need a 12-byte header field. */
-            /* This is also the case for any object with undefined length, */
-            /* so we don't need to check that as a special case. */
-            return 12;
-        }
+       if (outvr.usesExtendedLengthEncoding())
+       {
+           return 12;
+       }
     }
     return 8;
 }
@@ -526,18 +512,6 @@ OFCondition DcmObject::writeTagAndLength(DcmOutputStream &outStream,
 
             /* getValidEVR() will convert datatype "UN" to "OB" if generation of "UN" is disabled */
             DcmEVR vr = myvr.getValidEVR();
-            myvr.setVR(vr);
-
-            if (Length > 0xffff && (!myvr.usesExtendedLengthEncoding()))
-            {
-                /* Attribute length is larger than 64 kBytes. */
-                /* We need to encode this as UN (or OB, if generation of UN is disabled */
-                if (dcmEnableUnknownVRGeneration.get()) vr = EVR_UN; else vr = EVR_OB;
-                myvr.setVR(vr);
-                /* output debug information to the logger */
-                DCMDATA_DEBUG("DcmObject::writeTagAndLength() Length of element " << Tag
-                    << " exceeds maximum of 16-bit length field, changing VR to " << myvr.getVRName());
-            }
 
             /* get name of data type */
             const char *vrname = myvr.getValidVRName();
@@ -575,10 +549,7 @@ OFCondition DcmObject::writeTagAndLength(DcmOutputStream &outStream,
                 outStream.write(&valueLength, 2);                                   // write length, 2 bytes wide
                 writtenBytes += 2;                                                  // remember that 2 bytes were written in total
             }
-            /* ... if not, report an error message and return an error code.
-             * This should never happen because we automatically convert such
-             * elements to UN/OB, but just in case, we leave the check in here.
-             */
+            /* ... if not, report an error message and return an error code. */
             else {
                 DcmTag tag(Tag);
                 DCMDATA_ERROR("DcmObject: Length of element " << tag.getTagName() << " " << tag

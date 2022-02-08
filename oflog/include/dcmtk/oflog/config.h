@@ -28,8 +28,6 @@
 
 #include "dcmtk/ofstd/ofdefine.h"     /* We need DCMTK_DECL_EXPORT/_IMPORT */
 
-#include "dcmtk/ofstd/ofstdinc.h"
-
 #ifdef oflog_EXPORTS
 #  define DCMTK_INSIDE_LOG4CPLUS
 #endif
@@ -42,7 +40,7 @@
 #  include "dcmtk/oflog/config/defines.h"
 #endif
 
-#if ! defined (DCMTK_OFLOG_UNICODE) && ! defined (DCMTK_LOG4CPLUS_HAVE_VSNPRINTF_S) \
+#if ! defined (UNICODE) && ! defined (DCMTK_LOG4CPLUS_HAVE_VSNPRINTF_S) \
     && ! defined (DCMTK_LOG4CPLUS_HAVE__VSNPRINTF_S) \
     && ! defined (DCMTK_LOG4CPLUS_HAVE_VSNPRINTF) \
     && ! defined (DCMTK_LOG4CPLUS_HAVE__VSNPRINTF)
@@ -92,7 +90,7 @@
 #  define DCMTK_LOG4CPLUS_INLINE_EXPORT
 #endif
 
-#if defined (DCMTK_OFLOG_UNICODE)
+#if defined (UNICODE)
 #  if defined (_MSC_VER) && _MSC_VER >= 1400
 #    define DCMTK_LOG4CPLUS_FSTREAM_ACCEPTS_WCHAR_T
 #  endif
@@ -120,7 +118,7 @@
 #  define DCMTK_LOG4CPLUS_HAVE_RVALUE_REFS
 #endif
 
-#if ! defined (DCMTK_OFLOG_UNICODE) && defined (__GNUC__) && __GNUC__ >= 3
+#if ! defined (UNICODE) && defined (__GNUC__) && __GNUC__ >= 3
 #  define DCMTK_LOG4CPLUS_FORMAT_ATTRIBUTE(archetype, format_index, first_arg_index) \
     __attribute__ ((format (archetype, format_index, first_arg_index)))
 #else

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1997-2021, OFFIS e.V.
+ *  Copyright (C) 1997-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -29,23 +29,25 @@
 #include "dcmtk/ofstd/ofcast.h"
 #include "dcmtk/ofstd/ofdefine.h"
 
-#ifdef HAVE_STL_STACK
-// It is possible to use the standard template library list class since the
+#if defined(HAVE_STL) || defined(HAVE_STL_STACK)
+// It is possible to use the standard template library list class since the 
 // interface is nearly identical.
 // Important: If you want to use the standard template library, no variable
-// in a namespace with using a list shall have the name stack
+// in a namespace with using a list shall have the name stack 
 #include <stack>
 #define OFStack std::stack
 #else
 
-#include <cassert>
+#define INCLUDE_CASSERT
+#define INCLUDE_CSTDDEF
+#include "dcmtk/ofstd/ofstdinc.h"
 
 #ifndef HAVE_CLASS_TEMPLATE
 #error Your C++ compiler cannot handle class templates:
 #endif
 
 
-/** non-template single linked list class, used to store elements of a stack.
+/**  non-template single linked list class, used to store elements of a stack.
  *  Implicitly used by OFStack, should not be called by users.
  */
 struct OFStackLinkBase
@@ -65,10 +67,10 @@ struct OFStackLinkBase
     }
 private:
 
-    /// private undefined copy constructor
+    /// private undefined copy constructor 
     OFStackLinkBase(const OFStackLinkBase &);
 
-    /// private undefined copy assignment operator
+    /// private undefined copy assignment operator 
     OFStackLinkBase &operator=(const OFStackLinkBase &);
 };
 
@@ -93,7 +95,7 @@ public:
     }
 
     /** checks if the stack is empty
-     *  @return true if stack is empty, false otherwise
+     *  @return true if stack is emtpy, false otherwise
      */
     OFBool base_empty() const { return head == NULL; }
 
@@ -104,22 +106,11 @@ public:
 
     /** returns element on top of stack.
      *  precondition: stack is not empty
-     *  @return element on top of stack.
      */
-    OFStackLinkBase * base_top()
+    OFStackLinkBase * base_top() 
     {
-      assert(head!=NULL);
-      return head;
-    }
-
-    /** returns element on top of stack.
-     *  precondition: stack is not empty
-     *  @return element on top of stack.
-     */
-    const OFStackLinkBase * base_top() const
-    {
-      assert(head!=NULL);
-      return head;
+    assert(head!=NULL);
+    return head;
     }
 
     /** pushes element onto stack.
@@ -131,7 +122,7 @@ public:
       head = element;
       stackSize++;
     }
-
+    
     /** removes top element from stack.
      *  precondition: stack not empty.
      */
@@ -148,16 +139,16 @@ protected:
 
     /// pointer to top element of stack
     OFStackLinkBase * head;
-
+    
     /// size of stack
     size_t stackSize;
 
 private:
-
-    /// private undefined copy constructor
+ 
+    /// private undefined copy constructor 
     OFStackBase(const OFStackBase &);
 
-    /// private undefined copy assignment operator
+    /// private undefined copy assignment operator 
     OFStackBase &operator=(const OFStackBase &);
 
 };
@@ -182,11 +173,11 @@ struct OFStackLink : public OFStackLinkBase
     }
 
 private:
-
-    /// private undefined copy constructor
+ 
+    /// private undefined copy constructor 
     OFStackLink(const OFStackLink<T> &);
 
-    /// private undefined copy assignment operator
+    /// private undefined copy assignment operator 
     OFStackLink<T> &operator=(const OFStackLink<T> &);
 };
 
@@ -201,7 +192,7 @@ class OFStack : private OFStackBase
 
 public:
 
-    /// default constructor
+    /// Default constructor
     OFStack() {};
 
     /// copy constructor
@@ -210,7 +201,7 @@ public:
         copy(x);
     }
 
-    /// assignment operator
+    /// Assignment operator
     OFStack<T> &operator=(const OFStack<T> &x)
     {
         if (this != &x)
@@ -236,37 +227,28 @@ public:
      *  This method may not be called if the stack is empty.
      *  @return reference to top element
      */
-    T & top()
-    {
-        return (OFstatic_cast(OFStackLink<T> *, OFStackBase::base_top()))->info;
-    }
-
-    /** returns a const reference to the top element on the stack.
-     *  This method may not be called if the stack is empty.
-     *  @return const reference to top element
-     */
-    const T & top() const
-    {
-        return (OFstatic_cast(const OFStackLink<T> *, OFStackBase::base_top()))->info;
+    T & top() 
+    { 
+        return (OFstatic_cast(OFStackLink<T> *, OFStackBase::base_top()))->info; 
     }
 
     /** inserts a new element on top of the stack. The value of
      *  the new element is copy constructed from the given argument.
      *  @param x value to be pushed (copied) onto the stack
      */
-    void push(const T & x)
-    {
+    void push(const T & x) 
+    { 
         OFStackBase::base_push(new OFStackLink<T>(x));
     }
 
     /** removes the top element from the stack.
      *  This method may not be called if the stack is empty.
-     */
+     */    
     void pop() { OFStackBase::base_pop(); }
 
 private:
 
-    /** copy assignment of a stack.
+    /** copy assignment of a stack. 
      *  @param x stack to be copied
      *  @return dummy value, required to keep Sun CC 2.0.1 happy
      */
@@ -280,7 +262,8 @@ private:
             OFStackLinkBase * oldPtr = x.head->next;
             while (oldPtr)
             {
-            newPtr->next = new OFStackLink<T>((OFstatic_cast(OFStackLink<T>*, oldPtr))->info);
+            newPtr->next = 
+                new OFStackLink<T>((OFstatic_cast(OFStackLink<T>*, oldPtr))->info);
             oldPtr = oldPtr->next;
             newPtr = newPtr->next;
             }

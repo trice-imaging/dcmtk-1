@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2016, OFFIS e.V.
+ *  Copyright (C) 2002-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -163,12 +163,12 @@ public:
   inline int computeIndex(const DcmQuantPixel& px) const
   {
     int result = -1;
-    int r2, g2, b2;
-    long newdist;
-    int r1 = OFstatic_cast(int, px.getRed());
-    int g1 = OFstatic_cast(int, px.getGreen());
-    int b1 = OFstatic_cast(int, px.getBlue());
-    long dist = 2000000000;
+    register int r2, g2, b2;
+    register long newdist;
+    register int r1 = OFstatic_cast(int, px.getRed());
+    register int g1 = OFstatic_cast(int, px.getGreen());
+    register int b1 = OFstatic_cast(int, px.getBlue());
+    register long dist = 2000000000;
     for (unsigned long i = 0; i < numColors; ++i)
     {
         r2 = r1 - OFstatic_cast(int, array[i]->getRed());

@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class DRTBeamSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -24,11 +24,8 @@
 #include "dcmtk/dcmrt/seq/drtbl2.h"    // for BlockSequence
 #include "dcmtk/dcmrt/seq/drtcos.h"    // for CompensatorSequence
 #include "dcmtk/dcmrt/seq/drtcps.h"    // for ControlPointSequence
-#include "dcmtk/dcmrt/seq/drtgas.h"    // for GeneralAccessorySequence
 #include "dcmtk/dcmrt/seq/drtpvis.h"   // for PlannedVerificationImageSequence
-#include "dcmtk/dcmrt/seq/drtpfms.h"   // for PrimaryFluenceModeSequence
 #include "dcmtk/dcmrt/seq/drtrbos1.h"  // for ReferencedBolusSequence
-#include "dcmtk/dcmrt/seq/drtrdrs1.h"  // for ReferencedDoseReferenceSequence
 #include "dcmtk/dcmrt/seq/drtrds.h"    // for ReferencedDoseSequence
 #include "dcmtk/dcmrt/seq/drtrris1.h"  // for ReferencedReferenceImageSequence
 #include "dcmtk/dcmrt/seq/drtws.h"     // for WedgeSequence
@@ -68,7 +65,6 @@ class DCMTK_DCMRT_EXPORT DRTBeamSequence
 
         /** assigment operator
          *  @param copy item object to be copied
-         *  @return reference to this object
          */
         Item &operator=(const Item &copy);
 
@@ -432,18 +428,6 @@ class DCMTK_DCMRT_EXPORT DRTBeamSequence
         const DRTControlPointSequence &getControlPointSequence() const
             { return ControlPointSequence; }
 
-        /** get GeneralAccessorySequence (300a,0420)
-         *  @return reference to sequence element
-         */
-        DRTGeneralAccessorySequence &getGeneralAccessorySequence()
-            { return GeneralAccessorySequence; }
-
-        /** get GeneralAccessorySequence (300a,0420)
-         *  @return const reference to sequence element
-         */
-        const DRTGeneralAccessorySequence &getGeneralAccessorySequence() const
-            { return GeneralAccessorySequence; }
-
         /** get PlannedVerificationImageSequence (300a,00ca)
          *  @return reference to sequence element
          */
@@ -456,18 +440,6 @@ class DCMTK_DCMRT_EXPORT DRTBeamSequence
         const DRTPlannedVerificationImageSequence &getPlannedVerificationImageSequence() const
             { return PlannedVerificationImageSequence; }
 
-        /** get PrimaryFluenceModeSequence (3002,0050)
-         *  @return reference to sequence element
-         */
-        DRTPrimaryFluenceModeSequence &getPrimaryFluenceModeSequence()
-            { return PrimaryFluenceModeSequence; }
-
-        /** get PrimaryFluenceModeSequence (3002,0050)
-         *  @return const reference to sequence element
-         */
-        const DRTPrimaryFluenceModeSequence &getPrimaryFluenceModeSequence() const
-            { return PrimaryFluenceModeSequence; }
-
         /** get ReferencedBolusSequence (300c,00b0)
          *  @return reference to sequence element
          */
@@ -479,18 +451,6 @@ class DCMTK_DCMRT_EXPORT DRTBeamSequence
          */
         const DRTReferencedBolusSequenceInRTBeamsModule &getReferencedBolusSequence() const
             { return ReferencedBolusSequence; }
-
-        /** get ReferencedDoseReferenceSequence (300c,0050)
-         *  @return reference to sequence element
-         */
-        DRTReferencedDoseReferenceSequenceInRTBeamsModule &getReferencedDoseReferenceSequence()
-            { return ReferencedDoseReferenceSequence; }
-
-        /** get ReferencedDoseReferenceSequence (300c,0050)
-         *  @return const reference to sequence element
-         */
-        const DRTReferencedDoseReferenceSequenceInRTBeamsModule &getReferencedDoseReferenceSequence() const
-            { return ReferencedDoseReferenceSequence; }
 
         /** get ReferencedDoseSequence (300c,0080)
          *  @return reference to sequence element
@@ -739,8 +699,6 @@ class DCMTK_DCMRT_EXPORT DRTBeamSequence
         DcmLongString DeviceSerialNumber;
         /// FinalCumulativeMetersetWeight (300a,010e) vr=DS, vm=1, type=1C
         DcmDecimalString FinalCumulativeMetersetWeight;
-        /// GeneralAccessorySequence (300a,0420) vr=SQ, vm=1, type=3
-        DRTGeneralAccessorySequence GeneralAccessorySequence;
         /// HighDoseTechniqueType (300a,00c7) vr=CS, vm=1, type=1C
         DcmCodeString HighDoseTechniqueType;
         /// InstitutionAddress (0008,0081) vr=ST, vm=1, type=3
@@ -767,14 +725,10 @@ class DCMTK_DCMRT_EXPORT DRTBeamSequence
         DRTPlannedVerificationImageSequence PlannedVerificationImageSequence;
         /// PrimaryDosimeterUnit (300a,00b3) vr=CS, vm=1, type=3
         DcmCodeString PrimaryDosimeterUnit;
-        /// PrimaryFluenceModeSequence (3002,0050) vr=SQ, vm=1, type=3
-        DRTPrimaryFluenceModeSequence PrimaryFluenceModeSequence;
         /// RadiationType (300a,00c6) vr=CS, vm=1, type=2
         DcmCodeString RadiationType;
         /// ReferencedBolusSequence (300c,00b0) vr=SQ, vm=1, type=1C
         DRTReferencedBolusSequenceInRTBeamsModule ReferencedBolusSequence;
-        /// ReferencedDoseReferenceSequence (300c,0050) vr=SQ, vm=1, type=3
-        DRTReferencedDoseReferenceSequenceInRTBeamsModule ReferencedDoseReferenceSequence;
         /// ReferencedDoseSequence (300c,0080) vr=SQ, vm=1, type=3
         DRTReferencedDoseSequence ReferencedDoseSequence;
         /// ReferencedPatientSetupNumber (300c,006a) vr=IS, vm=1, type=3
@@ -816,7 +770,6 @@ class DCMTK_DCMRT_EXPORT DRTBeamSequence
 
     /** assigment operator
      *  @param copy sequence object to be copied
-     *  @return reference to this object
      */
     DRTBeamSequence &operator=(const DRTBeamSequence &copy);
 
@@ -839,7 +792,7 @@ class DCMTK_DCMRT_EXPORT DRTBeamSequence
     /** get number of items in the sequence
      *  @return number of items
      */
-    size_t getNumberOfItems() const;
+    unsigned long getNumberOfItems() const;
 
     /** goto first item in the sequence
      *  @return status, EC_Normal if successful, an error code otherwise
@@ -855,7 +808,7 @@ class DCMTK_DCMRT_EXPORT DRTBeamSequence
      *  @param  num  number of the item to be selected (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num);
+    OFCondition gotoItem(const unsigned long num);
 
     /** get current item in the sequence
      *  @param  item  reference to item pointer (result variable)
@@ -878,31 +831,31 @@ class DCMTK_DCMRT_EXPORT DRTBeamSequence
      *  @param  item  reference to item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition getItem(const size_t num, Item *&item);
+    OFCondition getItem(const unsigned long num, Item *&item);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &getItem(const size_t num);
+    Item &getItem(const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &getItem(const size_t num) const;
+    const Item &getItem(const unsigned long num) const;
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &operator[](const size_t num);
+    Item &operator[](const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &operator[](const size_t num) const;
+    const Item &operator[](const unsigned long num) const;
 
     /** add new item to the end of this sequence
      *  @param  item  reference to new item pointer (result variable)
@@ -915,13 +868,13 @@ class DCMTK_DCMRT_EXPORT DRTBeamSequence
      *  @param  item  reference to new item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition insertItem(const size_t pos, Item *&item);
+    OFCondition insertItem(const unsigned long pos, Item *&item);
 
     /** remove particular item from the sequence
      *  @param  pos  position of the item to be removed (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition removeItem(const size_t pos);
+    OFCondition removeItem(const unsigned long pos);
 
   // --- input/output methods ---
 
@@ -956,7 +909,7 @@ class DCMTK_DCMRT_EXPORT DRTBeamSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListIterator(Item *) &iterator);
 
     /** goto particular item in the sequence
@@ -964,7 +917,7 @@ class DCMTK_DCMRT_EXPORT DRTBeamSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListConstIterator(Item *) &iterator) const;
 
   private:

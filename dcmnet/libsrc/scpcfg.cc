@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2012-2020, OFFIS e.V.
+ *  Copyright (C) 2012-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,6 +20,7 @@
  */
 
 #include "dcmtk/config/osconfig.h" /* make sure OS specific configuration is included first */
+
 #include "dcmtk/dcmnet/scpcfg.h"
 #include "dcmtk/dcmnet/diutil.h"
 
@@ -39,8 +40,7 @@ DcmSCPConfig::DcmSCPConfig() :
   m_verbosePCMode(OFFalse),
   m_connectionTimeout(1000),
   m_respondWithCalledAETitle(OFTrue),
-  m_progressNotificationMode(OFTrue),
-  m_tLayer(NULL)
+  m_progressNotificationMode(OFTrue)
 {
 }
 
@@ -197,14 +197,8 @@ void DcmSCPConfig::setProgressNotificationMode(const OFBool mode)
 
 // ----------------------------------------------------------------------------
 
-void DcmSCPConfig::setAlwaysAcceptDefaultRole(const OFBool enabled)
-{
-  m_assocConfig.setAlwaysAcceptDefaultRole(enabled);
-}
-
-// ----------------------------------------------------------------------------
-
 /* Get methods for SCP settings and current association information */
+
 
 OFBool DcmSCPConfig::getRefuseAssociation() const
 {
@@ -262,7 +256,7 @@ Uint32 DcmSCPConfig::getDIMSETimeout() const
 
 // ----------------------------------------------------------------------------
 
-Uint32 DcmSCPConfig::getConnectionTimeout() const
+Uint32 DcmSCPConfig::getConnnectionTimeout() const
 {
   return m_connectionTimeout;
 }
@@ -297,27 +291,6 @@ OFBool DcmSCPConfig::getProgressNotificationMode() const
 
 // ----------------------------------------------------------------------------
 
-OFBool DcmSCPConfig::transportLayerEnabled() const
-{
-  return (m_tLayer != NULL);
-}
-
-// ----------------------------------------------------------------------------
-
-DcmTransportLayer * DcmSCPConfig::getTransportLayer() const
-{
-    return m_tLayer;
-}
-
-// ----------------------------------------------------------------------------
-
-void DcmSCPConfig::setTransportLayer(DcmTransportLayer *tlayer)
-{
-  m_tLayer = tlayer;
-}
-
-// ----------------------------------------------------------------------------
-
 // Reads association configuration from config file
 OFCondition DcmSCPConfig::loadAssociationCfgFile(const OFString &assocFile)
 {
@@ -345,34 +318,8 @@ OFCondition DcmSCPConfig::setAndCheckAssociationProfile(const OFString &profileN
   if (profileName.empty())
     return EC_IllegalParameter;
 
-  DCMNET_TRACE("Setting and checking SCP association profile " << profileName);
+  DCMNET_TRACE("Setting and checking SCP association profile");
   OFString mangledName;
-  OFCondition result = checkAssociationProfile(profileName, mangledName);
-  if (result.good())
-  {
-    m_assocCfgProfileName = mangledName;
-    DCMNET_TRACE("Setting SCP association profile to (mangled name) " << mangledName);
-  }
-  return result;
-}
-
-// ----------------------------------------------------------------------------
-
-OFString DcmSCPConfig::getActiveAssociationProfile() const
-{
-  return m_assocCfgProfileName;
-}
-
-// ----------------------------------------------------------------------------
-
-OFCondition DcmSCPConfig::checkAssociationProfile(const OFString& profileName,
-                                                  OFString& mangledName) const
-{
-  if (profileName.empty())
-    return EC_IllegalParameter;
-
-  DCMNET_TRACE("Checking SCP association profile " << profileName);
-  mangledName.clear();
   OFCondition result;
 
   /* perform name mangling for config file key */
@@ -385,91 +332,52 @@ OFCondition DcmSCPConfig::checkAssociationProfile(const OFString& profileName,
   /* check profile */
   if (result.good() && !m_assocConfig.isKnownProfile(mangledName.c_str()))
   {
-    DCMNET_ERROR("No association profile named \"" << profileName << "\" in association configuration, " <<
-      "did you forget to add presentation contexts?");
-    result = NET_EC_InvalidSCPAssociationProfile;
+    DCMNET_ERROR("No association profile named \"" << profileName << "\" in association configuration");
+    result = EC_IllegalParameter; // TODO: need to find better error code
   }
   if (result.good() && !m_assocConfig.isValidSCPProfile(mangledName.c_str()))
   {
     DCMNET_ERROR("The association profile named \"" << profileName << "\" is not a valid SCP association profile");
-    result = NET_EC_InvalidSCPAssociationProfile;
+    result = EC_IllegalParameter; // TODO: need to find better error code
   }
+  if (result.good())
+    m_assocCfgProfileName = mangledName;
 
   return result;
 }
 
+// ----------------------------------------------------------------------------
 
 OFCondition DcmSCPConfig::addPresentationContext(const OFString &abstractSyntax,
-                                                 const OFList<OFString> &xferSyntaxes,
+                                                 const OFList<OFString> xferSyntaxes,
                                                  const T_ASC_SC_ROLE role,
                                                  const OFString &profile)
 {
-  const OFString profileName = mangleProfileName(profile);
-  if (profileName.empty() || xferSyntaxes.empty() || (role == ASC_SC_ROLE_NONE) || abstractSyntax.empty())
+  if (profile.empty())
     return EC_IllegalParameter;
+
+  const char *DCMSCP_TS_KEY = "DCMSCP_GEN_TS_KEY";
+  const char *DCMSCP_PC_KEY = "DCMSCP_GEN_PC_KEY";
+  const char *DCMSCP_RO_KEY = "DCMSCP_GEN_RO_KEY";
+  OFListConstIterator(OFString) it = xferSyntaxes.begin();
+  OFListConstIterator(OFString) endOfList = xferSyntaxes.end();
   OFCondition result;
-
-  // check whether we already have a matching ts list and otherwise create one
-  OFString DCMSCP_TS_KEY = m_assocConfig.findTSKey(xferSyntaxes);
-  if ( DCMSCP_TS_KEY.empty() )
+  // the association configuration needs key names for transfer syntaxes,
+  // presentation contexts and roles. Use predefined key names.
+  while ((it != endOfList) && result.good())
   {
-    // use counter in order to create unique configuration keys if required.
-    // increment counter in all cases since we could have produced a broken
-    // ts list that we do not want use in another call to this function.
-    static size_t count = 0;
-    DCMSCP_TS_KEY += "TSKEY_";
-    DCMSCP_TS_KEY += numToString(count);
-    result = addNewTSList(DCMSCP_TS_KEY, xferSyntaxes);
-    count++;
+    result = m_assocConfig.addTransferSyntax(DCMSCP_TS_KEY, (*it).c_str());
+    it++;
   }
-
-  // create role key and amend configuration (if required)
-  OFString DCMSCP_RO_KEY;
-  DCMSCP_RO_KEY = profileName;
-  DCMSCP_RO_KEY += "_ROLEKEY";
-  result = m_assocConfig.createEmptyRoleList(DCMSCP_RO_KEY.c_str());
-  if (result.good() && (role != ASC_SC_ROLE_DEFAULT))
+  if (result.good())
   {
-    result = m_assocConfig.addRole(DCMSCP_RO_KEY.c_str(), abstractSyntax.c_str(), role);
+    result = m_assocConfig.addPresentationContext(DCMSCP_PC_KEY, abstractSyntax.c_str(), DCMSCP_TS_KEY);
   }
-  if (result.bad())
-    return result;
-
-
-  // create new profile if required and add presentation context as just defined.
-  // we always use the same presentation context list.
-  OFString DCMSCP_PC_KEY = profileName; DCMSCP_PC_KEY += "_PCKEY";
-  const DcmProfileEntry* pEntry = NULL;
-  if ( result.good() )
+  if (result.good())
   {
-    pEntry = m_assocConfig.getProfileEntry(profileName);
-    if ( pEntry == NULL)
-    {
-      // finally add new presentation context to list and profile to configuration
-      if ( result.good() ) result = m_assocConfig.addPresentationContext(DCMSCP_PC_KEY.c_str(), abstractSyntax.c_str(), DCMSCP_TS_KEY.c_str());
-      if ( result.good() ) result = m_assocConfig.addProfile(profileName.c_str(), DCMSCP_PC_KEY.c_str(), DCMSCP_RO_KEY.c_str());
-    }
-    else
-    {
-      // finally, add presentation context to existing profile
-      result = m_assocConfig.addPresentationContext(pEntry->getPresentationContextKey(), abstractSyntax.c_str(), DCMSCP_TS_KEY.c_str());
-    }
+    result = m_assocConfig.addRole(DCMSCP_RO_KEY, abstractSyntax.c_str(), role);
   }
-  return result;
-}
-
-
-void DcmSCPConfig::dumpPresentationContexts(STD_NAMESPACE ostream &out,
-                                            OFString profileName)
-{
-  if ( profileName.empty() ) profileName = m_assocCfgProfileName;
-  m_assocConfig.dumpProfiles(out, profileName);
-}
-
-
-OFString DcmSCPConfig::mangleProfileName(const OFString& profile) const
-{
-  /* perform name mangling for config profile key */
+  /* perform name mangling for config file key */
   const unsigned char *c = OFreinterpret_cast(const unsigned char *, profile.c_str());
   OFString mangledName;
   while (*c)
@@ -477,36 +385,10 @@ OFString DcmSCPConfig::mangleProfileName(const OFString& profile) const
     if (! isspace(*c)) mangledName += OFstatic_cast(char, toupper(*c));
     ++c;
   }
-  return mangledName;
-}
-
-
-OFString DcmSCPConfig::numToString(const size_t num) const
-{
-  OFString result;
-  OFStringStream stream;
-  stream << num;
-  stream << OFStringStream_ends;
-  OFSTRINGSTREAM_GETSTR(stream, buffStr)
-  result = buffStr;
-  OFSTRINGSTREAM_FREESTR(buffStr)
-  return result;
-}
-
-
-OFCondition DcmSCPConfig::addNewTSList(
-  const OFString& tsListName,
-  const OFList<OFString>& ts)
-{
-  // add ts to new ts list
-  OFCondition result;
-  OFListConstIterator(OFString) it = ts.begin();
-  OFListConstIterator(OFString) endOfList = ts.end();
-  while ((it != endOfList) && result.good())
+  if (result.good() && !m_assocConfig.isKnownProfile(mangledName.c_str()))
   {
-    result = m_assocConfig.addTransferSyntax(tsListName.c_str(), (*it).c_str());
-    if ( result.bad() ) return result;
-    it++;
+    result = m_assocConfig.addProfile(mangledName.c_str(), DCMSCP_PC_KEY, DCMSCP_RO_KEY);
   }
+
   return result;
 }

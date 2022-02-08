@@ -183,18 +183,18 @@ namespace
             & (PropertyConfigurator::fEncodingMask
                 << PropertyConfigurator::fEncodingShift))
         {
-#if defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF8_FACET) && defined (DCMTK_OFLOG_UNICODE)
+#if defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF8_FACET) && defined (UNICODE)
         case PropertyConfigurator::fUTF8:
             return helpers::Properties::fUTF8;
 #endif
 
 #if (defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF16_FACET) || defined (WIN32)) \
-    && defined (DCMTK_OFLOG_UNICODE)
+    && defined (UNICODE)
         case PropertyConfigurator::fUTF16:
             return helpers::Properties::fUTF16;
 #endif
 
-#if defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF32_FACET) && defined (DCMTK_OFLOG_UNICODE)
+#if defined (DCMTK_LOG4CPLUS_HAVE_CODECVT_UTF32_FACET) && defined (UNICODE)
         case PropertyConfigurator::fUTF32:
             return helpers::Properties::fUTF32;
 #endif

@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTIonRangeCompensatorSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -24,7 +24,6 @@ DRTIonRangeCompensatorSequence::Item::Item(const OFBool emptyDefaultItem)
     AccessoryCode(DCM_AccessoryCode),
     CompensatorColumnOffset(DCM_CompensatorColumnOffset),
     CompensatorColumns(DCM_CompensatorColumns),
-    CompensatorDescription(DCM_CompensatorDescription),
     CompensatorDivergence(DCM_CompensatorDivergence),
     CompensatorID(DCM_CompensatorID),
     CompensatorMillingToolDiameter(DCM_CompensatorMillingToolDiameter),
@@ -47,7 +46,6 @@ DRTIonRangeCompensatorSequence::Item::Item(const Item &copy)
     AccessoryCode(copy.AccessoryCode),
     CompensatorColumnOffset(copy.CompensatorColumnOffset),
     CompensatorColumns(copy.CompensatorColumns),
-    CompensatorDescription(copy.CompensatorDescription),
     CompensatorDivergence(copy.CompensatorDivergence),
     CompensatorID(copy.CompensatorID),
     CompensatorMillingToolDiameter(copy.CompensatorMillingToolDiameter),
@@ -78,7 +76,6 @@ DRTIonRangeCompensatorSequence::Item &DRTIonRangeCompensatorSequence::Item::oper
         AccessoryCode = copy.AccessoryCode;
         CompensatorColumnOffset = copy.CompensatorColumnOffset;
         CompensatorColumns = copy.CompensatorColumns;
-        CompensatorDescription = copy.CompensatorDescription;
         CompensatorDivergence = copy.CompensatorDivergence;
         CompensatorID = copy.CompensatorID;
         CompensatorMillingToolDiameter = copy.CompensatorMillingToolDiameter;
@@ -102,7 +99,6 @@ void DRTIonRangeCompensatorSequence::Item::clear()
     if (!EmptyDefaultItem)
     {
         /* clear all DICOM attributes */
-        CompensatorDescription.clear();
         CompensatorNumber.clear();
         MaterialID.clear();
         CompensatorID.clear();
@@ -125,8 +121,7 @@ void DRTIonRangeCompensatorSequence::Item::clear()
 
 OFBool DRTIonRangeCompensatorSequence::Item::isEmpty()
 {
-    return CompensatorDescription.isEmpty() &&
-           CompensatorNumber.isEmpty() &&
+    return CompensatorNumber.isEmpty() &&
            MaterialID.isEmpty() &&
            CompensatorID.isEmpty() &&
            AccessoryCode.isEmpty() &&
@@ -158,7 +153,6 @@ OFCondition DRTIonRangeCompensatorSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, CompensatorDescription, "1", "3", "IonRangeCompensatorSequence");
         getAndCheckElementFromDataset(item, CompensatorNumber, "1", "1", "IonRangeCompensatorSequence");
         getAndCheckElementFromDataset(item, MaterialID, "1", "2", "IonRangeCompensatorSequence");
         getAndCheckElementFromDataset(item, CompensatorID, "1", "3", "IonRangeCompensatorSequence");
@@ -187,7 +181,6 @@ OFCondition DRTIonRangeCompensatorSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmLongText(CompensatorDescription), "1", "3", "IonRangeCompensatorSequence");
         addElementToDataset(result, item, new DcmIntegerString(CompensatorNumber), "1", "1", "IonRangeCompensatorSequence");
         addElementToDataset(result, item, new DcmShortString(MaterialID), "1", "2", "IonRangeCompensatorSequence");
         addElementToDataset(result, item, new DcmShortString(CompensatorID), "1", "3", "IonRangeCompensatorSequence");
@@ -242,15 +235,6 @@ OFCondition DRTIonRangeCompensatorSequence::Item::getCompensatorColumns(Sint32 &
         return EC_IllegalCall;
     else
         return OFconst_cast(DcmIntegerString &, CompensatorColumns).getSint32(value, pos);
-}
-
-
-OFCondition DRTIonRangeCompensatorSequence::Item::getCompensatorDescription(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(CompensatorDescription, value, pos);
 }
 
 
@@ -473,19 +457,6 @@ OFCondition DRTIonRangeCompensatorSequence::Item::setCompensatorColumns(const OF
         result = (check) ? DcmIntegerString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
             result = CompensatorColumns.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTIonRangeCompensatorSequence::Item::setCompensatorDescription(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmLongText::checkStringValue(value) : EC_Normal;
-        if (result.good())
-            result = CompensatorDescription.putOFStringArray(value);
     }
     return result;
 }
@@ -747,7 +718,7 @@ OFBool DRTIonRangeCompensatorSequence::isValid() const
 }
 
 
-size_t DRTIonRangeCompensatorSequence::getNumberOfItems() const
+unsigned long DRTIonRangeCompensatorSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -777,12 +748,12 @@ OFCondition DRTIonRangeCompensatorSequence::gotoNextItem()
 }
 
 
-OFCondition DRTIonRangeCompensatorSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTIonRangeCompensatorSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -797,12 +768,12 @@ OFCondition DRTIonRangeCompensatorSequence::gotoItem(const size_t num, OFListIte
 }
 
 
-OFCondition DRTIonRangeCompensatorSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTIonRangeCompensatorSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -817,7 +788,7 @@ OFCondition DRTIonRangeCompensatorSequence::gotoItem(const size_t num, OFListCon
 }
 
 
-OFCondition DRTIonRangeCompensatorSequence::gotoItem(const size_t num)
+OFCondition DRTIonRangeCompensatorSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -853,7 +824,7 @@ const DRTIonRangeCompensatorSequence::Item &DRTIonRangeCompensatorSequence::getC
 }
 
 
-OFCondition DRTIonRangeCompensatorSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTIonRangeCompensatorSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -863,7 +834,7 @@ OFCondition DRTIonRangeCompensatorSequence::getItem(const size_t num, Item *&ite
 }
 
 
-DRTIonRangeCompensatorSequence::Item &DRTIonRangeCompensatorSequence::getItem(const size_t num)
+DRTIonRangeCompensatorSequence::Item &DRTIonRangeCompensatorSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -873,7 +844,7 @@ DRTIonRangeCompensatorSequence::Item &DRTIonRangeCompensatorSequence::getItem(co
 }
 
 
-const DRTIonRangeCompensatorSequence::Item &DRTIonRangeCompensatorSequence::getItem(const size_t num) const
+const DRTIonRangeCompensatorSequence::Item &DRTIonRangeCompensatorSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -883,13 +854,13 @@ const DRTIonRangeCompensatorSequence::Item &DRTIonRangeCompensatorSequence::getI
 }
 
 
-DRTIonRangeCompensatorSequence::Item &DRTIonRangeCompensatorSequence::operator[](const size_t num)
+DRTIonRangeCompensatorSequence::Item &DRTIonRangeCompensatorSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTIonRangeCompensatorSequence::Item &DRTIonRangeCompensatorSequence::operator[](const size_t num) const
+const DRTIonRangeCompensatorSequence::Item &DRTIonRangeCompensatorSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -912,7 +883,7 @@ OFCondition DRTIonRangeCompensatorSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTIonRangeCompensatorSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTIonRangeCompensatorSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -935,7 +906,7 @@ OFCondition DRTIonRangeCompensatorSequence::insertItem(const size_t pos, Item *&
 }
 
 
-OFCondition DRTIonRangeCompensatorSequence::removeItem(const size_t pos)
+OFCondition DRTIonRangeCompensatorSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

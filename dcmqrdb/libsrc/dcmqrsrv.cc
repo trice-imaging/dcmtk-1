@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1993-2021, OFFIS e.V.
+ *  Copyright (C) 1993-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -99,15 +99,13 @@ static void storeCallback(
 DcmQueryRetrieveSCP::DcmQueryRetrieveSCP(
   const DcmQueryRetrieveConfig& config,
   const DcmQueryRetrieveOptions& options,
-  const DcmQueryRetrieveDatabaseHandleFactory& factory,
-  const DcmAssociationConfiguration& associationConfiguration)
+  const DcmQueryRetrieveDatabaseHandleFactory& factory)
 : config_(&config)
 , processtable_()
 , dbCheckFindIdentifier_(OFFalse)
 , dbCheckMoveIdentifier_(OFFalse)
 , factory_(factory)
 , options_(options)
-, associationConfiguration_(associationConfiguration)
 {
 }
 
@@ -192,7 +190,7 @@ OFCondition DcmQueryRetrieveSCP::dispatch(T_ASC_Association *assoc, OFBool corre
             }
             else
             {
-                // the condition will be returned, the caller will abort the association.
+                // the condition will be returned, the caller will abort the assosiation.
             }
         }
 
@@ -213,8 +211,8 @@ OFCondition DcmQueryRetrieveSCP::handleAssociation(T_ASC_Association * assoc, OF
     DIC_AE              myAETitle;
     OFString            temp_str;
 
-    ASC_getPresentationAddresses(assoc->params, peerHostName, sizeof(peerHostName), NULL, 0);
-    ASC_getAPTitles(assoc->params, peerAETitle, sizeof(peerAETitle), myAETitle, sizeof(myAETitle), NULL, 0);
+    ASC_getPresentationAddresses(assoc->params, peerHostName, NULL);
+    ASC_getAPTitles(assoc->params, peerAETitle, myAETitle, NULL);
 
     /* now do the real work */
     cond = dispatch(assoc, correctUIDPadding);
@@ -269,11 +267,11 @@ OFCondition DcmQueryRetrieveSCP::findSCP(T_ASC_Association * assoc, T_DIMSE_C_Fi
 
 {
     OFCondition cond = EC_Normal;
-    DcmQueryRetrieveFindContext context(dbHandle, options_, STATUS_Pending, config_->getCharacterSetOptions());
+    DcmQueryRetrieveFindContext context(dbHandle, options_, STATUS_Pending);
 
     DIC_AE aeTitle;
     aeTitle[0] = '\0';
-    ASC_getAPTitles(assoc->params, NULL, 0, aeTitle, sizeof(aeTitle), NULL, 0);
+    ASC_getAPTitles(assoc->params, NULL, aeTitle, NULL);
     context.setOurAETitle(aeTitle);
 
     OFString temp_str;
@@ -296,7 +294,7 @@ OFCondition DcmQueryRetrieveSCP::getSCP(T_ASC_Association * assoc, T_DIMSE_C_Get
 
     DIC_AE aeTitle;
     aeTitle[0] = '\0';
-    ASC_getAPTitles(assoc->params, NULL, 0, aeTitle, sizeof(aeTitle), NULL, 0);
+    ASC_getAPTitles(assoc->params, NULL, aeTitle, NULL);
     context.setOurAETitle(aeTitle);
 
     OFString temp_str;
@@ -315,11 +313,11 @@ OFCondition DcmQueryRetrieveSCP::moveSCP(T_ASC_Association * assoc, T_DIMSE_C_Mo
         T_ASC_PresentationContextID presID, DcmQueryRetrieveDatabaseHandle& dbHandle)
 {
     OFCondition cond = EC_Normal;
-    DcmQueryRetrieveMoveContext context(dbHandle, options_, associationConfiguration_, config_, STATUS_Pending, assoc, request->MessageID, request->Priority);
+    DcmQueryRetrieveMoveContext context(dbHandle, options_, config_, STATUS_Pending, assoc, request->MessageID, request->Priority);
 
     DIC_AE aeTitle;
     aeTitle[0] = '\0';
-    ASC_getAPTitles(assoc->params, NULL, 0, aeTitle, sizeof(aeTitle), NULL, 0);
+    ASC_getAPTitles(assoc->params, NULL, aeTitle, NULL);
     context.setOurAETitle(aeTitle);
 
     OFString temp_str;
@@ -353,18 +351,18 @@ OFCondition DcmQueryRetrieveSCP::storeSCP(T_ASC_Association * assoc, T_DIMSE_C_S
         /* callback will send back sop class not supported status */
         context.setStatus(STATUS_STORE_Refused_SOPClassNotSupported);
         /* must still receive data */
-        OFStandard::strlcpy(imageFileName, NULL_DEVICE_NAME, sizeof(imageFileName));
+        strcpy(imageFileName, NULL_DEVICE_NAME);
     } else if (options_.ignoreStoreData_) {
-        OFStandard::strlcpy(imageFileName, NULL_DEVICE_NAME, sizeof(imageFileName));
+        strcpy(imageFileName, NULL_DEVICE_NAME);
     } else {
         dbcond = dbHandle.makeNewStoreFileName(
             request->AffectedSOPClassUID,
             request->AffectedSOPInstanceUID,
-            imageFileName, sizeof(imageFileName));
+            imageFileName);
         if (dbcond.bad()) {
             DCMQRDB_ERROR("storeSCP: Database: makeNewStoreFileName Failed");
             /* must still receive data */
-            OFStandard::strlcpy(imageFileName, NULL_DEVICE_NAME, sizeof(imageFileName));
+            strcpy(imageFileName, NULL_DEVICE_NAME);
             /* callback will send back out of resources status */
             context.setStatus(STATUS_STORE_Refused_OutOfResources);
         }
@@ -382,7 +380,7 @@ OFCondition DcmQueryRetrieveSCP::storeSCP(T_ASC_Association * assoc, T_DIMSE_C_S
         DCMQRDB_ERROR("storeSCP: file locking failed, cannot create file");
 
         /* must still receive data */
-        OFStandard::strlcpy(imageFileName, NULL_DEVICE_NAME, sizeof(imageFileName));
+        strcpy(imageFileName, NULL_DEVICE_NAME);
 
         /* callback will send back out of resources status */
         context.setStatus(STATUS_STORE_Refused_OutOfResources);
@@ -402,7 +400,7 @@ OFCondition DcmQueryRetrieveSCP::storeSCP(T_ASC_Association * assoc, T_DIMSE_C_S
 
     DcmDataset *dset = dcmff.getDataset();
 
-    /* we must still retrieve the data set even if some error has occurred */
+    /* we must still retrieve the data set even if some error has occured */
 
     if (options_.bitPreserving_) { /* the bypass option can be set on the command line */
         cond = DIMSE_storeProvider(assoc, presId, request, imageFileName, (int)options_.useMetaheader_,
@@ -423,7 +421,7 @@ OFCondition DcmQueryRetrieveSCP::storeSCP(T_ASC_Association * assoc, T_DIMSE_C_S
       if (strcmp(imageFileName, NULL_DEVICE_NAME) != 0) // don't try to delete /dev/null
       {
         DCMQRDB_INFO("Store SCP: Deleting Image File: %s" << imageFileName);
-        OFStandard::deleteFile(imageFileName);
+        unlink(imageFileName);
       }
       dbHandle.pruneInvalidRecords();
     }
@@ -447,25 +445,11 @@ void DcmQueryRetrieveSCP::refuseAnyStorageContexts(T_ASC_Association * assoc)
 {
     int i;
     T_ASC_PresentationContextID pid;
-    T_ASC_PresentationContext ctx;
 
-    for (i = 0; i < numberOfDcmAllStorageSOPClassUIDs; i++) {
+    for (i = 0; i < numberOfAllDcmStorageSOPClassUIDs; i++) {
         do {
-            pid = ASC_findAcceptedPresentationContextID(assoc, dcmAllStorageSOPClassUIDs[i]);
-            if (pid != 0) {
-                if (ASC_findAcceptedPresentationContext(assoc->params, pid, &ctx).bad() ||
-                    ctx.acceptedRole != ASC_SC_ROLE_SCP) {
-                    // pid refers to a storage presentation context in which the client is not
-                    // exclusively acting as SCP (i.e. receiver of images).
-                    // Reject this presentation context to enforce the "read-only" nature
-                    // of the storage area.
-                    ASC_refusePresentationContext(assoc->params, pid, ASC_P_USERREJECTION);
-                }
-                else {
-                    // for the current SOP class, role negotiation is active. Skip to the next one.
-                    pid = 0;
-                }
-            }
+          pid = ASC_findAcceptedPresentationContextID(assoc, dcmAllStorageSOPClassUIDs[i]);
+          if (pid != 0) ASC_refusePresentationContext(assoc->params, pid, ASC_P_USERREJECTION);
         } while (pid != 0); // repeat as long as we find presentation contexts for this SOP class - there might be multiple ones.
     }
 }
@@ -578,7 +562,7 @@ OFCondition DcmQueryRetrieveSCP::negotiateAssociation(T_ASC_Association * assoc)
     };
 
     DIC_AE calledAETitle;
-    ASC_getAPTitles(assoc->params, NULL, 0, calledAETitle, sizeof(calledAETitle), NULL, 0);
+    ASC_getAPTitles(assoc->params, NULL, calledAETitle, NULL);
 
     const char* transferSyntaxes[] = { NULL, NULL, NULL, NULL };
     int numTransferSyntaxes = 0;
@@ -693,46 +677,6 @@ OFCondition DcmQueryRetrieveSCP::negotiateAssociation(T_ASC_Association * assoc)
         transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
         numTransferSyntaxes = 4;
         break;
-      case EXS_MPEG4HighProfileLevel4_2_For2DVideo:
-        /* we prefer MPEG4 HP/L4.2 for 2D Videos */
-        transferSyntaxes[0] = UID_MPEG4HighProfileLevel4_2_For2DVideoTransferSyntax;
-        transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
-        transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
-        transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
-        numTransferSyntaxes = 4;
-        break;
-      case EXS_MPEG4HighProfileLevel4_2_For3DVideo:
-        /* we prefer MPEG4 HP/L4.2 for 3D Videos */
-        transferSyntaxes[0] = UID_MPEG4HighProfileLevel4_2_For3DVideoTransferSyntax;
-        transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
-        transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
-        transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
-        numTransferSyntaxes = 4;
-        break;
-      case EXS_MPEG4StereoHighProfileLevel4_2:
-        /* we prefer MPEG4 Stereo HP/L4.2 */
-        transferSyntaxes[0] = UID_MPEG4StereoHighProfileLevel4_2TransferSyntax;
-        transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
-        transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
-        transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
-        numTransferSyntaxes = 4;
-        break;
-      case EXS_HEVCMainProfileLevel5_1:
-        /* we prefer HEVC/H.265 Main Profile/L5.1 */
-        transferSyntaxes[0] = UID_HEVCMainProfileLevel5_1TransferSyntax;
-        transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
-        transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
-        transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
-        numTransferSyntaxes = 4;
-        break;
-      case EXS_HEVCMain10ProfileLevel5_1:
-        /* we prefer HEVC/H.265 Main 10 Profile/L5.1 */
-        transferSyntaxes[0] = UID_HEVCMain10ProfileLevel5_1TransferSyntax;
-        transferSyntaxes[1] = UID_LittleEndianExplicitTransferSyntax;
-        transferSyntaxes[2] = UID_BigEndianExplicitTransferSyntax;
-        transferSyntaxes[3] = UID_LittleEndianImplicitTransferSyntax;
-        numTransferSyntaxes = 4;
-        break;
       case EXS_RLELossless:
         /* we prefer RLE Lossless */
         transferSyntaxes[0] = UID_RLELosslessTransferSyntax;
@@ -836,66 +780,6 @@ OFCondition DcmQueryRetrieveSCP::negotiateAssociation(T_ASC_Association * assoc)
         }
     }
 
-    if (options_.incomingProfile.empty())
-    {
-      /*  accept any of the storage syntaxes */
-      if (options_.disableGetSupport_)
-      {
-        /* accept storage syntaxes with default role only */
-        cond = ASC_acceptContextsWithPreferredTransferSyntaxes(
-          assoc->params,
-          dcmAllStorageSOPClassUIDs, numberOfDcmAllStorageSOPClassUIDs,
-          (const char**)transferSyntaxes, numTransferSyntaxes);
-        if (cond.bad()) {
-          DCMQRDB_ERROR("Cannot accept presentation contexts: " << DimseCondition::dump(temp_str, cond));
-        }
-      } else {
-        /* accept storage syntaxes with proposed role */
-        T_ASC_PresentationContext pc;
-        T_ASC_SC_ROLE role;
-        int npc = ASC_countPresentationContexts(assoc->params);
-        for (i = 0; i < npc; i++)
-        {
-          ASC_getPresentationContext(assoc->params, i, &pc);
-          if (dcmIsaStorageSOPClassUID(pc.abstractSyntax))
-          {
-            /*
-            ** We are prepared to accept whatever role he proposes.
-            ** Normally we can be the SCP of the Storage Service Class.
-            ** When processing the C-GET operation we can be the SCU of the Storage Service Class.
-            */
-            role = pc.proposedRole;
-
-            /*
-            ** Accept in the order "least wanted" to "most wanted" transfer
-            ** syntax.  Accepting a transfer syntax will override previously
-            ** accepted transfer syntaxes.
-            */
-            for (int k = numTransferSyntaxes - 1; k >= 0; k--)
-            {
-              for (int j = 0; j < (int)pc.transferSyntaxCount; j++)
-              {
-                /* if the transfer syntax was proposed then we can accept it
-                 * appears in our supported list of transfer syntaxes
-                 */
-                if (strcmp(pc.proposedTransferSyntaxes[j], transferSyntaxes[k]) == 0)
-                {
-                  cond = ASC_acceptPresentationContext(
-                      assoc->params, pc.presentationContextID, transferSyntaxes[k], role);
-                  if (cond.bad()) return cond;
-                }
-              }
-            }
-          }
-        } /* for */
-      } /* else */
-    }
-    else
-    {
-      cond = associationConfiguration_.evaluateAssociationParameters(options_.incomingProfile.c_str(), *assoc);
-      if (cond.bad()) return cond;
-    }
-
     /*  accept any of the non-storage syntaxes */
     cond = ASC_acceptContextsWithPreferredTransferSyntaxes(
     assoc->params,
@@ -904,6 +788,58 @@ OFCondition DcmQueryRetrieveSCP::negotiateAssociation(T_ASC_Association * assoc)
     if (cond.bad()) {
         DCMQRDB_ERROR("Cannot accept presentation contexts: " << DimseCondition::dump(temp_str, cond));
     }
+
+    /*  accept any of the storage syntaxes */
+    if (options_.disableGetSupport_)
+    {
+      /* accept storage syntaxes with default role only */
+      cond = ASC_acceptContextsWithPreferredTransferSyntaxes(
+        assoc->params,
+        dcmAllStorageSOPClassUIDs, numberOfAllDcmStorageSOPClassUIDs,
+        (const char**)transferSyntaxes, numTransferSyntaxes);
+      if (cond.bad()) {
+        DCMQRDB_ERROR("Cannot accept presentation contexts: " << DimseCondition::dump(temp_str, cond));
+      }
+    } else {
+      /* accept storage syntaxes with proposed role */
+      T_ASC_PresentationContext pc;
+      T_ASC_SC_ROLE role;
+      int npc = ASC_countPresentationContexts(assoc->params);
+      for (i = 0; i < npc; i++)
+      {
+        ASC_getPresentationContext(assoc->params, i, &pc);
+        if (dcmIsaStorageSOPClassUID(pc.abstractSyntax))
+        {
+          /*
+          ** We are prepared to accept whatever role he proposes.
+          ** Normally we can be the SCP of the Storage Service Class.
+          ** When processing the C-GET operation we can be the SCU of the Storage Service Class.
+          */
+          role = pc.proposedRole;
+
+          /*
+          ** Accept in the order "least wanted" to "most wanted" transfer
+          ** syntax.  Accepting a transfer syntax will override previously
+          ** accepted transfer syntaxes.
+          */
+          for (int k = numTransferSyntaxes - 1; k >= 0; k--)
+          {
+            for (int j = 0; j < (int)pc.transferSyntaxCount; j++)
+            {
+              /* if the transfer syntax was proposed then we can accept it
+               * appears in our supported list of transfer syntaxes
+               */
+              if (strcmp(pc.proposedTransferSyntaxes[j], transferSyntaxes[k]) == 0)
+              {
+                cond = ASC_acceptPresentationContext(
+                    assoc->params, pc.presentationContextID, transferSyntaxes[k], role);
+                if (cond.bad()) return cond;
+              }
+            }
+          }
+        }
+      } /* for */
+    } /* else */
 
     /*
      * check if we have negotiated the private "shutdown" SOP Class
@@ -1021,7 +957,7 @@ OFCondition DcmQueryRetrieveSCP::waitForAssociation(T_ASC_Network * theNet)
     if (! go_cleanup)
     {
         /* Application Context Name */
-        cond = ASC_getApplicationContextName(assoc->params, buf, sizeof(buf));
+        cond = ASC_getApplicationContextName(assoc->params, buf);
         if (cond.bad() || strcmp(buf, DICOM_STDAPPLICATIONCONTEXT) != 0)
         {
             /* reject: the application context name is not supported */
@@ -1105,8 +1041,9 @@ OFCondition DcmQueryRetrieveSCP::waitForAssociation(T_ASC_Network * theNet)
             pid = (int)(fork());
             if (pid < 0)
             {
+                char errBuf[256];
                 DCMQRDB_ERROR("Cannot create association sub-process: "
-                   << OFStandard::getLastSystemErrorCode().message());
+                   << OFStandard::strerror(errno, errBuf, sizeof(errBuf)));
                 cond = refuseAssociation(&assoc, CTN_CannotFork);
                 go_cleanup = OFTrue;
             }

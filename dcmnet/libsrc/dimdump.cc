@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1993-2021, OFFIS e.V.
+ *  Copyright (C) 1993-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -29,6 +29,12 @@
 */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CSTDARG
+#include "dcmtk/ofstd/ofstdinc.h"
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -60,554 +66,288 @@ static void DIMSE_dumpMessage_end(OFString &str, DcmItem *dataset = NULL)
     str += "======================= END DIMSE MESSAGE =======================";
 }
 
-static void DIMSE_printStatusClassString(STD_NAMESPACE ostream& dumpStream, int status)
-{
-  /* try to determine the Status Class of the DIMSE Status Code */
-  if (DICOM_SUCCESS_STATUS(status))
-    dumpStream << "Success";
-  else if (DICOM_FAILURE_STATUS(status))
-    dumpStream << "Failure";
-  else if (DICOM_WARNING_STATUS(status))
-    dumpStream << "Warning";
-  else if (DICOM_CANCEL_STATUS(status))
-    dumpStream << "Cancel";
-  else if (DICOM_PENDING_STATUS(status))
-    dumpStream << "Pending";
-  else if (DICOM_STANDARD_STATUS(status))
-    dumpStream << "Unknown Status Code";
-  else
-    dumpStream << "Unknown Status Code (non-standard)";
-}
-
 static void DIMSE_printNStatusString(STD_NAMESPACE ostream& dumpStream, int status)
 {
-  /* first, output the DIMSE status code in numeric format */
-  dumpStream << "0x" << STD_NAMESPACE hex << STD_NAMESPACE setfill('0')
-      << STD_NAMESPACE setw(4) << status << ": ";
-
   switch(status)
   {
-    /* General DIMSE-N Codes */
-    case STATUS_N_Success:
-      dumpStream << "Success";
-      break;
-    case STATUS_N_Refused_NotAuthorized:
-      dumpStream << "Refused: Not authorized";
+    case STATUS_Success:
+      dumpStream << "0x0000: Success";
       break;
     case STATUS_N_Cancel:
-      dumpStream << "Cancel";
+      dumpStream << "0xFE00: Cancel";
       break;
     case STATUS_N_AttributeListError:
-      dumpStream << "Attribute list error";
+      dumpStream << "0x0107: Attribute list error";
       break;
     case STATUS_N_SOPClassNotSupported:
-      dumpStream << "SOP Class not supported";
+      dumpStream << "0x0122: SOP class not supported";
       break;
     case STATUS_N_ClassInstanceConflict:
-      dumpStream << "Class-Instance conflict";
+      dumpStream << "0x0119: Class/instance conflict";
       break;
     case STATUS_N_DuplicateSOPInstance:
-      dumpStream << "Duplicate SOP Instance";
+      dumpStream << "0x0111: Duplicate SOP instance";
       break;
     case STATUS_N_DuplicateInvocation:
-      dumpStream << "Duplicate invocation";
+      dumpStream << "0x0210: Duplicate invocation";
       break;
     case STATUS_N_InvalidArgumentValue:
-      dumpStream << "Invalid argument value";
+      dumpStream << "0x0115: Invalid argument value";
       break;
     case STATUS_N_InvalidAttributeValue:
-      dumpStream << "Invalid attribute value";
+      dumpStream << "0x0106: Invalid attribute value";
       break;
     case STATUS_N_AttributeValueOutOfRange:
-      dumpStream << "Attribute value out of range";
+      dumpStream << "0x0116: Attribute value out of range";
       break;
-    case STATUS_N_InvalidSOPInstance:
-      dumpStream << "Invalid SOP Instance";
+    case STATUS_N_InvalidObjectInstance:
+      dumpStream << "0x0117: Invalid object instance";
       break;
     case STATUS_N_MissingAttribute:
-      dumpStream << "Missing attribute";
+      dumpStream << "0x0120: Missing attribute";
       break;
     case STATUS_N_MissingAttributeValue:
-      dumpStream << "Missing attribute value";
+      dumpStream << "0x0121: Missing attribute value";
       break;
     case STATUS_N_MistypedArgument:
-      dumpStream << "Mistyped argument";
-      break;
-    case STATUS_N_NoSuchAction:
-      dumpStream << "No such action";
+      dumpStream << "0x0212: Mistyped argument";
       break;
     case STATUS_N_NoSuchArgument:
-      dumpStream << "No such argument";
+      dumpStream << "0x0114: No such argument";
       break;
     case STATUS_N_NoSuchAttribute:
-      dumpStream << "No such attribute";
+      dumpStream << "0x0105: No such attribute";
       break;
     case STATUS_N_NoSuchEventType:
-      dumpStream << "No such Event Type";
+      dumpStream << "0x0113: No such event type";
       break;
-    case STATUS_N_NoSuchSOPInstance:
-      dumpStream << "No such SOP Instance";
+    case STATUS_N_NoSuchObjectInstance:
+      dumpStream << "0x0112: No such object instance";
       break;
     case STATUS_N_NoSuchSOPClass:
-      dumpStream << "No such SOP Class";
+      dumpStream << "0x0118: No such SOP class";
       break;
     case STATUS_N_ProcessingFailure:
-      dumpStream << "Processing failure";
+      dumpStream << "0x0110: Processing failure";
       break;
     case STATUS_N_ResourceLimitation:
-      dumpStream << "Resource limitation";
+      dumpStream << "0x0213: Resource limitation";
       break;
     case STATUS_N_UnrecognizedOperation:
-      dumpStream << "Unrecognized operation";
+      dumpStream << "0x0211: Unrecognized operation";
       break;
-
-    /* Print Management Service Class Specific Codes */
     case STATUS_N_PRINT_BFS_Warn_MemoryAllocation:
-      dumpStream << "Basic film session warning - Memory allocation";
+      dumpStream << "0xB600: Basic film session warning - Memory allocation";
       break;
     case STATUS_N_PRINT_BFS_Warn_NoSessionPrinting:
-      dumpStream << "Basic film session warning - No session printing";
+      dumpStream << "0xB601: Basic film session warning - No session printing";
       break;
     case STATUS_N_PRINT_BFS_Warn_EmptyPage:
-      dumpStream << "Basic film session warning - Empty page";
+      dumpStream << "0xB602: Basic film session warning - Empty page";
       break;
     case STATUS_N_PRINT_BFB_Warn_EmptyPage:
-      dumpStream << "Basic film box warning - Empty page";
-      break;
-    case STATUS_N_PRINT_BFS_BFB_IB_Warn_ImageDemagnified:
-      dumpStream << "Basic film session/box or image box warning - Image demagnified";
-      break;
-    case STATUS_N_PRINT_BFS_BFB_IB_Warn_ImageCropped:
-      dumpStream << "Basic film session/box or image box warning - Image cropped";
-      break;
-    case STATUS_N_PRINT_BFS_BFB_IB_Warn_ImageDecimated:
-      dumpStream << "Basic film session/box or image box warning - Image decimated";
+      dumpStream << "0xB603: Basic film box warning - Empty page";
       break;
     case STATUS_N_PRINT_BFS_Fail_NoFilmBox:
-      dumpStream << "Basic film session failure - No film box";
+      dumpStream << "0xC600: Basic film session failure - No film box";
       break;
     case STATUS_N_PRINT_BFS_Fail_PrintQueueFull:
-      dumpStream << "Basic film session failure - Print queue full";
+      dumpStream << "0xC601: Basic film session failure - Print queue full";
       break;
-    case STATUS_N_PRINT_BFB_Fail_PrintQueueFull:
-      dumpStream << "Basic film box failure - Print queue full";
+    case STATUS_N_PRINT_BSB_Fail_PrintQueueFull:
+      dumpStream << "0xC602: Basic film box failure - Print queue full";
       break;
     case STATUS_N_PRINT_BFS_BFB_Fail_ImageSize:
-      dumpStream << "Basic film session/box failure - Image size";
+      dumpStream << "0xC603: Basic film session/box failure - Image size";
       break;
-    case STATUS_N_PRINT_BFS_BFB_Fail_PositionCollision:    // retired
-      dumpStream << "Basic film session/box failure - Position collision (retired)";
-      break;
-    case STATUS_N_PRINT_BFS_BFB_Fail_CombinedImageSize:
-      dumpStream << "Basic film session/box failure - Combined image size";
-      break;
-    case STATUS_N_PRINT_IB_Warn_MinMaxDensity:
-      dumpStream << "Image box warning - Min/Max density";
+    case STATUS_N_PRINT_BFS_BFB_Fail_PositionCollision:
+      dumpStream << "0xC604: Basic film session/box failure - Position collision";
       break;
     case STATUS_N_PRINT_IB_Fail_InsufficientMemory:
-      dumpStream << "Image box failure - Insufficient memory";
+      dumpStream << "0xC605: Image box failure - Insufficient memory";
       break;
     case STATUS_N_PRINT_IB_Fail_MoreThanOneVOILUT:
-      dumpStream << "Image box failure - More than one VOI LUT";
+      dumpStream << "0xC606: Image box failure - More than one VOI LUT";
       break;
-
-    /* Modality Performed Procedure Step Retrieve SOP Class Specific Codes */
-    case STATUS_N_MPPS_Warning_RequestedOptionalAttributesNotSupported:
-      dumpStream << "MPPS retrieve warning: Requested optional attributes not supported";
-      break;
-
-    /* Application Event Logging Service Class Specific Codes */
-    case STATUS_N_LOG_Failure_ProceduralLoggingNotAvailable:
-      dumpStream << "Event logging failure - Procedural logging not available";
-      break;
-    case STATUS_N_LOG_Failure_EventInformationDoesNotMatchTemplate:
-      dumpStream << "Event logging failure - Event information does not match template";
-      break;
-    case STATUS_N_LOG_Failure_CannotMatchEventToCurrentStudy:
-      dumpStream << "Event logging failure - Cannot match event to a current study";
-      break;
-    case STATUS_N_LOG_Failure_IDsInconsistentInMatchingCurrentStudy:
-      dumpStream << "Event logging failure - IDs inconsistent in matching a current study - Event not logged";
-      break;
-    case STATUS_N_LOG_Warning_SynchronizationFrameOfReferenceDoesNotMatch:
-      dumpStream << "Event logging warning - Synchronization Frame of Reference does not match";
-      break;
-    case STATUS_N_LOG_Warning_StudyInstanceUIDCoercion:
-      dumpStream << "Event logging warning - Study Instance UID coercion";
-      break;
-    case STATUS_N_LOG_Warning_IDsInconsistentInMatchingCurrentStudy:
-      dumpStream << "Event logging warning - IDs inconsistent in matching a current study - Event logged";
-      break;
-
-    /* Media Creation Management Service Class Specific Codes */
-    case STATUS_N_MEDIA_Failed_MediaCreationActionAlreadyReceived:
-      dumpStream << "Media creation failure - Action already received";
-      break;
-    case STATUS_N_MEDIA_Failed_MediaCreationRequestAlreadyCompleted:
-      dumpStream << "Media creation failure - Request already completed";
-      break;
-    case STATUS_N_MEDIA_Failed_MediaCreationRequestAlreadyInProgress:
-      dumpStream << "Media creation failure - Request already in progress";
-      break;
-    case STATUS_N_MEDIA_Failed_CancellationDenied:
-      dumpStream << "Media creation failure - Cancellation denied";
-      break;
-
-    /* other codes (try to determine the Status Class) */
     default:
-      DIMSE_printStatusClassString(dumpStream, status);
+      dumpStream << "0x" << STD_NAMESPACE hex << STD_NAMESPACE setfill('0') << STD_NAMESPACE setw(4)
+          << status << ": Unknown Status Code";
       break;
   }
 }
 
 static void DIMSE_printCStoreStatusString(STD_NAMESPACE ostream& dumpStream, int status)
 {
-  /* first, output the DIMSE status code in numeric format */
   dumpStream << "0x" << STD_NAMESPACE hex << STD_NAMESPACE setfill('0')
-      << STD_NAMESPACE setw(4) << status << ": ";
+      << STD_NAMESPACE setw(4) << status;
 
-  /* General C-STORE Codes */
-  if (status == STATUS_STORE_Success)
+  if ((status & 0xff00) == STATUS_STORE_Refused_OutOfResources)
   {
-    dumpStream << "Success";
+    dumpStream << ": Error: Refused - Out of resources";
   }
-  else if (status == STATUS_STORE_Refused_SOPClassNotSupported)
+  else if ((status & 0xff00) == STATUS_STORE_Refused_SOPClassNotSupported)
   {
-    dumpStream << "Refused: SOP Class not supported";
-  }
-  else if (status == STATUS_STORE_Refused_NotAuthorized)
-  {
-    dumpStream << "Refused: Not authorized";
-  }
-  else if (status == STATUS_STORE_InvalidSOPClass)
-  {
-    dumpStream << "Invalid SOP Class";
-  }
-  else if (status == STATUS_STORE_DuplicateInvocation)
-  {
-    dumpStream << "Duplicate invocation";
-  }
-  else if (status == STATUS_STORE_UnrecognizedOperation)
-  {
-    dumpStream << "Unrecognized operation";
-  }
-  else if (status == STATUS_STORE_MistypedArgument)
-  {
-    dumpStream << "Mistyped argument";
-  }
-
-  /* Service Class Specific C-STORE Codes */
-  else if ((status & 0xff00) == STATUS_STORE_Refused_OutOfResources)
-  {
-    dumpStream << "Refused: Out of resources";
+    dumpStream << ": Error: Refused - SOP Class not supported";
   }
   else if ((status & 0xff00) == STATUS_STORE_Error_DataSetDoesNotMatchSOPClass)
   {
-    dumpStream << "Error: Data Set does not match SOP Class";
+    dumpStream << ": Error: Refused - Data Set does not match SOP Class";
   }
   else if ((status & 0xf000) == STATUS_STORE_Error_CannotUnderstand)
   {
-    dumpStream << "Error: Cannot understand";
+    dumpStream << ": Error: Cannot understand";
   }
   else if (status == STATUS_STORE_Warning_CoercionOfDataElements)
   {
-    dumpStream << "Warning: Coercion of Data Elements";
+    dumpStream << ": Warning: Coercion of data elements";
   }
   else if (status == STATUS_STORE_Warning_DataSetDoesNotMatchSOPClass)
   {
-    dumpStream << "Warning: Data Set does not match SOP Class";
+    dumpStream << ": Warning: Data Set does not match SOP Class";
   }
   else if (status == STATUS_STORE_Warning_ElementsDiscarded)
   {
-    dumpStream << "Warning: Elements discarded";
+    dumpStream << ": Warning: Elements discarded";
   }
-
-  /* other codes (try to determine the Status Class) */
+  else if (DICOM_WARNING_STATUS(status))
+  {
+    dumpStream << ": Warning";
+  }
+  else if (DICOM_PENDING_STATUS(status))
+  {
+    dumpStream << ": Pending";
+  }
+  else if (status == STATUS_Success)
+  {
+    dumpStream << ": Success";
+  }
   else
   {
-    DIMSE_printStatusClassString(dumpStream, status);
+    dumpStream << ": Unknown Status Code";
   }
 }
 
-static void DIMSE_printCFindStatusString(STD_NAMESPACE ostream& dumpStream, int status, const char *sopClass)
+static void DIMSE_printCFindStatusString(STD_NAMESPACE ostream& dumpStream, int status)
 {
-  /* first, output the DIMSE status code in numeric format */
   dumpStream << "0x" << STD_NAMESPACE hex << STD_NAMESPACE setfill('0')
-      << STD_NAMESPACE setw(4) << status << ": ";
+      << STD_NAMESPACE setw(4) << status;
 
-  /* General C-FIND Codes */
-  if (status == STATUS_FIND_Refused_SOPClassNotSupported)
+  if ((status & 0xff00) == STATUS_FIND_Refused_OutOfResources)
   {
-    dumpStream << "Refused: SOP Class not supported";
+    dumpStream << ": Error: Refused - Out of resources";
   }
-
-  /* Service Class Specific C-FIND Codes */
-  else if (status == STATUS_FIND_Success_MatchingIsComplete)
+  else if ((status & 0xff00) == STATUS_FIND_Refused_SOPClassNotSupported)
   {
-    dumpStream << "Success: Matching is complete";
+    dumpStream << ": Error: Refused - SOP Class not supported";
   }
-  else if (status == STATUS_FIND_Refused_OutOfResources)
+  else if ((status & 0xff00) == STATUS_FIND_Failed_IdentifierDoesNotMatchSOPClass)
   {
-    dumpStream << "Refused: Out of resources";
-  }
-  else if ((status & 0xff00) == STATUS_FIND_Error_DataSetDoesNotMatchSOPClass)
-  {
-    dumpStream << "Error: Data Set does not match SOP Class";
+    dumpStream << ": Error: Failed - Identifier does not match SOP Class";
   }
   else if ((status & 0xf000) == STATUS_FIND_Failed_UnableToProcess)
   {
-    /* Relevant Patient Information Query uses some specific Codes in "Cxxx" */
-    if (sopClass && (strncmp(sopClass, UID_RelevantPatientInformationQuery_Prefix, strlen(UID_RelevantPatientInformationQuery_Prefix)) == 0))
-    {
-      if (status == STATUS_FIND_Failed_MoreThanOneMatchFound)
-      {
-        dumpStream << "Failed: More than one match found";
-      }
-      else if (status == STATUS_FIND_Failed_UnableToSupportRequestedTemplate)
-      {
-        dumpStream << "Failed: Unable to support requested template";
-      }
-      else
-      {
-        dumpStream << "Failed: Unable to process";
-      }
-    }
-    /* for all other Services Classes, the generic output is used */
-    else
-    {
-      dumpStream << "Failed: Unable to process";
-    }
+    dumpStream << ": Error: Failed - Unable to process";
   }
   else if (status == STATUS_FIND_Cancel_MatchingTerminatedDueToCancelRequest)
   {
-    dumpStream << "Cancel: Matching terminated due to Cancel Request";
-  }
-  else if (status == STATUS_FIND_Pending_MatchesAreContinuing)
-  {
-    dumpStream << "Pending: Matches are continuing";
+    dumpStream << ": Cancel: Matching terminated due to Cancel Request";
   }
   else if (status == STATUS_FIND_Pending_WarningUnsupportedOptionalKeys)
   {
-    dumpStream << "Pending: Matches are continuing - Warning: Unsupported optional keys";
+    dumpStream << ": Pending: Warning - Unsupported optional keys";
   }
-
-  /* other codes (try to determine the Status Class) */
+  else if (DICOM_WARNING_STATUS(status))
+  {
+    dumpStream << ": Warning";
+  }
+  else if (DICOM_PENDING_STATUS(status))
+  {
+    dumpStream << ": Pending";
+  }
+  else if (status == STATUS_Success)
+  {
+    dumpStream << ": Success";
+  }
   else
   {
-    DIMSE_printStatusClassString(dumpStream, status);
+    dumpStream << ": Unknown Status Code";
   }
 }
 
-static void DIMSE_printCGetStatusString(STD_NAMESPACE ostream& dumpStream, int status)
+static void DIMSE_printCGetMoveStatusString(STD_NAMESPACE ostream& dumpStream, int status)
 {
-  /* first, output the DIMSE status code in numeric format */
   dumpStream << "0x" << STD_NAMESPACE hex << STD_NAMESPACE setfill('0')
-      << STD_NAMESPACE setw(4) << status << ": ";
+      << STD_NAMESPACE setw(4) << status;
 
-  /* General C-GET Codes */
-  if (status == STATUS_GET_Refused_SOPClassNotSupported)
+  if ((status & 0xf000) == STATUS_MOVE_Failed_UnableToProcess)
   {
-    dumpStream << "Refused: SOP Class not supported";
-  }
-  else if (status == STATUS_GET_DuplicateInvocation)
-  {
-    dumpStream << "Duplicate invocation";
-  }
-  else if (status == STATUS_GET_UnrecognizedOperation)
-  {
-    dumpStream << "Unrecognized operation";
-  }
-  else if (status == STATUS_GET_MistypedArgument)
-  {
-    dumpStream << "Mistyped argument";
-  }
-
-  /* Service Class Specific C-GET Codes */
-  else if (status == STATUS_GET_Success_SubOperationsCompleteNoFailures)
-  {
-    dumpStream << "Success: Sub-operations complete - No failures or warnings";
-  }
-  else if (status == STATUS_GET_Refused_OutOfResourcesNumberOfMatches)
-  {
-    dumpStream << "Refused: Out of resources - Unable to calculate number of matches";
-  }
-  else if (status == STATUS_GET_Refused_OutOfResourcesSubOperations)
-  {
-    dumpStream << "Refused: Out of resources - Unable to perform sub-operations";
-  }
-  else if (status == STATUS_GET_Error_DataSetDoesNotMatchSOPClass)
-  {
-    dumpStream << "Error: Data Set does not match SOP Class";
-  }
-  else if (status == STATUS_GET_Failed_NoneOfTheFramesWereFoundInSOPInstance)
-  {
-    dumpStream << "Failed: None of the frames requested were found in SOP Instance";
-  }
-  else if (status == STATUS_GET_Failed_UnableToCreateNewObjectForThisSOPClass)
-  {
-    dumpStream << "Failed: Unable to create new object for this SOP Class";
-  }
-  else if (status == STATUS_GET_Failed_UnableToExtractFrames)
-  {
-    dumpStream << "Failed: Unable to extract frames";
-  }
-  else if (status == STATUS_GET_Failed_TimeBasedRequestForNonTimeBasedSOPInstance)
-  {
-    dumpStream << "Failed: Time-based request for non-time-based SOP Instance";
-  }
-  else if (status == STATUS_GET_Failed_InvalidRequest)
-  {
-    dumpStream << "Failed: Invalid request";
-  }
-  else if ((status & 0xf000) == STATUS_GET_Failed_UnableToProcess)
-  {
-    dumpStream << "Failed: Unable to process";
-  }
-  else if (status == STATUS_GET_Cancel_SubOperationsTerminatedDueToCancelIndication)
-  {
-    dumpStream << "Cancel: Sub-operations terminated due to Cancel Indication";
-  }
-  else if (status == STATUS_GET_Warning_SubOperationsCompleteOneOrMoreFailures)
-  {
-    dumpStream << "Warning: Sub-operations complete - One or more failures or warnings";
-  }
-  else if (status == STATUS_GET_Pending_SubOperationsAreContinuing)
-  {
-    dumpStream << "Pending: Sub-operations are continuing";
-  }
-
-  /* other codes (try to determine the Status Class) */
-  else
-  {
-    DIMSE_printStatusClassString(dumpStream, status);
-  }
-}
-
-static void DIMSE_printCMoveStatusString(STD_NAMESPACE ostream& dumpStream, int status)
-{
-  /* first, output the DIMSE status code in numeric format */
-  dumpStream << "0x" << STD_NAMESPACE hex << STD_NAMESPACE setfill('0')
-      << STD_NAMESPACE setw(4) << status << ": ";
-
-  /* General C-MOVE Codes */
-  if (status == STATUS_MOVE_Refused_SOPClassNotSupported)
-  {
-    dumpStream << "Refused: SOP Class not supported";
-  }
-  else if (status == STATUS_MOVE_Refused_NotAuthorized)
-  {
-    dumpStream << "Refused: Not authorized";
-  }
-  else if (status == STATUS_MOVE_DuplicateInvocation)
-  {
-    dumpStream << "Duplicate invocation";
-  }
-  else if (status == STATUS_MOVE_UnrecognizedOperation)
-  {
-    dumpStream << "Unrecognized operation";
-  }
-  else if (status == STATUS_MOVE_MistypedArgument)
-  {
-    dumpStream << "Mistyped argument";
-  }
-
-  /* Service Class Specific C-MOVE Codes */
-  else if (status == STATUS_MOVE_Success_SubOperationsCompleteNoFailures)
-  {
-    dumpStream << "Success: Sub-operations complete - No failures or warnings";
+    dumpStream << ": Error: Failed - Unable to process";
   }
   else if (status == STATUS_MOVE_Refused_OutOfResourcesNumberOfMatches)
   {
-    dumpStream << "Refused: Out of resources - Unable to calculate number of matches";
+    dumpStream << ": Error: Refused - Out of resources - Number of matches";
   }
   else if (status == STATUS_MOVE_Refused_OutOfResourcesSubOperations)
   {
-    dumpStream << "Refused: Out of resources - Unable to perform sub-operations";
+    dumpStream << ": Error: Refused - Out of resources - Suboperations";
   }
-  else if (status == STATUS_MOVE_Refused_MoveDestinationUnknown)
+  else if (status == STATUS_MOVE_Failed_SOPClassNotSupported)
   {
-    dumpStream << "Refused: Move Destination unknown";
+    dumpStream << ": Failed: SOP Class not supported";
   }
-  else if (status == STATUS_MOVE_Error_DataSetDoesNotMatchSOPClass)
+  else if (status == STATUS_MOVE_Failed_MoveDestinationUnknown)
   {
-    dumpStream << "Error: Data Set does not match SOP Class";
+    dumpStream << ": Failed: Move Destination unknown";
   }
-  else if (status == STATUS_MOVE_Failed_NoneOfTheFramesWereFoundInSOPInstance)
+  else if (status == STATUS_MOVE_Failed_IdentifierDoesNotMatchSOPClass)
   {
-    dumpStream << "Failed: None of the frames requested were found in SOP Instance";
-  }
-  else if (status == STATUS_MOVE_Failed_UnableToCreateNewObjectForThisSOPClass)
-  {
-    dumpStream << "Failed: Unable to create new object for this SOP Class";
-  }
-  else if (status == STATUS_MOVE_Failed_UnableToExtractFrames)
-  {
-    dumpStream << "Failed: Unable to extract frames";
-  }
-  else if (status == STATUS_MOVE_Failed_TimeBasedRequestForNonTimeBasedSOPInstance)
-  {
-    dumpStream << "Failed: Time-based request for non-time-based SOP Instance";
-  }
-  else if (status == STATUS_MOVE_Failed_InvalidRequest)
-  {
-    dumpStream << "Failed: Invalid request";
-  }
-  else if ((status & 0xf000) == STATUS_MOVE_Failed_UnableToProcess)
-  {
-    dumpStream << "Failed: Unable to process";
+    dumpStream << ": Failed: Identifier does not match SOP Class";
   }
   else if (status == STATUS_MOVE_Cancel_SubOperationsTerminatedDueToCancelIndication)
   {
-    dumpStream << "Cancel: Sub-operations terminated due to Cancel Indication";
+    dumpStream << ": Cancel: Suboperations terminated due to Cancel Indication";
   }
   else if (status == STATUS_MOVE_Warning_SubOperationsCompleteOneOrMoreFailures)
   {
-    dumpStream << "Warning: Sub-operations complete - One or more failures or warnings";
+    dumpStream << ": Warning: Suboperations complete, one or more failures";
   }
-  else if (status == STATUS_MOVE_Pending_SubOperationsAreContinuing)
+  else if (DICOM_WARNING_STATUS(status))
   {
-    dumpStream << "Pending: Sub-operations are continuing";
+    dumpStream << ": Warning";
   }
-
-  /* other codes (try to determine the Status Class) */
+  else if (DICOM_PENDING_STATUS(status))
+  {
+    dumpStream << ": Pending";
+  }
+  else if (status == STATUS_Success)
+  {
+    dumpStream << ": Success";
+  }
   else
   {
-    DIMSE_printStatusClassString(dumpStream, status);
+    dumpStream << ": Unknown Status Code";
   }
 }
 
 static void DIMSE_printCEchoStatusString(STD_NAMESPACE ostream& dumpStream, int status)
 {
-  /* first, output the DIMSE status code in numeric format */
   dumpStream << "0x" << STD_NAMESPACE hex << STD_NAMESPACE setfill('0')
-      << STD_NAMESPACE setw(4) << status << ": ";
-
-  /* General C-ECHO Codes */
-  if (status == STATUS_ECHO_Success)
+      << STD_NAMESPACE setw(4) << status;
+  if (DICOM_WARNING_STATUS(status))
   {
-    dumpStream << "Success";
+    dumpStream << ": Warning";
   }
-  else if (status == STATUS_ECHO_Refused_SOPClassNotSupported)
+  else if (DICOM_PENDING_STATUS(status))
   {
-    dumpStream << "Refused: SOP Class not supported";
+    dumpStream << ": Pending";
   }
-  else if (status == STATUS_ECHO_DuplicateInvocation)
+  else if (status == STATUS_Success)
   {
-    dumpStream << "Duplicate invocation";
+    dumpStream << ": Success";
   }
-  else if (status == STATUS_ECHO_UnrecognizedOperation)
-  {
-    dumpStream << "Unrecognized operation";
-  }
-  else if (status == STATUS_ECHO_MistypedArgument)
-  {
-    dumpStream << "Mistyped argument";
-  }
-
-  /* other codes (so try to determine the Status Class) */
   else
   {
-    DIMSE_printStatusClassString(dumpStream, status);
+    dumpStream << ": Unknown Status Code";
   }
 }
 
@@ -807,7 +547,7 @@ OFString& DIMSE_dumpMessage(OFString &str, T_DIMSE_C_GetRSP &msg, enum DIMSE_dir
     else stream << "none" << OFendl;
     stream << "Data Set                      : " << ((msg.DataSetType==DIMSE_DATASET_NULL) ? "none" : "present") << OFendl
            << "DIMSE Status                  : ";
-    DIMSE_printCGetStatusString(stream, msg.DimseStatus);
+    DIMSE_printCGetMoveStatusString(stream, msg.DimseStatus);
 
     OFSTRINGSTREAM_GETSTR(stream, result)
     str += result;
@@ -886,7 +626,7 @@ OFString& DIMSE_dumpMessage(OFString &str, T_DIMSE_C_MoveRSP &msg, enum DIMSE_di
     else stream << "none" << OFendl;
     stream << "Data Set                      : " << ((msg.DataSetType==DIMSE_DATASET_NULL) ? "none" : "present") << OFendl
            << "DIMSE Status                  : ";
-    DIMSE_printCMoveStatusString(stream, msg.DimseStatus);
+    DIMSE_printCGetMoveStatusString(stream, msg.DimseStatus);
 
     OFSTRINGSTREAM_GETSTR(stream, result)
     str += result;
@@ -937,10 +677,10 @@ OFString& DIMSE_dumpMessage(OFString &str, T_DIMSE_C_FindRQ &msg, enum DIMSE_dir
 OFString& DIMSE_dumpMessage(OFString &str, T_DIMSE_C_FindRSP &msg, enum DIMSE_direction dir, DcmItem *dataset, T_ASC_PresentationContextID presID)
 {
     OFOStringStream stream;
-    const char *sopClassUID = (msg.opts & O_FIND_AFFECTEDSOPCLASSUID) ? msg.AffectedSOPClassUID : NULL;
-    const char *sopClassName = dcmFindNameOfUID(sopClassUID);
+    const char *uid = NULL;
 
     DIMSE_dumpMessage_start(str, dir);
+    if (msg.opts & O_FIND_AFFECTEDSOPCLASSUID) uid = dcmFindNameOfUID(msg.AffectedSOPClassUID);
     stream << "Message Type                  : C-FIND RSP" << OFendl;
     if (presID > 0)
     {
@@ -948,15 +688,11 @@ OFString& DIMSE_dumpMessage(OFString &str, T_DIMSE_C_FindRSP &msg, enum DIMSE_di
     }
     stream << "Message ID Being Responded To : " << msg.MessageIDBeingRespondedTo << OFendl
            << "Affected SOP Class UID        : ";
-    if (sopClassName)
-        stream << sopClassName << OFendl;
-    else if (sopClassUID)
-        stream << sopClassUID << OFendl;
-    else
-        stream << "none" << OFendl;
+    if (msg.opts & O_FIND_AFFECTEDSOPCLASSUID) stream << (uid ? uid : msg.AffectedSOPClassUID) << OFendl;
+    else stream << "none" << OFendl;
     stream << "Data Set                      : " << ((msg.DataSetType==DIMSE_DATASET_NULL) ? "none" : "present") << OFendl
            << "DIMSE Status                  : ";
-    DIMSE_printCFindStatusString(stream, msg.DimseStatus, sopClassUID);
+    DIMSE_printCFindStatusString(stream, msg.DimseStatus);
 
     OFSTRINGSTREAM_GETSTR(stream, result)
     str += result;

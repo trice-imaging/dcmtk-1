@@ -1,0 +1,123 @@
+`configure' configures dcmtk 3.6.1 to adapt to many kinds of systems.
+
+Usage: config/configure [OPTION]... [VAR=VALUE]...
+
+To assign environment variables (e.g., CC, CFLAGS...), specify them as
+VAR=VALUE.  See below for descriptions of some of the useful variables.
+
+Defaults for the options are specified in brackets.
+
+Configuration:
+  -h, --help              display this help and exit
+      --help=short        display options specific to this package
+      --help=recursive    display the short help of all the included packages
+  -V, --version           display version information and exit
+  -q, --quiet, --silent   do not print `checking ...' messages
+      --cache-file=FILE   cache test results in FILE [disabled]
+  -C, --config-cache      alias for `--cache-file=config.cache'
+  -n, --no-create         do not create output files
+      --srcdir=DIR        find the sources in DIR [configure dir or `..']
+
+Installation directories:
+  --prefix=PREFIX         install architecture-independent files in PREFIX
+                          [/usr/local]
+  --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
+                          [PREFIX]
+
+By default, `make install' will install all the files in
+`/usr/local/bin', `/usr/local/lib' etc.  You can specify
+an installation prefix other than `/usr/local' using `--prefix',
+for instance `--prefix=$HOME'.
+
+For better control, use the options below.
+
+Fine tuning of the installation directories:
+  --bindir=DIR            user executables [EPREFIX/bin]
+  --sbindir=DIR           system admin executables [EPREFIX/sbin]
+  --libexecdir=DIR        program executables [EPREFIX/libexec]
+  --sysconfdir=DIR        read-only single-machine data [PREFIX/etc/dcmtk]
+  --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
+  --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --libdir=DIR            object code libraries [EPREFIX/lib]
+  --includedir=DIR        C header files [PREFIX/include]
+  --oldincludedir=DIR     C header files for non-gcc [/usr/include]
+  --datarootdir=DIR       read-only arch.-independent data root [PREFIX/share]
+  --datadir=DIR           read-only arch.-independent data [DATAROOTDIR/dcmtk]
+  --infodir=DIR           info documentation [DATAROOTDIR/info]
+  --localedir=DIR         locale-dependent data [DATAROOTDIR/locale]
+  --mandir=DIR            man documentation [DATAROOTDIR/man]
+  --docdir=DIR            documentation root [DATAROOTDIR/doc/dcmtk]
+  --htmldir=DIR           html documentation [DOCDIR/html]
+  --dvidir=DIR            dvi documentation [DOCDIR]
+  --pdfdir=DIR            pdf documentation [DOCDIR]
+  --psdir=DIR             ps documentation [DOCDIR]
+
+System types:
+  --build=BUILD     configure for building on BUILD [guessed]
+  --host=HOST       cross-compile to build programs to run on HOST [BUILD]
+
+Optional Features:
+  --disable-option-checking  ignore unrecognized --enable/--with options
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-debug          compile with debug code, don't optimize
+  --disable-debug         compile without debug code (default)
+  --enable-threads=TYPE   compile with MT support (posix/solaris/auto=default)
+  --disable-threads       compile without MT support
+  --enable-lfs=TYPE       compile with LFS support (lfs/lfs64/auto=default)
+  --disable-lfs           compile without LFS support
+  --enable-std-includes   use C++ ANSI standard includes (default: auto)
+  --disable-std-includes  use old C++ includes
+  --disable-rpath         do not hardcode runtime library paths
+
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-private-tags     enable private tag dictionary
+  --without-private-tags  don't enable private tag dictionary (default)
+  --with-opensslinc=DIR   location of OpenSSL includes and libraries
+  --with-openssl          include OpenSSL support (default: auto)
+  --without-openssl       don't include OpenSSL support
+  --with-zlibinc=DIR      location of zlib includes and libraries
+  --with-zlib             include zlib support (default: auto)
+  --without-zlib          don't include zlib support
+  --with-libtiffinc=DIR   location of libtiff includes and libraries
+  --with-libtiff          include libtiff support (default: auto)
+  --without-libtiff       don't include libtiff support
+  --with-libpnginc=DIR    location of libpng includes and libraries
+  --with-libpng           include libpng support (default: auto)
+  --without-libpng        don't include libpng support
+  --with-libxmlinc=DIR    location of libxml includes and libraries
+  --with-libxml           include libxml support (default: auto)
+  --without-libxml        don't include libxml support
+  --with-libwrapinc=DIR   location of libwrap includes and libraries
+  --with-libwrap          include libwrap support (default: auto)
+  --without-libwrap       don't include libwrap support
+  --with-libsndfileinc=DIR
+                          location of libsndfile includes and libraries
+  --with-libsndfile       include libsndfile support (default: auto)
+  --without-libsndfile    don't include libsndfile support
+  --with-libiconvinc=DIR  location of libiconv includes and libraries
+  --with-libiconv         include libiconv support (default: auto)
+  --without-libiconv      don't include libiconv support
+  --with-cxx11-stl        enable C++11 STL
+  --without-cxx11-stl     disable C++11 STL (default)
+
+Some influential environment variables:
+  CC          C compiler command
+  CFLAGS      C compiler flags
+  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
+              nonstandard directory <lib dir>
+  LIBS        libraries to pass to the linker, e.g. -l<library>
+  CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
+              you have headers in a nonstandard directory <include dir>
+  CPP         C preprocessor
+  CXX         C++ compiler command
+  CXXFLAGS    C++ compiler flags
+  CXXCPP      C++ preprocessor
+
+Use these variables to override the choices made by `configure' or to help
+it to find libraries and programs with nonstandard names/locations.
+
+Report bugs to <bugs@dcmtk.org>.
+dcmtk home page: <http://www.dcmtk.org/>.

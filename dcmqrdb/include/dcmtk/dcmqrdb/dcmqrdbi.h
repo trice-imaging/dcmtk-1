@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1993-2017, OFFIS e.V.
+ *  Copyright (C) 1993-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -36,16 +36,7 @@ struct IdxRecord;
 struct DB_ElementList;
 class DcmQueryRetrieveConfig;
 
-/* ENSURE THAT DBVERSION IS INCREMENTED WHENEVER ONE OF THE INDEX FILE STRUCTS IS MODIFIED */
-
-#define DBINDEXFILE  "index.dat"
-#define DBMAGIC      "QRDB"
-#define DBVERSION    5
-#define DBHEADERSIZE 6
-
-#if DBVERSION > 0xFF
-#error maximum database version reached, you have to invent a new mechanism
-#endif
+#define DBINDEXFILE "index.dat"
 
 #ifndef _WIN32
 /* we lock image files on all platforms except Win32 where it does not work
@@ -142,14 +133,12 @@ public:
    *  @param newImageFileName file name is returned in this parameter.
    *    Memory must be provided by the caller and should be at least MAXPATHLEN+1 
    *    characters. The file name generated should be an absolute file name.
-   *  @param newImageFileNameLen length of buffer pointed to by newImageFileName
    *  @return EC_Normal upon normal completion, or some other OFCondition code upon failure.
    */
   OFCondition makeNewStoreFileName(
       const char *SOPClassUID,
       const char *SOPInstanceUID,
-      char       *newImageFileName,
-      size_t      newImageFileNameLen);
+      char *newImageFileName);
   
   /** register the given DICOM object, which has been received through a C-STORE 
    *  operation and stored in a file, in the database.
@@ -168,21 +157,40 @@ public:
       const char *imageFileName,
       DcmQueryRetrieveDatabaseStatus  *status,
       OFBool     isNew = OFTrue );
-
-  /** @copydoc DcmQueryRetrieveDatabaseHandle::startFindRequest()
+  
+  /** initiate FIND operation using the given SOP class UID (which identifies
+   *  the query model) and DICOM dataset containing find request identifiers. 
+   *  @param SOPClassUID SOP class UID of query service, identifies Q/R model
+   *  @param findRequestIdentifiers dataset containing request identifiers (i.e., the query)
+   *    The caller retains responsibility for destroying the 
+   *    findRequestIdentifiers when no longer needed.
+   *  @param status pointer to DB status object in which a DIMSE status code 
+   *    suitable for use with the C-FIND-RSP message is set. Status will be
+   *    PENDING if any FIND responses will be generated or SUCCESS if no FIND responses will
+   *    be generated (SUCCESS indicates the completion of a operation), or
+   *    another status code upon failure. 
+   *  @return EC_Normal upon normal completion, or some other OFCondition code upon failure.
    */
   OFCondition startFindRequest(
       const char *SOPClassUID,
       DcmDataset *findRequestIdentifiers,
       DcmQueryRetrieveDatabaseStatus *status);     
-
-  /** @copydoc DcmQueryRetrieveDatabaseHandle::nextFindResponse()
+                
+  /** return the next available FIND response as a new DICOM dataset.
+   *  @param findResponseIdentifiers DICOM dataset returned in this parameter.
+   *    The caller is responsible for destroying the findResponseIdentifiers
+   *    when no longer needed.
+   *  @param status pointer to DB status object in which a DIMSE status code 
+   *    suitable for use with the C-FIND-RSP message is set. Status will be
+   *    PENDING if more FIND responses will be generated or SUCCESS if no more 
+   *    FIND responses will be generated (SUCCESS indicates the completion of 
+   *    a operation), or another status code upon failure. 
+   *  @return EC_Normal upon normal completion, or some other OFCondition code upon failure.
    */
   OFCondition nextFindResponse(
       DcmDataset **findResponseIdentifiers,
-      DcmQueryRetrieveDatabaseStatus *status,
-      const DcmQueryRetrieveCharacterSetOptions& characterSetOptions);
-
+      DcmQueryRetrieveDatabaseStatus *status);
+   
   /** cancel the ongoing FIND request, stop and reset every running operation
    *  associated with this request, delete existing temporary files.
    *  @param status pointer to DB status object in which a DIMSE status code 
@@ -214,13 +222,10 @@ public:
    *  imageFileName containing the requested data). 
    *  @param SOPClassUID pointer to string of at least 65 characters into 
    *    which the SOP class UID for the next DICOM object to be transferred is copied.
-   *  @param SOPClassUIDSize size of SOPClassUID element
    *  @param SOPInstanceUID pointer to string of at least 65 characters into 
    *    which the SOP instance UID for the next DICOM object to be transferred is copied.
-   *  @param SOPInstanceUIDSize size of SOPInstanceUID element
    *  @param imageFileName pointer to string of at least MAXPATHLEN+1 characters into 
    *    which the file path for the next DICOM object to be transferred is copied.
-   *  @param imageFileNameSize size of imageFileName element
    *  @param numberOfRemainingSubOperations On return, this parameter will contain
    *     the number of suboperations still remaining for the request
    *     (this number is needed by move responses with PENDING status).
@@ -233,14 +238,11 @@ public:
    */  
   OFCondition nextMoveResponse(
       char *SOPClassUID,
-      size_t SOPClassUIDSize,
       char *SOPInstanceUID,
-      size_t SOPInstanceUIDSize,
       char *imageFileName,
-      size_t imageFileNameSize,
       unsigned short *numberOfRemainingSubOperations,
       DcmQueryRetrieveDatabaseStatus *status);
-
+  
   /** cancel the ongoing MOVE request, stop and reset every running operation
    *  associated with this request, delete existing temporary files.
    *  @param status pointer to DB status object in which a DIMSE status code 
@@ -344,35 +346,17 @@ public:
       
 private:
 
-  /** a private helper class that performs character set conversions on the fly
-   *  (if necessary) before matching.
-   */
-  class CharsetConsideringMatcher;
-
-  /** Determine if a character set is not compatible to UTF-8, i.e.\ if it is
-   *  not UTF-8 or ASCII.
-   *  @param characterSet the character set to inspect.
-   *  @return OFTrue if the character set is neither ASCII nor UTF-8, OFFalse
-   *    otherwise.
-   */
-  static OFBool isConversionToUTF8Necessary(const OFString& characterSet);
-
-  /** Determine if data in the source character set must be converted to
-   *  be compatible to the given destination character set.
-   *  @param sourceCharacterSet the character set the data is encoded in.
-   *  @param destinationCharacterSet the character set that is requested,
-   *    e.g. the character set that the SCU understands.
-   *  @return OFTrue if the source character set is not equal to and not a
-   *    subset of the destination character set, OFFalse otherwise.
-   */
-  static OFBool isConversionNecessary(const OFString& sourceCharacterSet,
-                                      const OFString& destinationCharacterSet);
-
   OFCondition removeDuplicateImage(
       const char *SOPInstanceUID, const char *StudyInstanceUID,
       StudyDescRecord *pStudyDesc, const char *newImageFileName);
   int deleteOldestStudy(StudyDescRecord *pStudyDesc);
   OFCondition deleteOldestImages(StudyDescRecord *pStudyDesc, int StudyNum, char *StudyUID, long RequiredSize);
+  int matchDate (DB_SmallDcmElmt *mod, DB_SmallDcmElmt *elt);
+  int matchTime (DB_SmallDcmElmt *mod, DB_SmallDcmElmt *elt);
+  int matchUID (DB_SmallDcmElmt *mod, DB_SmallDcmElmt *elt);
+  int matchStrings (DB_SmallDcmElmt *mod, DB_SmallDcmElmt *elt);
+  int matchOther (DB_SmallDcmElmt *mod, DB_SmallDcmElmt *elt);
+  int dbmatch (DB_SmallDcmElmt *mod, DB_SmallDcmElmt *elt);
   void makeResponseList(DB_Private_Handle *phandle, IdxRecord *idxRec);
   int matchStudyUIDInStudyDesc (StudyDescRecord *pStudyDesc, char *StudyUID, int maxStudiesAllowed);
   OFCondition checkupinStudyDesc(StudyDescRecord *pStudyDesc, char *StudyUID, long imageSize);
@@ -382,8 +366,7 @@ private:
       IdxRecord         *idxRec,
       DB_LEVEL          level,
       DB_LEVEL          infLevel,
-      int               *match,
-      CharsetConsideringMatcher& dbmatch);
+      int               *match);
 
   OFCondition testFindRequestList (
       DB_ElementList  *findRequestList,

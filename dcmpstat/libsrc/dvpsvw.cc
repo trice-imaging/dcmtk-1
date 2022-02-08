@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2021, OFFIS e.V.
+ *  Copyright (C) 1998-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -24,6 +24,9 @@
 #include "dcmtk/dcmpstat/dvpsvw.h"
 #include "dcmtk/dcmdata/dctk.h"
 #include "dcmtk/ofstd/ofstd.h"
+
+#define INCLUDE_CSTDIO
+#include "dcmtk/ofstd/ofstdinc.h"
 
 /* --------------- class DVPSVOIWindow --------------- */
 
@@ -57,13 +60,13 @@ OFCondition DVPSVOIWindow::read(size_t idx, DcmDecimalString &wcenter, DcmDecima
   if (wcenter.getVM() <= idx) return EC_IllegalCall;
   if (wwidth.getVM() <= idx) return EC_IllegalCall;
   Float64 wc=0.0, ww=0.0;
-  OFCondition result = wcenter.getFloat64(wc, OFstatic_cast(Uint32, idx));
-  if (EC_Normal==result) result= wwidth.getFloat64(ww, OFstatic_cast(Uint32, idx));
+  OFCondition result = wcenter.getFloat64(wc, idx);
+  if (EC_Normal==result) result= wwidth.getFloat64(ww, idx);
   if (EC_Normal==result)
   {
     windowCenter = wc;
     windowWidth = ww;
-    if (expl && (expl->getVM() > idx)) expl->getOFString(windowCenterWidthExplanation, OFstatic_cast(Uint32, idx));
+    if (expl && (expl->getVM() > idx)) expl->getOFString(windowCenterWidthExplanation, idx);
     else
     {
       // create default description for VOI Window

@@ -1,9 +1,9 @@
 /*
  *
- *  Copyright (C) 2014-2021, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
- *  This software and supporting documentation are maintained by
+ *  This software and supporting documentation were developed by
  *
  *    OFFIS e.V.
  *    R&D Division Health
@@ -16,7 +16,7 @@
  *  Author:  Joerg Riesmeier
  *
  *  Purpose:
- *    classes: DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker
+ *    classes: DSRRadiopharmaceuticalRadiationDoseConstraintChecker
  *
  */
 
@@ -26,48 +26,45 @@
 #include "dcmtk/dcmsr/dsrrrdcc.h"
 
 
-DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker::DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker()
+DSRRadiopharmaceuticalRadiationDoseConstraintChecker::DSRRadiopharmaceuticalRadiationDoseConstraintChecker()
   : DSRIODConstraintChecker()
 {
 }
 
 
-DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker::~DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker()
+DSRRadiopharmaceuticalRadiationDoseConstraintChecker::~DSRRadiopharmaceuticalRadiationDoseConstraintChecker()
 {
 }
 
 
-OFBool DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker::isByReferenceAllowed() const
-{
-    return OFFalse;
-}
-
-
-OFBool DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker::isTemplateSupportRequired() const
+OFBool DSRRadiopharmaceuticalRadiationDoseConstraintChecker::isByReferenceAllowed() const
 {
     return OFFalse;
 }
 
 
-OFCondition DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker::getRootTemplateIdentification(OFString &templateIdentifier,
-                                                                                                  OFString &mappingResource) const
+OFBool DSRRadiopharmaceuticalRadiationDoseConstraintChecker::isTemplateSupportRequired() const
 {
-    templateIdentifier.clear();
-    mappingResource.clear();
-    return EC_Normal;
+    return OFFalse;
 }
 
 
-DSRTypes::E_DocumentType DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker::getDocumentType() const
+const char *DSRRadiopharmaceuticalRadiationDoseConstraintChecker::getRootTemplateIdentifier() const
+{
+    return NULL;
+}
+
+
+DSRTypes::E_DocumentType DSRRadiopharmaceuticalRadiationDoseConstraintChecker::getDocumentType() const
 {
     return DT_RadiopharmaceuticalRadiationDoseSR;
 }
 
 
-OFBool DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker::checkContentRelationship(const E_ValueType sourceValueType,
-                                                                                        const E_RelationshipType relationshipType,
-                                                                                        const E_ValueType targetValueType,
-                                                                                        const OFBool byReference) const
+OFBool DSRRadiopharmaceuticalRadiationDoseConstraintChecker::checkContentRelationship(const E_ValueType sourceValueType,
+                                                                                      const E_RelationshipType relationshipType,
+                                                                                      const E_ValueType targetValueType,
+                                                                                      const OFBool byReference) const
 {
     /* the following code implements the constraints of table A.35.14-2 in DICOM PS3.3 */
     OFBool result = OFFalse;
@@ -88,11 +85,6 @@ OFBool DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker::checkContentRelat
             result = (targetValueType == VT_Text)     || (targetValueType == VT_Code)   || (targetValueType == VT_Num) ||
                      (targetValueType == VT_DateTime) || (targetValueType == VT_UIDRef) || (targetValueType == VT_PName);
         }
-        /* new row introduced with CP-2084 */
-        else if ((relationshipType == RT_hasObsContext) && (sourceValueType == VT_Container))
-        {
-            result = (targetValueType == VT_Container);
-        }
         /* row 3 of the table */
         else if ((relationshipType == RT_hasAcqContext) && (sourceValueType == VT_Container))
         {
@@ -107,7 +99,7 @@ OFBool DSRRadiopharmaceuticalRadiationDoseSRConstraintChecker::checkContentRelat
         }
         /* row 5 of the table */
         else if ((relationshipType == RT_hasProperties) &&
-            ((sourceValueType == VT_Text) || (sourceValueType == VT_Code) || (sourceValueType == VT_Num) || (sourceValueType == VT_PName)))
+            ((sourceValueType == VT_Text) || (sourceValueType == VT_Code) || (sourceValueType == VT_Num) || (targetValueType == VT_PName)))
         {
             result = (targetValueType == VT_Text)     || (targetValueType == VT_Code)   || (targetValueType == VT_Num)   ||
                      (targetValueType == VT_DateTime) || (targetValueType == VT_UIDRef) || (targetValueType == VT_PName) ||

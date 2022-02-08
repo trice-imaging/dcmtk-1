@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTReferencedPerformedProcedureStepSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -83,8 +83,8 @@ OFCondition DRTReferencedPerformedProcedureStepSequence::Item::read(DcmItem &ite
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, ReferencedSOPClassUID, "1", "1", "ReferencedPerformedProcedureStepSequence");
-        getAndCheckElementFromDataset(item, ReferencedSOPInstanceUID, "1", "1", "ReferencedPerformedProcedureStepSequence");
+        getAndCheckElementFromDataset(item, ReferencedSOPClassUID, "1", "1C", "ReferencedPerformedProcedureStepSequence");
+        getAndCheckElementFromDataset(item, ReferencedSOPInstanceUID, "1", "1C", "ReferencedPerformedProcedureStepSequence");
         result = EC_Normal;
     }
     return result;
@@ -97,8 +97,8 @@ OFCondition DRTReferencedPerformedProcedureStepSequence::Item::write(DcmItem &it
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPClassUID), "1", "1", "ReferencedPerformedProcedureStepSequence");
-        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPInstanceUID), "1", "1", "ReferencedPerformedProcedureStepSequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPClassUID), "1", "1C", "ReferencedPerformedProcedureStepSequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPInstanceUID), "1", "1C", "ReferencedPerformedProcedureStepSequence");
     }
     return result;
 }
@@ -251,7 +251,7 @@ OFBool DRTReferencedPerformedProcedureStepSequence::isValid() const
 }
 
 
-size_t DRTReferencedPerformedProcedureStepSequence::getNumberOfItems() const
+unsigned long DRTReferencedPerformedProcedureStepSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -281,12 +281,12 @@ OFCondition DRTReferencedPerformedProcedureStepSequence::gotoNextItem()
 }
 
 
-OFCondition DRTReferencedPerformedProcedureStepSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTReferencedPerformedProcedureStepSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -301,12 +301,12 @@ OFCondition DRTReferencedPerformedProcedureStepSequence::gotoItem(const size_t n
 }
 
 
-OFCondition DRTReferencedPerformedProcedureStepSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTReferencedPerformedProcedureStepSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -321,7 +321,7 @@ OFCondition DRTReferencedPerformedProcedureStepSequence::gotoItem(const size_t n
 }
 
 
-OFCondition DRTReferencedPerformedProcedureStepSequence::gotoItem(const size_t num)
+OFCondition DRTReferencedPerformedProcedureStepSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -357,7 +357,7 @@ const DRTReferencedPerformedProcedureStepSequence::Item &DRTReferencedPerformedP
 }
 
 
-OFCondition DRTReferencedPerformedProcedureStepSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTReferencedPerformedProcedureStepSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -367,7 +367,7 @@ OFCondition DRTReferencedPerformedProcedureStepSequence::getItem(const size_t nu
 }
 
 
-DRTReferencedPerformedProcedureStepSequence::Item &DRTReferencedPerformedProcedureStepSequence::getItem(const size_t num)
+DRTReferencedPerformedProcedureStepSequence::Item &DRTReferencedPerformedProcedureStepSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -377,7 +377,7 @@ DRTReferencedPerformedProcedureStepSequence::Item &DRTReferencedPerformedProcedu
 }
 
 
-const DRTReferencedPerformedProcedureStepSequence::Item &DRTReferencedPerformedProcedureStepSequence::getItem(const size_t num) const
+const DRTReferencedPerformedProcedureStepSequence::Item &DRTReferencedPerformedProcedureStepSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -387,13 +387,13 @@ const DRTReferencedPerformedProcedureStepSequence::Item &DRTReferencedPerformedP
 }
 
 
-DRTReferencedPerformedProcedureStepSequence::Item &DRTReferencedPerformedProcedureStepSequence::operator[](const size_t num)
+DRTReferencedPerformedProcedureStepSequence::Item &DRTReferencedPerformedProcedureStepSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTReferencedPerformedProcedureStepSequence::Item &DRTReferencedPerformedProcedureStepSequence::operator[](const size_t num) const
+const DRTReferencedPerformedProcedureStepSequence::Item &DRTReferencedPerformedProcedureStepSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -416,7 +416,7 @@ OFCondition DRTReferencedPerformedProcedureStepSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTReferencedPerformedProcedureStepSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTReferencedPerformedProcedureStepSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -439,7 +439,7 @@ OFCondition DRTReferencedPerformedProcedureStepSequence::insertItem(const size_t
 }
 
 
-OFCondition DRTReferencedPerformedProcedureStepSequence::removeItem(const size_t pos)
+OFCondition DRTReferencedPerformedProcedureStepSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

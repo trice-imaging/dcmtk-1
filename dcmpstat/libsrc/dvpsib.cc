@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2018, OFFIS e.V.
+ *  Copyright (C) 1998-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -136,18 +136,18 @@ OFCondition DVPSImageBoxContent::read(DcmItem &dset, DVPSPresentationLUT_PList& 
   DcmStack stack;
   OFString aString;
 
-  READ_FROM_DATASET(DcmUniqueIdentifier, EVR_UI, sOPInstanceUID)
-  READ_FROM_DATASET(DcmUnsignedShort, EVR_US, imageBoxPosition)
-  READ_FROM_DATASET(DcmCodeString, EVR_CS, polarity)
-  READ_FROM_DATASET(DcmCodeString, EVR_CS, magnificationType)
+  READ_FROM_DATASET(DcmUniqueIdentifier, sOPInstanceUID)
+  READ_FROM_DATASET(DcmUnsignedShort, imageBoxPosition)
+  READ_FROM_DATASET(DcmCodeString, polarity)
+  READ_FROM_DATASET(DcmCodeString, magnificationType)
         if (result==EC_TagNotFound) result = EC_Normal;
-  READ_FROM_DATASET(DcmShortText, EVR_ST, configurationInformation)
+  READ_FROM_DATASET(DcmShortText, configurationInformation)
                 if (result==EC_TagNotFound) result = EC_Normal;
-  READ_FROM_DATASET(DcmCodeString, EVR_CS, smoothingType)
+  READ_FROM_DATASET(DcmCodeString, smoothingType)
                 if (result==EC_TagNotFound) result = EC_Normal;
-  READ_FROM_DATASET(DcmDecimalString, EVR_DS, requestedImageSize)
+  READ_FROM_DATASET(DcmDecimalString, requestedImageSize)
                 if (result==EC_TagNotFound) result = EC_Normal;
-  READ_FROM_DATASET(DcmCodeString, EVR_CS, requestedDecimateCropBehavior)
+  READ_FROM_DATASET(DcmCodeString, requestedDecimateCropBehavior)
                 if (result==EC_TagNotFound) result = EC_Normal;
 
   if (result==EC_Normal)
@@ -161,14 +161,14 @@ OFCondition DVPSImageBoxContent::read(DcmItem &dset, DVPSPresentationLUT_PList& 
          item = seq->getItem(0);
          stack.clear();
 
-         READ_FROM_DATASET2(DcmApplicationEntity, EVR_AE, retrieveAETitle)
-         READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, referencedSOPClassUID)
-         READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, referencedSOPInstanceUID)
-         READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, studyInstanceUID)
-         READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, seriesInstanceUID)
-         READ_FROM_DATASET2(DcmIntegerString, EVR_IS, referencedFrameNumber)
+         READ_FROM_DATASET2(DcmApplicationEntity, retrieveAETitle)
+         READ_FROM_DATASET2(DcmUniqueIdentifier, referencedSOPClassUID)
+         READ_FROM_DATASET2(DcmUniqueIdentifier, referencedSOPInstanceUID)
+         READ_FROM_DATASET2(DcmUniqueIdentifier, studyInstanceUID)
+         READ_FROM_DATASET2(DcmUniqueIdentifier, seriesInstanceUID)
+         READ_FROM_DATASET2(DcmIntegerString, referencedFrameNumber)
                                  if (result==EC_TagNotFound) result = EC_Normal;
-         READ_FROM_DATASET2(DcmLongString, EVR_LO, patientID)
+         READ_FROM_DATASET2(DcmLongString, patientID)
       } else {
         result=EC_TagNotFound;
         DCMPSTAT_WARN("found ReferencedImageSequence in Stored Print Image Box with number of items != 1");
@@ -188,7 +188,7 @@ OFCondition DVPSImageBoxContent::read(DcmItem &dset, DVPSPresentationLUT_PList& 
       {
          item = seq->getItem(0);
          stack.clear();
-         READ_FROM_DATASET2(DcmUniqueIdentifier, EVR_UI, referencedPresentationLUTInstanceUID)
+         READ_FROM_DATASET2(DcmUniqueIdentifier, referencedPresentationLUTInstanceUID)
          if (referencedPresentationLUTInstanceUID.getLength() > 0)
          {
            referencedPresentationLUTInstanceUID.getOFString(aString,0);

@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTPhysiciansReadingStudyIdentificationSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -26,7 +26,6 @@ DRTPhysiciansReadingStudyIdentificationSequence::Item::Item(const OFBool emptyDe
     InstitutionName(DCM_InstitutionName),
     PersonAddress(DCM_PersonAddress),
     PersonIdentificationCodeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
-    PersonTelecomInformation(DCM_PersonTelecomInformation),
     PersonTelephoneNumbers(DCM_PersonTelephoneNumbers)
 {
 }
@@ -39,7 +38,6 @@ DRTPhysiciansReadingStudyIdentificationSequence::Item::Item(const Item &copy)
     InstitutionName(copy.InstitutionName),
     PersonAddress(copy.PersonAddress),
     PersonIdentificationCodeSequence(copy.PersonIdentificationCodeSequence),
-    PersonTelecomInformation(copy.PersonTelecomInformation),
     PersonTelephoneNumbers(copy.PersonTelephoneNumbers)
 {
 }
@@ -60,7 +58,6 @@ DRTPhysiciansReadingStudyIdentificationSequence::Item &DRTPhysiciansReadingStudy
         InstitutionName = copy.InstitutionName;
         PersonAddress = copy.PersonAddress;
         PersonIdentificationCodeSequence = copy.PersonIdentificationCodeSequence;
-        PersonTelecomInformation = copy.PersonTelecomInformation;
         PersonTelephoneNumbers = copy.PersonTelephoneNumbers;
     }
     return *this;
@@ -75,7 +72,6 @@ void DRTPhysiciansReadingStudyIdentificationSequence::Item::clear()
         PersonIdentificationCodeSequence.clear();
         PersonAddress.clear();
         PersonTelephoneNumbers.clear();
-        PersonTelecomInformation.clear();
         InstitutionName.clear();
         InstitutionAddress.clear();
         InstitutionCodeSequence.clear();
@@ -88,7 +84,6 @@ OFBool DRTPhysiciansReadingStudyIdentificationSequence::Item::isEmpty()
     return PersonIdentificationCodeSequence.isEmpty() &&
            PersonAddress.isEmpty() &&
            PersonTelephoneNumbers.isEmpty() &&
-           PersonTelecomInformation.isEmpty() &&
            InstitutionName.isEmpty() &&
            InstitutionAddress.isEmpty() &&
            InstitutionCodeSequence.isEmpty();
@@ -111,7 +106,6 @@ OFCondition DRTPhysiciansReadingStudyIdentificationSequence::Item::read(DcmItem 
         PersonIdentificationCodeSequence.read(item, "1-n", "1", "PhysiciansReadingStudyIdentificationSequence");
         getAndCheckElementFromDataset(item, PersonAddress, "1", "3", "PhysiciansReadingStudyIdentificationSequence");
         getAndCheckElementFromDataset(item, PersonTelephoneNumbers, "1-n", "3", "PhysiciansReadingStudyIdentificationSequence");
-        getAndCheckElementFromDataset(item, PersonTelecomInformation, "1", "3", "PhysiciansReadingStudyIdentificationSequence");
         getAndCheckElementFromDataset(item, InstitutionName, "1", "1C", "PhysiciansReadingStudyIdentificationSequence");
         getAndCheckElementFromDataset(item, InstitutionAddress, "1", "3", "PhysiciansReadingStudyIdentificationSequence");
         InstitutionCodeSequence.read(item, "1-n", "1C", "PhysiciansReadingStudyIdentificationSequence");
@@ -130,7 +124,6 @@ OFCondition DRTPhysiciansReadingStudyIdentificationSequence::Item::write(DcmItem
         if (result.good()) result = PersonIdentificationCodeSequence.write(item, "1-n", "1", "PhysiciansReadingStudyIdentificationSequence");
         addElementToDataset(result, item, new DcmShortText(PersonAddress), "1", "3", "PhysiciansReadingStudyIdentificationSequence");
         addElementToDataset(result, item, new DcmLongString(PersonTelephoneNumbers), "1-n", "3", "PhysiciansReadingStudyIdentificationSequence");
-        addElementToDataset(result, item, new DcmLongText(PersonTelecomInformation), "1", "3", "PhysiciansReadingStudyIdentificationSequence");
         addElementToDataset(result, item, new DcmLongString(InstitutionName), "1", "1C", "PhysiciansReadingStudyIdentificationSequence");
         addElementToDataset(result, item, new DcmShortText(InstitutionAddress), "1", "3", "PhysiciansReadingStudyIdentificationSequence");
         if (result.good()) result = InstitutionCodeSequence.write(item, "1-n", "1C", "PhysiciansReadingStudyIdentificationSequence");
@@ -163,15 +156,6 @@ OFCondition DRTPhysiciansReadingStudyIdentificationSequence::Item::getPersonAddr
         return EC_IllegalCall;
     else
         return getStringValueFromElement(PersonAddress, value, pos);
-}
-
-
-OFCondition DRTPhysiciansReadingStudyIdentificationSequence::Item::getPersonTelecomInformation(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(PersonTelecomInformation, value, pos);
 }
 
 
@@ -218,19 +202,6 @@ OFCondition DRTPhysiciansReadingStudyIdentificationSequence::Item::setPersonAddr
         result = (check) ? DcmShortText::checkStringValue(value) : EC_Normal;
         if (result.good())
             result = PersonAddress.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTPhysiciansReadingStudyIdentificationSequence::Item::setPersonTelecomInformation(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmLongText::checkStringValue(value) : EC_Normal;
-        if (result.good())
-            result = PersonTelecomInformation.putOFStringArray(value);
     }
     return result;
 }
@@ -352,7 +323,7 @@ OFBool DRTPhysiciansReadingStudyIdentificationSequence::isValid() const
 }
 
 
-size_t DRTPhysiciansReadingStudyIdentificationSequence::getNumberOfItems() const
+unsigned long DRTPhysiciansReadingStudyIdentificationSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -382,12 +353,12 @@ OFCondition DRTPhysiciansReadingStudyIdentificationSequence::gotoNextItem()
 }
 
 
-OFCondition DRTPhysiciansReadingStudyIdentificationSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTPhysiciansReadingStudyIdentificationSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -402,12 +373,12 @@ OFCondition DRTPhysiciansReadingStudyIdentificationSequence::gotoItem(const size
 }
 
 
-OFCondition DRTPhysiciansReadingStudyIdentificationSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTPhysiciansReadingStudyIdentificationSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -422,7 +393,7 @@ OFCondition DRTPhysiciansReadingStudyIdentificationSequence::gotoItem(const size
 }
 
 
-OFCondition DRTPhysiciansReadingStudyIdentificationSequence::gotoItem(const size_t num)
+OFCondition DRTPhysiciansReadingStudyIdentificationSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -458,7 +429,7 @@ const DRTPhysiciansReadingStudyIdentificationSequence::Item &DRTPhysiciansReadin
 }
 
 
-OFCondition DRTPhysiciansReadingStudyIdentificationSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTPhysiciansReadingStudyIdentificationSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -468,7 +439,7 @@ OFCondition DRTPhysiciansReadingStudyIdentificationSequence::getItem(const size_
 }
 
 
-DRTPhysiciansReadingStudyIdentificationSequence::Item &DRTPhysiciansReadingStudyIdentificationSequence::getItem(const size_t num)
+DRTPhysiciansReadingStudyIdentificationSequence::Item &DRTPhysiciansReadingStudyIdentificationSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -478,7 +449,7 @@ DRTPhysiciansReadingStudyIdentificationSequence::Item &DRTPhysiciansReadingStudy
 }
 
 
-const DRTPhysiciansReadingStudyIdentificationSequence::Item &DRTPhysiciansReadingStudyIdentificationSequence::getItem(const size_t num) const
+const DRTPhysiciansReadingStudyIdentificationSequence::Item &DRTPhysiciansReadingStudyIdentificationSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -488,13 +459,13 @@ const DRTPhysiciansReadingStudyIdentificationSequence::Item &DRTPhysiciansReadin
 }
 
 
-DRTPhysiciansReadingStudyIdentificationSequence::Item &DRTPhysiciansReadingStudyIdentificationSequence::operator[](const size_t num)
+DRTPhysiciansReadingStudyIdentificationSequence::Item &DRTPhysiciansReadingStudyIdentificationSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTPhysiciansReadingStudyIdentificationSequence::Item &DRTPhysiciansReadingStudyIdentificationSequence::operator[](const size_t num) const
+const DRTPhysiciansReadingStudyIdentificationSequence::Item &DRTPhysiciansReadingStudyIdentificationSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -517,7 +488,7 @@ OFCondition DRTPhysiciansReadingStudyIdentificationSequence::addItem(Item *&item
 }
 
 
-OFCondition DRTPhysiciansReadingStudyIdentificationSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTPhysiciansReadingStudyIdentificationSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -540,7 +511,7 @@ OFCondition DRTPhysiciansReadingStudyIdentificationSequence::insertItem(const si
 }
 
 
-OFCondition DRTPhysiciansReadingStudyIdentificationSequence::removeItem(const size_t pos)
+OFCondition DRTPhysiciansReadingStudyIdentificationSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

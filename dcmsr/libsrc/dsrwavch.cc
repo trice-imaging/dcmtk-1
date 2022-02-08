@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2021, OFFIS e.V.
+ *  Copyright (C) 2000-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRWaveformChannelList
@@ -26,17 +26,17 @@
 #include "dcmtk/dcmsr/dsrwavch.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
 
-#include "dcmtk/dcmdata/dcdeftag.h"
-#include "dcmtk/dcmdata/dcvrus.h"
+#define INCLUDE_CSTDIO
+#include "dcmtk/ofstd/ofstdinc.h"
 
-// global empty item object so it gets initialized and cleaned up by the linker
-const DSRWaveformChannelItem DSRWaveformChannelEmptyItem(0, 0);
+#ifdef HAVE_EXPLICIT_TEMPLATE_SPECIALIZATION
+#define EXPLICIT_SPECIALIZATION template<>
+#else
+#define EXPLICIT_SPECIALIZATION
+#endif
 
-template<>
-const DSRWaveformChannelItem& DSRgetEmptyItem<DSRWaveformChannelItem>()
-{
-    return DSRWaveformChannelEmptyItem;
-}
+/* declared in class DSRListOfItems<T> */
+EXPLICIT_SPECIALIZATION const DSRWaveformChannelItem DSRListOfItems<DSRWaveformChannelItem>::EmptyItem(0, 0);
 
 
 DSRWaveformChannelList::DSRWaveformChannelList()
@@ -88,8 +88,7 @@ OFCondition DSRWaveformChannelList::print(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRWaveformChannelList::read(DcmItem &dataset,
-                                         const size_t /*flags*/)
+OFCondition DSRWaveformChannelList::read(DcmItem &dataset)
 {
     /* get integer array from dataset */
     DcmUnsignedShort delem(DCM_ReferencedWaveformChannels);

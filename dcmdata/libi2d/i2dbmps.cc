@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2009-2021, OFFIS e.V.
+ *  Copyright (C) 2009-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -100,9 +100,8 @@ OFCondition I2DBmpSource::readPixelData(Uint16& rows,
     return cond;
   }
 
-  OFBool isMonochrome = OFFalse;
   Uint32 *palette = NULL;
-  cond = readColorPalette(colors, isMonochrome, palette);
+  cond = readColorPalette(colors, palette);
   if (cond.bad())
   {
     closeFile();
@@ -116,7 +115,7 @@ OFCondition I2DBmpSource::readPixelData(Uint16& rows,
   /* ...and read the "real" image data */
   char *data;
   Uint32 data_length;
-  cond = readBitmapData(width, height, bpp, isTopDown, isMonochrome, colors, palette, data, data_length);
+  cond = readBitmapData(width, height, bpp, isTopDown, colors, palette, data, data_length);
 
   if (palette)
     delete[] palette;
@@ -131,19 +130,12 @@ OFCondition I2DBmpSource::readPixelData(Uint16& rows,
 
   rows = height;
   cols = width;
-  if (isMonochrome)
-  {
-    samplesPerPixel = 1;
-    photoMetrInt = "MONOCHROME2";
-  }
-  else
-  {
-    samplesPerPixel = 3;    /* 24 bpp */
-    photoMetrInt = "RGB";
-  }
+  samplesPerPixel = 3;    /* 24 bpp */
+
   bitsAlloc = 8;
   bitsStored = 8;
   highBit = 7;
+  photoMetrInt = "RGB";
   planConf = 0;           /* For each pixel we save rgb in that order */
   pixData = data;
   length = data_length;
@@ -209,7 +201,7 @@ OFCondition I2DBmpSource::readBitmapHeader(Uint16 &width,
 
   // Check if we got a valid value here which fits into a Uint16
   // (height < 0 can happen because -(INT_MIN) == INT_MIN).
-  if (tmp_height <= 0 || tmp_height > OFstatic_cast(Sint32, UINT16_MAX))
+  if (tmp_height <= 0 || tmp_height > UINT16_MAX)
     return makeOFCondition(OFM_dcmdata, 18, OF_error, "Unsupported BMP file - height too large or zero");
 
   if (tmp_width < 0) /* Width also can be signed, but no semantic */
@@ -217,7 +209,7 @@ OFCondition I2DBmpSource::readBitmapHeader(Uint16 &width,
     tmp_width = -tmp_width;
   }
   width = OFstatic_cast(Uint16, tmp_width);
-  if (tmp_width <= 0 || tmp_width > OFstatic_cast(Sint32, UINT16_MAX))
+  if (tmp_width <= 0 || tmp_width > UINT16_MAX)
     return makeOFCondition(OFM_dcmdata, 18, OF_error, "Unsupported BMP file - width too large or zero");
 
   /* Some older standards used this, always 1 for BMP (number of planes) */
@@ -286,10 +278,8 @@ OFCondition I2DBmpSource::readBitmapHeader(Uint16 &width,
 }
 
 
-OFCondition I2DBmpSource::readColorPalette(
-  Uint16 colors,
-  OFBool& isMonochrome,
-  Uint32*& palette)
+OFCondition I2DBmpSource::readColorPalette(Uint16 colors,
+                                           Uint32*& palette)
 {
   if (colors == 0)
     // Nothing to do;
@@ -299,13 +289,11 @@ OFCondition I2DBmpSource::readColorPalette(
     // BMPs can not have more than 256 color table entries
     return EC_IllegalCall;
 
-  isMonochrome = OFTrue;
-  Uint8 r, g, b;
-
   // Read the color palette
   palette = new Uint32[colors];
-  Uint32 tmp;
   for (int i = 0; i < colors; i++) {
+    Uint32 tmp;
+
     // Each item is 32-bit BGRx entry, this function reads that data
     if (readDWord(tmp) != 0) {
       delete[] palette;
@@ -315,28 +303,20 @@ OFCondition I2DBmpSource::readColorPalette(
 
     // Converting this BGRx into RGB is done elsewhere
     palette[i] = tmp;
-
-    // check if the value is grayscale, set monochrome flag to false otherwise
-    r = OFstatic_cast(Uint8, tmp >> 16);
-    g = OFstatic_cast(Uint8, tmp >>  8);
-    b = OFstatic_cast(Uint8, tmp >>  0);
-    if ((r != g) || (r != b)) isMonochrome = OFFalse;
   }
 
   return EC_Normal;
 }
 
 
-OFCondition I2DBmpSource::readBitmapData(
-  const Uint16 width,
-  const Uint16 height,
-  const Uint16 bpp,
-  const OFBool isTopDown,
-  const OFBool isMonochrome,
-  const Uint16 colors,
-  const Uint32* palette,
-  char*& pixData,
-  Uint32& length)
+OFCondition I2DBmpSource::readBitmapData(const Uint16 width,
+                                         const Uint16 height,
+                                         const Uint16 bpp,
+                                         const OFBool isTopDown,
+                                         const Uint16 colors,
+                                         const Uint32* palette,
+                                         char*& pixData,
+                                         Uint32& length)
 {
   /* row_length = width * bits_per_pixel / 8 bits_per_byte.
      row_length must be rounded *up* to a 4-byte boundary:
@@ -346,9 +326,8 @@ OFCondition I2DBmpSource::readBitmapData(
   const Uint32 row_length = ((width * bpp + 31) / 32) * 4;
   Uint8 *row_data;
   Uint32 y;
-  OFBool positive_direction;
+  Sint32 direction;
   Uint32 max;
-  Uint16 samplesPerPixel = isMonochrome ? 1 : 3;
 
   // "palette" may only be NULL if colors is 0 and vice versa
   if ((palette == NULL) != (colors == 0))
@@ -362,18 +341,18 @@ OFCondition I2DBmpSource::readBitmapData(
   {
     /* This is a top-down BMP, we start at the first row and work our way down */
     y = 1;
-    positive_direction = OFTrue;
+    direction = 1;
     max = height + 1;
   }
   else
   {
     /* Bottom-up BMP, we start with the last row and work our way up */
     y = height;
-    positive_direction = OFFalse;
+    direction = -1;
     max = 0;
   }
 
-  length = width * height * samplesPerPixel;
+  length = width * height * 3;
 
   DCMDATA_LIBI2D_DEBUG("I2DBmpSource: Starting to read bitmap data");
 
@@ -388,12 +367,12 @@ OFCondition I2DBmpSource::readBitmapData(
   }
 
   /* Go through each row of the image */
-  for (; y != max; (positive_direction ? ++y : --y))
+  for (; y != max; y += direction)
   {
     /* Calculate posData for this line, it is the index of the first byte for
      * this line. ( -1 because we start at index 1, but C at index 0)
      */
-    Uint32 posData = (y - 1) * width * samplesPerPixel;
+    Uint32 posData = (y - 1) * width * 3;
 
     if (bmpFile.fread(row_data, 1, row_length) < row_length)
     {
@@ -408,7 +387,7 @@ OFCondition I2DBmpSource::readBitmapData(
       case 1:
       case 4:
       case 8:
-        cond = parseIndexedColorRow(row_data, width, bpp, colors, palette, isMonochrome, &pixData[posData]);
+        cond = parseIndexedColorRow(row_data, width, bpp, colors, palette, &pixData[posData]);
         break;
       case 16:
         cond = parse16BppRow(row_data, width, &pixData[posData]);
@@ -507,14 +486,12 @@ OFCondition I2DBmpSource::parse16BppRow(const Uint8 *row,
 }
 
 
-OFCondition I2DBmpSource::parseIndexedColorRow(
-  const Uint8 *row,
-  const Uint16 width,
-  const int bpp,
-  const Uint16 colors,
-  const Uint32* palette,
-  const OFBool isMonochrome,
-  char *pixData /*out*/) const
+OFCondition I2DBmpSource::parseIndexedColorRow(const Uint8 *row,
+                                               const Uint16 width,
+                                               const int bpp,
+                                               const Uint16 colors,
+                                               const Uint32* palette,
+                                               char *pixData /*out*/) const
 {
   // data that is still left from reading the last pixel
   Uint8 data = 0;
@@ -551,16 +528,10 @@ OFCondition I2DBmpSource::parseIndexedColorRow(
     // And save it in the resulting image, this implicitly converts the BGR we
     // got from the color table into RGB.
     pixData[pos]     = OFstatic_cast(Uint8, pixel >> 16);
-    if (isMonochrome)
-    {
-      pos++;
-    }
-    else
-    {
-      pixData[pos + 1] = OFstatic_cast(Uint8, pixel >>  8);
-      pixData[pos + 2] = OFstatic_cast(Uint8, pixel >>  0);
-      pos += 3;
-    }
+    pixData[pos + 1] = OFstatic_cast(Uint8, pixel >>  8);
+    pixData[pos + 2] = OFstatic_cast(Uint8, pixel >>  0);
+
+    pos += 3;
   }
   return EC_Normal;
 }

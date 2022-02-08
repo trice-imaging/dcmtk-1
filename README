@@ -1,3 +1,16 @@
+TRICE PARTICULARS:
+
+The only thing that is used in production is a modified 'storescp'.  The files changed are ./dcmnet/apps/storescp.cc  and ./dcmnet/apps/Makefile
+
+The libraries made in ../baseSrc are linked into storescp (as can be seen by the Makefile)
+
+Details for building for the "box" storescp  are found under box-extras/
+Details for building for android embedded version are found under   android-extras/
+Details for building for remote receiving storescp are found under cloud-extras/
+
+storescp.cc code changes are conditionally compiled using #ifdef TRICE
+
+This library is compiled for linux and cross-compiled for android and windows.  Some changes were needed for the cross-compiling to take place without error.  __android__ and __windows__ #ifdefs are used sparingly.
 
 DCMTK
 
@@ -9,23 +22,17 @@ DCMTK contains the following sub-packages, each in its own sub-directory:
 
     config   - configuration utilities for DCMTK
     dcmdata  - a data encoding/decoding library and utility apps
-    dcmect   - a library for working with Enhanced CT objects
-    dcmfg    - a library for working with functional groups
     dcmimage - adds support for color images to dcmimgle
     dcmimgle - an image processing library and utility apps
-    dcmiod   - a library for working with information objects and modules
     dcmjpeg  - a compression/decompression library and utility apps
     dcmjpls  - a compression/decompression library and utility apps
     dcmnet   - a networking library and utility apps
-    dcmpmap  - a library for working with parametric map objects
     dcmpstat - a presentation state library and utility apps
     dcmqrdb  - an image database server
     dcmrt    - a radiation therapy library and utility apps
-    dcmseg   - a library for working with segmentation objects
     dcmsign  - a digital signature library and utility apps
-    dcmsr    - a structured reporting library and utility apps
+    dcmsr    - a structured report library and utility apps
     dcmtls   - security extensions for the network library
-    dcmtract - a library for working with tractography results
     dcmwlm   - a modality worklist database server
     oflog    - a logging library based on log4cplus
     ofstd    - a library of general purpose classes
@@ -42,8 +49,7 @@ questions please consult the FAQ:
 
         http://forum.dcmtk.org/faq/
 
-In addition to the API documentation, there is also a Wiki system where
-further information (e.g. HOWTOs) can be found:
+There is also a Wiki system where additional information can be found:
 
         http://support.dcmtk.org/wiki/
 

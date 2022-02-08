@@ -1,24 +1,3 @@
-/*
- *
- *  Copyright (C) 2014-2017, OFFIS e.V.
- *  All rights reserved.  See COPYRIGHT file for details.
- *
- *  This software and supporting documentation were developed by
- *
- *    OFFIS e.V.
- *    R&D Division Health
- *    Escherweg 2
- *    D-26121 Oldenburg, Germany
- *
- *
- *  Module:  ofstd
- *
- *  Author:  Jan Schlamelcher
- *
- *  Purpose: unit test for OFoptional
- *
- */
-
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #define OFTEST_OFSTD_ONLY
@@ -31,11 +10,6 @@ STD_NAMESPACE istream& operator>>( STD_NAMESPACE istream& in, const test& ) { in
 
 OFTEST(ofstd_optional)
 {
-#if defined(HAVE_DEFAULT_CONSTRUCTOR_DETECTION_VIA_SFINAE) || defined(_MSC_VER)
-    OFCHECK( OFoptional_traits<int>::is_default_constructible::value );
-    OFCHECK( !OFoptional_traits<test>::is_default_constructible::value );
-#endif
-
     OFoptional<int> o0( 3 ), o1, o2( OFnullopt );
 
     OFCHECK( o0 && *o0 == 3 );
@@ -57,13 +31,9 @@ OFTEST(ofstd_optional)
     o1 = o2;
     OFCHECK( o1 == o2 );
     OFCHECK( o0 == OFnullopt );
-    OFCHECK( OFnullopt == o0 );
     OFCHECK( o2 == 3 );
-    OFCHECK( 3 == o2 );
     OFCHECK( o1 >= 1 );
-    OFCHECK( 1 <= o1 );
 
-#if defined(HAVE_DEFAULT_CONSTRUCTOR_DETECTION_VIA_SFINAE) || defined(_MSC_VER)
     OFStringStream s( "42" );
     o1 = OFnullopt;
     OFCHECK( !o1 );
@@ -83,16 +53,14 @@ OFTEST(ofstd_optional)
     s.str("23");
     s >> o1;
     OFCHECK( o1 && *o1 == 23 );
-#endif
 
-#ifdef HAVE_CXX11
+#ifdef DCMTK_USE_CXX11_STL
     OFoptional<test> o3( 2, OFFalse );
 #else // C++11
     OFoptional<test> o3( test( 2, OFFalse ) );
 #endif // NOT C++11
     OFCHECK( o3 && o3->doit() );
 
-#if defined(HAVE_DEFAULT_CONSTRUCTOR_DETECTION_VIA_SFINAE) || defined(_MSC_VER)
     s.clear();
     s.str( "test" );
     // if everything works, this sets the failbit
@@ -104,9 +72,8 @@ OFTEST(ofstd_optional)
     s.clear();
     OFCHECK( !(s >> o3).fail() ); // no fail, since no-call
     OFCHECK( !o3 );
-#endif
 
-#ifdef HAVE_CXX11
+#ifdef DCMTK_USE_CXX11_STL
     o3.emplace( 0, OFFalse );
 #else // C++11
     o3 = test( 0, OFFalse );

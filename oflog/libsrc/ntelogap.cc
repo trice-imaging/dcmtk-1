@@ -46,7 +46,7 @@ namespace {
 
     static
     bool
-    copySID(SID** ppDstSid, SID* pSrcSid)
+    copySID(SID** ppDstSid, SID* pSrcSid) 
     {
         DWORD dwLength = ::GetLengthSid(pSrcSid);
 
@@ -68,8 +68,8 @@ namespace {
 
 
     static
-    bool
-    GetCurrentUserSID(SID** ppSid)
+    bool 
+    GetCurrentUserSID(SID** ppSid) 
     {
         bool bSuccess = false;
         TOKEN_USER * ptu = 0;
@@ -102,56 +102,44 @@ namespace {
 
 
     static
-    HKEY
+    HKEY 
     regGetKey(const tstring& subkey, DWORD* disposition)
     {
         HKEY hkey = 0;
-#if defined (DCMTK_OFLOG_UNICODE)
-        RegCreateKeyEx(HKEY_LOCAL_MACHINE,
-#else
-        RegCreateKeyExA(HKEY_LOCAL_MACHINE,
-#endif
-                       subkey.c_str(),
-                       0,
-                       NULL,
-                       REG_OPTION_NON_VOLATILE,
-                       KEY_SET_VALUE,
-                       NULL,
-                       &hkey,
+        RegCreateKeyEx(HKEY_LOCAL_MACHINE, 
+                       subkey.c_str(), 
+                       0, 
+                       NULL, 
+                       REG_OPTION_NON_VOLATILE, 
+                       KEY_SET_VALUE, 
+                       NULL, 
+                       &hkey, 
                        disposition);
         return hkey;
     }
 
 
     static
-    void
+    void 
     regSetString(HKEY hkey, const tstring& name, const tstring& value)
     {
-#if defined (DCMTK_OFLOG_UNICODE)
-        RegSetValueEx(hkey,
-#else
-        RegSetValueExA(hkey,
-#endif
-                      name.c_str(),
-                      0,
-                      REG_SZ,
+        RegSetValueEx(hkey, 
+                      name.c_str(), 
+                      0, 
+                      REG_SZ, 
                       OFreinterpret_cast(BYTE const *, value.c_str()),
                       OFstatic_cast(DWORD, value.length() * sizeof(tchar)));
     }
 
 
     static
-    void
+    void 
     regSetDword(HKEY hkey, const tstring& name, DWORD value)
     {
-#if defined (DCMTK_OFLOG_UNICODE)
-        RegSetValueEx(hkey,
-#else
-        RegSetValueExA(hkey,
-#endif
-                      name.c_str(),
-                      0,
-                      REG_DWORD,
+        RegSetValueEx(hkey, 
+                      name.c_str(), 
+                      0, 
+                      REG_DWORD, 
                       OFreinterpret_cast(LPBYTE, &value),
                       OFstatic_cast(DWORD, sizeof(DWORD)));
     }
@@ -164,13 +152,13 @@ namespace {
 // NTEventLogAppender ctor and dtor
 //////////////////////////////////////////////////////////////////////////////
 
-NTEventLogAppender::NTEventLogAppender(const tstring& server,
-                                       const tstring& log,
+NTEventLogAppender::NTEventLogAppender(const tstring& server, 
+                                       const tstring& log, 
                                        const tstring& source)
-: server(server),
-  log(log),
-  source(source),
-  hEventLog(NULL),
+: server(server), 
+  log(log), 
+  source(source), 
+  hEventLog(NULL), 
   pCurrentUserSID(NULL)
 {
     init();
@@ -183,7 +171,7 @@ NTEventLogAppender::NTEventLogAppender(const helpers::Properties & properties)
   server(properties.getProperty( DCMTK_LOG4CPLUS_TEXT("server") )),
   log(properties.getProperty( DCMTK_LOG4CPLUS_TEXT("log") )),
   source(properties.getProperty( DCMTK_LOG4CPLUS_TEXT("source") )),
-  hEventLog(NULL),
+  hEventLog(NULL), 
   pCurrentUserSID(NULL)
 {
     init();
@@ -191,13 +179,13 @@ NTEventLogAppender::NTEventLogAppender(const helpers::Properties & properties)
 
 
 
-void
+void 
 NTEventLogAppender::init()
 {
     if(source.empty()) {
         helpers::getLogLog().warn(
             DCMTK_LOG4CPLUS_TEXT("Source option not set for appender [")
-            + name
+            + name 
             + DCMTK_LOG4CPLUS_TEXT("]."));
         return;
     }
@@ -211,13 +199,8 @@ NTEventLogAppender::init()
 
     addRegistryInfo();
 
-#if defined (DCMTK_OFLOG_UNICODE)
     hEventLog = ::RegisterEventSource(server.empty () ? 0 : server.c_str(),
         source.c_str());
-#else
-    hEventLog = ::RegisterEventSourceA(server.empty () ? 0 : server.c_str(),
-        source.c_str());
-#endif
     if (! hEventLog || hEventLog == HANDLE(ERROR_INVALID_HANDLE))
         helpers::getLogLog().warn (
             DCMTK_LOG4CPLUS_TEXT("Event source registration failed."));
@@ -241,7 +224,7 @@ NTEventLogAppender::~NTEventLogAppender()
 // NTEventLogAppender public methods
 //////////////////////////////////////////////////////////////////////////////
 
-void
+void 
 NTEventLogAppender::close()
 {
     if(hEventLog != NULL) {
@@ -257,7 +240,7 @@ NTEventLogAppender::close()
 // NTEventLogAppender protected methods
 //////////////////////////////////////////////////////////////////////////////
 
-void
+void 
 NTEventLogAppender::append(const spi::InternalLoggingEvent& event)
 {
     if(hEventLog == NULL) {
@@ -273,11 +256,7 @@ NTEventLogAppender::append(const spi::InternalLoggingEvent& event)
         str.resize (31839);
 
     const tchar * s = str.c_str ();
-#if defined (DCMTK_OFLOG_UNICODE)
     BOOL bSuccess = ::ReportEvent(hEventLog,
-#else
-    BOOL bSuccess = ::ReportEventA(hEventLog,
-#endif
                                   getEventType(event),
                                   getEventCategory(event),
                                   0x1000,
@@ -296,7 +275,7 @@ NTEventLogAppender::append(const spi::InternalLoggingEvent& event)
 
 
 
-WORD
+WORD 
 NTEventLogAppender::getEventType(const spi::InternalLoggingEvent& event)
 {
     WORD ret_val;
@@ -314,7 +293,7 @@ NTEventLogAppender::getEventType(const spi::InternalLoggingEvent& event)
 
 
 
-WORD
+WORD 
 NTEventLogAppender::getEventCategory(const spi::InternalLoggingEvent& event)
 {
     WORD ret_val;
@@ -338,28 +317,28 @@ NTEventLogAppender::getEventCategory(const spi::InternalLoggingEvent& event)
 
 
 // Add this source with appropriate configuration keys to the registry.
-void
+void 
 NTEventLogAppender::addRegistryInfo()
 {
     DWORD disposition;
     HKEY hkey = 0;
     tstring subkey =   DCMTK_LOG4CPLUS_TEXT("SYSTEM\\CurrentControlSet\\Services\\EventLog\\")
-                     + log
-                     + DCMTK_LOG4CPLUS_TEXT("\\")
+                     + log 
+                     + DCMTK_LOG4CPLUS_TEXT("\\") 
                      + source;
-
+    
     hkey = regGetKey(subkey, &disposition);
     if(disposition == REG_CREATED_NEW_KEY) {
-        regSetString(hkey,
-                     DCMTK_LOG4CPLUS_TEXT("EventMessageFile"),
+        regSetString(hkey, 
+                     DCMTK_LOG4CPLUS_TEXT("EventMessageFile"), 
                      DCMTK_LOG4CPLUS_TEXT("NTEventLogAppender.dll"));
-        regSetString(hkey,
-                     DCMTK_LOG4CPLUS_TEXT("CategoryMessageFile"),
+        regSetString(hkey, 
+                     DCMTK_LOG4CPLUS_TEXT("CategoryMessageFile"), 
                      DCMTK_LOG4CPLUS_TEXT("NTEventLogAppender.dll"));
         regSetDword(hkey, DCMTK_LOG4CPLUS_TEXT("TypesSupported"), OFstatic_cast(DWORD, 7));
         regSetDword(hkey, DCMTK_LOG4CPLUS_TEXT("CategoryCount"), OFstatic_cast(DWORD, 5));
     }
-
+    
     RegCloseKey(hkey);
     return;
 }
@@ -368,8 +347,5 @@ NTEventLogAppender::addRegistryInfo()
 } // namespace log4cplus
 } // end namespace dcmtk
 
-#else
-
-int oflog_ntelogap_cc_dummy_to_keep_linker_from_moaning = 0;
 
 #endif // DCMTK_LOG4CPLUS_HAVE_NT_EVENT_LOG

@@ -17,13 +17,14 @@ oflogdir = $(top_srcdir)/../oflog
 dcmdatadir = $(top_srcdir)/../dcmdata
 dcmimgledir = $(top_srcdir)/../dcmimgle
 
-LOCALINCLUDES = -I$(dcmdatadir)/include -I$(oflogdir)/include -I$(ofstddir)/include
-LIBDIRS = -L$(top_srcdir)/libsrc -L$(dcmimgledir)/libsrc -L$(dcmdatadir)/libsrc \
-	-L$(oflogdir)/libsrc -L$(ofstddir)/libsrc
+LOCALINCLUDES = -I$(top_srcdir)/include -I$(dcmdatadir)/include -I$(oflogdir)/include \
+	-I$(ofstddir)/include
+LIBDIRS = -L$(top_srcdir)/libsrc  -L$(dcmimgledir)/libsrc \
+	-L$(dcmdatadir)/libsrc -L$(oflogdir)/libsrc -L$(ofstddir)/libsrc
 LOCALLIBS = -ldcmrt -ldcmimgle -ldcmdata -loflog -lofstd \
-	$(TIFFLIBS) $(PNGLIBS) $(ZLIBLIBS) $(CHARCONVLIBS) $(MATHLIBS)
+	$(TIFFLIBS) $(PNGLIBS) $(ZLIBLIBS) $(ICONVLIBS)
 
-test_objs = tests.o tsearch.o tcontour.o
+test_objs = tests.o tsearch.o
 objs = drttest.o $(test_objs)
 progs = drttest tests
 
@@ -31,19 +32,16 @@ progs = drttest tests
 all: $(progs)
 
 drttest: drttest.o
-	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $@.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
 
 tests: $(test_objs)
-	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $(test_objs) $(LOCALLIBS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $(test_objs) $(LOCALLIBS) $(ICONVLIBS) $(LIBS)
 
 install: all
 
 
 check: tests
-	DCMDICTPATH=../data/dicom.dic ./tests
-
-check-exhaustive: tests
-	DCMDICTPATH=../data/dicom.dic ./tests -x
+	./tests
 
 
 clean:

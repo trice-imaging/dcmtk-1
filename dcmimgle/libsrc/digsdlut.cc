@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1999-2021, OFFIS e.V.
+ *  Copyright (C) 1999-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,7 +25,9 @@
 #include "dcmtk/dcmimgle/digsdlut.h"
 #include "dcmtk/dcmimgle/displint.h"
 
-#include <cmath>
+#define INCLUDE_CMATH
+#include "dcmtk/ofstd/ofstdinc.h"
+
 
 /*----------------*
  *  constructors  *
@@ -100,9 +102,9 @@ int DiGSDFLUT::createLUT(const Uint16 *ddl_tab,
         if (jidx != NULL)
         {
             const double dist = (jnd_max - jnd_min) / (gin_ctn - 1);    // distance between two entries
-            unsigned long i;
-            double *s = jidx;
-            double value = jnd_min;                                     // first value is fixed !
+            register unsigned long i;
+            register double *s = jidx;
+            register double value = jnd_min;                            // first value is fixed !
             for (i = gin_ctn; i > 1; --i)                               // initialize scaled JND index array
             {
                 *(s++) = value;
@@ -125,12 +127,12 @@ int DiGSDFLUT::createLUT(const Uint16 *ddl_tab,
                         if (DataBuffer != NULL)
                         {
                             const double amb = getAmbientLightValue();
-                            Uint16 *q = DataBuffer;
-                            unsigned long j = 0;
+                            register Uint16 *q = DataBuffer;
+                            register unsigned long j = 0;
                             /* check whether to apply the inverse transformation */
                             if (inverse)
                             {
-                                double v;
+                                register double v;
                                 const double factor = OFstatic_cast(double, ddl_cnt - 1) / OFstatic_cast(double, Count - 1);
                                 /* convert DDL to P-Value */
                                 for (i = 0; i < Count; ++i)
@@ -165,7 +167,7 @@ int DiGSDFLUT::createLUT(const Uint16 *ddl_tab,
                                     ddl_max = j;
                                 }
                                 j = ddl_min;
-                                const double *r = gsdf;
+                                register const double *r = gsdf;
                                 /* convert P-Value to DDL */
                                 for (i = Count; i != 0; --i, ++r)
                                 {

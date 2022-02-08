@@ -128,14 +128,14 @@ Appender::Appender(const log4cplus::helpers::Properties & properties)
         helpers::Properties layoutProperties =
                 properties.getPropertySubset( DCMTK_LOG4CPLUS_TEXT("layout.") );
         try {
-            OFunique_ptr<Layout> newLayout(factory->createObject(layoutProperties));
-            if(!newLayout) {
+            OFauto_ptr<Layout> newLayout(factory->createObject(layoutProperties));
+            if(newLayout.get() == 0) {
                 helpers::getLogLog().error(
                     DCMTK_LOG4CPLUS_TEXT("Failed to create appender: ")
                     + factoryName);
             }
             else {
-                layout = OFmove(newLayout);
+                layout = newLayout;
             }
         }
         catch(STD_NAMESPACE exception const & e) {
@@ -320,7 +320,7 @@ Appender::getErrorHandler()
 
 
 void
-Appender::setErrorHandler(OFunique_ptr<ErrorHandler> eh)
+Appender::setErrorHandler(OFauto_ptr<ErrorHandler> eh)
 {
     if (! eh.get())
     {
@@ -333,17 +333,17 @@ Appender::setErrorHandler(OFunique_ptr<ErrorHandler> eh)
 
     thread::MutexGuard guard (access_mutex);
 
-    this->errorHandler = OFmove(eh);
+    this->errorHandler = eh;
 }
 
 
 
 void
-Appender::setLayout(OFunique_ptr<Layout> lo)
+Appender::setLayout(OFauto_ptr<Layout> lo)
 {
     thread::MutexGuard guard (access_mutex);
 
-    this->layout = OFmove(lo);
+    this->layout = lo;
 }
 
 

@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTContrastBolusAgentSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -30,13 +30,7 @@ DRTContrastBolusAgentSequence::Item::Item(const OFBool emptyDefaultItem)
     ContextGroupLocalVersion(DCM_ContextGroupLocalVersion),
     ContextGroupVersion(DCM_ContextGroupVersion),
     ContextIdentifier(DCM_ContextIdentifier),
-    ContextUID(DCM_ContextUID),
-    EquivalentCodeSequence(emptyDefaultItem /*emptyDefaultSequence*/),
-    LongCodeValue(DCM_LongCodeValue),
-    MappingResource(DCM_MappingResource),
-    MappingResourceName(DCM_MappingResourceName),
-    MappingResourceUID(DCM_MappingResourceUID),
-    URNCodeValue(DCM_URNCodeValue)
+    MappingResource(DCM_MappingResource)
 {
 }
 
@@ -52,13 +46,7 @@ DRTContrastBolusAgentSequence::Item::Item(const Item &copy)
     ContextGroupLocalVersion(copy.ContextGroupLocalVersion),
     ContextGroupVersion(copy.ContextGroupVersion),
     ContextIdentifier(copy.ContextIdentifier),
-    ContextUID(copy.ContextUID),
-    EquivalentCodeSequence(copy.EquivalentCodeSequence),
-    LongCodeValue(copy.LongCodeValue),
-    MappingResource(copy.MappingResource),
-    MappingResourceName(copy.MappingResourceName),
-    MappingResourceUID(copy.MappingResourceUID),
-    URNCodeValue(copy.URNCodeValue)
+    MappingResource(copy.MappingResource)
 {
 }
 
@@ -82,13 +70,7 @@ DRTContrastBolusAgentSequence::Item &DRTContrastBolusAgentSequence::Item::operat
         ContextGroupLocalVersion = copy.ContextGroupLocalVersion;
         ContextGroupVersion = copy.ContextGroupVersion;
         ContextIdentifier = copy.ContextIdentifier;
-        ContextUID = copy.ContextUID;
-        EquivalentCodeSequence = copy.EquivalentCodeSequence;
-        LongCodeValue = copy.LongCodeValue;
         MappingResource = copy.MappingResource;
-        MappingResourceName = copy.MappingResourceName;
-        MappingResourceUID = copy.MappingResourceUID;
-        URNCodeValue = copy.URNCodeValue;
     }
     return *this;
 }
@@ -103,14 +85,8 @@ void DRTContrastBolusAgentSequence::Item::clear()
         CodingSchemeDesignator.clear();
         CodingSchemeVersion.clear();
         CodeMeaning.clear();
-        LongCodeValue.clear();
-        URNCodeValue.clear();
-        EquivalentCodeSequence.clear();
         ContextIdentifier.clear();
-        ContextUID.clear();
         MappingResource.clear();
-        MappingResourceUID.clear();
-        MappingResourceName.clear();
         ContextGroupVersion.clear();
         ContextGroupExtensionFlag.clear();
         ContextGroupLocalVersion.clear();
@@ -125,14 +101,8 @@ OFBool DRTContrastBolusAgentSequence::Item::isEmpty()
            CodingSchemeDesignator.isEmpty() &&
            CodingSchemeVersion.isEmpty() &&
            CodeMeaning.isEmpty() &&
-           LongCodeValue.isEmpty() &&
-           URNCodeValue.isEmpty() &&
-           EquivalentCodeSequence.isEmpty() &&
            ContextIdentifier.isEmpty() &&
-           ContextUID.isEmpty() &&
            MappingResource.isEmpty() &&
-           MappingResourceUID.isEmpty() &&
-           MappingResourceName.isEmpty() &&
            ContextGroupVersion.isEmpty() &&
            ContextGroupExtensionFlag.isEmpty() &&
            ContextGroupLocalVersion.isEmpty() &&
@@ -156,15 +126,9 @@ OFCondition DRTContrastBolusAgentSequence::Item::read(DcmItem &item)
         getAndCheckElementFromDataset(item, CodeValue, "1", "1C", "ContrastBolusAgentSequence");
         getAndCheckElementFromDataset(item, CodingSchemeDesignator, "1", "1C", "ContrastBolusAgentSequence");
         getAndCheckElementFromDataset(item, CodingSchemeVersion, "1", "1C", "ContrastBolusAgentSequence");
-        getAndCheckElementFromDataset(item, CodeMeaning, "1", "1", "ContrastBolusAgentSequence");
-        getAndCheckElementFromDataset(item, LongCodeValue, "1", "1C", "ContrastBolusAgentSequence");
-        getAndCheckElementFromDataset(item, URNCodeValue, "1", "1C", "ContrastBolusAgentSequence");
-        EquivalentCodeSequence.read(item, "1-n", "3", "ContrastBolusAgentSequence");
+        getAndCheckElementFromDataset(item, CodeMeaning, "1", "1C", "ContrastBolusAgentSequence");
         getAndCheckElementFromDataset(item, ContextIdentifier, "1", "3", "ContrastBolusAgentSequence");
-        getAndCheckElementFromDataset(item, ContextUID, "1", "3", "ContrastBolusAgentSequence");
         getAndCheckElementFromDataset(item, MappingResource, "1", "1C", "ContrastBolusAgentSequence");
-        getAndCheckElementFromDataset(item, MappingResourceUID, "1", "3", "ContrastBolusAgentSequence");
-        getAndCheckElementFromDataset(item, MappingResourceName, "1", "3", "ContrastBolusAgentSequence");
         getAndCheckElementFromDataset(item, ContextGroupVersion, "1", "1C", "ContrastBolusAgentSequence");
         getAndCheckElementFromDataset(item, ContextGroupExtensionFlag, "1", "3", "ContrastBolusAgentSequence");
         getAndCheckElementFromDataset(item, ContextGroupLocalVersion, "1", "1C", "ContrastBolusAgentSequence");
@@ -184,15 +148,9 @@ OFCondition DRTContrastBolusAgentSequence::Item::write(DcmItem &item)
         addElementToDataset(result, item, new DcmShortString(CodeValue), "1", "1C", "ContrastBolusAgentSequence");
         addElementToDataset(result, item, new DcmShortString(CodingSchemeDesignator), "1", "1C", "ContrastBolusAgentSequence");
         addElementToDataset(result, item, new DcmShortString(CodingSchemeVersion), "1", "1C", "ContrastBolusAgentSequence");
-        addElementToDataset(result, item, new DcmLongString(CodeMeaning), "1", "1", "ContrastBolusAgentSequence");
-        addElementToDataset(result, item, new DcmUnlimitedCharacters(LongCodeValue), "1", "1C", "ContrastBolusAgentSequence");
-        addElementToDataset(result, item, new DcmUniversalResourceIdentifierOrLocator(URNCodeValue), "1", "1C", "ContrastBolusAgentSequence");
-        if (result.good()) result = EquivalentCodeSequence.write(item, "1-n", "3", "ContrastBolusAgentSequence");
+        addElementToDataset(result, item, new DcmLongString(CodeMeaning), "1", "1C", "ContrastBolusAgentSequence");
         addElementToDataset(result, item, new DcmCodeString(ContextIdentifier), "1", "3", "ContrastBolusAgentSequence");
-        addElementToDataset(result, item, new DcmUniqueIdentifier(ContextUID), "1", "3", "ContrastBolusAgentSequence");
         addElementToDataset(result, item, new DcmCodeString(MappingResource), "1", "1C", "ContrastBolusAgentSequence");
-        addElementToDataset(result, item, new DcmUniqueIdentifier(MappingResourceUID), "1", "3", "ContrastBolusAgentSequence");
-        addElementToDataset(result, item, new DcmLongString(MappingResourceName), "1", "3", "ContrastBolusAgentSequence");
         addElementToDataset(result, item, new DcmDateTime(ContextGroupVersion), "1", "1C", "ContrastBolusAgentSequence");
         addElementToDataset(result, item, new DcmCodeString(ContextGroupExtensionFlag), "1", "3", "ContrastBolusAgentSequence");
         addElementToDataset(result, item, new DcmDateTime(ContextGroupLocalVersion), "1", "1C", "ContrastBolusAgentSequence");
@@ -283,57 +241,12 @@ OFCondition DRTContrastBolusAgentSequence::Item::getContextIdentifier(OFString &
 }
 
 
-OFCondition DRTContrastBolusAgentSequence::Item::getContextUID(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(ContextUID, value, pos);
-}
-
-
-OFCondition DRTContrastBolusAgentSequence::Item::getLongCodeValue(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(LongCodeValue, value, pos);
-}
-
-
 OFCondition DRTContrastBolusAgentSequence::Item::getMappingResource(OFString &value, const signed long pos) const
 {
     if (EmptyDefaultItem)
         return EC_IllegalCall;
     else
         return getStringValueFromElement(MappingResource, value, pos);
-}
-
-
-OFCondition DRTContrastBolusAgentSequence::Item::getMappingResourceName(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(MappingResourceName, value, pos);
-}
-
-
-OFCondition DRTContrastBolusAgentSequence::Item::getMappingResourceUID(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(MappingResourceUID, value, pos);
-}
-
-
-OFCondition DRTContrastBolusAgentSequence::Item::getURNCodeValue(OFString &value, const signed long pos) const
-{
-    if (EmptyDefaultItem)
-        return EC_IllegalCall;
-    else
-        return getStringValueFromElement(URNCodeValue, value, pos);
 }
 
 
@@ -454,32 +367,6 @@ OFCondition DRTContrastBolusAgentSequence::Item::setContextIdentifier(const OFSt
 }
 
 
-OFCondition DRTContrastBolusAgentSequence::Item::setContextUID(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmUniqueIdentifier::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = ContextUID.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTContrastBolusAgentSequence::Item::setLongCodeValue(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmUnlimitedCharacters::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = LongCodeValue.putOFStringArray(value);
-    }
-    return result;
-}
-
-
 OFCondition DRTContrastBolusAgentSequence::Item::setMappingResource(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
@@ -488,45 +375,6 @@ OFCondition DRTContrastBolusAgentSequence::Item::setMappingResource(const OFStri
         result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
             result = MappingResource.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTContrastBolusAgentSequence::Item::setMappingResourceName(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmLongString::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = MappingResourceName.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTContrastBolusAgentSequence::Item::setMappingResourceUID(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmUniqueIdentifier::checkStringValue(value, "1") : EC_Normal;
-        if (result.good())
-            result = MappingResourceUID.putOFStringArray(value);
-    }
-    return result;
-}
-
-
-OFCondition DRTContrastBolusAgentSequence::Item::setURNCodeValue(const OFString &value, const OFBool check)
-{
-    OFCondition result = EC_IllegalCall;
-    if (!EmptyDefaultItem)
-    {
-        result = (check) ? DcmUniversalResourceIdentifierOrLocator::checkStringValue(value) : EC_Normal;
-        if (result.good())
-            result = URNCodeValue.putOFStringArray(value);
     }
     return result;
 }
@@ -635,7 +483,7 @@ OFBool DRTContrastBolusAgentSequence::isValid() const
 }
 
 
-size_t DRTContrastBolusAgentSequence::getNumberOfItems() const
+unsigned long DRTContrastBolusAgentSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -665,12 +513,12 @@ OFCondition DRTContrastBolusAgentSequence::gotoNextItem()
 }
 
 
-OFCondition DRTContrastBolusAgentSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTContrastBolusAgentSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -685,12 +533,12 @@ OFCondition DRTContrastBolusAgentSequence::gotoItem(const size_t num, OFListIter
 }
 
 
-OFCondition DRTContrastBolusAgentSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTContrastBolusAgentSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -705,7 +553,7 @@ OFCondition DRTContrastBolusAgentSequence::gotoItem(const size_t num, OFListCons
 }
 
 
-OFCondition DRTContrastBolusAgentSequence::gotoItem(const size_t num)
+OFCondition DRTContrastBolusAgentSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -741,7 +589,7 @@ const DRTContrastBolusAgentSequence::Item &DRTContrastBolusAgentSequence::getCur
 }
 
 
-OFCondition DRTContrastBolusAgentSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTContrastBolusAgentSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -751,7 +599,7 @@ OFCondition DRTContrastBolusAgentSequence::getItem(const size_t num, Item *&item
 }
 
 
-DRTContrastBolusAgentSequence::Item &DRTContrastBolusAgentSequence::getItem(const size_t num)
+DRTContrastBolusAgentSequence::Item &DRTContrastBolusAgentSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -761,7 +609,7 @@ DRTContrastBolusAgentSequence::Item &DRTContrastBolusAgentSequence::getItem(cons
 }
 
 
-const DRTContrastBolusAgentSequence::Item &DRTContrastBolusAgentSequence::getItem(const size_t num) const
+const DRTContrastBolusAgentSequence::Item &DRTContrastBolusAgentSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -771,13 +619,13 @@ const DRTContrastBolusAgentSequence::Item &DRTContrastBolusAgentSequence::getIte
 }
 
 
-DRTContrastBolusAgentSequence::Item &DRTContrastBolusAgentSequence::operator[](const size_t num)
+DRTContrastBolusAgentSequence::Item &DRTContrastBolusAgentSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTContrastBolusAgentSequence::Item &DRTContrastBolusAgentSequence::operator[](const size_t num) const
+const DRTContrastBolusAgentSequence::Item &DRTContrastBolusAgentSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -800,7 +648,7 @@ OFCondition DRTContrastBolusAgentSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTContrastBolusAgentSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTContrastBolusAgentSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -823,7 +671,7 @@ OFCondition DRTContrastBolusAgentSequence::insertItem(const size_t pos, Item *&i
 }
 
 
-OFCondition DRTContrastBolusAgentSequence::removeItem(const size_t pos)
+OFCondition DRTContrastBolusAgentSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

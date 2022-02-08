@@ -20,6 +20,7 @@
 #include "jlossls16.h"      /* Private declarations for lossless codec */
 #include "jdhuff16.h"       /* Declarations shared with jd*huff.c */
 
+
 #ifdef D_LOSSLESS_SUPPORTED
 
 typedef struct {
@@ -128,26 +129,15 @@ start_pass_lhuff_decoder (j_decompress_ptr cinfo)
 
 #define HUFF_EXTEND(x,s)  ((x) < extend_test[s] ? (x) + extend_offset[s] : (x))
 
-/* We should only need 16 entries in this array, the 17th one is for
- * invalid Cornell images with the Huffman table overflow bug
- */
-static const int extend_test[17] =   /* entry n is 2**(n-1) */
+static const int extend_test[16] =   /* entry n is 2**(n-1) */
   { 0, 0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
-    0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000, 0x8000 };
+    0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000 };
 
-/*
- * Originally, a -1 was shifted but since shifting a negative value is
- * undefined behavior, now "~0U" (bit-wise NOT unsigned int 0) is used,
- * shifted and casted to an int. The result is the same, of course.
- *
- * We should only need 16 entries in this array, the 17th one is for
- * invalid Cornell images with the Huffman table overflow bug
- */
-static const int extend_offset[17] = /* entry n is (-1 << n) + 1 */
-  { 0, (int)((~0U)<<1) + 1, (int)((~0U)<<2) + 1, (int)((~0U)<<3) + 1, (int)((~0U)<<4) + 1,
-    (int)((~0U)<<5) + 1, (int)((~0U)<<6) + 1, (int)((~0U)<<7) + 1, (int)((~0U)<<8) + 1,
-    (int)((~0U)<<9) + 1, (int)((~0U)<<10) + 1, (int)((~0U)<<11) + 1, (int)((~0U)<<12) + 1,
-    (int)((~0U)<<13) + 1, (int)((~0U)<<14) + 1, (int)((~0U)<<15) + 1, (int)((~0U)<<16) + 1 };
+static const int extend_offset[16] = /* entry n is (-1 << n) + 1 */
+  { 0, ((-1)<<1) + 1, ((-1)<<2) + 1, ((-1)<<3) + 1, ((-1)<<4) + 1,
+    ((-1)<<5) + 1, ((-1)<<6) + 1, ((-1)<<7) + 1, ((-1)<<8) + 1,
+    ((-1)<<9) + 1, ((-1)<<10) + 1, ((-1)<<11) + 1, ((-1)<<12) + 1,
+    ((-1)<<13) + 1, ((-1)<<14) + 1, ((-1)<<15) + 1 };
 
 #endif /* AVOID_TABLES */
 
@@ -209,7 +199,6 @@ decode_mcus (j_decompress_ptr cinfo, JDIFFIMAGE diff_buf,
   unsigned int mcu_num;
   int sampn, ci, yoffset, MCU_width, ptrn;
   BITREAD_STATE_VARS;
-  boolean cornell_workaround = (cinfo->workaround_options & WORKAROUND_BUGGY_CORNELL_16BIT_JPEG_ENCODER) != 0;
 
   /* Set output pointer locations based on MCU_col_num */
   for (ptrn = 0; ptrn < entropy->num_output_ptrs; ptrn++) {
@@ -250,38 +239,14 @@ decode_mcus (j_decompress_ptr cinfo, JDIFFIMAGE diff_buf,
     register int s, r;
 
     /* Section H.2.2: decode the sample difference */
-    HUFF_DECODE(s, br_state, dctbl, return mcu_num, label1, cornell_workaround);
+    HUFF_DECODE(s, br_state, dctbl, return mcu_num, label1);
     if (s) {
-      if (cornell_workaround)
-      {
-          if ((s == 16) && (bits_left < 16)) { /* standard case: always output 32768 */
-            s = 32768;
-          }
-          else if (s >= 16) { /* there are enough bits available, so check ... */
-            r = PEEK_BITS(16);
-            s = HUFF_EXTEND(r, 16);
-            if ((s & 0xffff) == 0x8000) { /* special case: handle buggy Cornell encoder */
-              DROP_BITS(16);
-            } else {  /* standard case: always output 32768 */
-              if (s == 0x7fff)
-                DROP_BITS(16);
-              s = 32768;
-            }
-          } else {    /* normal case: fetch subsequent bits */
-            CHECK_BIT_BUFFER(br_state, s, return mcu_num);
-            r = GET_BITS(s);
-            s = HUFF_EXTEND(r, s);
-          }
-      }
-      else
-      {
-          if (s == 16)  /* special case: always output 32768 */
-            s = 32768;
-          else {    /* normal case: fetch subsequent bits */
-            CHECK_BIT_BUFFER(br_state, s, return mcu_num);
-            r = GET_BITS(s);
-            s = HUFF_EXTEND(r, s);
-          }
+      if (s == 16)  /* special case: always output 32768 */
+        s = 32768;
+      else {    /* normal case: fetch subsequent bits */
+        CHECK_BIT_BUFFER(br_state, s, return mcu_num);
+        r = GET_BITS(s);
+        s = HUFF_EXTEND(r, s);
       }
     }
 

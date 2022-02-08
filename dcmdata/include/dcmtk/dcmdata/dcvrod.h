@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2013-2021, OFFIS e.V.
+ *  Copyright (C) 2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,11 +28,7 @@
 #include "dcmtk/dcmdata/dcvrfd.h"
 
 
-// forward declarations
-class DcmJsonFormat;
-
-
-/** a class representing the DICOM value representation 'Other Double' (OD)
+/** a class representing the DICOM value representation 'Other Double String' (OD)
  */
 class DCMTK_DCMDATA_EXPORT DcmOtherDouble
   : public DcmFloatingPointDouble
@@ -108,26 +104,8 @@ class DCMTK_DCMDATA_EXPORT DcmOtherDouble
      *  @param flags optional flag used to customize the output (see DCMTypes::XF_xxx)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    virtual OFCondition writeXML(STD_NAMESPACE ostream &out,
+    virtual OFCondition writeXML(STD_NAMESPACE ostream&out,
                                  const size_t flags = 0);
-
-    /** write object in JSON format to a stream
-     *  @param out output stream to which the JSON document is written
-     *  @param format used to format and customize the output
-     *  @return status, EC_Normal if successful, an error code otherwise
-     */
-    virtual OFCondition writeJson(STD_NAMESPACE ostream &out,
-                                  DcmJsonFormat &format);
-
-    /** create an empty Float64 array of given number of double values and set it.
-     *  All array elements are initialized with a value of 0 (using 'memset').
-     *  @param numDoubles number of double values (64 bit) to be created
-     *  @param doubleVals stores the pointer to the resulting Float64 array
-     *    (set to NULL in case of error)
-     *  @return status, EC_Normal if successful, an error code otherwise
-     */
-    virtual OFCondition createFloat64Array(const Uint32 numDoubles,
-                                           Float64 *&doubleVals);
 };
 
 

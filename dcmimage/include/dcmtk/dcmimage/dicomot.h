@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2016, OFFIS e.V.
+ *  Copyright (C) 1996-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -91,11 +91,11 @@ class DiColorMonoTemplate
             this->Data = new T[this->Count];
             if (this->Data != NULL)
             {
-                const T *r = pixel[0];
-                const T *g = pixel[1];
-                const T *b = pixel[2];
-                T *q = this->Data;
-                unsigned long i;
+                register const T *r = pixel[0];
+                register const T *g = pixel[1];
+                register const T *b = pixel[2];
+                register T *q = this->Data;
+                register unsigned long i;
                 for (i = this->Count; i != 0; i--)
                 {
                     *(q++) = OFstatic_cast(T, OFstatic_cast(double, *(r++)) * red +

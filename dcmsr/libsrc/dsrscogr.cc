@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2021, OFFIS e.V.
+ *  Copyright (C) 2000-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRGraphicDataList
@@ -24,21 +24,16 @@
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
 #include "dcmtk/dcmsr/dsrscogr.h"
-
-#include "dcmtk/dcmdata/dcdeftag.h"
-#include "dcmtk/dcmdata/dcvrfl.h"
-
 #include "dcmtk/ofstd/ofstd.h"
 
+#ifdef HAVE_EXPLICIT_TEMPLATE_SPECIALIZATION
+#define EXPLICIT_SPECIALIZATION template<>
+#else
+#define EXPLICIT_SPECIALIZATION
+#endif
 
-// global empty item object so it gets initialized and cleaned up by the linker
-const DSRGraphicDataItem DSRGraphicDataEmptyItem(0, 0);
-
-template<>
-const DSRGraphicDataItem& DSRgetEmptyItem<DSRGraphicDataItem>()
-{
-    return DSRGraphicDataEmptyItem;
-}
+/* declared in class DSRListOfItems<T> */
+EXPLICIT_SPECIALIZATION const DSRGraphicDataItem DSRListOfItems<DSRGraphicDataItem>::EmptyItem(0, 0);
 
 
 DSRGraphicDataList::DSRGraphicDataList()
@@ -76,9 +71,9 @@ OFCondition DSRGraphicDataList::print(STD_NAMESPACE ostream &stream,
     while (iterator != endPos)
     {
         /* need to convert float to avoid problems with decimal point ('.' or ',') */
-        OFStandard::ftoa(buffer, sizeof(buffer), (*iterator).Column, 0, 0, 9 /* FLT_DECIMAL_DIG for DICOM FL */);
+        OFStandard::ftoa(buffer, sizeof(buffer), (*iterator).Column);
         stream << buffer << pairSeparator;
-        OFStandard::ftoa(buffer, sizeof(buffer), (*iterator).Row, 0, 0, 9 /* FLT_DECIMAL_DIG for DICOM FL */);
+        OFStandard::ftoa(buffer, sizeof(buffer), (*iterator).Row);
         stream << buffer;
         iterator++;
         if (iterator != endPos)
@@ -95,8 +90,7 @@ OFCondition DSRGraphicDataList::print(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRGraphicDataList::read(DcmItem &dataset,
-                                     const size_t /*flags*/)
+OFCondition DSRGraphicDataList::read(DcmItem &dataset)
 {
     /* get floating point string from dataset */
     DcmFloatingPointSingle delem(DCM_GraphicData);

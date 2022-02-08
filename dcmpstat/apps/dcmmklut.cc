@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2021, OFFIS e.V.
+ *  Copyright (C) 1998-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,6 +25,10 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>
+#endif
+
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/dcmdata/dctk.h"
 #include "dcmtk/dcmdata/cmdlnarg.h"
@@ -36,7 +40,12 @@
 #include "dcmtk/dcmimgle/diutils.h"
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofstd.h"
-#include "dcmtk/ofstd/ofrand.h"
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CMATH
+#define INCLUDE_CCTYPE
+#include "dcmtk/ofstd/ofstdinc.h"
 
 #ifdef WITH_ZLIB
 #include <zlib.h>        /* for zlibVersion() */
@@ -119,7 +128,11 @@ static OFCondition readTextFile(const char *filename,
     if ((filename != NULL) && (strlen(filename) > 0))
     {
         OFLOG_INFO(dcmmklutLogger, "reading text file ...");
-        STD_NAMESPACE ifstream file(filename, OFopenmode_in_nocreate);
+#ifdef HAVE_IOS_NOCREATE
+        STD_NAMESPACE ifstream file(filename, STD_NAMESPACE ios::in | STD_NAMESPACE ios::nocreate);
+#else
+        STD_NAMESPACE ifstream file(filename, STD_NAMESPACE ios::in);
+#endif
         if (file)
         {
             inputEntries = 0;
@@ -421,15 +434,14 @@ static void applyInverseGSDF(const unsigned int numberOfBits,
                              const unsigned int reflection,
                              Uint16 *outputData,
                              OFString &header,
-                             char *explanation,
-                             size_t explanationSize)
+                             char *explanation)
 {
     if (outputData != NULL)
     {
         OFLOG_INFO(dcmmklutLogger, "applying inverse GSDF ...");
         OFOStringStream oss;
         if ((explanation != NULL) && (strlen(explanation) > 0))
-            OFStandard::strlcat(explanation, ", inverse GSDF", explanationSize);
+            strcat(explanation, ", inverse GSDF");
         const double l0 = (double)illumination;
         const double la = (double)reflection;
         const double dmin = (double)minDensity / 100;
@@ -459,31 +471,37 @@ static void applyInverseGSDF(const unsigned int numberOfBits,
     }
 }
 
+#ifndef RAND_MAX
+/* some brain-dead systems such as SunOS 4.1.3 do not define any constant
+ * for the upper limit of rand() calls. We hope that such systems at least
+ * keep within the SysV specs and return values up to 2^15-1.
+ */
+#define RAND_MAX 32767
+#endif
+
 static void mixingUpLUT(const unsigned long numberOfEntries,
                         const OFBool byteAlign,
                         const unsigned long randomCount,
-                        const Uint32 randomSeed,
+                        const unsigned int randomSeed,
                         Uint16 *outputData,
-                        char *explanation,
-                        size_t explanationSize)
+                        char *explanation)
 {
-    OFRandom rnd;
     if (outputData != NULL)
     {
         OFLOG_INFO(dcmmklutLogger, "mixing up LUT entries ...");
         if ((explanation != NULL) && (strlen(explanation) > 0))
-            OFStandard::strlcat(explanation, ", mixed-up entries", explanationSize);
-        rnd.seed(randomSeed);
+            strcat(explanation, ", mixed-up entries");
+        srand(randomSeed);
         unsigned long i, i1, i2;
-        const double factor = (double)(numberOfEntries - 1) / OFstatic_cast(Uint32, -1);
+        const double factor = (double)(numberOfEntries - 1) / RAND_MAX;
         if (byteAlign)
         {
             Uint8 temp;
             Uint8 *data8 = (Uint8 *)outputData;
             for (i = 0; i < randomCount; i++)
             {
-                i1 = (unsigned long)(rnd.getRND32() * factor);
-                i2 = (unsigned long)(rnd.getRND32() * factor);
+                i1 = (unsigned long)(rand() * factor);
+                i2 = (unsigned long)(rand() * factor);
                 if (i1 != i2)
                 {
                     temp = data8[i1];
@@ -495,8 +513,8 @@ static void mixingUpLUT(const unsigned long numberOfEntries,
             Uint16 temp;
             for (i = 0; i < randomCount; i++)
             {
-                i1 = (unsigned long)(rnd.getRND32() * factor);
-                i2 = (unsigned long)(rnd.getRND32() * factor);
+                i1 = (unsigned long)(rand() * factor);
+                i2 = (unsigned long)(rand() * factor);
                 if (i1 != i2)
                 {
                     temp = outputData[i1];
@@ -565,8 +583,8 @@ static OFCondition createLUT(const unsigned int numberOfBits,
         if (descriptor)
         {
             if (EC_Normal==result) result = descriptor->putUint16(numEntries16, 0);
-            if (EC_Normal==result) result = descriptor->putUint16(OFstatic_cast(Uint16, firstMapped), 1);
-            if (EC_Normal==result) result = descriptor->putUint16(OFstatic_cast(Uint16, numberOfBits), 2);
+            if (EC_Normal==result) result = descriptor->putUint16((Uint16)firstMapped, 1);
+            if (EC_Normal==result) result = descriptor->putUint16(numberOfBits, 2);
             if (EC_Normal==result) result = item.insert(descriptor, OFTrue /*replaceOld*/);
         } else
             return EC_MemoryExhausted;
@@ -893,7 +911,7 @@ int main(int argc, char *argv[])
         {
             char explStr[1024];
             if (opt_explanation != NULL)
-                OFStandard::strlcpy(explStr, opt_explanation, 1024);
+                strcpy(explStr, opt_explanation);
             else
                 explStr[0] = 0;
             OFString headerStr;
@@ -918,9 +936,9 @@ int main(int argc, char *argv[])
             {
                 if (opt_inverseGSDF)
                     applyInverseGSDF((unsigned int)opt_bits, opt_entries, opt_byteAlign, (unsigned int)opt_minDensity, (unsigned int)opt_maxDensity,
-                        (unsigned int)opt_illumination, (unsigned int)opt_reflection, outputData, headerStr, explStr, 1024);
+                        (unsigned int)opt_illumination, (unsigned int)opt_reflection, outputData, headerStr, explStr);
                 if (opt_randomCount > 0)
-                    mixingUpLUT(opt_entries, opt_byteAlign, opt_randomCount, (Uint32)opt_randomSeed, outputData, explStr, 1024);
+                    mixingUpLUT(opt_entries, opt_byteAlign, opt_randomCount, (unsigned int)opt_randomSeed, outputData, explStr);
                 result = createLUT((unsigned int)opt_bits, opt_entries, opt_firstMapped, opt_byteAlign, opt_lutVR, *ditem,
                     outputData, explStr);
             }

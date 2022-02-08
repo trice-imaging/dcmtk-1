@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTDoseReferenceSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -168,14 +168,14 @@ OFCondition DRTDoseReferenceSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, DoseReferenceNumber, "1", "1", "DoseReferenceSequence");
+        getAndCheckElementFromDataset(item, DoseReferenceNumber, "1", "1C", "DoseReferenceSequence");
         getAndCheckElementFromDataset(item, DoseReferenceUID, "1", "3", "DoseReferenceSequence");
-        getAndCheckElementFromDataset(item, DoseReferenceStructureType, "1", "1", "DoseReferenceSequence");
+        getAndCheckElementFromDataset(item, DoseReferenceStructureType, "1", "1C", "DoseReferenceSequence");
         getAndCheckElementFromDataset(item, DoseReferenceDescription, "1", "3", "DoseReferenceSequence");
         getAndCheckElementFromDataset(item, ReferencedROINumber, "1", "1C", "DoseReferenceSequence");
         getAndCheckElementFromDataset(item, DoseReferencePointCoordinates, "3", "1C", "DoseReferenceSequence");
         getAndCheckElementFromDataset(item, NominalPriorDose, "1", "3", "DoseReferenceSequence");
-        getAndCheckElementFromDataset(item, DoseReferenceType, "1", "1", "DoseReferenceSequence");
+        getAndCheckElementFromDataset(item, DoseReferenceType, "1", "1C", "DoseReferenceSequence");
         getAndCheckElementFromDataset(item, ConstraintWeight, "1", "3", "DoseReferenceSequence");
         getAndCheckElementFromDataset(item, DeliveryWarningDose, "1", "3", "DoseReferenceSequence");
         getAndCheckElementFromDataset(item, DeliveryMaximumDose, "1", "3", "DoseReferenceSequence");
@@ -199,14 +199,14 @@ OFCondition DRTDoseReferenceSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmIntegerString(DoseReferenceNumber), "1", "1", "DoseReferenceSequence");
+        addElementToDataset(result, item, new DcmIntegerString(DoseReferenceNumber), "1", "1C", "DoseReferenceSequence");
         addElementToDataset(result, item, new DcmUniqueIdentifier(DoseReferenceUID), "1", "3", "DoseReferenceSequence");
-        addElementToDataset(result, item, new DcmCodeString(DoseReferenceStructureType), "1", "1", "DoseReferenceSequence");
+        addElementToDataset(result, item, new DcmCodeString(DoseReferenceStructureType), "1", "1C", "DoseReferenceSequence");
         addElementToDataset(result, item, new DcmLongString(DoseReferenceDescription), "1", "3", "DoseReferenceSequence");
         addElementToDataset(result, item, new DcmIntegerString(ReferencedROINumber), "1", "1C", "DoseReferenceSequence");
         addElementToDataset(result, item, new DcmDecimalString(DoseReferencePointCoordinates), "3", "1C", "DoseReferenceSequence");
         addElementToDataset(result, item, new DcmDecimalString(NominalPriorDose), "1", "3", "DoseReferenceSequence");
-        addElementToDataset(result, item, new DcmCodeString(DoseReferenceType), "1", "1", "DoseReferenceSequence");
+        addElementToDataset(result, item, new DcmCodeString(DoseReferenceType), "1", "1C", "DoseReferenceSequence");
         addElementToDataset(result, item, new DcmDecimalString(ConstraintWeight), "1", "3", "DoseReferenceSequence");
         addElementToDataset(result, item, new DcmDecimalString(DeliveryWarningDose), "1", "3", "DoseReferenceSequence");
         addElementToDataset(result, item, new DcmDecimalString(DeliveryMaximumDose), "1", "3", "DoseReferenceSequence");
@@ -888,7 +888,7 @@ OFBool DRTDoseReferenceSequence::isValid() const
 }
 
 
-size_t DRTDoseReferenceSequence::getNumberOfItems() const
+unsigned long DRTDoseReferenceSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -918,12 +918,12 @@ OFCondition DRTDoseReferenceSequence::gotoNextItem()
 }
 
 
-OFCondition DRTDoseReferenceSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTDoseReferenceSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -938,12 +938,12 @@ OFCondition DRTDoseReferenceSequence::gotoItem(const size_t num, OFListIterator(
 }
 
 
-OFCondition DRTDoseReferenceSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTDoseReferenceSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -958,7 +958,7 @@ OFCondition DRTDoseReferenceSequence::gotoItem(const size_t num, OFListConstIter
 }
 
 
-OFCondition DRTDoseReferenceSequence::gotoItem(const size_t num)
+OFCondition DRTDoseReferenceSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -994,7 +994,7 @@ const DRTDoseReferenceSequence::Item &DRTDoseReferenceSequence::getCurrentItem()
 }
 
 
-OFCondition DRTDoseReferenceSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTDoseReferenceSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -1004,7 +1004,7 @@ OFCondition DRTDoseReferenceSequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTDoseReferenceSequence::Item &DRTDoseReferenceSequence::getItem(const size_t num)
+DRTDoseReferenceSequence::Item &DRTDoseReferenceSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -1014,7 +1014,7 @@ DRTDoseReferenceSequence::Item &DRTDoseReferenceSequence::getItem(const size_t n
 }
 
 
-const DRTDoseReferenceSequence::Item &DRTDoseReferenceSequence::getItem(const size_t num) const
+const DRTDoseReferenceSequence::Item &DRTDoseReferenceSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -1024,13 +1024,13 @@ const DRTDoseReferenceSequence::Item &DRTDoseReferenceSequence::getItem(const si
 }
 
 
-DRTDoseReferenceSequence::Item &DRTDoseReferenceSequence::operator[](const size_t num)
+DRTDoseReferenceSequence::Item &DRTDoseReferenceSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTDoseReferenceSequence::Item &DRTDoseReferenceSequence::operator[](const size_t num) const
+const DRTDoseReferenceSequence::Item &DRTDoseReferenceSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -1053,7 +1053,7 @@ OFCondition DRTDoseReferenceSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTDoseReferenceSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTDoseReferenceSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -1076,7 +1076,7 @@ OFCondition DRTDoseReferenceSequence::insertItem(const size_t pos, Item *&item)
 }
 
 
-OFCondition DRTDoseReferenceSequence::removeItem(const size_t pos)
+OFCondition DRTDoseReferenceSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

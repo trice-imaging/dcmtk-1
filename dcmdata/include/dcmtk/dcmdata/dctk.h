@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2019, OFFIS e.V.
+ *  Copyright (C) 1994-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -66,16 +66,14 @@
 #include "dcmtk/dcmdata/dcvris.h"
 #include "dcmtk/dcmdata/dcvrtm.h"
 #include "dcmtk/dcmdata/dcvrui.h"
-#include "dcmtk/dcmdata/dcvrur.h"
 
-// element classes for string management (8-bit and/or multi-byte)
+// element classes for string management (8-bit and/or 16-bit in later extensions)
 #include "dcmtk/dcmdata/dcchrstr.h"
 #include "dcmtk/dcmdata/dcvrlo.h"
 #include "dcmtk/dcmdata/dcvrlt.h"
 #include "dcmtk/dcmdata/dcvrpn.h"
 #include "dcmtk/dcmdata/dcvrsh.h"
 #include "dcmtk/dcmdata/dcvrst.h"
-#include "dcmtk/dcmdata/dcvruc.h"
 #include "dcmtk/dcmdata/dcvrut.h"
 
 // element class for byte and word value representations
@@ -89,15 +87,10 @@
 #include "dcmtk/dcmdata/dcvrus.h"
 #include "dcmtk/dcmdata/dcvrsl.h"
 #include "dcmtk/dcmdata/dcvrul.h"
-#include "dcmtk/dcmdata/dcvrsv.h"
-#include "dcmtk/dcmdata/dcvruv.h"
 #include "dcmtk/dcmdata/dcvrulup.h"
 #include "dcmtk/dcmdata/dcvrfl.h"
 #include "dcmtk/dcmdata/dcvrfd.h"
 #include "dcmtk/dcmdata/dcvrof.h"
-#include "dcmtk/dcmdata/dcvrod.h"
-#include "dcmtk/dcmdata/dcvrol.h"
-#include "dcmtk/dcmdata/dcvrov.h"
 
 // misc supporting tools
 #include "dcmtk/dcmdata/cmdlnarg.h"

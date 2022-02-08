@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1998-2021, OFFIS e.V.
+ *  Copyright (C) 1998-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -44,6 +44,14 @@
 #include "dcmtk/dcmpstat/dvpstx.h"      /* for DVPSTextObject, needed by MSVC5 with STL */
 #include "dcmtk/dcmpstat/dvpsgr.h"      /* for DVPSGraphicObject, needed by MSVC5 with STL */
 
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CMATH
+#define INCLUDE_CTIME
+#define INCLUDE_LIBC
+#define INCLUDE_UNISTD
+#include "dcmtk/ofstd/ofstdinc.h"
 
 /* --------------- class DVPresentationState --------------- */
 
@@ -1080,8 +1088,7 @@ OFCondition DVPresentationState::setGammaVOILUT(double gammaValue, DVPSObjectApp
   signed long firstMapped = 0;
   if (haveActiveVOIWindow())    // use active VOI window to specify the LUT descriptor
   {
-    double ww = 0.0;
-    double wc = 0.0;
+    double ww, wc;
     if ((getCurrentWindowWidth(ww) == EC_Normal) && (getCurrentWindowCenter(wc) == EC_Normal))
     {
       if (ww <= 65536)
@@ -1256,7 +1263,7 @@ Uint16 DVPresentationState::getOverlayInImageGroup(size_t idx)
   Uint16 group;
   do
   {
-    group = (Uint16) (currentImage->getOverlayGroupNumber(OFstatic_cast(Uint32, currentIndex++)));
+    group = (Uint16) (currentImage->getOverlayGroupNumber(currentIndex++));
     if (!overlayList.haveOverlayGroup(group))
     {
       // group is not shadowed by the presentation state
@@ -1339,9 +1346,9 @@ Uint16 DVPresentationState::findOverlayGroup(Uint16 currentGroup)
     if (allocated[(Uint16)(group - 0x6000) >> 1] == 2) return currentGroup;
   }
   // find a free group
-  for (i=0; i<16; i++) if (allocated[i]==0) return OFstatic_cast(Uint16, 0x6000+(i<<1));
+  for (i=0; i<16; i++) if (allocated[i]==0) return 0x6000+(i<<1);
   // find a group not used in the presentation state
-  for (i=0; i<16; i++) if (allocated[i]<2) return OFstatic_cast(Uint16, 0x6000+(i<<1));
+  for (i=0; i<16; i++) if (allocated[i]<2) return 0x6000+(i<<1);
   // not found.
   return 0;
 }
@@ -1547,8 +1554,8 @@ void DVPresentationState::renderPixelData(OFBool display)
     /* remove all external overlays that are not active as overlay or bitmap shutter */
     for (unsigned int remgroup=0x6000; remgroup <= 0x601F; remgroup += 2)
     {
-      if ((remgroup != bitmapShutterGroup)&&((! overlayList.haveOverlayGroup(OFstatic_cast(Uint16, remgroup)))||
-          (NULL == activationLayerList.getActivationLayer(OFstatic_cast(Uint16, remgroup)))))
+      if ((remgroup != bitmapShutterGroup)&&((! overlayList.haveOverlayGroup(remgroup))||
+          (NULL == activationLayerList.getActivationLayer(remgroup))))
       {
          currentImage->removeOverlay(remgroup); // ignore return value.
       }

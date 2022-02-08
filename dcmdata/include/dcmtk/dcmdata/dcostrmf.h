@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,6 +25,10 @@
 
 #include "dcmtk/config/osconfig.h"
 #include "dcmtk/dcmdata/dcostrma.h"
+
+#define INCLUDE_CSTDIO
+#include "dcmtk/ofstd/ofstdinc.h"
+
 
 /** consumer class that stores data in a plain file.
  */
@@ -133,5 +137,6 @@ private:
   /// the final consumer of the filter chain
   DcmFileConsumer consumer_;
 };
+
 
 #endif

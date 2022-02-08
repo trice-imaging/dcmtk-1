@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2019, OFFIS e.V.
+ *  Copyright (C) 2000-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRCodeTreeNode
@@ -27,57 +27,16 @@
 #include "dcmtk/dcmsr/dsrcodtn.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
 
-#include "dcmtk/dcmdata/dcdeftag.h"
-
 
 DSRCodeTreeNode::DSRCodeTreeNode(const E_RelationshipType relationshipType)
-  : DSRDocumentTreeNode(relationshipType, VT_Code),
-    DSRCodedEntryValue()
-{
-}
-
-
-DSRCodeTreeNode::DSRCodeTreeNode(const DSRCodeTreeNode &node)
-  : DSRDocumentTreeNode(node),
-    DSRCodedEntryValue(node)
+ : DSRDocumentTreeNode(relationshipType, VT_Code),
+   DSRCodedEntryValue()
 {
 }
 
 
 DSRCodeTreeNode::~DSRCodeTreeNode()
 {
-}
-
-
-OFBool DSRCodeTreeNode::operator==(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator==(node);
-    if (result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRCodedEntryValue::operator==(OFstatic_cast(const DSRCodeTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-OFBool DSRCodeTreeNode::operator!=(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator!=(node);
-    if (!result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRCodedEntryValue::operator!=(OFstatic_cast(const DSRCodeTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-DSRCodeTreeNode *DSRCodeTreeNode::clone() const
-{
-    return new DSRCodeTreeNode(*this);
 }
 
 
@@ -91,13 +50,7 @@ void DSRCodeTreeNode::clear()
 OFBool DSRCodeTreeNode::isValid() const
 {
     /* ConceptNameCodeSequence required */
-    return DSRDocumentTreeNode::isValid() && getConceptName().isValid() && hasValidValue();
-}
-
-
-OFBool DSRCodeTreeNode::hasValidValue() const
-{
-    return DSRCodedEntryValue::isValid();
+    return DSRDocumentTreeNode::isValid() && DSRCodedEntryValue::isValid() && getConceptName().isValid();
 }
 
 
@@ -110,28 +63,27 @@ OFCondition DSRCodeTreeNode::print(STD_NAMESPACE ostream &stream,
         DCMSR_PRINT_ANSI_ESCAPE_CODE(DCMSR_ANSI_ESCAPE_CODE_DELIMITER)
         stream << "=";
         DCMSR_PRINT_ANSI_ESCAPE_CODE(DCMSR_ANSI_ESCAPE_CODE_ITEM_VALUE)
-        DSRCodedEntryValue::print(stream, OFTrue /*printCodeValue*/, flags);
+        DSRCodedEntryValue::print(stream, OFTrue /*printCodeValue*/, (flags & PF_printInvalidCodes) > 0 /*printInvalid*/);
     }
     return result;
 }
 
 
 OFCondition DSRCodeTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
-                                                DSRXMLCursor cursor,
-                                                const size_t flags)
+                                                DSRXMLCursor cursor)
 {
     OFCondition result = SR_EC_CorruptedXMLStructure;
     if (cursor.valid())
     {
         /* goto "value" element */
-        const DSRXMLCursor childCursor = doc.getNamedChildNode(cursor, "value");
+        const DSRXMLCursor childCursor = doc.getNamedNode(cursor.getChild(), "value");
         if (childCursor.valid())
         {
             /* check whether code is stored as XML elements or attributes */
             if (doc.hasAttribute(childCursor, "codValue"))
-                result = DSRCodedEntryValue::readXML(doc, childCursor, flags);
+                result = DSRCodedEntryValue::readXML(doc, childCursor);
             else
-                result = DSRCodedEntryValue::readXML(doc, cursor, flags);
+                result = DSRCodedEntryValue::readXML(doc, cursor);
         }
     }
     return result;
@@ -156,11 +108,10 @@ OFCondition DSRCodeTreeNode::writeXML(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRCodeTreeNode::readContentItem(DcmItem &dataset,
-                                             const size_t flags)
+OFCondition DSRCodeTreeNode::readContentItem(DcmItem &dataset)
 {
     /* read ConceptCodeSequence */
-    return DSRCodedEntryValue::readSequence(dataset, DCM_ConceptCodeSequence, "1" /*type*/, flags);
+    return DSRCodedEntryValue::readSequence(dataset, DCM_ConceptCodeSequence, "1" /*type*/);
 }
 
 

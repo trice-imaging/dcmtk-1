@@ -20,14 +20,12 @@ dcmimagedir = $(top_srcdir)/../dcmimage
 
 LOCALINCLUDES = -I$(ofstddir)/include -I$(oflogdir)/include -I$(dcmdatadir)/include \
 	-I$(dcmimgledir)/include -I$(dcmimagedir)/include
-LIBDIRS = -L$(top_srcdir)/libcmr -L$(top_srcdir)/libsrc -L$(ofstddir)/libsrc \
-	-L$(oflogdir)/libsrc -L$(dcmdatadir)/libsrc -L$(dcmimgledir)/libsrc \
-	-L$(dcmimagedir)/libsrc
-LOCALLIBS = -lcmr -ldcmsr -ldcmimage -ldcmimgle -ldcmdata -loflog -lofstd $(TIFFLIBS) \
-	$(PNGLIBS) $(XMLLIBS) $(ZLIBLIBS) $(CHARCONVLIBS) $(MATHLIBS)
+LIBDIRS = -L$(top_srcdir)/libsrc -L$(ofstddir)/libsrc -L$(oflogdir)/libsrc \
+	-L$(dcmdatadir)/libsrc -L$(dcmimgledir)/libsrc -L$(dcmimagedir)/libsrc
+LOCALLIBS = -ldcmsr -ldcmimage -ldcmimgle -ldcmdata -loflog -lofstd $(TIFFLIBS) \
+	$(PNGLIBS) $(XMLLIBS) $(ZLIBLIBS) $(ICONVLIBS)
 
-tstobjs = tests.o tsrtree.o tsrdoctr.o tsrdoc.o tsrcodvl.o tsrnumvl.o tsrtpl.o tsrcmr.o \
-	tsrlist.o
+tstobjs = tests.o tsrtree.o tsrdoctr.o
 objs = mkreport.o $(tstobjs)
 progs = mkreport tests
 
@@ -35,17 +33,14 @@ progs = mkreport tests
 all: $(progs)
 
 mkreport: mkreport.o
-	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ mkreport.o $(LOCALLIBS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ mkreport.o $(LOCALLIBS) $(MATHLIBS) $(LIBS)
 
 tests: $(tstobjs)
-	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $(tstobjs) $(LOCALLIBS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(LIBDIRS) $(LDFLAGS) -o $@ $(tstobjs) $(LOCALLIBS) $(MATHLIBS) $(LIBS)
 
 
 check: tests
-	DCMDICTPATH=../../dcmdata/data/dicom.dic ./tests
-
-check-exhaustive: tests
-	DCMDICTPATH=../../dcmdata/data/dicom.dic ./tests -x
+	./tests
 
 install: all
 

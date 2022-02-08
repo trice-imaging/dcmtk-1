@@ -5,7 +5,6 @@
 
 #ifndef CHARLS_LOOKUPTABLE
 #define CHARLS_LOOKUPTABLE
-#include "dcmtk/ofstd/ofdiag.h"
 
 // Tables for fast decoding of short Golomb Codes. 
 
@@ -38,15 +37,10 @@ public:
 
 	enum { cbit = 8 } ;
 
-#include DCMTK_DIAGNOSTIC_PUSH
-#include DCMTK_DIAGNOSTIC_IGNORE_CLASS_MEMACCESS_WARNING
-
 	CTable() 
 	{
 		::memset(rgtype, 0, sizeof(rgtype));
 	}
-
-#include DCMTK_DIAGNOSTIC_POP
 
 	void AddEntry(BYTE bvalue, Code c);
 	

@@ -1,8 +1,7 @@
-.TH "img2dcm" 1 "Thu Jan 14 2021" "Version 3.6.6" "OFFIS DCMTK" \" -*- nroff -*-
+.TH "img2dcm" 1 "Tue Jun 17 2014" "Version 3.6.1" "OFFIS DCMTK" \" -*- nroff -*-
 .nh
 .SH NAME
 img2dcm \- Convert standard image formats into DICOM format
-
 .SH "SYNOPSIS"
 .PP
 .PP
@@ -13,8 +12,6 @@ img2dcm [options] imgfile-in dcmfile-out
 .SH "DESCRIPTION"
 .PP
 The \fBimg2dcm\fP tool serves as a conversion tool from a standard image format like JPEG or BMP to DICOM\&. Different output SOP Classes can be selected\&. The additional information (regarding patients, series, etc\&.) stored in the DICOM output file can be extracted from other DICOM files which serve as a 'template' for the resulting DICOM object\&. \fBimg2dcm\fP can also be configured to invent missing DICOM type 1 and type 2 attributes to work even without any template dataset\&.
-.PP
-\fBimg2dcm\fP only supports single-frame output so far, i\&.e\&. it is not possible to create multi-frame objects\&. Thus, also output SOP Classes that potentially allow multiple frames within one object (such as the new Secondary Capture SOP Classes) can only be created containing a single frame\&.
 .SH "PARAMETERS"
 .PP
 .PP
@@ -225,7 +222,7 @@ With the \fI--insert-type2\fP and \fI--invent-type1\fP options (both enabled per
 .PP
 .PD 0
 .IP "\(bu" 2
-The \fI--key\fP option can be used to add further attributes to the DICOM output file\&. It is also possible to specify sequences, items and nested attributes using the \fI--key\fP option\&. In these cases, a special 'path' notation has to be used\&. Details on this path notation can be found in the documentation of \fBdcmodify\fP\&. The \fI--key\fP option can be present more than once\&. The value part (after the '=') may be absent causing the attribute to be set with zero length\&. Please be advised that the \fI--key\fP option is applied at the very end, just before saving the DICOM file, so there is no value checking whatsoever\&.
+The \fI--key\fP option can be used to add further attributes to the DICOM output file\&. This option is applied at the very end, just before saving the DICOM file\&. It is also possible to specify sequences, items and nested attributes using the \fI--key\fP option\&. In these cases, a special 'path' notation has to be used\&. Details on this path notation can be found in the documentation of \fBdcmodify\fP\&.
 .PP
 .SS "UIDs"
 New Study and Series Instance UIDs are generated \fBif necessary\fP after applying the \fI--study-from\fP and \fI--series\fP options\&. If Study Instance UID or Series Instance UID are not present after these steps, they are newly generated, independently from each other\&. A contrary behavior is chosen for the SOP Instance UID that one could expect to be taken over when using the \fI--dataset-from\fP option\&. This is \fBnot\fP the case, the SOP Instance UID is \fBnot\fP copied to the new object\&. This should be the desirable behavior for most use cases\&. However, if a certain SOP Instance UID should be inserted into the new object, the \fI--key\fP option should be used\&.
@@ -266,7 +263,7 @@ JFIF (JPEG File Interchange Format) information facilitates optional APPn marker
 .PP
 For DICOM it is kind of a 'gray zone', whether the integration of JFIF (or any other APPn) data into the DICOM object's internal JPEG stream is allowed or not\&. However, the most reliable approach is to cut those markers and their information off the JPEG stream\&. This approach is also taken by the \fBimg2dcm\fP application\&. By default, all APPn markers are cut off from the original JPEG stream\&. However, if you want to keep other APPn markers than JFIF (e\&. g\&. EXIF information) inside the DICOM stream, the option \fI--keep-appn\fP does the trick\&. It should also be slightly faster than cutting off APPn information, because it is not necessary to scan the whole JPEG stream for such data\&. JFIF information is \fBalways\fP removed by \fBimg2dcm\fP\&.
 .SS "BMP Input Plugin"
-\fBimg2dcm\fP supports BMP as input format\&. However, so far only the most common BMP images are supported\&. In particular, BMP images which use bit fields or run length encoding will be rejected\&. Such images are uncommon\&. All input images will be converted into a DICOM image with RGB color model and a bit depth of 24\&. There are no specific options for fine-tuning BMP format conversion\&.
+\fBimg2dcm\fP supports BMP as input format\&. However, so far only the most commmon BMP images are supported\&. In particular, BMP images which use bitfields or run length encoding will be rejected\&. Such images are uncommon\&. All input images will be converted into a DICOM image with RGB color model and a bit depth of 24\&. There are no specific options for fine-tuning BMP format conversion\&.
 .SS "Output Plugins"
 The desired output SOP Class can be selected on the command line\&. Currently, an export plugin for the Secondary Capture Image SOP class (default, option \fI-sc\fP), the new Secondary Capture Image SOP classes (option \fI-nsc\fP) and Visible Light Photographic Image SOP class (option \fI-vl\fP) are available\&. Please note that the first one is deprecated according to the DICOM standard but is selected as a default because it is widely supported\&. Future versions of \fBimg2dcm\fP might provide further output plugins for other SOP Classes\&.
 .PP
@@ -297,7 +294,7 @@ Same as first example, but writes Visible Light Photographic Image object to 'ou
 .IP "4." 4
 img2dcm image\&.jpg out\&.dcm --series-from template\&.dcm -k 'PatientName=Bond^James'
 .br
-Same as 1), but imports patient/study/series information from DICOM file 'template\&.dcm'\&. Please note that attribute PatientName will contain 'Bond^James' at the end, any value from 'template\&.dcm' will be overwritten\&. That is, because the -k option is applied at the very end of the conversion pipeline (see above)\&.
+Same as 1), but imports patient/study/series infomation from DICOM file 'template\&.dcm'\&. Please note that attribute PatientName will contain 'Bond^James' at the end, any value from 'template\&.dcm' will be overwritten\&. That is, because the -k option is applied at the very end of the conversion pipeline (see above)\&.
 .PP
 
 .IP "5." 4
@@ -346,4 +343,4 @@ The default behavior should be preferred and the \fIDCMDICTPATH\fP environment v
 \fBdcm2pnm\fP(1), \fBdcmj2pnm\fP(1), \fBdump2dcm\fP(1), \fBdcmconv\fP(1), \fBdcmodify\fP(1)
 .SH "COPYRIGHT"
 .PP
-Copyright (C) 2007-2021 e\&.V\&., Escherweg 2, 26121 Oldenburg, Germany\&.
+Copyright (C) 2007-2014 by OFFIS e\&.V\&., Escherweg 2, 26121 Oldenburg, Germany\&.

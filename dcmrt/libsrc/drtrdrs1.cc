@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTReferencedDoseReferenceSequenceInRTBeamsModule
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -21,8 +21,7 @@
 
 DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item::Item(const OFBool emptyDefaultItem)
   : EmptyDefaultItem(emptyDefaultItem),
-    BeamDoseVerificationControlPointSequence(emptyDefaultItem /*emptyDefaultSequence*/),
-    DepthValueAveragingFlag(DCM_DepthValueAveragingFlag),
+    CumulativeDoseReferenceCoefficient(DCM_CumulativeDoseReferenceCoefficient),
     ReferencedDoseReferenceNumber(DCM_ReferencedDoseReferenceNumber)
 {
 }
@@ -30,8 +29,7 @@ DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item::Item(const OFBool empty
 
 DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item::Item(const Item &copy)
   : EmptyDefaultItem(copy.EmptyDefaultItem),
-    BeamDoseVerificationControlPointSequence(copy.BeamDoseVerificationControlPointSequence),
-    DepthValueAveragingFlag(copy.DepthValueAveragingFlag),
+    CumulativeDoseReferenceCoefficient(copy.CumulativeDoseReferenceCoefficient),
     ReferencedDoseReferenceNumber(copy.ReferencedDoseReferenceNumber)
 {
 }
@@ -47,8 +45,7 @@ DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item &DRTReferencedDoseRefere
     if (this != &copy)
     {
         EmptyDefaultItem = copy.EmptyDefaultItem;
-        BeamDoseVerificationControlPointSequence = copy.BeamDoseVerificationControlPointSequence;
-        DepthValueAveragingFlag = copy.DepthValueAveragingFlag;
+        CumulativeDoseReferenceCoefficient = copy.CumulativeDoseReferenceCoefficient;
         ReferencedDoseReferenceNumber = copy.ReferencedDoseReferenceNumber;
     }
     return *this;
@@ -61,8 +58,7 @@ void DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item::clear()
     {
         /* clear all DICOM attributes */
         ReferencedDoseReferenceNumber.clear();
-        DepthValueAveragingFlag.clear();
-        BeamDoseVerificationControlPointSequence.clear();
+        CumulativeDoseReferenceCoefficient.clear();
     }
 }
 
@@ -70,8 +66,7 @@ void DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item::clear()
 OFBool DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item::isEmpty()
 {
     return ReferencedDoseReferenceNumber.isEmpty() &&
-           DepthValueAveragingFlag.isEmpty() &&
-           BeamDoseVerificationControlPointSequence.isEmpty();
+           CumulativeDoseReferenceCoefficient.isEmpty();
 }
 
 
@@ -88,9 +83,8 @@ OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item::read(DcmIte
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, ReferencedDoseReferenceNumber, "1", "1", "ReferencedDoseReferenceSequence");
-        getAndCheckElementFromDataset(item, DepthValueAveragingFlag, "1", "1C", "ReferencedDoseReferenceSequence");
-        BeamDoseVerificationControlPointSequence.read(item, "1-n", "1", "ReferencedDoseReferenceSequence");
+        getAndCheckElementFromDataset(item, ReferencedDoseReferenceNumber, "1", "1C", "ReferencedDoseReferenceSequence");
+        getAndCheckElementFromDataset(item, CumulativeDoseReferenceCoefficient, "1", "2C", "ReferencedDoseReferenceSequence");
         result = EC_Normal;
     }
     return result;
@@ -103,20 +97,28 @@ OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item::write(DcmIt
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmIntegerString(ReferencedDoseReferenceNumber), "1", "1", "ReferencedDoseReferenceSequence");
-        addElementToDataset(result, item, new DcmCodeString(DepthValueAveragingFlag), "1", "1C", "ReferencedDoseReferenceSequence");
-        if (result.good()) result = BeamDoseVerificationControlPointSequence.write(item, "1-n", "1", "ReferencedDoseReferenceSequence");
+        addElementToDataset(result, item, new DcmIntegerString(ReferencedDoseReferenceNumber), "1", "1C", "ReferencedDoseReferenceSequence");
+        addElementToDataset(result, item, new DcmDecimalString(CumulativeDoseReferenceCoefficient), "1", "2C", "ReferencedDoseReferenceSequence");
     }
     return result;
 }
 
 
-OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item::getDepthValueAveragingFlag(OFString &value, const signed long pos) const
+OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item::getCumulativeDoseReferenceCoefficient(OFString &value, const signed long pos) const
 {
     if (EmptyDefaultItem)
         return EC_IllegalCall;
     else
-        return getStringValueFromElement(DepthValueAveragingFlag, value, pos);
+        return getStringValueFromElement(CumulativeDoseReferenceCoefficient, value, pos);
+}
+
+
+OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item::getCumulativeDoseReferenceCoefficient(Float64 &value, const unsigned long pos) const
+{
+    if (EmptyDefaultItem)
+        return EC_IllegalCall;
+    else
+        return OFconst_cast(DcmDecimalString &, CumulativeDoseReferenceCoefficient).getFloat64(value, pos);
 }
 
 
@@ -138,14 +140,14 @@ OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item::getReferenc
 }
 
 
-OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item::setDepthValueAveragingFlag(const OFString &value, const OFBool check)
+OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item::setCumulativeDoseReferenceCoefficient(const OFString &value, const OFBool check)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultItem)
     {
-        result = (check) ? DcmCodeString::checkStringValue(value, "1") : EC_Normal;
+        result = (check) ? DcmDecimalString::checkStringValue(value, "1") : EC_Normal;
         if (result.good())
-            result = DepthValueAveragingFlag.putOFStringArray(value);
+            result = CumulativeDoseReferenceCoefficient.putOFStringArray(value);
     }
     return result;
 }
@@ -267,7 +269,7 @@ OFBool DRTReferencedDoseReferenceSequenceInRTBeamsModule::isValid() const
 }
 
 
-size_t DRTReferencedDoseReferenceSequenceInRTBeamsModule::getNumberOfItems() const
+unsigned long DRTReferencedDoseReferenceSequenceInRTBeamsModule::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -297,12 +299,12 @@ OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::gotoNextItem()
 }
 
 
-OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -317,12 +319,12 @@ OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::gotoItem(const si
 }
 
 
-OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -337,7 +339,7 @@ OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::gotoItem(const si
 }
 
 
-OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::gotoItem(const size_t num)
+OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -373,7 +375,7 @@ const DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item &DRTReferencedDose
 }
 
 
-OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::getItem(const size_t num, Item *&item)
+OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -383,7 +385,7 @@ OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::getItem(const siz
 }
 
 
-DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item &DRTReferencedDoseReferenceSequenceInRTBeamsModule::getItem(const size_t num)
+DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item &DRTReferencedDoseReferenceSequenceInRTBeamsModule::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -393,7 +395,7 @@ DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item &DRTReferencedDoseRefere
 }
 
 
-const DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item &DRTReferencedDoseReferenceSequenceInRTBeamsModule::getItem(const size_t num) const
+const DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item &DRTReferencedDoseReferenceSequenceInRTBeamsModule::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -403,13 +405,13 @@ const DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item &DRTReferencedDose
 }
 
 
-DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item &DRTReferencedDoseReferenceSequenceInRTBeamsModule::operator[](const size_t num)
+DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item &DRTReferencedDoseReferenceSequenceInRTBeamsModule::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item &DRTReferencedDoseReferenceSequenceInRTBeamsModule::operator[](const size_t num) const
+const DRTReferencedDoseReferenceSequenceInRTBeamsModule::Item &DRTReferencedDoseReferenceSequenceInRTBeamsModule::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -432,7 +434,7 @@ OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::addItem(Item *&it
 }
 
 
-OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::insertItem(const size_t pos, Item *&item)
+OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -455,7 +457,7 @@ OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::insertItem(const 
 }
 
 
-OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::removeItem(const size_t pos)
+OFCondition DRTReferencedDoseReferenceSequenceInRTBeamsModule::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

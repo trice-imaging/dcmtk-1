@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2018, OFFIS e.V.
+ *  Copyright (C) 1994-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -64,16 +64,14 @@ const unsigned short ASCC_NULLKEY                        = 0x106;
 const unsigned short ASCC_SHUTDOWNAPPLICATION            = 0x107;
 const unsigned short ASCC_USERIDENTIFICATIONFAILED       = 0x108;
 const unsigned short ASCC_SCPSCUROLESELECTIONFAILED      = 0x109;
-const unsigned short ASCC_NOPRESENTATIONCONTEXTPROPOSED  = 0x110;
 
 // condition constants used in the association module
-extern DCMTK_DCMNET_EXPORT const OFConditionConst ASC_BADPRESENTATIONCONTEXTID;      /* Bad presentation context ID */
-extern DCMTK_DCMNET_EXPORT const OFConditionConst ASC_MISSINGTRANSFERSYNTAX;         /* Missing transfer syntax */
-extern DCMTK_DCMNET_EXPORT const OFConditionConst ASC_NULLKEY;                       /* Caller passed in a NULL key */
-extern DCMTK_DCMNET_EXPORT const OFConditionConst ASC_SHUTDOWNAPPLICATION;           /* Peer requested application shutdown */
-extern DCMTK_DCMNET_EXPORT const OFConditionConst ASC_USERIDENTIFICATIONFAILED;      /* User Identity Negotiation failed */
-extern DCMTK_DCMNET_EXPORT const OFConditionConst ASC_SCPSCUROLESELECTIONFAILED;     /* SCP/SCU role selection failed */
-extern DCMTK_DCMNET_EXPORT const OFConditionConst ASC_NOPRESENTATIONCONTEXTPROPOSED; /* No presentation context proposed */
+extern DCMTK_DCMNET_EXPORT const OFConditionConst ASC_BADPRESENTATIONCONTEXTID;   /* Bad presentation context ID */
+extern DCMTK_DCMNET_EXPORT const OFConditionConst ASC_MISSINGTRANSFERSYNTAX;      /* Missing transfer syntax */
+extern DCMTK_DCMNET_EXPORT const OFConditionConst ASC_NULLKEY;                    /* Caller passed in a NULL key */
+extern DCMTK_DCMNET_EXPORT const OFConditionConst ASC_SHUTDOWNAPPLICATION;        /* Peer requested application shutdown */
+extern DCMTK_DCMNET_EXPORT const OFConditionConst ASC_USERIDENTIFICATIONFAILED;   /* User Identity Negotiation failed */
+extern DCMTK_DCMNET_EXPORT const OFConditionConst ASC_SCPSCUROLESELECTIONFAILED;  /* SCP/SCU role selection failed */
 
 // condition code constants used in the DIMSE module
 const unsigned short DIMSEC_BADCOMMANDTYPE               = 0x201;
@@ -152,7 +150,6 @@ const unsigned short DULC_TCPWRAPPER                       = 0x324;
 const unsigned short DULC_FORKEDCHILD                      = 0x325;
 const unsigned short DULC_CANNOTFORK                       = 0x326;
 const unsigned short DULC_ILLEGALREJECTSOURCE              = 0x327;
-const unsigned short DULC_CANNOTREADSOCKETHANDLE         = 0x328;
 
 // condition constants used in the DUL module
 extern DCMTK_DCMNET_EXPORT const OFConditionConst DUL_ASSOCIATIONREJECTED;       /* DUL Association Rejected */
@@ -177,7 +174,6 @@ extern DCMTK_DCMNET_EXPORT const OFConditionConst DUL_REQUESTASSOCIATIONFAILED; 
 extern DCMTK_DCMNET_EXPORT const OFConditionConst DUL_UNEXPECTEDPDU;             /* Received unexpected PDU */
 extern DCMTK_DCMNET_EXPORT const OFConditionConst DUL_UNSUPPORTEDPEERPROTOCOL;   /* DUL Unsupported peer protocol */
 extern DCMTK_DCMNET_EXPORT const OFConditionConst DUL_WRONGDATATYPE;             /* DUL Wrong Data Type Specified for Request */
-extern DCMTK_DCMNET_EXPORT const OFConditionConst DUL_CANNOTREADSOCKETHANDLE;    /* Cannot read socket handle from pipe */
 
 // other condition constants used in the network module (codes 1000 to 1023)
 extern DCMTK_DCMNET_EXPORT const OFConditionConst NET_EC_InvalidSOPClassUID;               /* Invalid SOP Class UID */
@@ -195,10 +191,6 @@ extern DCMTK_DCMNET_EXPORT const OFConditionConst NET_EC_InsufficientPortPrivile
 // codes 1024 to 1073 are used for the association negotiation profile classes
 extern DCMTK_DCMNET_EXPORT const OFConditionConst NET_EC_SCPBusy;                          /* SCP is busy */
 extern DCMTK_DCMNET_EXPORT const OFConditionConst NET_EC_CannotStartSCPThread;             /* Cannot start SCP thread */
-extern DCMTK_DCMNET_EXPORT const OFConditionConst NET_EC_StopAfterAssociation;             /* Stop after current association (as requested) */
-extern DCMTK_DCMNET_EXPORT const OFConditionConst NET_EC_StopAfterConnectionTimeout;       /* Stop after TCP connection timeout (as requested) */
-extern DCMTK_DCMNET_EXPORT const OFConditionConst NET_EC_InvalidSCPAssociationProfile;     /* Invalid or non-existing SCP Association Profile */
-extern DCMTK_DCMNET_EXPORT const OFConditionConst NET_EC_AssociatePDUTooLarge;             /* A-ASSOCIATE PDU too large */
 
 // This macro creates a condition with given code, severity and text.
 // Making this a macro instead of a function saves the creation of a temporary.

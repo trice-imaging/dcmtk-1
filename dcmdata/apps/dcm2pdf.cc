@@ -1,6 +1,7 @@
+#define TRICE 1
 /*
  *
- *  Copyright (C) 2007-2021, OFFIS e.V.
+ *  Copyright (C) 2007-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,6 +21,11 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
 
 BEGIN_EXTERN_C
 #ifdef HAVE_FCNTL_H
@@ -134,11 +140,15 @@ int main(int argc, char *argv[])
       cmd.addOption("--bitstream-deflated", "+bd",    "expect deflated bitstream (default)");
       cmd.addOption("--bitstream-zlib",     "+bz",    "expect deflated zlib bitstream");
 #endif
+    cmd.addGroup("execution options:", LONGCOL, SHORTCOL + 2);
+      cmd.addOption("--exec",                "-x",  1, "[c]ommand: string",
+                                                        "execute command c after PDF extraction");
+#ifdef TRICE
+     cmd.addSubGroup("trice options:");
+       cmd.addOption("--dict-path",         "-dp",  1, "[p]ath: string", "complete path (including file name) for dicom.dic");
+#endif
 
-   cmd.addGroup("execution options:", LONGCOL, SHORTCOL + 2);
-     cmd.addOption("--exec",                "-x",  1, "[c]ommand: string",
-                                                      "execute command c after PDF extraction");
-    /* evaluate command line */
+       /* evaluate command line */
     prepareCmdLineArgs(argc, argv, OFFIS_CONSOLE_APPLICATION);
     if (app.parseCommandLine(cmd, argc, argv))
     {
@@ -255,6 +265,20 @@ int main(int argc, char *argv[])
     /* print resource identifier */
     OFLOG_DEBUG(dcm2pdfLogger, rcsid << OFendl);
 
+#ifdef TRICE
+    static const char* dicomPath;
+    if (cmd.findOption("--dict-path"))
+    {    app.checkValue(cmd.getValue(dicomPath));
+#ifndef __windows__
+         (void)setenv("DCMDICTPATH", dicomPath, 1);
+#else
+         char* envStr = (char*)malloc(strlen(dicomPath)+32);
+         sprintf(envStr, "DCMDICTPATH=%s", dicomPath);
+         (void)putenv(envStr);
+#endif
+    }
+#endif
+
     /* make sure data dictionary is loaded */
     if (!dcmDataDict.isDictionaryLoaded())
     {
@@ -308,12 +332,10 @@ int main(int argc, char *argv[])
     }
 
     /* strip pad byte at end of file, if there is one. The PDF format expects
-     * files to end with %%EOF followed by CR/LF (although in some cases the
-     * CR/LF may be missing or you might only find CR or LF).
-     * If the last character of the file is not a CR or LF, and not the
-     * letter 'F', we assume it is either trailing garbage or a pad byte, and remove it.
+     * files to end with %%EOF followed by CR/LF. If the last character of the
+     * file is not a CR or LF, we assume it is a pad byte and remove it.
      */
-    if (pdfDocument[len-1] != 10 && pdfDocument[len-1] != 13 && pdfDocument[len-1] != 'F')
+    if (pdfDocument[len-1] != 10 && pdfDocument[len-1] != 13)
     {
         --len;
     }

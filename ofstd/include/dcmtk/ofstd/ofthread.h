@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1997-2018, OFFIS e.V.
+ *  Copyright (C) 1997-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -251,6 +251,14 @@ private:
   OFThreadSpecificData& operator=(const OFThreadSpecificData& arg);
 };
 
+
+/* Mac OS X only permits named Semaphores. The code below compiles on Mac OS X
+   but does not work. This will be corrected in the next snapshot. For now, the
+   semaphore code is completely disabled for that OS (it is not used in other
+   parts of the toolkit so far.
+ */
+#ifndef _DARWIN_C_SOURCE
+
 /** provides an operating system independent abstraction for semaphores.
  *  A semaphore is a non-negative integer counter that is used
  *  to coordinate access to resources. The initial and maximum value of the counter
@@ -322,6 +330,9 @@ private:
   /** unimplemented private assignment operator */
   OFSemaphore& operator=(const OFSemaphore& arg);
 };
+
+
+#endif // _DARWIN_C_SOURCE
 
 /** provides an operating system independent abstraction for mutexes
  *  (mutual exclusion locks).
@@ -451,23 +462,14 @@ public:
    */
   int trywrlock();
 
-  /** unlocks the read lock. The read/write lock must be locked and
+  /** unlocks the read/write lock. The read/write lock must be locked and
    *  the calling thread must be the owner of the lock, otherwise the
    *  behaviour is undefined. One of the other threads that is waiting for
    *  the read/write lock to be freed will be unblocked, provided there are
    *  other waiting threads.
    *  @return 0 upon success, an error code otherwise.
    */
-  int rdunlock();
-
-  /** unlocks the write lock. The read/write lock must be locked and
-   *  the calling thread must be the owner of the lock, otherwise the
-   *  behaviour is undefined. One of the other threads that is waiting for
-   *  the read/write lock to be freed will be unblocked, provided there are
-   *  other waiting threads.
-   *  @return 0 upon success, an error code otherwise.
-   */
-  int wrunlock();
+  int unlock();
 
   /** converts any of the error codes returned by the methods of this class
    *  into a textual description, which is written into the string object.
@@ -538,7 +540,7 @@ public:
    */
   int trywrlock();
 
-  /** unlock the read/write lock
+  /** unlock the lock
    *  @return 0 upon success, an error code otherwise
    *  @see OFReadWriteLock::unlock
    */
@@ -550,9 +552,6 @@ private:
 
   /** did we successfully lock the lock? */
   OFBool locked;
-
-  /** did we acquire a write lock? */
-  OFBool isWriteLock;
 
   /** unimplemented private copy constructor */
   OFReadWriteLocker(const OFReadWriteLocker& arg);

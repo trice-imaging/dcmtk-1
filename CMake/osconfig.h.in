@@ -53,16 +53,6 @@
 /* Define the default data dictionary path for the dcmdata library package */
 #define DCM_DICT_DEFAULT_PATH "@DCM_DICT_DEFAULT_PATH@"
 
-/* Define the type of standard dictionary that we want to use:
-   0 - Do not load any default dictionary on startup
-   1 - Load builtin dictionary on startup
-   2 - Load external (i.e. file-based) dictionary on startup
-*/
-#define DCM_DICT_DEFAULT @DCM_DICT_DEFAULT@
-
-/* Define whether dictionaries defined through DCMDICTPATH variable should be loaded */
-#cmakedefine DCM_DICT_USE_DCMDICTPATH @DCM_DICT_USE_DCMDICTPATH@
-
 /* Define the environment variable path separator */
 #define ENVIRONMENT_PATH_SEPARATOR '@ENVIRONMENT_PATH_SEPARATOR@'
 
@@ -90,6 +80,9 @@
 /* Define to 1 if you have the `bind' function. */
 #cmakedefine HAVE_BIND @HAVE_BIND@
 
+/* Define to 1 if you have the `bzero' function. */
+#cmakedefine HAVE_BZERO @HAVE_BZERO@
+
 /* Define if your C++ compiler can work with class templates */
 #define HAVE_CLASS_TEMPLATE 1
 
@@ -105,14 +98,14 @@
 /* Define to 1 if you have the `cuserid' function. */
 #cmakedefine HAVE_CUSERID @HAVE_CUSERID@
 
+/* Define if bool is a built-in type */
+#cmakedefine HAVE_CXX_BOOL @HAVE_CXX_BOOL@
+
 /* Define if volatile is a known keyword */
 #define HAVE_CXX_VOLATILE 1
 
 /* Define if "const" is supported by the C compiler */
 #define HAVE_C_CONST 1
-
-/* Define if your system has a declaration for fp_except_t in ieeefp.h */
-#cmakedefine HAVE_DECLARATION_FP_EXCEPT_T @HAVE_DECLARATION_FP_EXCEPT_T@
 
 /* Define if your system has a declaration for socklen_t in sys/types.h
    sys/socket.h */
@@ -217,26 +210,17 @@
 /* Define to 1 if you have the `getlogin' function. */
 #cmakedefine HAVE_GETLOGIN @HAVE_GETLOGIN@
 
-/* Define to 1 if you have the `getlogin_r' function. */
-#cmakedefine HAVE_GETLOGIN_R @HAVE_GETLOGIN_R@
-
 /* Define to 1 if you have the `getpid' function. */
 #cmakedefine HAVE_GETPID @HAVE_GETPID@
 
 /* Define to 1 if you have the `getpwnam' function. */
 #cmakedefine HAVE_GETPWNAM @HAVE_GETPWNAM@
 
-/* Define to 1 if you have the `getrusage' function. */
-#cmakedefine HAVE_GETRUSAGE @HAVE_GETRUSAGE@
-
 /* Define to 1 if you have the `getsockname' function. */
 #cmakedefine HAVE_GETSOCKNAME @HAVE_GETSOCKNAME@
 
 /* Define to 1 if you have the `getsockopt' function. */
 #cmakedefine HAVE_GETSOCKOPT @HAVE_GETSOCKOPT@
-
-/* Define to 1 if you have the `gettimeofday' function. */
-#cmakedefine HAVE_GETTIMEOFDAY @HAVE_GETTIMEOFDAY@
 
 /* Define to 1 if you have the `getuid' function. */
 #cmakedefine HAVE_GETUID @HAVE_GETUID@
@@ -307,11 +291,16 @@
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #cmakedefine HAVE_LIBNSL @HAVE_LIBNSL@
 
-/* Define to 1 if the <libpng/png.h> header shall be used instead of <png.h>. */
-#cmakedefine HAVE_LIBPNG_PNG_H @HAVE_LIBPNG_PNG_H@
+/* Define to 1 if you have the <libpng/png.h> header file. */
+/* Comment this out so inside dipipng.cxx we can include <png.h> */
+/* instead of <libpng/png.h> KW 20060622 */
+/* #cmakedefine HAVE_LIBPNG_PNG_H @HAVE_LIBPNG_PNG_H@ */
 
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #cmakedefine HAVE_LIBSOCKET @HAVE_LIBSOCKET@
+
+/* Define if libtiff supports LZW compression */
+#define HAVE_LIBTIFF_LZW_COMPRESSION 1
 
 /* Define to 1 if you have the <limits.h> header file. */
 #cmakedefine HAVE_LIMITS_H @HAVE_LIMITS_H@
@@ -345,9 +334,6 @@
 
 /* Define to 1 if you have the <math.h> header file. */
 #cmakedefine HAVE_MATH_H @HAVE_MATH_H@
-
-/* Define to 1 if you have the <cmath> header file. */
-#cmakedefine HAVE_CMATH @HAVE_CMATH@
 
 /* Define to 1 if you have the `mbstowcs' function. */
 #cmakedefine HAVE_MBSTOWCS @HAVE_MBSTOWCS@
@@ -391,25 +377,10 @@
 /* Define to 1 if you have the <new.h> header file. */
 #cmakedefine HAVE_NEW_H @HAVE_NEW_H@
 
-/* Define to 1 if you have the <fenv.h> header file. */
-#cmakedefine HAVE_FENV_H @HAVE_FENV_H@
-
-/* Define to 1 if you have the <sys/systeminfo.h> header file. */
-#cmakedefine HAVE_SYS_SYSTEMINFO_H @HAVE_SYS_SYSTEMINFO_H@
-
-/* Define to 1 if you have the <iterator> header file. */
-#cmakedefine HAVE_ITERATOR_HEADER @HAVE_ITERATOR_HEADER@
-
-/* Define to 1 if you have readdir_r */
-#cmakedefine HAVE_READDIR_R @HAVE_READDIR_R@
-
 /* Define if your system supports readdir_r with the obsolete Posix 1.c draft
    6 declaration (2 arguments) instead of the Posix 1.c declaration with 3
    arguments. */
-#cmakedefine HAVE_OLD_READDIR_R @HAVE_OLD_READDIR_R@
-
-/* Define if your system has a prototype for feenableexcept in fenv.h */
-#cmakedefine HAVE_PROTOTYPE_FEENABLEEXCEPT @HAVE_PROTOTYPE_FEENABLEEXCEPT@
+/* #undef HAVE_OLD_READDIR_R */
 
 /* Define if your system has a prototype for accept in sys/types.h
    sys/socket.h */
@@ -418,18 +389,16 @@
 /* Define if your system has a prototype for bind in sys/types.h sys/socket.h */
 #cmakedefine HAVE_PROTOTYPE_BIND @HAVE_PROTOTYPE_BIND@
 
+/* Define if your system has a prototype for bzero in string.h strings.h
+   libc.h unistd.h stdlib.h */
+#cmakedefine HAVE_PROTOTYPE_BZERO @HAVE_PROTOTYPE_BZERO@
+
 /* Define if your system has a prototype for connect in sys/types.h
    sys/socket.h */
 #cmakedefine HAVE_PROTOTYPE_CONNECT @HAVE_PROTOTYPE_CONNECT@
 
 /* Define if your system has a prototype for finite in math.h */
 #cmakedefine HAVE_PROTOTYPE_FINITE @HAVE_PROTOTYPE_FINITE@
-
-/* Define to 1 if your has a prototype for `TryAcquireSRWLockShared' in windows.h (Win32 only). */
-#cmakedefine HAVE_PROTOTYPE_TRYACQUIRESRWLOCKSHARED @HAVE_PROTOTYPE_TRYACQUIRESRWLOCKSHARED@
-
-/* Define if your system has a prototype for std::finite in cmath */
-#cmakedefine HAVE_PROTOTYPE_STD__FINITE @HAVE_PROTOTYPE_STD__FINITE@
 
 /* Define if your system has a prototype for flock in sys/file.h */
 #cmakedefine HAVE_PROTOTYPE_FLOCK @HAVE_PROTOTYPE_FLOCK@
@@ -441,10 +410,6 @@
 /* Define if your system has a prototype for gethostbyname_r in libc.h unistd.h
    stdlib.h netdb.h */
 #cmakedefine HAVE_PROTOTYPE_GETHOSTBYNAME_R @HAVE_PROTOTYPE_GETHOSTBYNAME_R@
-
-/* Define if your system has a prototype for gethostbyaddr_r in libc.h unistd.h
-   stdlib.h netdb.h */
-#cmakedefine HAVE_PROTOTYPE_GETHOSTBYADDR_R @HAVE_PROTOTYPE_GETHOSTBYADDR_R@
 
 /* Define if your system has a prototype for gethostid in libc.h unistd.h
    stdlib.h netdb.h */
@@ -471,15 +436,6 @@
 
 /* Define if your system has a prototype for isnan in math.h */
 #cmakedefine HAVE_PROTOTYPE_ISNAN @HAVE_PROTOTYPE_ISNAN@
-
-/* Define if your system has a prototype for std::isinf in cmath */
-#cmakedefine HAVE_PROTOTYPE_STD__ISINF @HAVE_PROTOTYPE_STD__ISINF@
-
-/* Define if your system has a prototype for std::isnan in cmath */
-#cmakedefine HAVE_PROTOTYPE_STD__ISNAN @HAVE_PROTOTYPE_STD__ISNAN@
-
-/* Define if your system has a prototype for fpclassf in math.h */
-#cmakedefine HAVE_PROTOTYPE__FPCLASSF @HAVE_PROTOTYPE__FPCLASSF@
 
 /* Define if your system has a prototype for listen in sys/types.h
   sys/socket.h */
@@ -519,9 +475,6 @@
 
 /* Define if your system has a prototype for strerror_r in string.h */
 #cmakedefine HAVE_PROTOTYPE_STRERROR_R @HAVE_PROTOTYPE_STRERROR_R@
-
-/* Define if your system has a prototype for gettid */
-#cmakedefine HAVE_SYS_GETTID @HAVE_SYS_GETTID@
 
 /* Define if your system has a prototype for usleep in libc.h unistd.h
    stdlib.h */
@@ -644,9 +597,6 @@
 /* Define to 1 if `strerror_r' returns a char*. */
 #cmakedefine HAVE_CHARP_STRERROR_R @HAVE_CHARP_STRERROR_R@
 
-/* Define to 1 if you have the <streambuf.h> header file. */
-#cmakedefine HAVE_STREAMBUF_H @HAVE_STREAMBUF_H@
-
 /* Define to 1 if you have the <strings.h> header file. */
 #cmakedefine HAVE_STRINGS_H @HAVE_STRINGS_H@
 
@@ -688,9 +638,6 @@
 
 /* Define if InterlockedDecrement is available */
 #cmakedefine HAVE_INTERLOCKED_DECREMENT @HAVE_INTERLOCKED_DECREMENT@
-
-/* Define if passwd::pw_gecos is available */
-#cmakedefine HAVE_PASSWD_GECOS @HAVE_PASSWD_GECOS@
 
 /* Define to 1 if you have the `sysinfo' function. */
 #cmakedefine HAVE_SYSINFO @HAVE_SYSINFO@
@@ -821,11 +768,8 @@
 /* Define to 1 if you have the `nanosleep' function. */
 #cmakedefine HAVE_NANOSLEEP @HAVE_NANOSLEEP@
 
-/* Define if libc.h should be treated as a C++ header */
-#cmakedefine INCLUDE_LIBC_H_AS_CXX @INCLUDE_LIBC_H_AS_CXX@
-
 /* Define if <math.h> fails if included extern "C" */
-#cmakedefine INCLUDE_MATH_H_AS_CXX @INCLUDE_MATH_H_AS_CXX@
+#define INCLUDE_MATH_H_AS_CXX 1
 
 /* Define to 1 if you have variable length arrays. */
 #cmakedefine HAVE_VLA @HAVE_VLA@
@@ -869,12 +813,16 @@
 /* Define if signal handlers need ellipse (...) parameters */
 /* #undef SIGNAL_HANDLER_WITH_ELLIPSE */
 
-/* LFS mode constants. */
-#define DCMTK_LFS 1
-#define DCMTK_LFS64 2
+/* Define to enable LFS64 (explicit large file support) if available*/
+#cmakedefine _LARGEFILE64_SOURCE @_LARGEFILE64_SOURCE@
 
-/* Select LFS mode (defined above) that shall be used or don't define it */
-#cmakedefine DCMTK_ENABLE_LFS @DCMTK_LFS_MODE@
+/* Explicitly request large file support, assuming it exists if fseeko() exists */
+#if defined(HAVE_FSEEKO) && !defined(_LARGEFILE_SOURCE)
+#define _LARGEFILE_SOURCE 1
+#endif
+#if defined(_LARGEFILE_SOURCE) && !defined(_FILE_OFFSET_BITS)
+#define _FILE_OFFSET_BITS 64
+#endif
 
 /* The size of a `char', as computed by sizeof. */
 #cmakedefine SIZEOF_CHAR @SIZEOF_CHAR@
@@ -897,43 +845,20 @@
 /* The size of a `void *', as computed by sizeof. */
 #cmakedefine SIZEOF_VOID_P @SIZEOF_VOID_P@
 
-/* The size of a `fpos_t', as computed by sizeof. */
-#cmakedefine SIZEOF_FPOS_T @SIZEOF_FPOS_T@
-
-/* The size of a `off_t', as computed by sizeof. */
-#cmakedefine SIZEOF_OFF_T @SIZEOF_OFF_T@
-
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 /* #undef TM_IN_SYS_TIME */
 
+/* Define if ANSI standard C++ includes are used */
+#cmakedefine USE_STD_CXX_INCLUDES
+
 /* Define if we are compiling with libiconv support. */
 #cmakedefine WITH_LIBICONV
 
-/* Define if the C standard library has iconv builtin. */
-#cmakedefine WITH_STDLIBC_ICONV
-
-/* Define if we are compiling with ICU support. */
-#cmakedefine WITH_ICU
-
-/* character set conversion constants. */
-#define DCMTK_CHARSET_CONVERSION_ICU 1
-#define DCMTK_CHARSET_CONVERSION_ICONV 2
-#define DCMTK_CHARSET_CONVERSION_STDLIBC_ICONV 3
-
-/* Define to select character set conversion implementation. */
-#cmakedefine DCMTK_ENABLE_CHARSET_CONVERSION @DCMTK_ENABLE_CHARSET_CONVERSION@
-
 /* Define if the second argument to iconv() is const */
 #cmakedefine LIBICONV_SECOND_ARGUMENT_CONST @LIBICONV_SECOND_ARGUMENT_CONST@
-
-/* Try to define the iconv behavior as conversion flags */
-#cmakedefine DCMTK_FIXED_ICONV_CONVERSION_FLAGS @DCMTK_FIXED_ICONV_CONVERSION_FLAGS@
-
-/* Define if iconv_open() accepts "" as an argument */
-#cmakedefine DCMTK_STDLIBC_ICONV_HAS_DEFAULT_ENCODING @DCMTK_STDLIBC_ICONV_HAS_DEFAULT_ENCODING@
 
 /* Define if we are compiling with libpng support */
 #cmakedefine WITH_LIBPNG
@@ -944,14 +869,11 @@
 /* Define if we are compiling with libxml support */
 #cmakedefine WITH_LIBXML
 
-/* Define if we are compiling with OpenJPEG support */
-#cmakedefine WITH_OPENJPEG
-
 /* Define if we are compiling with OpenSSL support */
 #cmakedefine WITH_OPENSSL
 
 /* Define if we are compiling for built-in private tag dictionary */
-#cmakedefine ENABLE_PRIVATE_TAGS
+#cmakedefine WITH_PRIVATE_TAGS
 
 /* Define if we are compiling with sndfile support. */
 #cmakedefine WITH_SNDFILE
@@ -1026,9 +948,6 @@ typedef unsigned long ulong;
 #cmakedefine HAVE_LONGLONG
 #cmakedefine HAVE_ULONGLONG
 
-#cmakedefine HAVE_INT64_T @HAVE_INT64_T@
-#cmakedefine HAVE_UINT64_T @HAVE_UINT64_T@
-
  /* Additional settings for Borland C++ Builder */
 #ifdef __BORLANDC__
 #define _stricmp stricmp    /* _stricmp in MSVC is stricmp in Borland C++ */
@@ -1042,6 +961,7 @@ typedef unsigned long ulong;
 #endif
 #define HAVE_PROTOTYPE_MKTEMP 1
 #undef HAVE_SYS_UTIME_H
+#define NO_IOS_BASE_ASSIGN 1
 #define _MSC_VER 1200       /* Treat Borland C++ 5.5 as MSVC6. */
 #endif /* __BORLANDC__ */
 
@@ -1065,10 +985,10 @@ typedef unsigned long ulong;
 
     #pragma warning( disable : 4251 )  /* disable warnings about needed dll-interface */
                                        /* http://www.unknownroad.com/rtfm/VisualStudio/warningC4251.html */
-    #pragma warning( disable : 4099 )  /* disable warning about mismatched class and struct keywords */
+    #pragma warning( disable: 4099 )   /* disable warning about mismatched class and struct keywords */
                                        /* http://alfps.wordpress.com/2010/06/22/cppx-is-c4099-really-a-sillywarning-disabling-msvc-sillywarnings */
-    #pragma warning( disable : 4521 )  /* disable warnings about multiple copy constructors and assignment operators,*/
-    #pragma warning( disable : 4522 )  /* since these are sometimes necessary for correct overload resolution*/
+    #pragma warning( disable: 4521 )   /* disable warnings about multiple copy constructors and assignment operators,*/
+    #pragma warning( disable: 4522 )   /* since these are sometimes necessary for correct overload resolution*/
 
 #if _MSC_VER >= 1400                   /* Additional settings for Visual Studio 2005 and newer */
     #pragma warning( disable : 4996 )  /* disable warnings about "deprecated" C runtime functions */
@@ -1079,267 +999,59 @@ typedef unsigned long ulong;
 /* Define if your system defines ios::nocreate in iostream.h */
 #cmakedefine HAVE_IOS_NOCREATE @HAVE_IOS_NOCREATE@
 
+#ifdef USE_STD_CXX_INCLUDES
+
 /* Define if ANSI standard C++ includes use std namespace */
-#cmakedefine HAVE_STD_NAMESPACE @HAVE_STD_NAMESPACE@
+#define HAVE_STD_NAMESPACE 1
+
+/* Define if it is not possible to assign stream objects */
+#define NO_IOS_BASE_ASSIGN 1
 
 /* Define if the compiler supports std::nothrow */
-#cmakedefine HAVE_STD__NOTHROW @HAVE_STD__NOTHROW@
+#define HAVE_STD__NOTHROW 1
+
+/* Define if the compiler supports operator delete (std::nothrow).
+ * Microsoft Visual C++ 6.0 does NOT have it, newer versions do.
+ * For other compilers, by default assume that it exists.
+ */
+#if defined(_MSC_VER) && (_MSC_VER <= 1200)
+/* #undef HAVE_NOTHROW_DELETE */
+#else
+#define HAVE_NOTHROW_DELETE 1
+#endif
+
+/* Define if your system has a prototype for std::vfprintf in stdarg.h */
+/* #undef HAVE_PROTOTYPE_STD__VFPRINTF */
+
+#else
+
+/* Define if ANSI standard C++ includes use std namespace */
+/* #undef HAVE_STD_NAMESPACE */
+
+/* Define if it is not possible to assign stream objects */
+/* #undef NO_IOS_BASE_ASSIGN */
+
+/* Define if the compiler supports std::nothrow */
+/* #undef HAVE_STD__NOTHROW */
 
 /* Define if the compiler supports operator delete (std::nothrow) */
-#cmakedefine HAVE_NOTHROW_DELETE @HAVE_NOTHROW_DELETE@
-
-/* Define if the compiler supports static_assert */
-#cmakedefine HAVE_STATIC_ASSERT @HAVE_STATIC_ASSERT@
-
-/* Define if the compiler supports [[deprecated]] */
-#cmakedefine HAVE_CXX14_DEPRECATED_ATTRIBUTE @HAVE_CXX14_DEPRECATED_ATTRIBUTE@
-
-/* Define if the compiler supports [[deprecated("message")]] */
-#cmakedefine HAVE_CXX14_DEPRECATED_ATTRIBUTE_MSG @HAVE_CXX14_DEPRECATED_ATTRIBUTE_MSG@
-
-/* Define if the compiler supports __attribute__((deprecated)) */
-#cmakedefine HAVE_ATTRIBUTE_DEPRECATED @HAVE_ATTRIBUTE_DEPRECATED@
-
-/* Define if the compiler supports __attribute__((deprecated("message"))) */
-#cmakedefine HAVE_ATTRIBUTE_DEPRECATED_MSG @HAVE_ATTRIBUTE_DEPRECATED_MSG@
-
-/* Define if the compiler supports __declspec(deprecated) */
-#cmakedefine HAVE_DECLSPEC_DEPRECATED @HAVE_DECLSPEC_DEPRECATED@
-
-/* Define if the compiler supports __declspec(deprecated("message")) */
-#cmakedefine HAVE_DECLSPEC_DEPRECATED_MSG @HAVE_DECLSPEC_DEPRECATED_MSG@
+/* #undef HAVE_NOTHROW_DELETE */
 
 /* Define if your system has a prototype for std::vfprintf in stdarg.h */
 #cmakedefine HAVE_PROTOTYPE_STD__VFPRINTF @HAVE_PROTOTYPE_STD__VFPRINTF@
 
-/* Define if your system has off64_t */
-#cmakedefine HAVE_OFF64_T @HAVE_OFF64_T@
-
-/* Define if your system has fpos64_t */
-#cmakedefine HAVE_FPOS64_T @HAVE_FPOS64_T@
-
-/* Define if your system uses _popen instead of popen */
-#cmakedefine HAVE_POPEN @HAVE_POPEN@
-
-/* Define if your system uses _pclose instead of pclose */
-#cmakedefine HAVE_PCLOSE @HAVE_PCLOSE@
-
-/* Define if your system provides sigjmp_buf as conditional jmp_buf alternative */
-#cmakedefine HAVE_SIGJMP_BUF @HAVE_SIGJMP_BUF@
+#endif /* USE_STD_CXX_INCLUDES */
 
 /* Always define STDIO_NAMESPACE to ::, because MSVC6 gets mad if you don't. */
 #define STDIO_NAMESPACE ::
 
-/* Define if we can use C++11 */
-#cmakedefine HAVE_CXX11 @HAVE_CXX11@
+/* Enable or disable C++11 while building DCMTK */
+#cmakedefine DCMTK_USE_CXX11_STL
 
-#if defined(HAVE_CXX11) && defined(__cplusplus) && __cplusplus < 201103L
+#if defined(DCMTK_USE_CXX11_STL) && defined(__cplusplus) && __cplusplus < 201103L
 #error\
-DCMTK was configured to use C++11 features, but your compiler does not or was not configured to provide them.
+ DCMTK was configured to use the C++11 STL, but your compiler is not configured\
+ for building with C++11 features.
 #endif
-
-/* Define if we can use C++14 */
-#cmakedefine HAVE_CXX14 @HAVE_CXX14@
-
-#if defined(HAVE_CXX14) && defined(__cplusplus) && __cplusplus < 201402L
-#error\
-DCMTK was configured to use C++14 features, but your compiler does not or was not configured to provide them.
-#endif
-
-/* Define if we can use C++17 */
-#cmakedefine HAVE_CXX17 @HAVE_CXX17@
-
-#if defined(HAVE_CXX17) && defined(__cplusplus) && __cplusplus < 201703L
-#error\
-DCMTK was configured to use C++17 features, but your compiler does not or was not configured to provide them.
-#endif
-
-/* Define if the compiler supports __alignof__ */
-#cmakedefine HAVE_GNU_ALIGNOF @HAVE_GNU_ALIGNOF@
-
-/* Define if the compiler supports __alignof */
-#cmakedefine HAVE_MS_ALIGNOF @HAVE_MS_ALIGNOF@
-
-/* Define if the compiler supports __attribute__((aligned)) */
-#cmakedefine HAVE_ATTRIBUTE_ALIGNED @HAVE_ATTRIBUTE_ALIGNED@
-
-/* Define if __attribute__((aligned)) supports templates */
-#cmakedefine ATTRIBUTE_ALIGNED_SUPPORTS_TEMPLATES @ATTRIBUTE_ALIGNED_SUPPORTS_TEMPLATES@
-
-/* Define if the compiler supports __declspec(align) */
-#cmakedefine HAVE_DECLSPEC_ALIGN @HAVE_DECLSPEC_ALIGN@
-
-/* Define if the compiler supports default constructor detection via SFINAE */
-#cmakedefine HAVE_DEFAULT_CONSTRUCTOR_DETECTION_VIA_SFINAE @HAVE_DEFAULT_CONSTRUCTOR_DETECTION_VIA_SFINAE@
-
-/* Define if we are cross compiling */
-#cmakedefine DCMTK_CROSS_COMPILING @DCMTK_CROSS_COMPILING@
-
-/* The path on the Android device that should be used for temporary files */
-#cmakedefine ANDROID_TEMPORARY_FILES_LOCATION "@ANDROID_TEMPORARY_FILES_LOCATION@"
-
-/* Define if we are supposed to use STL's vector */
-#cmakedefine HAVE_STL_VECTOR @HAVE_STL_VECTOR@
-
-/* Define if we are supposed to use STL's algorithms */
-#cmakedefine HAVE_STL_ALGORITHM @HAVE_STL_ALGORITHM@
-
-/* Define if we are supposed to use STL's limit */
-#cmakedefine HAVE_STL_LIMITS @HAVE_STL_LIMITS@
-
-/* Define if we are supposed to use STL's list */
-#cmakedefine HAVE_STL_LIST @HAVE_STL_LIST@
-
-/* Define if we are supposed to use STL's list */
-#cmakedefine HAVE_STL_MAP @HAVE_STL_MAP@
-
-/* Define if we are supposed to use STL's memory */
-#cmakedefine HAVE_STL_MEMORY @HAVE_STL_MEMORY@
-
-/* Define if we are supposed to use STL's stack */
-#cmakedefine HAVE_STL_STACK @HAVE_STL_STACK@
-
-/* Define if we are supposed to use STL's string */
-#cmakedefine HAVE_STL_STRING @HAVE_STL_STRING@
-
-/* Define if we are supposed to use STL's type_traits */
-#cmakedefine HAVE_STL_TYPE_TRAITS @HAVE_STL_TYPE_TRAITS@
-
-/* Define if we are supposed to use STL's tuple */
-#cmakedefine HAVE_STL_TUPLE @HAVE_STL_TUPLE@
-
-/* Define if we are supposed to use STL's system_error */
-#cmakedefine HAVE_STL_SYSTEM_ERROR @HAVE_STL_SYSTEM_ERROR@
-
-/* Define if the input iterator category is supported */
-#cmakedefine HAVE_INPUT_ITERATOR_CATEGORY @HAVE_INPUT_ITERATOR_CATEGORY@
-
-/* Define if the input iterator category is supported */
-#cmakedefine HAVE_OUTPUT_ITERATOR_CATEGORY @HAVE_OUTPUT_ITERATOR_CATEGORY@
-
-/* Define if the input iterator category is supported */
-#cmakedefine HAVE_FORWARD_ITERATOR_CATEGORY @HAVE_FORWARD_ITERATOR_CATEGORY@
-
-/* Define if the input iterator category is supported */
-#cmakedefine HAVE_BIDIRECTIONAL_ITERATOR_CATEGORY @HAVE_BIDIRECTIONAL_ITERATOR_CATEGORY@
-
-/* Define if the input iterator category is supported */
-#cmakedefine HAVE_RANDOM_ACCESS_ITERATOR_CATEGORY @HAVE_RANDOM_ACCESS_ITERATOR_CATEGORY@
-
-/* Define if the input iterator category is supported */
-#cmakedefine HAVE_CONTIGUOUS_ITERATOR_CATEGORY @HAVE_CONTIGUOUS_ITERATOR_CATEGORY@
-
-/* Feature Tests for the OpenSSL Library */
-
-/* Define if your OpenSSL library provides the SSL_CTX_GET0_PARAM function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_SSL_CTX_GET0_PARAM @HAVE_OPENSSL_PROTOTYPE_SSL_CTX_GET0_PARAM@
-
-/* Define if your OpenSSL library provides the RAND_egd function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_RAND_EGD @HAVE_OPENSSL_PROTOTYPE_RAND_EGD@
-
-/* Define if we have OpenSSL with the DH_bits() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_DH_BITS @HAVE_OPENSSL_PROTOTYPE_DH_BITS@
-
-/* Define if we have OpenSSL with the SSL_ERROR_WANT_ASYNC error code */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_SSL_ERROR_WANT_ASYNC @HAVE_OPENSSL_PROTOTYPE_SSL_ERROR_WANT_ASYNC@
-
-/* Define if we have OpenSSL with the SSL_ERROR_WANT_ASYNC_JOB error code */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_SSL_ERROR_WANT_ASYNC_JOB @HAVE_OPENSSL_PROTOTYPE_SSL_ERROR_WANT_ASYNC_JOB@
-
-/* Define if we have OpenSSL with the SSL_ERROR_WANT_CLIENT_HELLO_CB error code */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_SSL_ERROR_WANT_CLIENT_HELLO_CB @HAVE_OPENSSL_PROTOTYPE_SSL_ERROR_WANT_CLIENT_HELLO_CB@
-
-/* Define if we have OpenSSL with the EVP_PKEY_base_id error code */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_EVP_PKEY_BASE_ID @HAVE_OPENSSL_PROTOTYPE_EVP_PKEY_BASE_ID@
-
-/* Define if we have OpenSSL with the EVP_PKEY_RSA_PSS macro */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_EVP_PKEY_RSA_PSS @HAVE_OPENSSL_PROTOTYPE_EVP_PKEY_RSA_PSS@
-
-/* Define if we have OpenSSL with the SSL_CTX_get_cert_store() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_SSL_CTX_GET_CERT_STORE @HAVE_OPENSSL_PROTOTYPE_SSL_CTX_GET_CERT_STORE@
-
-/* Define if we have OpenSSL with the SSL_CTX_get_ciphers() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_SSL_CTX_GET_CIPHERS @HAVE_OPENSSL_PROTOTYPE_SSL_CTX_GET_CIPHERS@
-
-/* Define if we have OpenSSL with the SSL_CTX_set0_tmp_dh_pkey() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_SSL_CTX_SET0_TMP_DH_PKEY @HAVE_OPENSSL_PROTOTYPE_SSL_CTX_SET0_TMP_DH_PKEY@
-
-/* Define if we have OpenSSL with the SSL_CTX_set1_curves() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_SSL_CTX_SET1_CURVES @HAVE_OPENSSL_PROTOTYPE_SSL_CTX_SET1_CURVES@
-
-/* Define if we have OpenSSL with the SSL_CTX_set1_sigalgs() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_SSL_CTX_SET1_SIGALGS @HAVE_OPENSSL_PROTOTYPE_SSL_CTX_SET1_SIGALGS@
-
-/* Define if we have OpenSSL with the SSL_CTX_set_ecdh_auto() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_SSL_CTX_SET_ECDH_AUTO @HAVE_OPENSSL_PROTOTYPE_SSL_CTX_SET_ECDH_AUTO@
-
-/* Define if we have OpenSSL with the SSL_CTX_set_max_proto_version() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_SSL_CTX_SET_MAX_PROTO_VERSION @HAVE_OPENSSL_PROTOTYPE_SSL_CTX_SET_MAX_PROTO_VERSION@
-
-/* Define if we have OpenSSL with the SSL_CTX_set_security_level() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_SSL_CTX_SET_SECURITY_LEVEL @HAVE_OPENSSL_PROTOTYPE_SSL_CTX_SET_SECURITY_LEVEL@
-
-/* Define if we have OpenSSL with the TLS1_TXT_ECDHE_RSA_WITH_CHACHA20_POLY1305 macro */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_TLS1_TXT_ECDHE_RSA_WITH_CHACHA20_POLY1305 @HAVE_OPENSSL_PROTOTYPE_TLS1_TXT_ECDHE_RSA_WITH_CHACHA20_POLY1305@
-
-/* Define if we have OpenSSL with the TLS_method() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_TLS_METHOD @HAVE_OPENSSL_PROTOTYPE_TLS_METHOD@
-
-/* Define if we have OpenSSL with the X509_get_signature_nid() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_X509_GET_SIGNATURE_NID @HAVE_OPENSSL_PROTOTYPE_X509_GET_SIGNATURE_NID@
-
-/* Define if we have OpenSSL with the X509_STORE_get0_param() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_X509_STORE_GET0_PARAM @HAVE_OPENSSL_PROTOTYPE_X509_STORE_GET0_PARAM@
-
-/* Define if we have OpenSSL with the ASN1_STRING_get0_data() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_ASN1_STRING_GET0_DATA @HAVE_OPENSSL_PROTOTYPE_ASN1_STRING_GET0_DATA@
-
-/* Define if we have OpenSSL with the new typedef of EVP_MD_CTX as struct evp_md_ctx_st */
-#cmakedefine HAVE_OPENSSL_DECLARATION_NEW_EVP_MD_CTX @HAVE_OPENSSL_DECLARATION_NEW_EVP_MD_CTX@
-
-/* Define if we have OpenSSL with the EVP_PKEY_get0_EC_KEY() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_EVP_PKEY_GET0_EC_KEY @HAVE_OPENSSL_PROTOTYPE_EVP_PKEY_GET0_EC_KEY@
-
-/* Define if we have OpenSSL with the EVP_PKEY_get_group_name() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_EVP_PKEY_GET_GROUP_NAME @HAVE_OPENSSL_PROTOTYPE_EVP_PKEY_GET_GROUP_NAME@
-
-/* Define if we have OpenSSL with the EVP_PKEY_id() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_EVP_PKEY_ID @HAVE_OPENSSL_PROTOTYPE_EVP_PKEY_ID@
-
-/* Define if we have OpenSSL with the OSSL_PROVIDER_load() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_OSSL_PROVIDER_LOAD @HAVE_OPENSSL_PROTOTYPE_OSSL_PROVIDER_LOAD@
-
-/* Define if we have the <openssl/provider.h> header file*/
-#cmakedefine HAVE_OPENSSL_PROVIDER_H @HAVE_OPENSSL_PROVIDER_H@
-
-/* Define if we have OpenSSL with the TS_STATUS_INFO_get0_failure_info() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_TS_STATUS_INFO_GET0_FAILURE_INFO @HAVE_OPENSSL_PROTOTYPE_TS_STATUS_INFO_GET0_FAILURE_INFO@
-
-/* Define if we have OpenSSL with the TS_STATUS_INFO_get0_status() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_TS_STATUS_INFO_GET0_STATUS @HAVE_OPENSSL_PROTOTYPE_TS_STATUS_INFO_GET0_STATUS@
-
-/* Define if we have OpenSSL with the TS_STATUS_INFO_get0_text() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_TS_STATUS_INFO_GET0_TEXT @HAVE_OPENSSL_PROTOTYPE_TS_STATUS_INFO_GET0_TEXT@
-
-/* Define if we have OpenSSL with the TS_VERIFY_CTS_set_certs() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_TS_VERIFY_CTS_SET_CERTS @HAVE_OPENSSL_PROTOTYPE_TS_VERIFY_CTS_SET_CERTS@
-
-/* Define if we have OpenSSL with the TS_VERIFY_CTX_set_data() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_TS_VERIFY_CTX_SET_DATA @HAVE_OPENSSL_PROTOTYPE_TS_VERIFY_CTX_SET_DATA@
-
-/* Define if we have OpenSSL with the TS_VERIFY_CTX_set_flags() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_TS_VERIFY_CTX_SET_FLAGS @HAVE_OPENSSL_PROTOTYPE_TS_VERIFY_CTX_SET_FLAGS@
-
-/* Define if we have OpenSSL with the TS_VERIFY_CTX_set_store() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_TS_VERIFY_CTX_SET_STORE @HAVE_OPENSSL_PROTOTYPE_TS_VERIFY_CTX_SET_STORE@
-
-/* Define if we have OpenSSL with the X509_ALGOR_get0() function expecting a const pointer as first parameter */
-#cmakedefine HAVE_OPENSSL_X509_ALGOR_GET0_CONST_PARAM @HAVE_OPENSSL_X509_ALGOR_GET0_CONST_PARAM@
-
-/* Define if we have OpenSSL with the X509_get0_notAfter() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_X509_GET0_NOTAFTER @HAVE_OPENSSL_PROTOTYPE_X509_GET0_NOTAFTER@
-
-/* Define if we have OpenSSL with the X509_get0_notBefore() function */
-#cmakedefine HAVE_OPENSSL_PROTOTYPE_X509_GET0_NOTBEFORE @HAVE_OPENSSL_PROTOTYPE_X509_GET0_NOTBEFORE@
 
 #endif /* !OSCONFIG_H*/

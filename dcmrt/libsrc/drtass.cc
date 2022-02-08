@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTApplicationSetupSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -473,7 +473,7 @@ OFBool DRTApplicationSetupSequence::isValid() const
 }
 
 
-size_t DRTApplicationSetupSequence::getNumberOfItems() const
+unsigned long DRTApplicationSetupSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -503,12 +503,12 @@ OFCondition DRTApplicationSetupSequence::gotoNextItem()
 }
 
 
-OFCondition DRTApplicationSetupSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTApplicationSetupSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -523,12 +523,12 @@ OFCondition DRTApplicationSetupSequence::gotoItem(const size_t num, OFListIterat
 }
 
 
-OFCondition DRTApplicationSetupSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTApplicationSetupSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -543,7 +543,7 @@ OFCondition DRTApplicationSetupSequence::gotoItem(const size_t num, OFListConstI
 }
 
 
-OFCondition DRTApplicationSetupSequence::gotoItem(const size_t num)
+OFCondition DRTApplicationSetupSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -579,7 +579,7 @@ const DRTApplicationSetupSequence::Item &DRTApplicationSetupSequence::getCurrent
 }
 
 
-OFCondition DRTApplicationSetupSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTApplicationSetupSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -589,7 +589,7 @@ OFCondition DRTApplicationSetupSequence::getItem(const size_t num, Item *&item)
 }
 
 
-DRTApplicationSetupSequence::Item &DRTApplicationSetupSequence::getItem(const size_t num)
+DRTApplicationSetupSequence::Item &DRTApplicationSetupSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -599,7 +599,7 @@ DRTApplicationSetupSequence::Item &DRTApplicationSetupSequence::getItem(const si
 }
 
 
-const DRTApplicationSetupSequence::Item &DRTApplicationSetupSequence::getItem(const size_t num) const
+const DRTApplicationSetupSequence::Item &DRTApplicationSetupSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -609,13 +609,13 @@ const DRTApplicationSetupSequence::Item &DRTApplicationSetupSequence::getItem(co
 }
 
 
-DRTApplicationSetupSequence::Item &DRTApplicationSetupSequence::operator[](const size_t num)
+DRTApplicationSetupSequence::Item &DRTApplicationSetupSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTApplicationSetupSequence::Item &DRTApplicationSetupSequence::operator[](const size_t num) const
+const DRTApplicationSetupSequence::Item &DRTApplicationSetupSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -638,7 +638,7 @@ OFCondition DRTApplicationSetupSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTApplicationSetupSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTApplicationSetupSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -661,7 +661,7 @@ OFCondition DRTApplicationSetupSequence::insertItem(const size_t pos, Item *&ite
 }
 
 
-OFCondition DRTApplicationSetupSequence::removeItem(const size_t pos)
+OFCondition DRTApplicationSetupSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

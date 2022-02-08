@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -22,9 +22,17 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CERRNO
+#define INCLUDE_CCTYPE
+#define INCLUDE_LIBC
+#define INCLUDE_UNISTD
+#include "dcmtk/ofstd/ofstdinc.h"
+
 #include "dcmtk/ofstd/ofstream.h"
 #include "dcmtk/ofstd/ofcast.h"
-#include "dcmtk/ofstd/ofstd.h"
 
 #include "dcmtk/dcmdata/dcdirrec.h"
 #include "dcmtk/dcmdata/dctk.h"
@@ -93,11 +101,7 @@ static const char *DRTypeNames[] =
     "IMPLANT GROUP",
     "IMPLANT ASSY",
     "PLAN",
-    "SURFACE SCAN",
-    "TRACT",
-    "ASSESSMENT",
-    "RADIOTHERAPY",
-    "ANNOTATION"
+    "SURFACE SCAN"
 };
 
 static const short DIM_OF_DRTypeNames = OFstatic_cast(short, (sizeof(DRTypeNames) / sizeof(DRTypeNames[0])));
@@ -107,7 +111,7 @@ static const short DIM_OF_DRTypeNames = OFstatic_cast(short, (sizeof(DRTypeNames
 
 
 DcmDirectoryRecord::DcmDirectoryRecord()
-  : DcmItem(DCM_ItemTag),
+  : DcmItem(ItemTag),
     recordsOriginFile(),
     lowerLevelList(new DcmSequenceOfItems(DCM_DirectoryRecordSequence)),
     DirRecordType(ERT_Private),
@@ -141,7 +145,7 @@ DcmDirectoryRecord::DcmDirectoryRecord(const E_DirRecType recordType,
                                        const char *referencedFileID,
                                        const OFFilename &sourceFilename,
                                        DcmFileFormat *fileFormat)
-  : DcmItem(DCM_ItemTag),
+  : DcmItem(ItemTag),
     recordsOriginFile(),
     lowerLevelList(new DcmSequenceOfItems(DCM_DirectoryRecordSequence)),
     DirRecordType(recordType),
@@ -163,7 +167,7 @@ DcmDirectoryRecord::DcmDirectoryRecord(const char *recordTypeName,
                                        const char *referencedFileID,
                                        const OFFilename &sourceFilename,
                                        DcmFileFormat *fileFormat)
-  : DcmItem(DCM_ItemTag),
+  : DcmItem(ItemTag),
     recordsOriginFile(),
     lowerLevelList(new DcmSequenceOfItems(DCM_DirectoryRecordSequence)),
     DirRecordType(ERT_Private),
@@ -265,8 +269,7 @@ E_DirRecType DcmDirectoryRecord::recordNameToType(const char *recordTypeName)
 
 
 char *DcmDirectoryRecord::buildFileName(const char *origName,
-                                        char *destName,
-                                        size_t len) const
+                                        char *destName)
 {
     const char *from = origName;
     char *to = destName;
@@ -294,14 +297,13 @@ char *DcmDirectoryRecord::buildFileName(const char *origName,
     {
         fclose(f);
     } else {
-        size_t buflen = strlen(destName) + 2;
-        char* newname = new char[buflen];
-        OFStandard::strlcpy(newname, destName, buflen);
-        OFStandard::strlcat(newname, ".", buflen);
+        char* newname = new char[strlen(destName) + 2];
+        strcpy(newname, destName);
+        strcat(newname, ".");
         if ((f = fopen(newname, "rb")) != NULL)
         {
             fclose(f);
-            OFStandard::strlcpy(destName, newname, len);
+            strcpy(destName, newname);
         } else {
             /* we cannot find the file. let the caller deal with this */
         }
@@ -339,7 +341,7 @@ OFCondition DcmDirectoryRecord::checkHierarchy(const E_DirRecType upperRecord,
                     break;
             }
             break;
-        case ERT_FilmBox:  // retired
+        case ERT_FilmBox:
             switch (lowerRecord)
             {
                 case ERT_ImageBox:
@@ -351,7 +353,7 @@ OFCondition DcmDirectoryRecord::checkHierarchy(const E_DirRecType upperRecord,
                     break;
             }
             break;
-        case ERT_FilmSession:  // retired
+        case ERT_FilmSession:
             switch (lowerRecord)
             {
                 case ERT_FilmBox:
@@ -367,7 +369,7 @@ OFCondition DcmDirectoryRecord::checkHierarchy(const E_DirRecType upperRecord,
             switch (lowerRecord)
             {
                 case ERT_Study:
-                case ERT_HL7StrucDoc:  // retired
+                case ERT_HL7StrucDoc:
                 case ERT_Private:
                     l_error = EC_Normal;
                     break;
@@ -376,7 +378,7 @@ OFCondition DcmDirectoryRecord::checkHierarchy(const E_DirRecType upperRecord,
                     break;
             }
             break;
-        case ERT_PrintQueue:  // retired
+        case ERT_PrintQueue:
             switch (lowerRecord)
             {
                 case ERT_FilmSession:
@@ -388,7 +390,7 @@ OFCondition DcmDirectoryRecord::checkHierarchy(const E_DirRecType upperRecord,
                     break;
             }
             break;
-        case ERT_Results:  // retired
+        case ERT_Results:
             switch (lowerRecord)
             {
                 case ERT_Interpretation:
@@ -428,10 +430,6 @@ OFCondition DcmDirectoryRecord::checkHierarchy(const E_DirRecType upperRecord,
                 case ERT_Measurement:
                 case ERT_Plan:
                 case ERT_SurfaceScan:
-                case ERT_Tract:
-                case ERT_Assessment:
-                case ERT_Radiotherapy:
-                case ERT_Annotation:
                 case ERT_Private:
                     l_error = EC_Normal;
                     break;
@@ -456,7 +454,7 @@ OFCondition DcmDirectoryRecord::checkHierarchy(const E_DirRecType upperRecord,
                     break;
             }
             break;
-        case ERT_Topic:  // retired
+        case ERT_Topic:
             switch (lowerRecord)
             {
                 case ERT_Curve:
@@ -488,7 +486,7 @@ OFCondition DcmDirectoryRecord::checkHierarchy(const E_DirRecType upperRecord,
                     break;
             }
             break;
-        case ERT_Mrdr:  // retired
+        case ERT_Mrdr:
             l_error = EC_IllegalCall;
             break;
         case ERT_Curve:
@@ -517,7 +515,7 @@ OFCondition DcmDirectoryRecord::checkHierarchy(const E_DirRecType upperRecord,
         case ERT_ValueMap:
         case ERT_HangingProtocol:
         case ERT_Stereometric:
-        case ERT_HL7StrucDoc:  // retired
+        case ERT_HL7StrucDoc:
         case ERT_Palette:
         case ERT_Surface:
         case ERT_Measurement:
@@ -526,10 +524,6 @@ OFCondition DcmDirectoryRecord::checkHierarchy(const E_DirRecType upperRecord,
         case ERT_ImplantAssy:
         case ERT_Plan:
         case ERT_SurfaceScan:
-        case ERT_Tract:
-        case ERT_Assessment:
-        case ERT_Radiotherapy:
-        case ERT_Annotation:
         case ERT_Private:
             switch (lowerRecord)
             {
@@ -599,7 +593,7 @@ E_DirRecType DcmDirectoryRecord::lookForRecordType()
 static void hostToDicomFilename(char *fname)
 {
     /*
-    ** Massage filename into DICOM format.
+    ** Massage filename into dicom format.
     ** Eliminate any invalid characters.
     ** Most commonly there is a '.' at the end of a filename.
     */
@@ -626,9 +620,8 @@ OFCondition DcmDirectoryRecord::setReferencedFileID(const char *referencedFileID
 {
     OFCondition l_error = EC_Normal;
 
-    size_t bufsize = strlen(referencedFileID) + 1;
-    char* newFname = new char[bufsize];
-    OFStandard::strlcpy(newFname, referencedFileID, bufsize);
+    char* newFname = new char[strlen(referencedFileID) + 1];
+    strcpy(newFname, referencedFileID);
     hostToDicomFilename(newFname);
 
     DcmTag refFileTag(DCM_ReferencedFileID);
@@ -910,9 +903,8 @@ OFCondition DcmDirectoryRecord::fillElementsAndReadSOP(const char *referencedFil
         if (sourceFileName.isEmpty())
         {
             /* create a new source filename */
-            size_t bufsize = strlen(referencedFileID) + 2;
-            char *newname = new char[bufsize];
-            buildFileName(referencedFileID, newname, bufsize);
+            char *newname = new char[strlen(referencedFileID) + 2];
+            buildFileName(referencedFileID, newname);
             fileName.set(newname);
             delete[] newname;
         } else {
@@ -1082,9 +1074,8 @@ OFCondition DcmDirectoryRecord::purgeReferencedFile()
         const char *fileName = lookForReferencedFileID();
         if (fileName != NULL)
         {
-            size_t buflen = strlen(fileName) + 2;
-            localFileName = new char[buflen];
-            buildFileName(fileName, localFileName, buflen);
+            localFileName = new char[strlen(fileName) + 2];
+            buildFileName(fileName, localFileName);
             setReferencedFileID(NULL);
         }
 
@@ -1095,8 +1086,10 @@ OFCondition DcmDirectoryRecord::purgeReferencedFile()
         {                                 // filename exists
             if (unlink(localFileName) != 0)
             {
-                OFString buffer = OFStandard::getLastSystemErrorCode().message();
-                errorFlag = makeOFCondition(OFM_dcmdata, 19, OF_error, buffer.c_str());
+                char buf[256];
+                const char *text = OFStandard::strerror(errno, buf, sizeof(buf));
+                if (text == NULL) text = "(unknown error code)";
+                errorFlag = makeOFCondition(OFM_dcmdata, 19, OF_error, text);
             }
             delete[] localFileName;
         } else {                          // no referenced file exists
@@ -1125,20 +1118,22 @@ DcmEVR DcmDirectoryRecord::ident() const
 
 OFCondition DcmDirectoryRecord::convertCharacterSet(const OFString &fromCharset,
                                                     const OFString &toCharset,
-                                                    const size_t flags,
-                                                    const OFBool updateCharset)
+                                                    const OFBool transliterate,
+                                                    const OFBool updateCharset,
+                                                    const OFBool discardIllegal)
 {
     // call the method of the base class; this method is only needed to avoid a compiler warning
-    return DcmItem::convertCharacterSet(fromCharset, toCharset, flags, updateCharset);
+    return DcmItem::convertCharacterSet(fromCharset, toCharset, transliterate, updateCharset, discardIllegal);
 }
 
 
 OFCondition DcmDirectoryRecord::convertCharacterSet(const OFString &toCharset,
-                                                    const size_t flags,
-                                                    const OFBool ignoreCharset)
+                                                    const OFBool transliterate,
+                                                    const OFBool ignoreCharset,
+                                                    const OFBool discardIllegal)
 {
     // call the method of the base class; this method is only needed to avoid a compiler warning
-    return DcmItem::convertCharacterSet(toCharset, flags, ignoreCharset);
+    return DcmItem::convertCharacterSet(toCharset, transliterate, ignoreCharset, discardIllegal);
 }
 
 
@@ -1161,19 +1156,13 @@ OFCondition DcmDirectoryRecord::convertCharacterSet(DcmSpecificCharacterSet &con
             << fromCharset << "'" << (fromCharset.empty() ? " (ASCII)" : "") << " to '"
             << toCharset << "'" << (toCharset.empty() ? " (ASCII)" : ""));
         // select source and destination character set, use same transliteration mode
-        status = newConverter.selectCharacterSet(fromCharset, toCharset);
+        status = newConverter.selectCharacterSet(fromCharset, toCharset, converter.getTransliterationMode(), converter.getDiscardIllegalSequenceMode());
         if (status.good())
         {
-            const unsigned cflags = converter.getConversionFlags();
-            if (cflags > 0)
-                status = newConverter.setConversionFlags(cflags);
-            if (status.good())
-            {
-                // convert all affected element values in the item with the new converter
-                status = DcmItem::convertCharacterSet(newConverter);
-                // update the Specific Character Set (0008,0005) element
-                updateSpecificCharacterSet(status, newConverter);
-            }
+            // convert all affected element values in the item with the new converter
+            status = DcmItem::convertCharacterSet(newConverter);
+            // update the Specific Character Set (0008,0005) element
+            updateSpecificCharacterSet(status, newConverter);
         }
     } else {
         // no Specific Character Set attribute or the same character set,
@@ -1187,7 +1176,7 @@ OFCondition DcmDirectoryRecord::convertCharacterSet(DcmSpecificCharacterSet &con
 // ********************************
 
 
-void DcmDirectoryRecord::print(STD_NAMESPACE ostream &out,
+void DcmDirectoryRecord::print(STD_NAMESPACE ostream&out,
                                const size_t flags,
                                const int level,
                                const char *pixelFileName,
@@ -1250,7 +1239,7 @@ void DcmDirectoryRecord::print(STD_NAMESPACE ostream &out,
         if (lowerLevelList->card() > 0)
             lowerLevelList->print(out, flags, level + 1);
         /* print record end line */
-        DcmTag delimItemTag(DCM_ItemDelimitationItemTag);
+        DcmTag delimItemTag(DCM_ItemDelimitationItem);
         if (getLengthField() == DCM_UndefinedLength)
             printInfoLine(out, flags, level, "\"ItemDelimitationItem\"", &delimItemTag);
         else
@@ -1265,11 +1254,10 @@ void DcmDirectoryRecord::print(STD_NAMESPACE ostream &out,
 OFCondition DcmDirectoryRecord::writeXML(STD_NAMESPACE ostream &out,
                                          const size_t flags)
 {
-    OFCondition l_error = EC_Normal;
     if (flags & DCMTypes::XF_useNativeModel)
     {
         /* in Native DICOM Model, there is no concept of a DICOMDIR */
-        l_error = makeOFCondition(OFM_dcmdata, EC_CODE_CannotConvertToXML, OF_error,
+        return makeOFCondition(OFM_dcmdata, EC_CODE_CannotConvertToXML, OF_error,
             "Cannot convert Directory Record to Native DICOM Model");
     } else {
         /* XML start tag for "item" */
@@ -1290,18 +1278,16 @@ OFCondition DcmDirectoryRecord::writeXML(STD_NAMESPACE ostream &out,
             elementList->seek(ELP_first);
             do {
                 dO = elementList->get();
-                l_error = dO->writeXML(out, flags);
-            } while (l_error.good() && elementList->seek(ELP_next));
+                dO->writeXML(out, flags);
+            } while (elementList->seek(ELP_next));
         }
-        if (l_error.good())
-        {
-            if (lowerLevelList->card() > 0)
-                lowerLevelList->writeXML(out, flags);
-            /* XML end tag for "item" */
-            out << "</item>" << OFendl;
-        }
+        if (lowerLevelList->card() > 0)
+            lowerLevelList->writeXML(out, flags);
+        /* XML end tag for "item" */
+        out << "</item>" << OFendl;
+        /* always report success */
+        return EC_Normal;
     }
-    return l_error;
 }
 
 

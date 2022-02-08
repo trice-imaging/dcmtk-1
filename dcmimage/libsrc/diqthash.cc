@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2017, OFFIS e.V.
+ *  Copyright (C) 2002-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -43,7 +43,7 @@ unsigned long DcmQuantColorHashTable::countEntries() const
 {
   unsigned long result = 0;
   for (const_table_iterator it = m_Table.begin(); it != m_Table.end(); ++it)
-    if (*it) result += OFstatic_cast(unsigned long, (*it)->size());
+    if (*it) result += (*it)->size();
   return result;
 }
 
@@ -85,7 +85,7 @@ unsigned long DcmQuantColorHashTable::addToHashTable(
   DcmQuantScaleTable scaletable;
   scaletable.createTable(maxval, newmaxval);
 
-  DcmQuantComponent r, g, b;
+  register DcmQuantComponent r, g, b;
 
   for (unsigned long ff=0; ff<frames; ff++)
   {

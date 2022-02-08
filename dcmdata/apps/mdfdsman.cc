@@ -1,6 +1,7 @@
+#define TRICE
 /*
  *
- *  Copyright (C) 2003-2021, OFFIS e.V.
+ *  Copyright (C) 2003-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,6 +29,13 @@
 #include "dcmtk/dcmdata/dcpath.h"
 #include "dcmtk/dcmdata/dcistrmf.h"  /* for class DcmInputFileStream */
 
+#define INCLUDE_CSTDIO
+#include "dcmtk/ofstd/ofstdinc.h"
+
+#ifdef TRICE
+#include "trice_dicom.cc"
+#endif
+
 static OFLogger mdfdsmanLogger = OFLog::getLogger("dcmtk.dcmdata.mdfdsman");
 
 MdfDatasetManager::MdfDatasetManager()
@@ -42,7 +50,11 @@ MdfDatasetManager::MdfDatasetManager()
 OFCondition MdfDatasetManager::loadFile(const char *file_name,
                                         const E_FileReadMode readMode,
                                         const E_TransferSyntax xfer,
+#ifdef TRICE
+                                        const OFBool createIfNecessary, OFBool convertToUTF8)
+#else
                                         const OFBool createIfNecessary)
+#endif
 {
     OFCondition cond;
     // delete old dfile and free memory and reset current_file
@@ -53,7 +65,7 @@ OFCondition MdfDatasetManager::loadFile(const char *file_name,
 
     // load file into dfile if it exists
     OFLOG_INFO(mdfdsmanLogger, "Loading file into dataset manager: " << file_name);
-    if (OFStandard::fileExists(file_name) || (strcmp(file_name, "-") == 0))
+    if (OFStandard::fileExists(file_name))
     {
       cond = dfile->loadFile(file_name, xfer, EGL_noChange, DCM_MaxReadLength, readMode);
     }
@@ -78,6 +90,17 @@ OFCondition MdfDatasetManager::loadFile(const char *file_name,
         // get dataset from file
         OFLOG_INFO(mdfdsmanLogger, "Getting dataset from loaded file: " << file_name);
         dset=dfile->getDataset();
+#ifdef TRICE
+#ifdef WITH_LIBICONV
+        if (convertToUTF8)
+        {
+            OFLOG_INFO(mdfdsmanLogger, "converting all element values that are affected by Specific Character Set (0008,0005) to UTF-8");
+            cond = dset->convertToUTF8();
+            if (cond.bad())
+                OFLOG_FATAL(mdfdsmanLogger, cond.text() << ": converting file to UTF-8: " << file_name);
+    }
+#endif
+#endif
         /* load also pixeldata into memory:
          * Without this command pixeldata wouldn't be included into the file,
          * that's saved after modifying, because original filename was renamed
@@ -96,12 +119,12 @@ static DcmTagKey getTagKeyFromDictionary(OFString tag)
     DcmTagKey key(0xffff,0xffff);
     const DcmDataDictionary& globalDataDict = dcmDataDict.rdlock();
     const DcmDictEntry *dicent = globalDataDict.findEntry(tag.c_str());
-    // successful lookup in dictionary -> translate to tag and return
+    // successfull lookup in dictionary -> translate to tag and return
     if (dicent)
     {
         key = dicent->getKey();
     }
-    dcmDataDict.rdunlock();
+    dcmDataDict.unlock();
     return key;
 }
 
@@ -295,7 +318,7 @@ static OFCondition splitTagPath(OFString &tag_path,
 
 OFCondition MdfDatasetManager::modifyOrInsertPath(OFString tag_path,
                                                   const OFString &value,
-                                                  const OFBool only_modify,
+                                                  const OFBool &only_modify,
                                                   const OFBool update_metaheader,
                                                   const OFBool ignore_missing_tags,
                                                   const OFBool no_reservation_checks)
@@ -365,7 +388,7 @@ OFCondition MdfDatasetManager::modifyOrInsertPath(OFString tag_path,
 
 OFCondition MdfDatasetManager::modifyOrInsertFromFile(OFString tag_path,
                                                       const OFString &filename,
-                                                      const OFBool only_modify,
+                                                      const OFBool &only_modify,
                                                       const OFBool update_metaheader,
                                                       const OFBool ignore_missing_tags,
                                                       const OFBool no_reservation_checks)
@@ -477,10 +500,10 @@ OFCondition MdfDatasetManager::modifyAllTags(OFString tag_path,
     DcmStack result_stack;
     DcmObject *elem;
     // get references to all matching tags in dataset and store them in stack
-    OFLOG_DEBUG(mdfdsmanLogger, "looking for occurrences of: " << key.toString());
+    OFLOG_DEBUG(mdfdsmanLogger, "looking for occurences of: " << key.toString());
     result=dset->findAndGetElements(key, result_stack);
     // if there are elements found, modify metaheader if necessary
-    OFLOG_DEBUG(mdfdsmanLogger, "found " << result_stack.card() << " occurrences");
+    OFLOG_DEBUG(mdfdsmanLogger, "found " << result_stack.card() << " occurences");
     // as long there are matching elements left on the stack
     while( result_stack.card() > 0 && result.good() )
     {
@@ -558,6 +581,48 @@ OFCondition MdfDatasetManager::deleteTag(OFString tag_path,
 }
 
 
+#ifdef TRICE
+OFCondition MdfDatasetManager::deletePrivateGroup(OFString path)
+{
+   char* p = (char*)path.c_str();
+   if (*p == '(')  p++;
+   char* delim = strstr(p, "-");
+   if (delim == NULL)
+      delim = strstr(p, ",");
+   if (delim == NULL)
+      return makeOFCondition(OFM_dcmdata,22,OF_error, "Invalid group specificed (0xnnn-RESERVATIONNAME)");
+   *delim = '\0';
+   unsigned int group = 0;
+   sscanf(p,"%x", &group);
+   if (group == 0)
+      return makeOFCondition(OFM_dcmdata,22,OF_error, "Invalid group specificed (0xnnn-RESERVATIONNAME)");
+   char* rname = trim(delim+1);
+   if (rname[strlen(rname)-1] == ')')
+        rname[strlen(rname)-1] = '\0';
+   u_int16_t upper = findSpecificPrivateSpace(dset, (u_int16_t)group, rname, 0); 
+   if (upper == 0)  //**Nothing to do
+       return EC_Normal;
+      //**Delete
+  DcmStack stack;
+  DcmObject *dobj = NULL;
+  DcmTagKey tag;
+  OFCondition status = dset->nextObject(stack, OFTrue);
+  while (status.good())
+  {
+      dobj = stack.top();
+      tag = dobj->getTag();
+      unsigned int tgroup = tag.getGroup();
+      unsigned int telement = tag.getElement();
+      if ((tgroup & 1) && tgroup == group && (telement / (16*16) == upper || telement == upper))// private tag or reservation tag?
+      {   stack.pop();
+          delete OFstatic_cast(DcmItem *, (stack.top()))->remove(dobj);
+      }
+      status = dset->nextObject(stack, OFTrue);
+  }
+  return EC_Normal;
+}
+
+#endif
 OFCondition MdfDatasetManager::deletePrivateData()
 {
   // if no file loaded : return an error
@@ -648,7 +713,7 @@ OFCondition MdfDatasetManager::saveFile(const char *file_name,
                                  opt_padenc,
                                  OFstatic_cast(Uint32, opt_filepad),
                                  OFstatic_cast(Uint32, opt_itempad),
-                                 (opt_dataset) ? EWM_dataset : EWM_createNewMeta);
+                                 (opt_dataset) ? EWM_dataset : EWM_fileformat);
 
     } else {
         OFLOG_DEBUG(mdfdsmanLogger, "no conversion to transfer syntax " << DcmXfer(opt_xfer).getXferName() << " possible!");
@@ -719,8 +784,8 @@ OFBool MdfDatasetManager::isTagInDictionary(const DcmTagKey &search_key)
 {
     const DcmDataDictionary& globalDataDict = dcmDataDict.rdlock();
     const DcmDictEntry *dicent = globalDataDict.findEntry(search_key,NULL);
-    // successful lookup in dictionary -> translate to tag and return
-    dcmDataDict.rdunlock();
+    // successfull lookup in dictionary -> translate to tag and return
+    dcmDataDict.unlock();
     if (dicent)
         return OFTrue;
     else return OFFalse;

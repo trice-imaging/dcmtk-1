@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2021, OFFIS e.V.
+ *  Copyright (C) 2002-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -20,6 +20,15 @@
  */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
+
+#ifdef HAVE_GUSI_H
+#include <GUSI.h>
+#endif
 
 #include "dcmtk/dcmdata/dctk.h"
 #include "dcmtk/dcmdata/cmdlnarg.h"
@@ -46,6 +55,11 @@ static char rcsid[] = "$dcmtk: " OFFIS_CONSOLE_APPLICATION " v"
 
 int main(int argc, char *argv[])
 {
+
+#ifdef HAVE_GUSI_H
+  GUSISetup(GUSIwithSIOUXSockets);
+  GUSISetup(GUSIwithInternetSockets);
+#endif
 
   const char *opt_ifname = NULL;
   const char *opt_ofname = NULL;
@@ -205,8 +219,20 @@ int main(int argc, char *argv[])
       cmd.endOptionBlock();
 
       cmd.beginOptionBlock();
-      if (cmd.findOption("--enable-new-vr")) dcmEnableGenerationOfNewVRs();
-      if (cmd.findOption("--disable-new-vr")) dcmDisableGenerationOfNewVRs();
+      if (cmd.findOption("--enable-new-vr"))
+      {
+          dcmEnableUnknownVRGeneration.set(OFTrue);
+          dcmEnableUnlimitedTextVRGeneration.set(OFTrue);
+          dcmEnableOtherFloatStringVRGeneration.set(OFTrue);
+          dcmEnableOtherDoubleStringVRGeneration.set(OFTrue);
+      }
+      if (cmd.findOption("--disable-new-vr"))
+      {
+          dcmEnableUnknownVRGeneration.set(OFFalse);
+          dcmEnableUnlimitedTextVRGeneration.set(OFFalse);
+          dcmEnableOtherFloatStringVRGeneration.set(OFFalse);
+          dcmEnableOtherDoubleStringVRGeneration.set(OFFalse);
+      }
       cmd.endOptionBlock();
 
       cmd.beginOptionBlock();
@@ -292,7 +318,8 @@ int main(int argc, char *argv[])
 
     DcmXfer opt_oxferSyn(opt_oxfer);
 
-    if (dataset->chooseRepresentation(opt_oxfer, NULL).good() && dataset->canWriteXfer(opt_oxfer))
+    dataset->chooseRepresentation(opt_oxfer, NULL);
+    if (dataset->canWriteXfer(opt_oxfer))
     {
         OFLOG_INFO(dcmcrleLogger, "Output transfer syntax " << opt_oxferSyn.getXferName() << " can be written");
     } else {

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2019, OFFIS e.V.
+ *  Copyright (C) 2000-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRTimeTreeNode
@@ -26,9 +26,6 @@
 #include "dcmtk/dcmsr/dsrtypes.h"
 #include "dcmtk/dcmsr/dsrtimtn.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
-
-#include "dcmtk/dcmdata/dcdeftag.h"
-#include "dcmtk/dcmdata/dcvrtm.h"
 
 
 DSRTimeTreeNode::DSRTimeTreeNode(const E_RelationshipType relationshipType)
@@ -47,47 +44,8 @@ DSRTimeTreeNode::DSRTimeTreeNode(const E_RelationshipType relationshipType,
 }
 
 
-DSRTimeTreeNode::DSRTimeTreeNode(const DSRTimeTreeNode &node)
-  : DSRDocumentTreeNode(node),
-    DSRStringValue(node)
-{
-}
-
-
 DSRTimeTreeNode::~DSRTimeTreeNode()
 {
-}
-
-
-OFBool DSRTimeTreeNode::operator==(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator==(node);
-    if (result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRStringValue::operator==(OFstatic_cast(const DSRTimeTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-OFBool DSRTimeTreeNode::operator!=(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator!=(node);
-    if (!result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRStringValue::operator!=(OFstatic_cast(const DSRTimeTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-DSRTimeTreeNode *DSRTimeTreeNode::clone() const
-{
-    return new DSRTimeTreeNode(*this);
 }
 
 
@@ -101,13 +59,7 @@ void DSRTimeTreeNode::clear()
 OFBool DSRTimeTreeNode::isValid() const
 {
     /* ConceptNameCodeSequence required */
-    return DSRDocumentTreeNode::isValid() && getConceptName().isValid() && hasValidValue();
-}
-
-
-OFBool DSRTimeTreeNode::hasValidValue() const
-{
-    return checkCurrentValue().good();
+    return DSRDocumentTreeNode::isValid() && getConceptName().isValid() && checkCurrentValue().good();
 }
 
 
@@ -141,11 +93,10 @@ OFCondition DSRTimeTreeNode::writeXML(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRTimeTreeNode::readContentItem(DcmItem &dataset,
-                                             const size_t flags)
+OFCondition DSRTimeTreeNode::readContentItem(DcmItem &dataset)
 {
     /* read Time */
-    return DSRStringValue::read(dataset, DCM_Time, flags);
+    return DSRStringValue::read(dataset, DCM_Time);
 }
 
 
@@ -157,12 +108,11 @@ OFCondition DSRTimeTreeNode::writeContentItem(DcmItem &dataset) const
 
 
 OFCondition DSRTimeTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
-                                                DSRXMLCursor cursor,
-                                                const size_t /*flags*/)
+                                                DSRXMLCursor cursor)
 {
     OFString tmpString;
     /* retrieve value from XML element "value" */
-    OFCondition result = setValue(getValueFromXMLNodeContent(doc, doc.getNamedChildNode(cursor, "value"), tmpString));
+    OFCondition result = setValue(getValueFromXMLNodeContent(doc, doc.getNamedNode(cursor.gotoChild(), "value"), tmpString));
     if (result == EC_IllegalParameter)
         result = SR_EC_InvalidValue;
     return result;

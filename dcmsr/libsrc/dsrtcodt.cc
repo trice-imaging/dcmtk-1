@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2017, OFFIS e.V.
+ *  Copyright (C) 2000-2012, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRReferencedDateTimeList
@@ -25,18 +25,14 @@
 
 #include "dcmtk/dcmsr/dsrtcodt.h"
 
-#include "dcmtk/dcmdata/dcdeftag.h"
-#include "dcmtk/dcmdata/dcvrdt.h"
+#ifdef HAVE_EXPLICIT_TEMPLATE_SPECIALIZATION
+#define EXPLICIT_SPECIALIZATION template<>
+#else
+#define EXPLICIT_SPECIALIZATION
+#endif
 
-
-// global empty item object so it gets initialized and cleaned up by the linker
-const OFString OFStringEmptyItem;
-
-template<>
-const OFString& DSRgetEmptyItem<OFString>()
-{
-    return OFStringEmptyItem;
-}
+/* declared in class DSRListOfItems<T> */
+EXPLICIT_SPECIALIZATION const OFString DSRListOfItems<OFString>::EmptyItem;
 
 
 DSRReferencedDateTimeList::DSRReferencedDateTimeList()
@@ -88,8 +84,7 @@ OFCondition DSRReferencedDateTimeList::print(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRReferencedDateTimeList::read(DcmItem &dataset,
-                                            const size_t /*flags*/)
+OFCondition DSRReferencedDateTimeList::read(DcmItem &dataset)
 {
     /* get string array from dataset */
     DcmDateTime delem(DCM_ReferencedDateTime);

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2021, OFFIS e.V.
+ *  Copyright (C) 2000-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -26,20 +26,14 @@
 
 #include "dcmtk/config/osconfig.h"   /* make sure OS specific configuration is included first */
 
-#include "dcmtk/dcmsr/dsdefine.h"
-
-#include "dcmtk/dcmdata/dcelem.h"
-#include "dcmtk/dcmdata/dcitem.h"
-#include "dcmtk/dcmdata/dcsequen.h"
+#include "dcmtk/dcmdata/dctk.h"
 
 #include "dcmtk/ofstd/ofstream.h"
-#include "dcmtk/ofstd/ofstring.h"
 #include "dcmtk/ofstd/oftypes.h"
 #include "dcmtk/ofstd/ofcond.h"
 #include "dcmtk/oflog/oflog.h"
 
-
-// global definitions for logging mechanism provided by the oflog module
+#include "dcmtk/dcmsr/dsdefine.h"
 
 extern DCMTK_DCMSR_EXPORT OFLogger DCM_dcmsrLogger;
 
@@ -92,7 +86,6 @@ extern DCMTK_DCMSR_EXPORT OFLogger DCM_dcmsrLogger;
 #define DCMSR_ANSI_ESCAPE_CODE_CONCEPT_NAME      "\033[22m\033[33m"
 #define DCMSR_ANSI_ESCAPE_CODE_ITEM_VALUE        "\033[1m\033[37m"
 #define DCMSR_ANSI_ESCAPE_CODE_TEMPLATE_ID       "\033[22m\033[35m"
-#define DCMSR_ANSI_ESCAPE_CODE_ANNOTATION        "\033[22m\033[36m"
 #define DCMSR_ANSI_ESCAPE_CODE_DELIMITER         "\033[1m\033[30m"
 
 // helper macro for the conditional usage of ANSI escape codes
@@ -129,13 +122,13 @@ extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_UnknownDocumentType;
 /// error: the document status is invalid
 extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_InvalidDocument;
 
-/// error: the document tree is invalid (e.g. corrupted structure)
+/// error: the document tree is invalid (corrupted structure)
 extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_InvalidDocumentTree;
 
 /// error: a mandatory attribute is missing
 extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_MandatoryAttributeMissing;
 
-/// error: a value is invalid according to the DICOM standard
+/// error: a value is invalid according to the standard
 extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_InvalidValue;
 
 /// error: a value is not supported by this implementation
@@ -170,61 +163,6 @@ extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_RepresentationNotAvailabl
 
 /// error: an icon image could not be created from the given DICOM image
 extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_CannotCreateIconImage;
-
-/// error: a new content item could not be added to the current one
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_CannotAddContentItem;
-
-/// error: an invalid concept name code has been passed or is used
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_InvalidConceptName;
-
-/// error: a given subtree could not be inserted at the current node
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_CannotInsertSubTree;
-
-/// error: the current relationship type cannot be replaced by the given one
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_CannotChangeRelationshipType;
-
-/// error: the document tree does not comply with the given SR IOD constraints
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_IncompatibleDocumentTree;
-
-/// error: the specified content item (node) could not be found
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_ContentItemNotFound;
-
-/// error: the specified subtree could not be removed from the document tree
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_CannotRemoveSubTree;
-
-/// error: the document tree is empty (and this is not allowed in this context)
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_EmptyDocumentTree;
-
-/// error: the content item is invalid, e.g. the concept name or the stored value
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_InvalidContentItem;
-
-/// error: template identification cannot be used, i.e. requirements are not fulfilled
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_CannotUseTemplateIdentification;
-
-/// error: cannot add content item or insert subtree to non-extensible template
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_NonExtensibleTemplate;
-
-/// error: cannot add coded entry to non-extensible context group
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_NonExtensibleContextGroup;
-
-/// error: a given coded entry in not contained in the context group
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_CodedEntryNotInContextGroup;
-
-/// normal: a given coded entry is contained in the context group (i.e. a standard code)
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_CodedEntryInStandardContextGroup;
-
-/// normal: a given coded entry is known as an extension of the context group
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_CodedEntryIsExtensionOfContextGroup;
-
-/// error: a value violates the value set constraint of a particular template row
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_ValueSetConstraintViolated;
-
-/// error: the internally managed structure of a template class is invalid
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_InvalidTemplateStructure;
-
-/// error: cannot process document tree with included templates
-extern DCMTK_DCMSR_EXPORT const OFConditionConst SR_EC_CannotProcessIncludedTemplates;
-
 //@}
 
 
@@ -244,7 +182,7 @@ class DCMTK_DCMSR_EXPORT DSRTypes
 
   // --- constant declarations ---
 
-    /** @name read() flags
+    /** @name read() flags.
      *  These flags can be combined and passed to the read() methods.
      *  The 'shortcut' flags can be used for common combinations.
      */
@@ -273,7 +211,7 @@ class DCMTK_DCMSR_EXPORT DSRTypes
     //@}
 
 
-    /** @name renderHTML() flags
+    /** @name renderHTML() flags.
      *  These flags can be combined and passed to the renderHMTL() methods.
      *  Please note that only the 'external' flags can be used from outside
      *  this library.  The 'shortcut' flags can be used for common combinations.
@@ -354,7 +292,7 @@ class DCMTK_DCMSR_EXPORT DSRTypes
     //@}
 
 
-    /** @name read/writeXML() flags
+    /** @name read/writeXML() flags.
      *  These flags can be combined and passed to the read/writeXML() methods.
      *  The 'shortcut' flags can be used for common combinations.
      */
@@ -392,12 +330,6 @@ class DCMTK_DCMSR_EXPORT DSRTypes
 
     /// read/write: template identification element encloses content items
     static const size_t XF_templateElementEnclosesItems;
-
-    /// write: add comments with details at beginning/end of included template (might be useful for debugging purposes)
-    static const size_t XF_addCommentsForIncludedTemplate;
-
-    /// read: accept empty Study/Series/SOP Instance UID attribute values (must be filled later)
-    static const size_t XF_acceptEmptyStudySeriesInstanceUID;
 
     /// shortcut: combines all XF_xxxAsAttribute write flags (see above)
     static const size_t XF_encodeEverythingAsAttribute;
@@ -440,31 +372,13 @@ class DCMTK_DCMSR_EXPORT DSRTypes
     /// print code triple for invalid codes (instead of the text "invalid code")
     static const size_t PF_printInvalidCodes;
 
-    /// print node ID at the beginning of each line (might be useful for debugging purposes)
-    static const size_t PF_printNodeID;
-
-    /// indicate with a "*" that the "enhanced encoding mode" is used for codes
-    static const size_t PF_indicateEnhancedEncodingMode;
-
-    /// print annotation of a content item (optional, e.g. user-defined information)
-    static const size_t PF_printAnnotation;
-
-    /// do not print internal "included template" nodes (position counter is still increased)
-    static const size_t PF_hideIncludedTemplateNodes;
-
-    /// do not count internal "included template" nodes (only with PF_hideIncludedTemplateNodes)
-    static const size_t PF_dontCountIncludedTemplateNodes;
-
-    /// print text "empty code" for empty codes (instead of "invalid code")
-    static const size_t PF_printEmptyCodes;
-
-    /// shortcut: print all codes (combines all PF_printXxxCodes flags, see above)
+    /// shortcut: print all codes
     static const size_t PF_printAllCodes;
     //@}
 
 
     /** @name checkByReferenceRelationships() modes
-     *  These modes can be combined and passed to the checkByReferenceRelationships() method.
+     *  These flags can be combined and passed to the checkByReferenceRelationships() method.
      */
     //@{
 
@@ -479,23 +393,9 @@ class DCMTK_DCMSR_EXPORT DSRTypes
     //@}
 
 
-    /** @name checkByReferenceRelationships() bit masks
-     *  These bit masks are used to "filter" valid flags passed to checkByReferenceRelationships().
-     */
-    //@{
-
-    /// bit mask (filter) for valid print flags (see PF_xxx)
-    static const size_t CB_maskPrintFlags;
-
-    /// bit mask (filter) for valid read flags (see RF_xxx)
-    static const size_t CB_maskReadFlags;
-
-    //@}
-
-
   // --- type definitions ---
 
-    /** SR document types (DICOM IOD)
+    /** SR document types
      */
     enum E_DocumentType
     {
@@ -521,8 +421,6 @@ class DCMTK_DCMSR_EXPORT DSRTypes
         DT_ProcedureLog,
         /// DICOM IOD: X-Ray Radiation Dose SR
         DT_XRayRadiationDoseSR,
-        /// DICOM IOD: Enhanced X-Ray Radiation Dose SR (not yet implemented)
-        DT_EnhancedXRayRadiationDoseSR,
         /// DICOM IOD: Spectacle Prescription Report
         DT_SpectaclePrescriptionReport,
         /// DICOM IOD: Macular Grid Thickness and Volume Report
@@ -533,22 +431,8 @@ class DCMTK_DCMSR_EXPORT DSRTypes
         DT_Comprehensive3DSR,
         /// DICOM IOD: Radiopharmaceutical Radiation Dose SR
         DT_RadiopharmaceuticalRadiationDoseSR,
-        /// DICOM IOD: Extensible SR (not yet implemented)
-        DT_ExtensibleSR,
-        /// DICOM IOD: Acquisition Context SR
-        DT_AcquisitionContextSR,
-        /// DICOM IOD: Simplified Adult Echo SR
-        DT_SimplifiedAdultEchoSR,
-        /// DICOM IOD: Patient Radiation Dose SR
-        DT_PatientRadiationDoseSR,
-        /// DICOM IOD: Performed Imaging Agent Administration SR
-        DT_PerformedImagingAgentAdministrationSR,
-        /// DICOM IOD: Planned Imaging Agent Administration SR
-        DT_PlannedImagingAgentAdministrationSR,
-        /// DICOM IOD: Rendition Selection Document
-        DT_RenditionSelectionDocument,
         /// internal type used to mark the last entry
-        DT_last = DT_RenditionSelectionDocument
+        DT_last = DT_RadiopharmaceuticalRadiationDoseSR
     };
 
     /** SR relationship types
@@ -617,10 +501,8 @@ class DCMTK_DCMSR_EXPORT DSRTypes
         VT_Container,
         /// internal type used to indicate by-reference relationships
         VT_byReference,
-        /// internal type used to indicate (enclose) included templates
-        VT_includedTemplate,
         /// internal type used to mark the last entry
-        VT_last = VT_includedTemplate
+        VT_last = VT_byReference
     };
 
     /** Softcopy presentation state types.  Used for content item IMAGE.
@@ -641,20 +523,8 @@ class DCMTK_DCMSR_EXPORT DSRTypes
         PT_Blending,
         /// XA/XRF Grayscale Softcopy Presentation State (XGSPS)
         PT_XAXRFGrayscale,
-        /// Grayscale Planar MPR Volumetric Presentation State (GP-VPS)
-        PT_GrayscalePlanarMPR,
-        /// Compositing Planar MPR Volumetric Presentation State (CP-VPS)
-        PT_CompositingPlanarMPR,
-        /// Advanced Blending Presentation State (ABPS)
-        PT_AdvancedBlending,
-        /// Volume Rendering Volumetric Presentation State (VR-VPS)
-        PT_VolumeRendering,
-        /// Segmented Volume Rendering Volumetric Presentation State (SVR-VPS)
-        PT_SegmentedVolumeRendering,
-        /// Multiple Volume Rendering Volumetric Presentation State (MVR-VPS)
-        PT_MultipleVolumeRendering,
         /// internal type used to mark the last entry
-        PT_last = PT_MultipleVolumeRendering
+        PT_last = PT_XAXRFGrayscale
     };
 
     /** SR graphic types.  Used for content item SCOORD.
@@ -793,8 +663,6 @@ class DCMTK_DCMSR_EXPORT DSRTypes
         CS_unknown = CS_invalid,
         /// ISO 646 (ISO-IR 6): ASCII
         CS_ASCII,
-        /// internal type used to indicate the default character set
-        CS_default = CS_ASCII,
         /// ISO-IR 100: Latin alphabet No. 1
         CS_Latin1,
         /// ISO-IR 101: Latin alphabet No. 2
@@ -813,36 +681,14 @@ class DCMTK_DCMSR_EXPORT DSRTypes
         CS_Hebrew,
         /// ISO-IR 148: Latin alphabet No. 5
         CS_Latin5,
+        /// ISO-IR 13: Japanese (Katakana/Romaji)
+        CS_Japanese,
         /// ISO-IR 166: Thai
         CS_Thai,
-        /// ISO-IR 13/87: Japanese (Katakana/Romaji/Kanji)
-        CS_Japanese,
-        /// ISO-IR 6/149: Korean (Hangul/Hanja)
-        CS_Korean,
-        /// ISO-IR 6/58: Chinese
-        CS_ChineseISO,
-        /// GB18030: Chinese
-        CS_ChineseGB18030,
-        /// GBK: Chinese
-        CS_ChineseGBK,
         /// UTF-8: Unicode in UTF-8
         CS_UTF8,
         /// internal type used to mark the last entry
         CS_last = CS_UTF8
-    };
-
-    /** Code value type
-     */
-    enum E_CodeValueType
-    {
-        /// determine code value type automatically
-        CVT_auto,
-        /// short code value (VR=SH)
-        CVT_Short,
-        /// long code value (VR=UC)
-        CVT_Long,
-        /// URN code value (VR=UR)
-        CVT_URN
     };
 
     /** Add node mode
@@ -854,9 +700,7 @@ class DCMTK_DCMSR_EXPORT DSRTypes
         /// add new node before current one (sibling)
         AM_beforeCurrent,
         /// add new node below current one (after last child)
-        AM_belowCurrent,
-        /// add new node below current one (before first child)
-        AM_belowCurrentBeforeFirstChild
+        AM_belowCurrent
     };
 
 
@@ -897,51 +741,11 @@ class DCMTK_DCMSR_EXPORT DSRTypes
     static const char *documentTypeToDocumentTitle(const E_DocumentType documentType,
                                                    OFString &documentTitle);
 
-    /** check whether a given SR document type requires the Enhanced General Equipment Module
+    /** check whether SR document type requires Enhanced General Equipment Module
      ** @param  documentType  SR document type to be checked
-     ** @return OFTrue if the Enhanced General Equipment Module is required, OFFalse otherwise
+     ** @return OFTrue if Enhanced General Equipment Module is required, OFFalse otherwise
      */
     static OFBool requiresEnhancedEquipmentModule(const E_DocumentType documentType);
-
-    /** check whether a given SR document type requires the Timezone Module
-     ** @param  documentType  SR document type to be checked
-     ** @return OFTrue if the Timezone Module is required, OFFalse otherwise
-     */
-    static OFBool requiresTimezoneModule(const E_DocumentType documentType);
-
-    /** check whether a given SR document type requires the Synchronization Module
-     ** @param  documentType  SR document type to be checked
-     ** @return OFTrue if the Synchronization Module is required, OFFalse otherwise
-     */
-    static OFBool requiresSynchronizationModule(const E_DocumentType documentType);
-
-    /** check whether a given SR document type uses the SR Document Series Module
-     *  (instead of the Key Object Document Series Module)
-     ** @param  documentType  SR document type to be checked
-     ** @return OFTrue if the SR Document Series Module is used, OFFalse otherwise
-     */
-    static OFBool usesSRDocumentSeriesModule(const E_DocumentType documentType);
-
-    /** check whether a given SR document type uses the Key Object Document Series Module
-     *  (instead of the SR Document Series Module)
-     ** @param  documentType  SR document type to be checked
-     ** @return OFTrue if the Key Object Document Series Module is used, OFFalse otherwise
-     */
-    static OFBool usesKeyObjectDocumentSeriesModule(const E_DocumentType documentType);
-
-    /** check whether a given SR document type uses the SR Document General Module
-     *  (instead of the Key Object Document Module)
-     ** @param  documentType  SR document type to be checked
-     ** @return OFTrue if the SR Document General Module is used, OFFalse otherwise
-     */
-    static OFBool usesSRDocumentGeneralModule(const E_DocumentType documentType);
-
-    /** check whether a given SR document type uses the Key Object Document Module
-     *  (instead of the SR Document General Module)
-     ** @param  documentType  SR document type to be checked
-     ** @return OFTrue if the Key Object Document Module is used, OFFalse otherwise
-     */
-    static OFBool usesKeyObjectDocumentModule(const E_DocumentType documentType);
 
     /** convert relationship type to DICOM defined term
      ** @param  relationshipType  relationship type to be converted
@@ -1067,80 +871,79 @@ class DCMTK_DCMSR_EXPORT DSRTypes
 
     /** convert SOP class UID to SR document type
      ** @param  sopClassUID  SOP class UID to be converted
-     ** @return SR document type if successful, DSRTypes::DT_invalid otherwise
+     ** @return SR document type if successful, DT_invalid otherwise
      */
     static E_DocumentType sopClassUIDToDocumentType(const OFString &sopClassUID);
 
     /** convert DICOM defined term to relationship type
      ** @param  definedTerm  defined term to be converted
-     ** @return relationship type if successful, DSRTypes::RT_invalid otherwise
+     ** @return relationship type if successful, RT_invalid otherwise
      */
     static E_RelationshipType definedTermToRelationshipType(const OFString &definedTerm);
 
     /** convert DICOM defined term to value type
      ** @param  definedTerm  defined term to be converted
-     ** @return value type if successful, DSRTypes::VT_invalid otherwise
+     ** @return value type if successful, VT_invalid otherwise
      */
     static E_ValueType definedTermToValueType(const OFString &definedTerm);
 
     /** convert SOP class UID to presentation state type
      ** @param  sopClassUID  SOP class UID to be converted
-     ** @return presentation state type if successful, DSRTypes::PT_invalid otherwise
+     ** @return presentation state type if successful, PT_invalid otherwise
      */
     static E_PresentationStateType sopClassUIDToPresentationStateType(const OFString &sopClassUID);
 
     /** convert XML tag name to value type
      ** @param  xmlTagName  XML tag name to be converted
-     ** @return value type if successful, DSRTypes::VT_invalid otherwise
+     ** @return value type if successful, VT_invalid otherwise
      */
     static E_ValueType xmlTagNameToValueType(const OFString &xmlTagName);
 
     /** convert DICOM enumerated value to graphic type
      ** @param  enumeratedValue  enumerated value to be converted
-     ** @return graphic type if successful, DSRTypes::GT_invalid otherwise
+     ** @return graphic type if successful, GT_invalid otherwise
      */
     static E_GraphicType enumeratedValueToGraphicType(const OFString &enumeratedValue);
 
     /** convert DICOM enumerated value to graphic type (3D)
      ** @param  enumeratedValue  enumerated value to be converted
-     ** @return graphic type if successful, DSRTypes::GT3_invalid otherwise
+     ** @return graphic type if successful, GT3_invalid otherwise
      */
     static E_GraphicType3D enumeratedValueToGraphicType3D(const OFString &enumeratedValue);
 
     /** convert DICOM enumerated value to temporal range type
      ** @param  enumeratedValue  enumerated value to be converted
-     ** @return temporal range type if successful, DSRTypes::TRT_invalid otherwise
+     ** @return temporal range type if successful, TRT_invalid otherwise
      */
     static E_TemporalRangeType enumeratedValueToTemporalRangeType(const OFString &enumeratedValue);
 
     /** convert DICOM enumerated value to continuity of content flag
      ** @param  enumeratedValue  enumerated value to be converted
-     ** @return continuity of content flag type if successful, DSRTypes::COC_invalid otherwise
+     ** @return continuity of content flag type if successful, COC_invalid otherwise
      */
     static E_ContinuityOfContent enumeratedValueToContinuityOfContent(const OFString &enumeratedValue);
 
     /** convert DICOM enumerated value to preliminary flag
      ** @param  enumeratedValue  enumerated value to be converted
-     ** @return preliminary flag type if successful, DSRTypes::PF_invalid otherwise
+     ** @return preliminary flag type if successful, PF_invalid otherwise
      */
     static E_PreliminaryFlag enumeratedValueToPreliminaryFlag(const OFString &enumeratedValue);
 
     /** convert DICOM enumerated value to completion flag
      ** @param  enumeratedValue  enumerated value to be converted
-     ** @return completion flag type if successful, DSRTypes::CF_invalid otherwise
+     ** @return completion flag type if successful, CF_invalid otherwise
      */
     static E_CompletionFlag enumeratedValueToCompletionFlag(const OFString &enumeratedValue);
 
     /** convert DICOM enumerated value to verification flag
      ** @param  enumeratedValue  enumerated value to be converted
-     ** @return verification flag type if successful, DSRTypes::VF_invalid otherwise
+     ** @return verification flag type if successful, VF_invalid otherwise
      */
     static E_VerificationFlag enumeratedValueToVerificationFlag(const OFString &enumeratedValue);
 
-    /** convert DICOM defined term to character set.
-     *  An empty defined term is mapped to DSRTypes::CS_default (which is ASCII).
+    /** convert DICOM defined term to character set
      ** @param  definedTerm  defined term to be converted
-     ** @return character set if successful, DSRTypes::CS_invalid otherwise
+     ** @return character set if successful, CS_invalid otherwise
      */
     static E_CharacterSet definedTermToCharacterSet(const OFString &definedTerm);
 
@@ -1161,6 +964,7 @@ class DCMTK_DCMSR_EXPORT DSRTypes
     static const OFString &currentDate(OFString &dateString);
 
     /** get current time in DICOM 'TM' format. (HHMMSS)
+     *  The optional UTC notation (e.g. +0100) is currently not supported.
      ** @param  timeString  string used to store the current time
      *                      ('000000' if current time could not be retrieved)
      ** @return resulting character string (see 'timeString')
@@ -1176,13 +980,6 @@ class DCMTK_DCMSR_EXPORT DSRTypes
      ** @return resulting character string (see 'dateTimeString')
      */
     static const OFString &currentDateTime(OFString &dateTimeString);
-
-    /** get local timezone in DICOM format. (&ZZXX)
-     ** @param  timezoneString  string used to store the local timezone
-     *                          ('+0000' if timezone could not be retrieved)
-     ** @return resulting character string (see 'timezoneString')
-     */
-    static const OFString &localTimezone(OFString &timezoneString);
 
     /** convert DICOM date string to readable format.
      *  The ISO format "YYYY-MM-DD" is used for the readable format.
@@ -1243,8 +1040,7 @@ class DCMTK_DCMSR_EXPORT DSRTypes
     /** convert unsigned integer number to character string
      ** @param  number       unsigned integer number to be converted
      *  @param  stringValue  character string used to store the result
-     ** @return pointer to the first character of the resulting string
-     *          (may be NULL if 'string' was NULL)
+     ** @return pointer to the first character of the resulting string (may be NULL if 'string' was NULL)
      */
     static const char *numberToString(const size_t number,
                                       char *stringValue);
@@ -1266,14 +1062,14 @@ class DCMTK_DCMSR_EXPORT DSRTypes
                                                 OFString &printString);
 
     /** convert character string to HTML mnenonic string.
-     *  Characters with special meaning for HTML (e.g. '<' and '&') are replace by the corresponding
-     *  mnenonics (e.g. "&lt;" and "&amp;").
-     *  If flag DSRTypes::HF_convertNonASCIICharacters is set, all characters > #127 are also converted
-     *  (useful if only HTML 3.2 is supported which does not allow to specify the character set).
+     *  Characters with special meaning for HTML (e.g. '<' and '&') are replace by the
+     *  corresponding mnenonics (e.g. "&lt;" and "&amp;").  If flag 'HF_convertNonASCIICharacters'
+     *  is set all characters > #127 are also converted (useful if only HTML 3.2 is supported which
+     *  does not allow to specify the character set).
      ** @param  sourceString     source string to be converted
      *  @param  markupString     reference to variable where the result should be stored
-     *  @param  flags            optional flags, only checking DSRTypes::HF_convertNonASCIICharacters,
-     *                           DSRTypes::HF_HTML32Compatibility and DSRTypes::HF_XHTML11Compatibility
+     *  @param  flags            optional flags, checking HF_convertNonASCIICharacters,
+                                 HF_HTML32Compatibility and HF_XHTML11Compatibility only
      *  @param  newlineAllowed   optional flag indicating whether newlines are allowed or not.
      *                           If they are allowed the text "<br>" is used, "&para;" otherwise.
      *                           The following combinations are accepted: LF, CR, LF CR, CF LF.
@@ -1377,7 +1173,7 @@ class DCMTK_DCMSR_EXPORT DSRTypes
 
     /** get string value from element
      ** @param  delem        DICOM element from which the string value should be retrieved
-     *  @param  stringValue  reference to variable in which the result should be stored
+     *  @param  stringValue  reference to variable in which the result should be stored.
      *                       (This parameter is automatically cleared if an error occurs.)
      *  @param  pos          index of the value to get (0..vm-1), -1 for all components
      ** @return status, EC_Normal if successful, an error code otherwise
@@ -1406,19 +1202,18 @@ class DCMTK_DCMSR_EXPORT DSRTypes
                                                       OFString &stringValue,
                                                       const OFBool convertNonASCII = OFFalse);
 
-    /** get string value from dataset
+    /** get string value from dataset.
+     *  Please note that only the first element value is retrieved (in case of multiple values).
      ** @param  dataset      DICOM dataset from which the string should be retrieved.
      *                       (Would be 'const' if the methods from 'dcmdata' would also be 'const'.)
      *  @param  tagKey       DICOM tag specifying the attribute from which the string should be retrieved
-     *  @param  stringValue  reference to variable in which the result should be stored
+     *  @param  stringValue  reference to variable in which the result should be stored.
      *                       (This parameter is automatically cleared if the tag could not be found.)
-     *  @param  pos          index of the value to get (0..vm-1), -1 for all components
      ** @return status, EC_Normal if successful, an error code otherwise
      */
     static OFCondition getStringValueFromDataset(DcmItem &dataset,
                                                  const DcmTagKey &tagKey,
-                                                 OFString &stringValue,
-                                                 const signed long pos = 0);
+                                                 OFString &stringValue);
 
     /** put string value to dataset
      ** @param  dataset      reference to DICOM dataset to which the string should be put.
@@ -1434,16 +1229,14 @@ class DCMTK_DCMSR_EXPORT DSRTypes
                                                const OFBool allowEmpty = OFTrue);
 
     /** check element value for correct value multiplicity and type.
-     ** @param  delem            pointer to DICOM element to be checked (might be NULL)
-     *  @param  tagKey           DICOM tag of the DICOM element the parameter 'delem' points to
-     *  @param  vm               value multiplicity (according to the data dictionary) to be checked
-     *                           for.  (See DcmElement::checkVM() for a list of valid values.)
-     *                           Interpreted as cardinality (number of items) for sequence attributes.
-     *  @param  type             value type (valid value: "1", "1C", "2", something else)
-     *  @param  searchCond       optional flag indicating the status of a previous search() call
-     *  @param  moduleName       optional module name to be printed (default: "SR document" if NULL)
-     *  @param  acceptViolation  accept certain violations regarding the VR and VM if OFTrue.
-     *                           A warning message will always be reported if the value in incorrect.
+     ** @param  delem       pointer to DICOM element to be checked (might be NULL)
+     *  @param  tagKey      DICOM tag of the DICOM element then parameter 'delem' points to
+     *  @param  vm          value multiplicity (according to the data dictionary) to be checked for.
+     *                      (See DcmElement::checkVM() for a list of valid values.)
+     *                      Interpreted as cardinality (number of items) for sequence attributes.
+     *  @param  type        value type (valid value: "1", "1C", "2", something else)
+     *  @param  searchCond  optional flag indicating the status of a previous 'search' function call
+     *  @param  moduleName  optional module name to be printed (default: "SR document" if NULL)
      ** @return OFTrue if element value is correct, OFFalse otherwise
      */
     static OFBool checkElementValue(DcmElement *delem,
@@ -1451,77 +1244,62 @@ class DCMTK_DCMSR_EXPORT DSRTypes
                                     const OFString &vm,
                                     const OFString &type,
                                     const OFCondition &searchCond = EC_Normal,
-                                    const char *moduleName = NULL,
-                                    const OFBool acceptViolation = OFFalse);
+                                    const char *moduleName = NULL);
 
     /** check element value for correct value multiplicity and type.
-     ** @param  delem            DICOM element to be checked
-     *  @param  vm               value multiplicity (according to the data dictionary) to be checked
-     *                           for.  (See DcmElement::checkVM() for a list of valid values.)
-     *                           Interpreted as cardinality (number of items) for sequence attributes.
-     *  @param  type             value type (valid value: "1", "1C", "2", something else)
-     *  @param  searchCond       optional flag indicating the status of a previous search() call
-     *  @param  moduleName       optional module name to be printed (default: "SR document" if NULL)
-     *  @param  acceptViolation  accept certain violations regarding the VR and VM if OFTrue.
-     *                           A warning message will always be reported if the value in incorrect.
+     ** @param  delem       DICOM element to be checked
+     *  @param  vm          value multiplicity (according to the data dictionary) to be checked for.
+     *                      (See DcmElement::checkVM() for a list of valid values.)
+     *                      Interpreted as cardinality (number of items) for sequence attributes.
+     *  @param  type        value type (valid value: "1", "1C", "2", something else)
+     *  @param  searchCond  optional flag indicating the status of a previous 'search' function call
+     *  @param  moduleName  optional module name to be printed (default: "SR document" if NULL)
      ** @return OFTrue if element value is correct, OFFalse otherwise
      */
     static OFBool checkElementValue(DcmElement &delem,
                                     const OFString &vm,
                                     const OFString &type,
                                     const OFCondition &searchCond = EC_Normal,
-                                    const char *moduleName = NULL,
-                                    const OFBool acceptViolation = OFFalse);
+                                    const char *moduleName = NULL);
 
     /** get element from dataset and check it for correct value multiplicity and type.
-     ** @param  dataset          DICOM dataset from which the element should be retrieved.  (Would be
-     *                           'const' if the methods from 'dcmdata' would also be 'const'.)
-     *  @param  delem            DICOM element used to store the value (always creates a copy!)
-     *  @param  vm               value multiplicity (according to the data dictionary) to be checked
-     *                           for.  (See DcmElement::checkVM() for a list of valid values.)
-     *                           Interpreted as cardinality (number of items) for sequence attributes.
-     *  @param  type             value type (valid value: "1", "1C", "2", something else which is not
-     *                           checked)
-     *  @param  moduleName       optional module name to be printed (default: "SR document" if NULL)
-     *  @param  acceptViolation  accept certain violations regarding the VR and VM if OFTrue.
-     *                           A warning message will always be reported if the value in incorrect.
-     ** @return status, EC_Normal if element could be retrieved and value is correct, an error code
-     *          otherwise
+     ** @param  dataset     DICOM dataset from which the element should be retrieved.
+     *                      (Would be 'const' if the methods from 'dcmdata' would also be 'const'.)
+     *  @param  delem       DICOM element used to store the value (always creates a copy!)
+     *  @param  vm          value multiplicity (according to the data dictionary) to be checked for.
+     *                      (See DcmElement::checkVM() for a list of valid values.)
+     *                      Interpreted as cardinality (number of items) for sequence attributes.
+     *  @param  type        value type (valid value: "1", "1C", "2", something else which is not checked)
+     *  @param  moduleName  optional module name to be printed (default: "SR document" if NULL)
+     ** @return status, EC_Normal if element could be retrieved and value is correct, an error code otherwise
      */
     static OFCondition getAndCheckElementFromDataset(DcmItem &dataset,
                                                      DcmElement &delem,
                                                      const OFString &vm,
                                                      const OFString &type,
-                                                     const char *moduleName = NULL,
-                                                     const OFBool acceptViolation = OFFalse);
+                                                     const char *moduleName = NULL);
 
     /** get string value from dataset and check it for correct value multiplicity and type.
-     ** @param  dataset          DICOM dataset from which the element should be retrieved.  (Would be
-     *                           'const' if the methods from 'dcmdata' would also be 'const'.)
-     *  @param  tagKey           DICOM tag specifying the attribute from which the string should be
-     *                           retrieved
-     *  @param  stringValue      reference to variable in which the result should be stored.
-     *                           (This parameter is automatically cleared if the tag could not be found.
-     *                           It is not cleared if the retrieved string is invalid, e.g. violates VR
-     *                           or VM definition.)
-     *  @param  vm               value multiplicity (according to the data dictionary) to be checked
-     *                           for.  (See DcmElement::checkVM() for a list of valid values.)
-     *                           Interpreted as cardinality (number of items) for sequence attributes.
-     *  @param  type             value type (valid value: "1", "1C", "2", something else which is not
-     *                           checked)
-     *  @param  moduleName       optional module name to be printed (default: "SR document" if NULL)
-     *  @param  acceptViolation  accept certain violations regarding the VR and VM if OFTrue.
-     *                           A warning message will always be reported if the value in incorrect.
-     ** @return status, EC_Normal if element could be retrieved and value is correct, an error code
-     *          otherwise
+     ** @param  dataset      DICOM dataset from which the element should be retrieved.
+     *                       (Would be 'const' if the methods from 'dcmdata' would also be 'const'.)
+     *  @param  tagKey       DICOM tag specifying the attribute from which the string should be retrieved
+     *  @param  stringValue  reference to variable in which the result should be stored.
+     *                       (This parameter is automatically cleared if the tag could not be found.
+     *                        It is not cleared if the retrieved string is invalid, e.g. violates VR or
+     *                        VM definition.)
+     *  @param  vm           value multiplicity (according to the data dictionary) to be checked for.
+     *                       (See DcmElement::checkVM() for a list of valid values.)
+     *                       Interpreted as cardinality (number of items) for sequence attributes.
+     *  @param  type         value type (valid value: "1", "1C", "2", something else which is not checked)
+     *  @param  moduleName   optional module name to be printed (default: "SR document" if NULL)
+     ** @return status, EC_Normal if element could be retrieved and value is correct, an error code otherwise
      */
     static OFCondition getAndCheckStringValueFromDataset(DcmItem &dataset,
                                                          const DcmTagKey &tagKey,
                                                          OFString &stringValue,
                                                          const OFString &vm,
                                                          const OFString &type,
-                                                         const char *moduleName = NULL,
-                                                         const OFBool acceptViolation = OFFalse);
+                                                         const char *moduleName = NULL);
 
   // --- output functions ---
 

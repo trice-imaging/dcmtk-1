@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTReferencedStructureSetSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -83,8 +83,8 @@ OFCondition DRTReferencedStructureSetSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, ReferencedSOPClassUID, "1", "1", "ReferencedStructureSetSequence");
-        getAndCheckElementFromDataset(item, ReferencedSOPInstanceUID, "1", "1", "ReferencedStructureSetSequence");
+        getAndCheckElementFromDataset(item, ReferencedSOPClassUID, "1", "1C", "ReferencedStructureSetSequence");
+        getAndCheckElementFromDataset(item, ReferencedSOPInstanceUID, "1", "1C", "ReferencedStructureSetSequence");
         result = EC_Normal;
     }
     return result;
@@ -97,8 +97,8 @@ OFCondition DRTReferencedStructureSetSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPClassUID), "1", "1", "ReferencedStructureSetSequence");
-        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPInstanceUID), "1", "1", "ReferencedStructureSetSequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPClassUID), "1", "1C", "ReferencedStructureSetSequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPInstanceUID), "1", "1C", "ReferencedStructureSetSequence");
     }
     return result;
 }
@@ -251,7 +251,7 @@ OFBool DRTReferencedStructureSetSequence::isValid() const
 }
 
 
-size_t DRTReferencedStructureSetSequence::getNumberOfItems() const
+unsigned long DRTReferencedStructureSetSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -281,12 +281,12 @@ OFCondition DRTReferencedStructureSetSequence::gotoNextItem()
 }
 
 
-OFCondition DRTReferencedStructureSetSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTReferencedStructureSetSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -301,12 +301,12 @@ OFCondition DRTReferencedStructureSetSequence::gotoItem(const size_t num, OFList
 }
 
 
-OFCondition DRTReferencedStructureSetSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTReferencedStructureSetSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -321,7 +321,7 @@ OFCondition DRTReferencedStructureSetSequence::gotoItem(const size_t num, OFList
 }
 
 
-OFCondition DRTReferencedStructureSetSequence::gotoItem(const size_t num)
+OFCondition DRTReferencedStructureSetSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -357,7 +357,7 @@ const DRTReferencedStructureSetSequence::Item &DRTReferencedStructureSetSequence
 }
 
 
-OFCondition DRTReferencedStructureSetSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTReferencedStructureSetSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -367,7 +367,7 @@ OFCondition DRTReferencedStructureSetSequence::getItem(const size_t num, Item *&
 }
 
 
-DRTReferencedStructureSetSequence::Item &DRTReferencedStructureSetSequence::getItem(const size_t num)
+DRTReferencedStructureSetSequence::Item &DRTReferencedStructureSetSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -377,7 +377,7 @@ DRTReferencedStructureSetSequence::Item &DRTReferencedStructureSetSequence::getI
 }
 
 
-const DRTReferencedStructureSetSequence::Item &DRTReferencedStructureSetSequence::getItem(const size_t num) const
+const DRTReferencedStructureSetSequence::Item &DRTReferencedStructureSetSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -387,13 +387,13 @@ const DRTReferencedStructureSetSequence::Item &DRTReferencedStructureSetSequence
 }
 
 
-DRTReferencedStructureSetSequence::Item &DRTReferencedStructureSetSequence::operator[](const size_t num)
+DRTReferencedStructureSetSequence::Item &DRTReferencedStructureSetSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTReferencedStructureSetSequence::Item &DRTReferencedStructureSetSequence::operator[](const size_t num) const
+const DRTReferencedStructureSetSequence::Item &DRTReferencedStructureSetSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -416,7 +416,7 @@ OFCondition DRTReferencedStructureSetSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTReferencedStructureSetSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTReferencedStructureSetSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -439,7 +439,7 @@ OFCondition DRTReferencedStructureSetSequence::insertItem(const size_t pos, Item
 }
 
 
-OFCondition DRTReferencedStructureSetSequence::removeItem(const size_t pos)
+OFCondition DRTReferencedStructureSetSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class DRTExposureSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -22,8 +22,6 @@
 #include "dcmtk/dcmrt/seq/drtas5.h"    // for ApplicatorSequence
 #include "dcmtk/dcmrt/seq/drtblds5.h"  // for BeamLimitingDeviceSequence
 #include "dcmtk/dcmrt/seq/drtbl5.h"    // for BlockSequence
-#include "dcmtk/dcmrt/seq/drtgas.h"    // for GeneralAccessorySequence
-#include "dcmtk/dcmrt/seq/drtpfms.h"   // for PrimaryFluenceModeSequence
 
 
 /** Interface class for ExposureSequence (3002,0030) in RTImageModule
@@ -60,7 +58,6 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
 
         /** assigment operator
          *  @param copy item object to be copied
-         *  @return reference to this object
          */
         Item &operator=(const Item &copy);
 
@@ -96,20 +93,6 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
 
       // --- get DICOM attribute values ---
 
-        /** get BeamLimitingDeviceAngle (300a,0120)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getBeamLimitingDeviceAngle(OFString &value, const signed long pos = 0) const;
-
-        /** get BeamLimitingDeviceAngle (300a,0120)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getBeamLimitingDeviceAngle(Float64 &value, const unsigned long pos = 0) const;
-
         /** get DiaphragmPosition (3002,0034)
          *  @param  value  reference to variable in which the value should be stored
          *  @param  pos    index of the value to get (0..vm-1), -1 for all components
@@ -143,34 +126,6 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
          *  @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition getExposureTime(Sint32 &value, const unsigned long pos = 0) const;
-
-        /** get ExposureTimeInms (0018,9328)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getExposureTimeInms(Float64 &value, const unsigned long pos = 0) const;
-
-        /** get GantryAngle (300a,011e)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getGantryAngle(OFString &value, const signed long pos = 0) const;
-
-        /** get GantryAngle (300a,011e)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getGantryAngle(Float64 &value, const unsigned long pos = 0) const;
-
-        /** get GantryPitchAngle (300a,014a)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getGantryPitchAngle(Float32 &value, const unsigned long pos = 0) const;
 
         /** get KVP (0018,0060)
          *  @param  value  reference to variable in which the value should be stored
@@ -214,20 +169,6 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
          */
         OFCondition getNumberOfBlocks(Sint32 &value, const unsigned long pos = 0) const;
 
-        /** get PatientSupportAngle (300a,0122)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getPatientSupportAngle(OFString &value, const signed long pos = 0) const;
-
-        /** get PatientSupportAngle (300a,0122)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getPatientSupportAngle(Float64 &value, const unsigned long pos = 0) const;
-
         /** get ReferencedFrameNumber (0008,1160)
          *  @param  value  reference to variable in which the value should be stored
          *  @param  pos    index of the value to get (0..vm-1), -1 for all components
@@ -242,62 +183,6 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
          */
         OFCondition getReferencedFrameNumber(Sint32 &value, const unsigned long pos = 0) const;
 
-        /** get TableTopLateralPosition (300a,012a)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getTableTopLateralPosition(OFString &value, const signed long pos = 0) const;
-
-        /** get TableTopLateralPosition (300a,012a)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getTableTopLateralPosition(Float64 &value, const unsigned long pos = 0) const;
-
-        /** get TableTopLongitudinalPosition (300a,0129)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getTableTopLongitudinalPosition(OFString &value, const signed long pos = 0) const;
-
-        /** get TableTopLongitudinalPosition (300a,0129)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getTableTopLongitudinalPosition(Float64 &value, const unsigned long pos = 0) const;
-
-        /** get TableTopPitchAngle (300a,0140)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getTableTopPitchAngle(Float32 &value, const unsigned long pos = 0) const;
-
-        /** get TableTopRollAngle (300a,0144)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getTableTopRollAngle(Float32 &value, const unsigned long pos = 0) const;
-
-        /** get TableTopVerticalPosition (300a,0128)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getTableTopVerticalPosition(OFString &value, const signed long pos = 0) const;
-
-        /** get TableTopVerticalPosition (300a,0128)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getTableTopVerticalPosition(Float64 &value, const unsigned long pos = 0) const;
-
         /** get XRayTubeCurrent (0018,1151)
          *  @param  value  reference to variable in which the value should be stored
          *  @param  pos    index of the value to get (0..vm-1), -1 for all components
@@ -311,13 +196,6 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
          *  @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition getXRayTubeCurrent(Sint32 &value, const unsigned long pos = 0) const;
-
-        /** get XRayTubeCurrentInmA (0018,9330)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getXRayTubeCurrentInmA(Float64 &value, const unsigned long pos = 0) const;
 
       // --- get DICOM sequence attributes ---
 
@@ -357,38 +235,7 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
         const DRTBlockSequenceInRTImageModule &getBlockSequence() const
             { return BlockSequence; }
 
-        /** get GeneralAccessorySequence (300a,0420)
-         *  @return reference to sequence element
-         */
-        DRTGeneralAccessorySequence &getGeneralAccessorySequence()
-            { return GeneralAccessorySequence; }
-
-        /** get GeneralAccessorySequence (300a,0420)
-         *  @return const reference to sequence element
-         */
-        const DRTGeneralAccessorySequence &getGeneralAccessorySequence() const
-            { return GeneralAccessorySequence; }
-
-        /** get PrimaryFluenceModeSequence (3002,0050)
-         *  @return reference to sequence element
-         */
-        DRTPrimaryFluenceModeSequence &getPrimaryFluenceModeSequence()
-            { return PrimaryFluenceModeSequence; }
-
-        /** get PrimaryFluenceModeSequence (3002,0050)
-         *  @return const reference to sequence element
-         */
-        const DRTPrimaryFluenceModeSequence &getPrimaryFluenceModeSequence() const
-            { return PrimaryFluenceModeSequence; }
-
       // --- set DICOM attribute values ---
-
-        /** set BeamLimitingDeviceAngle (300a,0120)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (DS) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setBeamLimitingDeviceAngle(const OFString &value, const OFBool check = OFTrue);
 
         /** set DiaphragmPosition (3002,0034)
          *  @param  value  value to be set (possibly multi-valued) or "" for no value
@@ -403,27 +250,6 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
          *  @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition setExposureTime(const OFString &value, const OFBool check = OFTrue);
-
-        /** set ExposureTimeInms (0018,9328)
-         *  @param  value  value to be set (should be valid for this VR)
-         *  @param  pos    index of the value to be set (0..vm-1), vm=1
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setExposureTimeInms(const Float64 value, const unsigned long pos = 0);
-
-        /** set GantryAngle (300a,011e)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (DS) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setGantryAngle(const OFString &value, const OFBool check = OFTrue);
-
-        /** set GantryPitchAngle (300a,014a)
-         *  @param  value  value to be set (should be valid for this VR)
-         *  @param  pos    index of the value to be set (0..vm-1), vm=1
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setGantryPitchAngle(const Float32 value, const unsigned long pos = 0);
 
         /** set KVP (0018,0060)
          *  @param  value  value to be set (single value only) or "" for no value
@@ -446,54 +272,12 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
          */
         OFCondition setNumberOfBlocks(const OFString &value, const OFBool check = OFTrue);
 
-        /** set PatientSupportAngle (300a,0122)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (DS) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setPatientSupportAngle(const OFString &value, const OFBool check = OFTrue);
-
         /** set ReferencedFrameNumber (0008,1160)
          *  @param  value  value to be set (possibly multi-valued) or "" for no value
          *  @param  check  check 'value' for conformance with VR (IS) and VM (1-n) if enabled
          *  @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition setReferencedFrameNumber(const OFString &value, const OFBool check = OFTrue);
-
-        /** set TableTopLateralPosition (300a,012a)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (DS) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setTableTopLateralPosition(const OFString &value, const OFBool check = OFTrue);
-
-        /** set TableTopLongitudinalPosition (300a,0129)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (DS) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setTableTopLongitudinalPosition(const OFString &value, const OFBool check = OFTrue);
-
-        /** set TableTopPitchAngle (300a,0140)
-         *  @param  value  value to be set (should be valid for this VR)
-         *  @param  pos    index of the value to be set (0..vm-1), vm=1
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setTableTopPitchAngle(const Float32 value, const unsigned long pos = 0);
-
-        /** set TableTopRollAngle (300a,0144)
-         *  @param  value  value to be set (should be valid for this VR)
-         *  @param  pos    index of the value to be set (0..vm-1), vm=1
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setTableTopRollAngle(const Float32 value, const unsigned long pos = 0);
-
-        /** set TableTopVerticalPosition (300a,0128)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (DS) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setTableTopVerticalPosition(const OFString &value, const OFBool check = OFTrue);
 
         /** set XRayTubeCurrent (0018,1151)
          *  @param  value  value to be set (single value only) or "" for no value
@@ -502,13 +286,6 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
          */
         OFCondition setXRayTubeCurrent(const OFString &value, const OFBool check = OFTrue);
 
-        /** set XRayTubeCurrentInmA (0018,9330)
-         *  @param  value  value to be set (should be valid for this VR)
-         *  @param  pos    index of the value to be set (0..vm-1), vm=1
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setXRayTubeCurrentInmA(const Float64 value, const unsigned long pos = 0);
-
       private:
 
         /// internal flag used to mark the empty default item
@@ -516,8 +293,6 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
 
         /// ApplicatorSequence (300a,0107) vr=SQ, vm=1, type=3
         DRTApplicatorSequenceInRTImageModule ApplicatorSequence;
-        /// BeamLimitingDeviceAngle (300a,0120) vr=DS, vm=1, type=3
-        DcmDecimalString BeamLimitingDeviceAngle;
         /// BeamLimitingDeviceSequence (300a,00b6) vr=SQ, vm=1, type=3
         DRTBeamLimitingDeviceSequenceInRTImageModule BeamLimitingDeviceSequence;
         /// BlockSequence (300a,00f4) vr=SQ, vm=1, type=2C
@@ -526,40 +301,16 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
         DcmDecimalString DiaphragmPosition;
         /// ExposureTime (0018,1150) vr=IS, vm=1, type=2C
         DcmIntegerString ExposureTime;
-        /// ExposureTimeInms (0018,9328) vr=FD, vm=1, type=3
-        DcmFloatingPointDouble ExposureTimeInms;
-        /// GantryAngle (300a,011e) vr=DS, vm=1, type=3
-        DcmDecimalString GantryAngle;
-        /// GantryPitchAngle (300a,014a) vr=FL, vm=1, type=3
-        DcmFloatingPointSingle GantryPitchAngle;
-        /// GeneralAccessorySequence (300a,0420) vr=SQ, vm=1, type=3
-        DRTGeneralAccessorySequence GeneralAccessorySequence;
         /// KVP (0018,0060) vr=DS, vm=1, type=2C
         DcmDecimalString KVP;
         /// MetersetExposure (3002,0032) vr=DS, vm=1, type=2C
         DcmDecimalString MetersetExposure;
-        /// NumberOfBlocks (300a,00f0) vr=IS, vm=1, type=1
+        /// NumberOfBlocks (300a,00f0) vr=IS, vm=1, type=1C
         DcmIntegerString NumberOfBlocks;
-        /// PatientSupportAngle (300a,0122) vr=DS, vm=1, type=3
-        DcmDecimalString PatientSupportAngle;
-        /// PrimaryFluenceModeSequence (3002,0050) vr=SQ, vm=1, type=3
-        DRTPrimaryFluenceModeSequence PrimaryFluenceModeSequence;
         /// ReferencedFrameNumber (0008,1160) vr=IS, vm=1-n, type=1C
         DcmIntegerString ReferencedFrameNumber;
-        /// TableTopLateralPosition (300a,012a) vr=DS, vm=1, type=3
-        DcmDecimalString TableTopLateralPosition;
-        /// TableTopLongitudinalPosition (300a,0129) vr=DS, vm=1, type=3
-        DcmDecimalString TableTopLongitudinalPosition;
-        /// TableTopPitchAngle (300a,0140) vr=FL, vm=1, type=3
-        DcmFloatingPointSingle TableTopPitchAngle;
-        /// TableTopRollAngle (300a,0144) vr=FL, vm=1, type=3
-        DcmFloatingPointSingle TableTopRollAngle;
-        /// TableTopVerticalPosition (300a,0128) vr=DS, vm=1, type=3
-        DcmDecimalString TableTopVerticalPosition;
         /// XRayTubeCurrent (0018,1151) vr=IS, vm=1, type=2C
         DcmIntegerString XRayTubeCurrent;
-        /// XRayTubeCurrentInmA (0018,9330) vr=FD, vm=1, type=3
-        DcmFloatingPointDouble XRayTubeCurrentInmA;
 
     };
 
@@ -581,7 +332,6 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
 
     /** assigment operator
      *  @param copy sequence object to be copied
-     *  @return reference to this object
      */
     DRTExposureSequence &operator=(const DRTExposureSequence &copy);
 
@@ -604,7 +354,7 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
     /** get number of items in the sequence
      *  @return number of items
      */
-    size_t getNumberOfItems() const;
+    unsigned long getNumberOfItems() const;
 
     /** goto first item in the sequence
      *  @return status, EC_Normal if successful, an error code otherwise
@@ -620,7 +370,7 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
      *  @param  num  number of the item to be selected (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num);
+    OFCondition gotoItem(const unsigned long num);
 
     /** get current item in the sequence
      *  @param  item  reference to item pointer (result variable)
@@ -643,31 +393,31 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
      *  @param  item  reference to item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition getItem(const size_t num, Item *&item);
+    OFCondition getItem(const unsigned long num, Item *&item);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &getItem(const size_t num);
+    Item &getItem(const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &getItem(const size_t num) const;
+    const Item &getItem(const unsigned long num) const;
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &operator[](const size_t num);
+    Item &operator[](const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &operator[](const size_t num) const;
+    const Item &operator[](const unsigned long num) const;
 
     /** add new item to the end of this sequence
      *  @param  item  reference to new item pointer (result variable)
@@ -680,13 +430,13 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
      *  @param  item  reference to new item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition insertItem(const size_t pos, Item *&item);
+    OFCondition insertItem(const unsigned long pos, Item *&item);
 
     /** remove particular item from the sequence
      *  @param  pos  position of the item to be removed (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition removeItem(const size_t pos);
+    OFCondition removeItem(const unsigned long pos);
 
   // --- input/output methods ---
 
@@ -721,7 +471,7 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListIterator(Item *) &iterator);
 
     /** goto particular item in the sequence
@@ -729,7 +479,7 @@ class DCMTK_DCMRT_EXPORT DRTExposureSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListConstIterator(Item *) &iterator) const;
 
   private:

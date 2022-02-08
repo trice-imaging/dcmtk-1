@@ -152,7 +152,7 @@ void initializeFactoryRegistry()
     DCMTK_LOG4CPLUS_REG_APPENDER (reg, RollingFileAppender);
     DCMTK_LOG4CPLUS_REG_APPENDER (reg, DailyRollingFileAppender);
     DCMTK_LOG4CPLUS_REG_APPENDER (reg, SocketAppender);
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(__windows__)
 #  if defined(DCMTK_LOG4CPLUS_HAVE_NT_EVENT_LOG)
     DCMTK_LOG4CPLUS_REG_APPENDER (reg, NTEventLogAppender);
 #  endif

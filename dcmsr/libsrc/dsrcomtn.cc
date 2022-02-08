@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2018, OFFIS e.V.
+ *  Copyright (C) 2000-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -11,9 +11,9 @@
  *    D-26121 Oldenburg, Germany
  *
  *
- *  Module: dcmsr
+ *  Module:  dcmsr
  *
- *  Author: Joerg Riesmeier
+ *  Author:  Joerg Riesmeier
  *
  *  Purpose:
  *    classes: DSRCompositeTreeNode
@@ -27,7 +27,6 @@
 #include "dcmtk/dcmsr/dsrcomtn.h"
 #include "dcmtk/dcmsr/dsrxmld.h"
 
-#include "dcmtk/dcmdata/dcdeftag.h"
 #include "dcmtk/dcmdata/dcuid.h"
 
 
@@ -38,47 +37,8 @@ DSRCompositeTreeNode::DSRCompositeTreeNode(const E_RelationshipType relationship
 }
 
 
-DSRCompositeTreeNode::DSRCompositeTreeNode(const DSRCompositeTreeNode &node)
-  : DSRDocumentTreeNode(node),
-    DSRCompositeReferenceValue(node)
-{
-}
-
-
 DSRCompositeTreeNode::~DSRCompositeTreeNode()
 {
-}
-
-
-OFBool DSRCompositeTreeNode::operator==(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator==(node);
-    if (result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRCompositeReferenceValue::operator==(OFstatic_cast(const DSRCompositeTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-OFBool DSRCompositeTreeNode::operator!=(const DSRDocumentTreeNode &node) const
-{
-    /* call comparison operator of base class (includes check of value type) */
-    OFBool result = DSRDocumentTreeNode::operator!=(node);
-    if (!result)
-    {
-        /* it's safe to cast the type since the value type has already been checked */
-        result = DSRCompositeReferenceValue::operator!=(OFstatic_cast(const DSRCompositeTreeNode &, node).getValue());
-    }
-    return result;
-}
-
-
-DSRCompositeTreeNode *DSRCompositeTreeNode::clone() const
-{
-    return new DSRCompositeTreeNode(*this);
 }
 
 
@@ -91,13 +51,7 @@ void DSRCompositeTreeNode::clear()
 
 OFBool DSRCompositeTreeNode::isValid() const
 {
-    return DSRDocumentTreeNode::isValid() && hasValidValue();
-}
-
-
-OFBool DSRCompositeTreeNode::hasValidValue() const
-{
-    return DSRCompositeReferenceValue::isValid();
+    return DSRDocumentTreeNode::isValid() && DSRCompositeReferenceValue::isValid();
 }
 
 
@@ -130,11 +84,10 @@ OFCondition DSRCompositeTreeNode::writeXML(STD_NAMESPACE ostream &stream,
 }
 
 
-OFCondition DSRCompositeTreeNode::readContentItem(DcmItem &dataset,
-                                                  const size_t flags)
+OFCondition DSRCompositeTreeNode::readContentItem(DcmItem &dataset)
 {
     /* read ReferencedSOPSequence */
-    return DSRCompositeReferenceValue::readSequence(dataset, DCM_ReferencedSOPSequence, "1" /* type */, flags);
+    return DSRCompositeReferenceValue::readSequence(dataset, DCM_ReferencedSOPSequence, "1" /* type */);
 }
 
 
@@ -146,11 +99,10 @@ OFCondition DSRCompositeTreeNode::writeContentItem(DcmItem &dataset) const
 
 
 OFCondition DSRCompositeTreeNode::readXMLContentItem(const DSRXMLDocument &doc,
-                                                     DSRXMLCursor cursor,
-                                                     const size_t flags)
+                                                     DSRXMLCursor cursor)
 {
     /* retrieve value from XML element "value" */
-    return DSRCompositeReferenceValue::readXML(doc, doc.getNamedChildNode(cursor, "value"), flags);
+    return DSRCompositeReferenceValue::readXML(doc, doc.getNamedNode(cursor.gotoChild(), "value"));
 }
 
 

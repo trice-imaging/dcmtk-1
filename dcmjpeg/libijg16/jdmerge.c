@@ -33,22 +33,8 @@
  */
 
 #define JPEG_INTERNALS
-#include "dcmtk/config/osconfig.h"
 #include "jinclude16.h"
 #include "jpeglib16.h"
-
-/* check if we have a 64-bit integer type */
-#if SIZEOF_LONG == 8
-typedef long jdmerge_sint64;
-#elif defined(_WIN32)
-typedef __int64 jdmerge_sint64;
-#elif defined(HAVE_LONG_LONG)
-typedef long long jdmerge_sint64;
-#elif defined (HAVE_LONGLONG)
-typedef longlong jdmerge_sint64;
-#else
-#define JDMERGE_NO_SINT64
-#endif
 
 #ifdef UPSAMPLE_MERGING_SUPPORTED
 
@@ -117,21 +103,12 @@ build_ycc_rgb_table (j_decompress_ptr cinfo)
   for (i = 0, x = -CENTERJSAMPLE; i <= MAXJSAMPLE; i++, x++) {
     /* i is the actual input pixel value, in the range 0..MAXJSAMPLE */
     /* The Cb or Cr value we are thinking of is x = i - CENTERJSAMPLE */
-#ifdef JDMERGE_NO_SINT64
     /* Cr=>R value is nearest int to 1.40200 * x */
     upsample->Cr_r_tab[i] = (int)
             RIGHT_SHIFT(FIX(1.40200) * x + ONE_HALF, SCALEBITS);
     /* Cb=>B value is nearest int to 1.77200 * x */
     upsample->Cb_b_tab[i] = (int)
             RIGHT_SHIFT(FIX(1.77200) * x + ONE_HALF, SCALEBITS);
-#else
-    /* Cr=>R value is nearest int to 1.40200 * x */
-    upsample->Cr_r_tab[i] = (int)
-            RIGHT_SHIFT((jdmerge_sint64) FIX(1.40200) * x + ONE_HALF, SCALEBITS);
-    /* Cb=>B value is nearest int to 1.77200 * x */
-    upsample->Cb_b_tab[i] = (int)
-            RIGHT_SHIFT((jdmerge_sint64) FIX(1.77200) * x + ONE_HALF, SCALEBITS);
-#endif
     /* Cr=>G value is scaled-up -0.71414 * x */
     upsample->Cr_g_tab[i] = (- FIX(0.71414)) * x;
     /* Cb=>G value is scaled-up -0.34414 * x */
@@ -171,7 +148,6 @@ merged_2v_upsample (j_decompress_ptr cinfo,
             JDIMENSION out_rows_avail)
 /* 2:1 vertical sampling case: may need a spare row. */
 {
-  (void) in_row_groups_avail;
   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
   JSAMPROW work_ptrs[2];
   JDIMENSION num_rows;      /* number of rows returned to caller */
@@ -221,8 +197,6 @@ merged_1v_upsample (j_decompress_ptr cinfo,
             JDIMENSION out_rows_avail)
 /* 1:1 vertical sampling case: much easier, never need a spare row. */
 {
-  (void) in_row_groups_avail;
-  (void) out_rows_avail;
   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
 
   /* Just do the upsampling. */

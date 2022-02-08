@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2021, OFFIS e.V.
+ *  Copyright (C) 2002-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -32,9 +32,9 @@
  *  constant declarations and macros  *
  *------------------------------------*/
 
-// default file-set ID
+// default fileset ID
 #define DEFAULT_FILESETID "DCMTK_MEDIA_DEMO"
-// default specific character set of file-set descriptor file
+// default specific character set of fileset descriptor file
 #define DEFAULT_DESCRIPTOR_CHARSET "ISO_IR 100"
 
 
@@ -133,12 +133,6 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
         AP_GeneralPurposeBDMPEG4HPatLV41,
         /// General Purpose BD Interchange with MPEG-4 AVC/H.264 BD-Compatible HiP\@Level4.1 (STD-GEN-BD-MPEG4-HPLV41BD)
         AP_GeneralPurposeBDMPEG4HPatLV41BD,
-        /// General Purpose BD Interchange with MPEG-4 AVC/H.264 HiP\@Level4.2 for 2D video (STD-GEN-BD-MPEG4-HPLV42-2D)
-        AP_GeneralPurposeBDMPEG4HPatLV42_2D,
-        /// General Purpose BD Interchange with MPEG-4 AVC/H.264 HiP\@Level4.2 for 3D video (STD-GEN-BD-MPEG4-HPLV42-3D)
-        AP_GeneralPurposeBDMPEG4HPatLV42_3D,
-        /// General Purpose BD Interchange with MPEG-4 AVC/H.264 Stereo HiP\@Level4.2 (STD-GEN-BD-MPEG4-SHPLV42)
-        AP_GeneralPurposeBDMPEG4StereoHPatLV42,
         /// General Purpose USB and Flash Memory Interchange with JPEG (STD-GEN-USB/MMC/CF/SD-JPEG)
         AP_USBandFlashJPEG,
         /// General Purpose USB and Flash Memory Interchange with JPEG 2000 (STD-GEN-USB/MMC/CF/SD-J2K)
@@ -301,13 +295,13 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
     OFCondition addDicomFile(const OFFilename &filename,
                              const OFFilename &directory = OFFilename());
 
-    /** set the file-set descriptor file ID and character set.
+    /** set the fileset descriptor file ID and character set.
      *  Prior to any internal modification both 'filename' and 'charset' are checked
      *  using the above checking routines.  Existence of 'filename' is not checked.
      *  Requires a DICOMDIR object to exist (see createNewDicomDir(), appendToDicomDir()
      *  or updateDicomDir()).
-     *  @param filename name of the file-set descriptor file to be set
-     *  @param charset character set of the file-set descriptor file to be set.
+     *  @param filename name of the fileset descriptor file to be set
+     *  @param charset character set of the fileset descriptor file to be set.
      *    default: ISO Latin 1 ("ISO_IR 100"), use NULL or empty string to omit value.
      *  @return EC_Normal upon success, an error code otherwise
      */
@@ -431,15 +425,6 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
         return TransferSyntaxCheck;
     }
 
-    /** get current status of the "DICOM file format check" mode.
-     *  See disableFileFormatCheck() for more details.
-     *  @return OFTrue if check is enabled, OFFalse otherwise
-     */
-    OFBool fileFormatCheck() const
-    {
-        return FileFormatCheck;
-    }
-
     /** get current status of the "consistency check" mode.
      *  See disableConsistencyCheck() for more details.
      *  @return OFTrue if check is enabled, OFFalse otherwise
@@ -450,7 +435,7 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
     }
 
     /** enable/disable the "abort on first error" mode.
-     *  If the mode is enabled, addDicomFile() reports an error message and
+     *  If the mode is enabled addDicomFile() reports an error message and
      *  returns with an error status code if something went wrong.
      *  Default: off, do not abort
      *  @param newMode enable mode if OFTrue, disable if OFFalse
@@ -459,7 +444,7 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
     OFBool enableAbortMode(const OFBool newMode = OFTrue);
 
     /** enable/disable the "map filenames" mode.
-     *  If the mode is enabled, filenames are automatically mapped to DICOM format
+     *  If the mode is enabled filenames are automatically mapped to DICOM format
      *  (convert lower case to upper case characters and remove trailing period).
      *  Default: off, do not map filenames
      *  @param newMode enable mode if OFTrue, disable if OFFalse
@@ -468,7 +453,7 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
     OFBool enableMapFilenamesMode(const OFBool newMode = OFTrue);
 
     /** enable/disable the "invent missing values" mode.
-     *  If the mode is enabled, required DICOMDIR attributes (type 1) are
+     *  If the mode is enabled required DICOMDIR attributes (type 1) are
      *  invented when missing in the DICOM file.
      *  Default: off, do not invent attribute values
      *  @param newMode enable mode if OFTrue, disable if OFFalse
@@ -477,7 +462,7 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
     OFBool enableInventMode(const OFBool newMode = OFTrue);
 
     /** enable/disable the "invent new patient ID" mode.
-     *  If the mode is enabled, a new PatientID is invented in case of
+     *  If the mode is enabled a new PatientID is invented in case of
      *  inconsistent PatientName attributes, i.e. when different patients
      *  share the same ID.
      *  Default: off, do not invent new patient ID
@@ -487,7 +472,7 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
     OFBool enableInventPatientIDMode(const OFBool newMode = OFTrue);
 
     /** enable/disable the "retired SOP class support" mode.
-     *  If the mode is enabled, retired SOP classes defined in previous editions
+     *  If the mode is enabled retired SOP classes defined in previous editions
      *  of the DICOM standard are also accepted.
      *  Default: off, do not accept retired SOP classes
      *  @param newMode enable mode if OFTrue, disable if OFFalse
@@ -496,7 +481,7 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
     OFBool enableRetiredSOPClassSupport(const OFBool newMode = OFTrue);
 
     /** enable/disable the "create icon images" mode.
-     *  If the mode is enabled, icon images are created for each IMAGE record.
+     *  If the mode is enabled icon images are created for each IMAGE record.
      *  Please note that particular application profiles (e.g. Basic Cardiac)
      *  require an icon images to be present.  Therefore, this mode does not
      *  affect the icon images creation of such profiles.
@@ -507,7 +492,7 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
     OFBool enableIconImageMode(const OFBool newMode = OFTrue);
 
     /** disable/enable the "create backup file" mode.
-     *  If this mode is disabled, no backup file of an existing DICOMDIR is created.
+     *  If this mode is disabled no backup file of an existing DICOMDIR is created.
      *  However, when appending new files to an existing DICOMDIR a _temporary_
      *  backup file "<dicomdir>.$$$" is always created.
      *  Default: on, create a backup file "<dicomdir>.BAK"
@@ -517,52 +502,40 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
     OFBool disableBackupMode(const OFBool newMode = OFFalse);
 
     /** disable/enable the "pixel encoding check".
-     *  If this mode is disabled, the pixel encoding is not check for compliance
-     *  with the selected application profile.
+     *  If this mode is disabled the pixel encoding is not check for compliance
+     *  with the selected application profile.  Please use this switch with care
+     *  since the resulting DICOMDIR will probably violate the rules for the
+     *  selected application profile.
      *  Default: on, check pixel encoding (bits allocated/stored, high bit)
-     *  @warning Please use this switch with care since the resulting DICOMDIR will
-     *    probably violate the rules for the selected application profile.
      *  @param newMode disable check if OFFalse, enable if OFTrue
      *  @return previously stored value
      */
     OFBool disableEncodingCheck(const OFBool newMode = OFFalse);
 
     /** disable/enable the "spatial resolution check".
-     *  If this mode is disabled, the spatial resolution is not check for compliance
-     *  with the selected application profile.
+     *  If this mode is disabled the spatial resolution is not check for compliance
+     *  with the selected application profile.  Please use this switch with care
+     *  since the resulting DICOMDIR will probably violate the rules for the
+     *  selected application profile.
      *  Default: on, check spatial resolution
-     *  @warning Please use this switch with care since the resulting DICOMDIR will
-     *    probably violate the rules for the selected application profile.
      *  @param newMode disable check if OFFalse, enable if OFTrue
      *  @return previously stored value
      */
     OFBool disableResolutionCheck(const OFBool newMode = OFFalse);
 
     /** disable/enable the "transfer syntax check".
-     *  If this mode is disabled, the transfer syntax is not check for compliance
-     *  with the selected application profile.
+     *  If this mode is disabled the transfer syntax is not check for compliance
+     *  with the selected application profile.  Please use this switch with care
+     *  since the resulting DICOMDIR will probably violate the rules for the
+     *  selected application profile.
      *  Default: on, check transfer syntax
-     *  @warning Please use this switch with care since the resulting DICOMDIR will
-     *    probably violate the rules for the selected application profile.
      *  @param newMode disable check if OFFalse, enable if OFTrue
      *  @return previously stored value
      */
     OFBool disableTransferSyntaxCheck(const OFBool newMode = OFFalse);
 
-    /** disable/enable the "DICOM file format check".
-     *  If this mode is disabled, it is not checked whether the file to be added
-     *  contains file meta information (according to DICOM part 10).
-     *  Default: on, check DICOM file format
-     *  @warning Please use this switch with care since the resulting DICOMDIR will
-     *    violate the rules of the DICOM standard if it references files that are
-     *    missing the file meta information.
-     *  @param newMode disable check if OFFalse, enable if OFTrue
-     *  @return previously stored value
-     */
-    OFBool disableFileFormatCheck(const OFBool newMode = OFFalse);
-
     /** disable/enable the "consistency check".
-     *  If this mode is disabled, the consistency of newly added records with
+     *  If this mode is disabled the consistency of newly added records with
      *  already existing ones is not checked (see warnAboutInconsistentAttributes()
      *  for details).
      *  Default: on, perform consistency check
@@ -1080,54 +1053,6 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
                                                const OFString &referencedFileID,
                                                const OFFilename &sourceFilename);
 
-    /** create or update tract record and copy required values from dataset
-     *  @param record record to be updated, use NULL to create a new one
-     *  @param fileformat DICOM dataset of the current file
-     *  @param referencedFileID value of the Referenced File ID attribute
-     *  @param sourceFilename name of the source DICOM file
-     *  @return pointer to new or updated record, NULL if an error occurred
-     */
-    DcmDirectoryRecord *buildTractRecord(DcmDirectoryRecord *record,
-                                         DcmFileFormat *fileformat,
-                                         const OFString &referencedFileID,
-                                         const OFFilename &sourceFilename);
-
-    /** create or update assessment record and copy required values from dataset
-     *  @param record record to be updated, use NULL to create a new one
-     *  @param fileformat DICOM dataset of the current file
-     *  @param referencedFileID value of the Referenced File ID attribute
-     *  @param sourceFilename name of the source DICOM file
-     *  @return pointer to new or updated record, NULL if an error occurred
-     */
-    DcmDirectoryRecord *buildAssessmentRecord(DcmDirectoryRecord *record,
-                                              DcmFileFormat *fileformat,
-                                              const OFString &referencedFileID,
-                                              const OFFilename &sourceFilename);
-
-    /** create or update radiotherapy record and copy required values from dataset
-     *  @param record record to be updated, use NULL to create a new one
-     *  @param fileformat DICOM dataset of the current file
-     *  @param referencedFileID value of the Referenced File ID attribute
-     *  @param sourceFilename name of the source DICOM file
-     *  @return pointer to new or updated record, NULL if an error occurred
-     */
-    DcmDirectoryRecord *buildRadiotherapyRecord(DcmDirectoryRecord *record,
-                                                DcmFileFormat *fileformat,
-                                                const OFString &referencedFileID,
-                                                const OFFilename &sourceFilename);
-
-    /** create or update annotation record and copy required values from dataset
-     *  @param record record to be updated, use NULL to create a new one
-     *  @param fileformat DICOM dataset of the current file
-     *  @param referencedFileID value of the Referenced File ID attribute
-     *  @param sourceFilename name of the source DICOM file
-     *  @return pointer to new or updated record, NULL if an error occurred
-     */
-    DcmDirectoryRecord *buildAnnotationRecord(DcmDirectoryRecord *record,
-                                              DcmFileFormat *fileformat,
-                                              const OFString &referencedFileID,
-                                              const OFFilename &sourceFilename);
-
     /** create or update image record and copy required values from dataset
      *  @param record record to be updated, use NULL to create a new one
      *  @param fileformat DICOM dataset of the current file
@@ -1206,7 +1131,6 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
      *  @param dataset DICOM dataset containing data of the new record
      *  @param referencedFileID value of the Referenced File ID attribute
      *  @param sourceFilename name of the source DICOM file
-     *  @return OFTrue if the data is consistent, OFFalse otherwise
      */
     OFBool checkReferencedSOPInstance(DcmDirectoryRecord *record,
                                       DcmItem *dataset,
@@ -1309,8 +1233,8 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
                                            const OFFilename &sourceFilename,
                                            const OFBool abortCheck = OFFalse);
 
-    /** check whether given file-set ID is valid
-     *  @param filesetID file-set ID to be checked
+    /** check whether given fileset ID is valid
+     *  @param filesetID fileset ID to be checked
      *  @return OFTrue if ID is valid, OFFalse otherwise
      */
     OFBool checkFilesetID(const OFString &filesetID);
@@ -1588,13 +1512,11 @@ class DCMTK_DCMDATA_EXPORT DicomDirInterface
     OFBool ResolutionCheck;
     /// check transfer syntax
     OFBool TransferSyntaxCheck;
-    /// check DICOM file format
-    OFBool FileFormatCheck;
     /// check consistency of newly added record
     OFBool ConsistencyCheck;
     /// create icon images
     OFBool IconImageMode;
-    /// update existing file-set
+    /// update existing fileset
     OFBool FilesetUpdateMode;
 
     /// name of the DICOMDIR backup file

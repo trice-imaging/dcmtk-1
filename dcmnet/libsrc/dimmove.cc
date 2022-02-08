@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were partly developed by
@@ -79,6 +79,12 @@
 */
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#define INCLUDE_CSTDARG
+#include "dcmtk/ofstd/ofstdinc.h"
 
 #include "dcmtk/ofstd/oftimer.h"
 
@@ -159,13 +165,13 @@ DIMSE_moveUser(
     DIC_US msgId;
     int responseCount = 0;
     T_ASC_Association *subAssoc = NULL;
-    DIC_US status = STATUS_MOVE_Pending_SubOperationsAreContinuing;
+    DIC_US status = STATUS_Pending;
     OFBool firstLoop = OFTrue;
 
     if (requestIdentifiers == NULL) return DIMSE_NULLKEY;
 
-    memset((char*)&req, 0, sizeof(req));
-    memset((char*)&rsp, 0, sizeof(rsp));
+    bzero((char*)&req, sizeof(req));
+    bzero((char*)&rsp, sizeof(rsp));
 
     req.CommandField = DIMSE_C_MOVE_RQ;
     request->DataSetType = DIMSE_DATASET_PRESENT;
@@ -181,7 +187,7 @@ DIMSE_moveUser(
     /* receive responses */
 
     OFTimer timer;
-    while (cond == EC_Normal && status == STATUS_MOVE_Pending_SubOperationsAreContinuing) {
+    while (cond == EC_Normal && status == STATUS_Pending) {
 
         /* if user wants, multiplex between net/subAssoc
          * and move responses over main assoc.
@@ -209,7 +215,7 @@ DIMSE_moveUser(
             continue;    /* continue with main loop */
         }
 
-        memset((char*)&rsp, 0, sizeof(rsp));
+        bzero((char*)&rsp, sizeof(rsp));
 
         cond = DIMSE_receiveCommand(assoc, blockMode, timeout, &presID, &rsp, statusDetail);
         if (cond != EC_Normal) {
@@ -233,7 +239,7 @@ DIMSE_moveUser(
         responseCount++;
 
         switch (status) {
-        case STATUS_MOVE_Pending_SubOperationsAreContinuing:
+        case STATUS_Pending:
             if (*statusDetail != NULL) {
                 DCMNET_WARN(DIMSE_warn_str(assoc) << "moveUser: Pending with statusDetail, ignoring detail");
                 delete *statusDetail;
@@ -294,7 +300,7 @@ OFCondition
 DIMSE_sendMoveResponse(
     T_ASC_Association *assoc,
     T_ASC_PresentationContextID presID,
-    const T_DIMSE_C_MoveRQ *request,
+    T_DIMSE_C_MoveRQ *request,
     T_DIMSE_C_MoveRSP *response, DcmDataset *rspIds,
     DcmDataset *statusDetail)
 {
@@ -302,18 +308,18 @@ DIMSE_sendMoveResponse(
     T_DIMSE_Message rsp;
     unsigned int opts;
 
-    memset((char*)&rsp, 0, sizeof(rsp));
+    bzero((char*)&rsp, sizeof(rsp));
     rsp.CommandField = DIMSE_C_MOVE_RSP;
     rsp.msg.CMoveRSP = *response;
     /* copy over stuff from request */
     rsp.msg.CMoveRSP.MessageIDBeingRespondedTo = request->MessageID;
     /* always send affected sop class uid */
-    OFStandard::strlcpy(rsp.msg.CMoveRSP.AffectedSOPClassUID, request->AffectedSOPClassUID, sizeof(rsp.msg.CMoveRSP.AffectedSOPClassUID));
+    strcpy(rsp.msg.CMoveRSP.AffectedSOPClassUID, request->AffectedSOPClassUID);
     rsp.msg.CMoveRSP.opts = O_MOVE_AFFECTEDSOPCLASSUID;
 
     switch (response->DimseStatus) {
-    case STATUS_MOVE_Success:
-    case STATUS_MOVE_Pending_SubOperationsAreContinuing:
+    case STATUS_Success:
+    case STATUS_Pending:
         /* Success cannot have a Failed SOP Instance UID list (no failures).
          * Pending may not send such a list.
          */
@@ -337,7 +343,7 @@ DIMSE_sendMoveResponse(
             O_MOVE_NUMBEROFWARNINGSUBOPERATIONS);
 
     switch (response->DimseStatus) {
-    case STATUS_MOVE_Pending_SubOperationsAreContinuing:
+    case STATUS_Pending:
     case STATUS_MOVE_Cancel_SubOperationsTerminatedDueToCancelIndication:
         break;
     default:
@@ -382,10 +388,10 @@ DIMSE_moveProvider(
         if (presIdData != presIdCmd) {
           cond = makeDcmnetCondition(DIMSEC_INVALIDPRESENTATIONCONTEXTID, OF_error, "DIMSE: Presentation Contexts of Command and Data Differ");
         } else {
-            memset((char*)&rsp, 0, sizeof(rsp));
-            rsp.DimseStatus = STATUS_MOVE_Pending_SubOperationsAreContinuing;   /* assume */
+            bzero((char*)&rsp, sizeof(rsp));
+            rsp.DimseStatus = STATUS_Pending;   /* assume */
 
-            while (cond == EC_Normal && rsp.DimseStatus == STATUS_MOVE_Pending_SubOperationsAreContinuing && normal) {
+            while (cond == EC_Normal && rsp.DimseStatus == STATUS_Pending && normal) {
                 responseCount++;
 
                 cond = DIMSE_checkForCancelRQ(assoc, presIdCmd, request->MessageID);

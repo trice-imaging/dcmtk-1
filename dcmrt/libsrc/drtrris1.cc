@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTReferencedReferenceImageSequenceInRTBeamsModule
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -98,9 +98,9 @@ OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::Item::read(DcmIt
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, ReferencedSOPClassUID, "1", "1", "ReferencedReferenceImageSequence");
-        getAndCheckElementFromDataset(item, ReferencedSOPInstanceUID, "1", "1", "ReferencedReferenceImageSequence");
-        getAndCheckElementFromDataset(item, ReferenceImageNumber, "1", "1", "ReferencedReferenceImageSequence");
+        getAndCheckElementFromDataset(item, ReferencedSOPClassUID, "1", "1C", "ReferencedReferenceImageSequence");
+        getAndCheckElementFromDataset(item, ReferencedSOPInstanceUID, "1", "1C", "ReferencedReferenceImageSequence");
+        getAndCheckElementFromDataset(item, ReferenceImageNumber, "1", "1C", "ReferencedReferenceImageSequence");
         getAndCheckElementFromDataset(item, StartCumulativeMetersetWeight, "1", "3", "ReferencedReferenceImageSequence");
         getAndCheckElementFromDataset(item, EndCumulativeMetersetWeight, "1", "3", "ReferencedReferenceImageSequence");
         result = EC_Normal;
@@ -115,9 +115,9 @@ OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::Item::write(DcmI
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPClassUID), "1", "1", "ReferencedReferenceImageSequence");
-        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPInstanceUID), "1", "1", "ReferencedReferenceImageSequence");
-        addElementToDataset(result, item, new DcmIntegerString(ReferenceImageNumber), "1", "1", "ReferencedReferenceImageSequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPClassUID), "1", "1C", "ReferencedReferenceImageSequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(ReferencedSOPInstanceUID), "1", "1C", "ReferencedReferenceImageSequence");
+        addElementToDataset(result, item, new DcmIntegerString(ReferenceImageNumber), "1", "1C", "ReferencedReferenceImageSequence");
         addElementToDataset(result, item, new DcmDecimalString(StartCumulativeMetersetWeight), "1", "3", "ReferencedReferenceImageSequence");
         addElementToDataset(result, item, new DcmDecimalString(EndCumulativeMetersetWeight), "1", "3", "ReferencedReferenceImageSequence");
     }
@@ -365,7 +365,7 @@ OFBool DRTReferencedReferenceImageSequenceInRTBeamsModule::isValid() const
 }
 
 
-size_t DRTReferencedReferenceImageSequenceInRTBeamsModule::getNumberOfItems() const
+unsigned long DRTReferencedReferenceImageSequenceInRTBeamsModule::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -395,12 +395,12 @@ OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::gotoNextItem()
 }
 
 
-OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -415,12 +415,12 @@ OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::gotoItem(const s
 }
 
 
-OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -435,7 +435,7 @@ OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::gotoItem(const s
 }
 
 
-OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::gotoItem(const size_t num)
+OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -471,7 +471,7 @@ const DRTReferencedReferenceImageSequenceInRTBeamsModule::Item &DRTReferencedRef
 }
 
 
-OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::getItem(const size_t num, Item *&item)
+OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -481,7 +481,7 @@ OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::getItem(const si
 }
 
 
-DRTReferencedReferenceImageSequenceInRTBeamsModule::Item &DRTReferencedReferenceImageSequenceInRTBeamsModule::getItem(const size_t num)
+DRTReferencedReferenceImageSequenceInRTBeamsModule::Item &DRTReferencedReferenceImageSequenceInRTBeamsModule::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -491,7 +491,7 @@ DRTReferencedReferenceImageSequenceInRTBeamsModule::Item &DRTReferencedReference
 }
 
 
-const DRTReferencedReferenceImageSequenceInRTBeamsModule::Item &DRTReferencedReferenceImageSequenceInRTBeamsModule::getItem(const size_t num) const
+const DRTReferencedReferenceImageSequenceInRTBeamsModule::Item &DRTReferencedReferenceImageSequenceInRTBeamsModule::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -501,13 +501,13 @@ const DRTReferencedReferenceImageSequenceInRTBeamsModule::Item &DRTReferencedRef
 }
 
 
-DRTReferencedReferenceImageSequenceInRTBeamsModule::Item &DRTReferencedReferenceImageSequenceInRTBeamsModule::operator[](const size_t num)
+DRTReferencedReferenceImageSequenceInRTBeamsModule::Item &DRTReferencedReferenceImageSequenceInRTBeamsModule::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTReferencedReferenceImageSequenceInRTBeamsModule::Item &DRTReferencedReferenceImageSequenceInRTBeamsModule::operator[](const size_t num) const
+const DRTReferencedReferenceImageSequenceInRTBeamsModule::Item &DRTReferencedReferenceImageSequenceInRTBeamsModule::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -530,7 +530,7 @@ OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::addItem(Item *&i
 }
 
 
-OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::insertItem(const size_t pos, Item *&item)
+OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -553,7 +553,7 @@ OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::insertItem(const
 }
 
 
-OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::removeItem(const size_t pos)
+OFCondition DRTReferencedReferenceImageSequenceInRTBeamsModule::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

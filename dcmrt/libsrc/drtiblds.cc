@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTIonBeamLimitingDeviceSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -332,7 +332,7 @@ OFBool DRTIonBeamLimitingDeviceSequence::isValid() const
 }
 
 
-size_t DRTIonBeamLimitingDeviceSequence::getNumberOfItems() const
+unsigned long DRTIonBeamLimitingDeviceSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -362,12 +362,12 @@ OFCondition DRTIonBeamLimitingDeviceSequence::gotoNextItem()
 }
 
 
-OFCondition DRTIonBeamLimitingDeviceSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTIonBeamLimitingDeviceSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -382,12 +382,12 @@ OFCondition DRTIonBeamLimitingDeviceSequence::gotoItem(const size_t num, OFListI
 }
 
 
-OFCondition DRTIonBeamLimitingDeviceSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTIonBeamLimitingDeviceSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -402,7 +402,7 @@ OFCondition DRTIonBeamLimitingDeviceSequence::gotoItem(const size_t num, OFListC
 }
 
 
-OFCondition DRTIonBeamLimitingDeviceSequence::gotoItem(const size_t num)
+OFCondition DRTIonBeamLimitingDeviceSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -438,7 +438,7 @@ const DRTIonBeamLimitingDeviceSequence::Item &DRTIonBeamLimitingDeviceSequence::
 }
 
 
-OFCondition DRTIonBeamLimitingDeviceSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTIonBeamLimitingDeviceSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -448,7 +448,7 @@ OFCondition DRTIonBeamLimitingDeviceSequence::getItem(const size_t num, Item *&i
 }
 
 
-DRTIonBeamLimitingDeviceSequence::Item &DRTIonBeamLimitingDeviceSequence::getItem(const size_t num)
+DRTIonBeamLimitingDeviceSequence::Item &DRTIonBeamLimitingDeviceSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -458,7 +458,7 @@ DRTIonBeamLimitingDeviceSequence::Item &DRTIonBeamLimitingDeviceSequence::getIte
 }
 
 
-const DRTIonBeamLimitingDeviceSequence::Item &DRTIonBeamLimitingDeviceSequence::getItem(const size_t num) const
+const DRTIonBeamLimitingDeviceSequence::Item &DRTIonBeamLimitingDeviceSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -468,13 +468,13 @@ const DRTIonBeamLimitingDeviceSequence::Item &DRTIonBeamLimitingDeviceSequence::
 }
 
 
-DRTIonBeamLimitingDeviceSequence::Item &DRTIonBeamLimitingDeviceSequence::operator[](const size_t num)
+DRTIonBeamLimitingDeviceSequence::Item &DRTIonBeamLimitingDeviceSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTIonBeamLimitingDeviceSequence::Item &DRTIonBeamLimitingDeviceSequence::operator[](const size_t num) const
+const DRTIonBeamLimitingDeviceSequence::Item &DRTIonBeamLimitingDeviceSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -497,7 +497,7 @@ OFCondition DRTIonBeamLimitingDeviceSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTIonBeamLimitingDeviceSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTIonBeamLimitingDeviceSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -520,7 +520,7 @@ OFCondition DRTIonBeamLimitingDeviceSequence::insertItem(const size_t pos, Item 
 }
 
 
-OFCondition DRTIonBeamLimitingDeviceSequence::removeItem(const size_t pos)
+OFCondition DRTIonBeamLimitingDeviceSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

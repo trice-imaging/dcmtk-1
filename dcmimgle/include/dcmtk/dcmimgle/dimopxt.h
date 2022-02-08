@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2016, OFFIS e.V.
+ *  Copyright (C) 1996-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -64,15 +64,7 @@ class DiMonoPixelTemplate
         /* use a non-throwing new here (if available) because the allocated buffer can be huge */
         Data = new (std::nothrow) T[Count];
 #else
-        /* make sure that the pointer is set to NULL in case of error */
-        try
-        {
-            Data = new T[Count];
-        }
-        catch (STD_NAMESPACE bad_alloc const &)
-        {
-            Data = NULL;
-        }
+        Data = new T[Count];
 #endif
         if (Data == NULL)
             DCMIMGLE_DEBUG("cannot allocate memory buffer for 'Data' in DiMonoPixelTemplate constructor");
@@ -229,15 +221,15 @@ class DiMonoPixelTemplate
         int result = 0;
         if ((Data != NULL) && (left_pos < columns) && (top_pos < rows))
         {
-            T *p = Data + (columns * rows * frame) + (top_pos * columns) + left_pos;
+            register T *p = Data + (columns * rows * frame) + (top_pos * columns) + left_pos;
             const unsigned long right_pos = (left_pos + width < columns) ? left_pos + width : columns;
             const unsigned long bottom = (top_pos + height < rows) ? top_pos + height : rows;
             const unsigned long skip_x = left_pos + (columns - right_pos);
-            unsigned long x;
-            unsigned long y;
-            T value = 0;
-            T min = *p;                             // get first pixel as initial value for min ...
-            T max = min;                            // ... and max
+            register unsigned long x;
+            register unsigned long y;
+            register T value = 0;
+            register T min = *p;                    // get first pixel as initial value for min ...
+            register T max = min;                   // ... and max
             for (y = top_pos; y < bottom; ++y)
             {
                 for (x = left_pos; x < right_pos; ++x)
@@ -278,7 +270,7 @@ class DiMonoPixelTemplate
             Uint32 *quant = new Uint32[count];
             if (quant != NULL)
             {
-                unsigned long i;
+                register unsigned long i;
                 OFBitmanipTemplate<Uint32>::zeroMem(quant, count);                  // initialize array
                 for (i = 0; i < Count; ++i)
                 {
@@ -290,7 +282,7 @@ class DiMonoPixelTemplate
 #endif
                 }
                 const Uint32 threshvalue = OFstatic_cast(Uint32, thresh * OFstatic_cast(double, Count));
-                Uint32 t = 0;
+                register Uint32 t = 0;
                 i = 0;
                 while ((i < count) && (t < threshvalue))
                     t += quant[i++];
@@ -368,9 +360,9 @@ class DiMonoPixelTemplate
                 if ((minvalue == 0) && (maxvalue == 0))
                 {
                     DCMIMGLE_DEBUG("determining global minimum and maximum pixel values for monochrome image");
-                    T *p = Data;
-                    T value = *p;
-                    unsigned long i;
+                    register T *p = Data;
+                    register T value = *p;
+                    register unsigned long i;
                     minvalue = value;
                     maxvalue = value;
                     for (i = Count; i > 1; --i)                 // could be optimized if necessary (see diinpxt.h) !
@@ -393,11 +385,11 @@ class DiMonoPixelTemplate
             if (mode & 0x2)
             {
                 DCMIMGLE_DEBUG("determining next minimum and maximum pixel values for monochrome image");
-                T *p = Data;
-                T value;
-                int firstmin = 1;
-                int firstmax = 1;
-                unsigned long i;
+                register T *p = Data;
+                register T value;
+                register int firstmin = 1;
+                register int firstmax = 1;
+                register unsigned long i;
                 for (i = Count; i != 0; --i)                    // could be optimized if necessary (see diinpxt.h) !
                 {
                     value = *(p++);

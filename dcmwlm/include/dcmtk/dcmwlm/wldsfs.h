@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1996-2019, OFFIS e.V.
+ *  Copyright (C) 1996-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -103,12 +103,12 @@ class DCMTK_DCMWLM_EXPORT WlmDataSourceFileSystem : public WlmDataSource
     ~WlmDataSourceFileSystem();
 
       /** Connects to the data source.
-       * @return Indicates if the connection was established successfully.
+       * @return Indicates if the connection was established succesfully.
        */
     OFCondition ConnectToDataSource();
 
       /** Disconnects from the data source.
-       * @return Indicates if the disconnection was completed successfully.
+       * @return Indicates if the disconnection was completed succesfully.
        */
     OFCondition DisconnectFromDataSource();
 

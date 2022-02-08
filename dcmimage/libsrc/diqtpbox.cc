@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2002-2021, OFFIS e.V.
+ *  Copyright (C) 2002-2010, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -23,10 +23,13 @@
 #include "dcmtk/config/osconfig.h"
 #include "dcmtk/ofstd/ofcast.h"
 #include "dcmtk/dcmimage/diqtpbox.h"   /* for DcmQuantPixelBoxArray */
-#include "dcmtk/ofstd/ofstdinc.h"
 
+#ifdef USE_STD_CXX_INCLUDES
 // Solaris defines qsort() in namespace std, other compilers don't...
-using STD_NAMESPACE qsort;
+namespace std { }
+using namespace std;
+#endif
+
 
 BEGIN_EXTERN_C
 static int sumcompare(const void *x1, const void *x2)

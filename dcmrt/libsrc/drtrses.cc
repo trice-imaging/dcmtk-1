@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTRTReferencedSeriesSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -83,8 +83,8 @@ OFCondition DRTRTReferencedSeriesSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, SeriesInstanceUID, "1", "1", "RTReferencedSeriesSequence");
-        ContourImageSequence.read(item, "1-n", "1", "RTReferencedSeriesSequence");
+        getAndCheckElementFromDataset(item, SeriesInstanceUID, "1", "1C", "RTReferencedSeriesSequence");
+        ContourImageSequence.read(item, "1-n", "1C", "RTReferencedSeriesSequence");
         result = EC_Normal;
     }
     return result;
@@ -97,8 +97,8 @@ OFCondition DRTRTReferencedSeriesSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmUniqueIdentifier(SeriesInstanceUID), "1", "1", "RTReferencedSeriesSequence");
-        if (result.good()) result = ContourImageSequence.write(item, "1-n", "1", "RTReferencedSeriesSequence");
+        addElementToDataset(result, item, new DcmUniqueIdentifier(SeriesInstanceUID), "1", "1C", "RTReferencedSeriesSequence");
+        if (result.good()) result = ContourImageSequence.write(item, "1-n", "1C", "RTReferencedSeriesSequence");
     }
     return result;
 }
@@ -229,7 +229,7 @@ OFBool DRTRTReferencedSeriesSequence::isValid() const
 }
 
 
-size_t DRTRTReferencedSeriesSequence::getNumberOfItems() const
+unsigned long DRTRTReferencedSeriesSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -259,12 +259,12 @@ OFCondition DRTRTReferencedSeriesSequence::gotoNextItem()
 }
 
 
-OFCondition DRTRTReferencedSeriesSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTRTReferencedSeriesSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -279,12 +279,12 @@ OFCondition DRTRTReferencedSeriesSequence::gotoItem(const size_t num, OFListIter
 }
 
 
-OFCondition DRTRTReferencedSeriesSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTRTReferencedSeriesSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -299,7 +299,7 @@ OFCondition DRTRTReferencedSeriesSequence::gotoItem(const size_t num, OFListCons
 }
 
 
-OFCondition DRTRTReferencedSeriesSequence::gotoItem(const size_t num)
+OFCondition DRTRTReferencedSeriesSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -335,7 +335,7 @@ const DRTRTReferencedSeriesSequence::Item &DRTRTReferencedSeriesSequence::getCur
 }
 
 
-OFCondition DRTRTReferencedSeriesSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTRTReferencedSeriesSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -345,7 +345,7 @@ OFCondition DRTRTReferencedSeriesSequence::getItem(const size_t num, Item *&item
 }
 
 
-DRTRTReferencedSeriesSequence::Item &DRTRTReferencedSeriesSequence::getItem(const size_t num)
+DRTRTReferencedSeriesSequence::Item &DRTRTReferencedSeriesSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -355,7 +355,7 @@ DRTRTReferencedSeriesSequence::Item &DRTRTReferencedSeriesSequence::getItem(cons
 }
 
 
-const DRTRTReferencedSeriesSequence::Item &DRTRTReferencedSeriesSequence::getItem(const size_t num) const
+const DRTRTReferencedSeriesSequence::Item &DRTRTReferencedSeriesSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -365,13 +365,13 @@ const DRTRTReferencedSeriesSequence::Item &DRTRTReferencedSeriesSequence::getIte
 }
 
 
-DRTRTReferencedSeriesSequence::Item &DRTRTReferencedSeriesSequence::operator[](const size_t num)
+DRTRTReferencedSeriesSequence::Item &DRTRTReferencedSeriesSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTRTReferencedSeriesSequence::Item &DRTRTReferencedSeriesSequence::operator[](const size_t num) const
+const DRTRTReferencedSeriesSequence::Item &DRTRTReferencedSeriesSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -394,7 +394,7 @@ OFCondition DRTRTReferencedSeriesSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTRTReferencedSeriesSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTRTReferencedSeriesSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -417,7 +417,7 @@ OFCondition DRTRTReferencedSeriesSequence::insertItem(const size_t pos, Item *&i
 }
 
 
-OFCondition DRTRTReferencedSeriesSequence::removeItem(const size_t pos)
+OFCondition DRTRTReferencedSeriesSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

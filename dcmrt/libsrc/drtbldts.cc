@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTBeamLimitingDeviceToleranceSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -83,8 +83,8 @@ OFCondition DRTBeamLimitingDeviceToleranceSequence::Item::read(DcmItem &item)
     {
         /* re-initialize object */
         clear();
-        getAndCheckElementFromDataset(item, RTBeamLimitingDeviceType, "1", "1", "BeamLimitingDeviceToleranceSequence");
-        getAndCheckElementFromDataset(item, BeamLimitingDevicePositionTolerance, "1", "1", "BeamLimitingDeviceToleranceSequence");
+        getAndCheckElementFromDataset(item, RTBeamLimitingDeviceType, "1", "1C", "BeamLimitingDeviceToleranceSequence");
+        getAndCheckElementFromDataset(item, BeamLimitingDevicePositionTolerance, "1", "1C", "BeamLimitingDeviceToleranceSequence");
         result = EC_Normal;
     }
     return result;
@@ -97,8 +97,8 @@ OFCondition DRTBeamLimitingDeviceToleranceSequence::Item::write(DcmItem &item)
     if (!EmptyDefaultItem)
     {
         result = EC_Normal;
-        addElementToDataset(result, item, new DcmCodeString(RTBeamLimitingDeviceType), "1", "1", "BeamLimitingDeviceToleranceSequence");
-        addElementToDataset(result, item, new DcmDecimalString(BeamLimitingDevicePositionTolerance), "1", "1", "BeamLimitingDeviceToleranceSequence");
+        addElementToDataset(result, item, new DcmCodeString(RTBeamLimitingDeviceType), "1", "1C", "BeamLimitingDeviceToleranceSequence");
+        addElementToDataset(result, item, new DcmDecimalString(BeamLimitingDevicePositionTolerance), "1", "1C", "BeamLimitingDeviceToleranceSequence");
     }
     return result;
 }
@@ -260,7 +260,7 @@ OFBool DRTBeamLimitingDeviceToleranceSequence::isValid() const
 }
 
 
-size_t DRTBeamLimitingDeviceToleranceSequence::getNumberOfItems() const
+unsigned long DRTBeamLimitingDeviceToleranceSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -290,12 +290,12 @@ OFCondition DRTBeamLimitingDeviceToleranceSequence::gotoNextItem()
 }
 
 
-OFCondition DRTBeamLimitingDeviceToleranceSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTBeamLimitingDeviceToleranceSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -310,12 +310,12 @@ OFCondition DRTBeamLimitingDeviceToleranceSequence::gotoItem(const size_t num, O
 }
 
 
-OFCondition DRTBeamLimitingDeviceToleranceSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTBeamLimitingDeviceToleranceSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -330,7 +330,7 @@ OFCondition DRTBeamLimitingDeviceToleranceSequence::gotoItem(const size_t num, O
 }
 
 
-OFCondition DRTBeamLimitingDeviceToleranceSequence::gotoItem(const size_t num)
+OFCondition DRTBeamLimitingDeviceToleranceSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -366,7 +366,7 @@ const DRTBeamLimitingDeviceToleranceSequence::Item &DRTBeamLimitingDeviceToleran
 }
 
 
-OFCondition DRTBeamLimitingDeviceToleranceSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTBeamLimitingDeviceToleranceSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -376,7 +376,7 @@ OFCondition DRTBeamLimitingDeviceToleranceSequence::getItem(const size_t num, It
 }
 
 
-DRTBeamLimitingDeviceToleranceSequence::Item &DRTBeamLimitingDeviceToleranceSequence::getItem(const size_t num)
+DRTBeamLimitingDeviceToleranceSequence::Item &DRTBeamLimitingDeviceToleranceSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -386,7 +386,7 @@ DRTBeamLimitingDeviceToleranceSequence::Item &DRTBeamLimitingDeviceToleranceSequ
 }
 
 
-const DRTBeamLimitingDeviceToleranceSequence::Item &DRTBeamLimitingDeviceToleranceSequence::getItem(const size_t num) const
+const DRTBeamLimitingDeviceToleranceSequence::Item &DRTBeamLimitingDeviceToleranceSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -396,13 +396,13 @@ const DRTBeamLimitingDeviceToleranceSequence::Item &DRTBeamLimitingDeviceToleran
 }
 
 
-DRTBeamLimitingDeviceToleranceSequence::Item &DRTBeamLimitingDeviceToleranceSequence::operator[](const size_t num)
+DRTBeamLimitingDeviceToleranceSequence::Item &DRTBeamLimitingDeviceToleranceSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTBeamLimitingDeviceToleranceSequence::Item &DRTBeamLimitingDeviceToleranceSequence::operator[](const size_t num) const
+const DRTBeamLimitingDeviceToleranceSequence::Item &DRTBeamLimitingDeviceToleranceSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -425,7 +425,7 @@ OFCondition DRTBeamLimitingDeviceToleranceSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTBeamLimitingDeviceToleranceSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTBeamLimitingDeviceToleranceSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -448,7 +448,7 @@ OFCondition DRTBeamLimitingDeviceToleranceSequence::insertItem(const size_t pos,
 }
 
 
-OFCondition DRTBeamLimitingDeviceToleranceSequence::removeItem(const size_t pos)
+OFCondition DRTBeamLimitingDeviceToleranceSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

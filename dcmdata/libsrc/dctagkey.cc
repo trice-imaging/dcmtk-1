@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2021, OFFIS e.V.
+ *  Copyright (C) 1994-2011, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -21,7 +21,10 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 #include "dcmtk/dcmdata/dctagkey.h"
-#include "dcmtk/ofstd/ofstd.h"
+
+#define INCLUDE_CSTDIO
+#define INCLUDE_CSTRING
+#include "dcmtk/ofstd/ofstdinc.h"
 
 /*
  * DcmTagKey member functions
@@ -46,7 +49,7 @@ OFString DcmTagKey::toString() const
 
     if (group == 0xffff && element == 0xffff)
     {
-        OFStandard::strlcpy(tagBuf, "(\?\?\?\?,\?\?\?\?)", 16); // prevent trigraph expansion in string constant
+        strcpy(tagBuf, "(\?\?\?\?,\?\?\?\?)"); // prevent trigraph expansion in string constant
     } else {
         sprintf(tagBuf, "(%04x,%04x)", OFstatic_cast(unsigned, group), OFstatic_cast(unsigned, element));
     }

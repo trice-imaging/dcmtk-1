@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2003-2021, OFFIS e.V.
+ *  Copyright (C) 2003-2013, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -25,6 +25,10 @@
 #include "dcmtk/dcmnet/dcasccfg.h"  /* for class DcmAssociationConfiguration */
 #include "dcmtk/dcmdata/dcerror.h"  /* for EC_IllegalCall */
 #include "dcmtk/ofstd/ofconfig.h"   /* for class OFConfigFile */
+
+#define INCLUDE_CCTYPE
+#include "dcmtk/ofstd/ofstdinc.h"
+
 
 /* config file keys for the association configuration */
 
@@ -478,5 +482,4 @@ OFCondition DcmAssociationConfigurationFile::parseProfiles(
 
   return result;
 }
-
 #undef TO_UCHAR

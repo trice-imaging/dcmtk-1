@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2000-2021, OFFIS e.V.
+ *  Copyright (C) 2000-2014, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were developed by
@@ -28,18 +28,15 @@
 /* if WITH_THREADS is undefined, we don't even attempt to implement a thread interface. */
 #ifdef WITH_THREADS
 
-#include "dcmtk/ofstd/ofstd.h"
+#define INCLUDE_CSTDLIB
+#define INCLUDE_CSTRING
+#define INCLUDE_CERRNO
+#include "dcmtk/ofstd/ofstdinc.h"
 
-#ifdef _DARWIN_C_SOURCE
-#define DARWIN_INTERFACE
-extern "C" {
-#include <dispatch/dispatch.h>
-}
-#endif /* _DARWIN_C_SOURCE */
+#include "dcmtk/ofstd/ofstd.h"
 
 #ifdef HAVE_WINDOWS_H
 #define WINDOWS_INTERFACE
-#define WIN32_LEAN_AND_MEAN
 
 extern "C" {
 #include <windows.h>
@@ -55,9 +52,8 @@ extern "C" {
 
 #elif defined(HAVE_PTHREAD_H) && defined(HAVE_SEMAPHORE_H)
 #define POSIX_INTERFACE
-#if !defined(HAVE_PTHREAD_RWLOCK) || defined(__ANDROID__)
+#ifndef HAVE_PTHREAD_RWLOCK
 // not all POSIX pthread implementations provide read/write locks
-// the android implementation seems to be insufficient
 #define POSIX_INTERFACE_WITHOUT_RWLOCK
 #endif
 extern "C" {
@@ -71,7 +67,6 @@ extern "C" {
 #include "dcmtk/ofstd/ofthread.h"
 #include "dcmtk/ofstd/ofconsol.h"
 #include "dcmtk/ofstd/ofstring.h"
-#include <cerrno>
 
 // The Posix interfaces are not always correctly declared as volatile,
 // so we need a two-step cast from our internal representation
@@ -399,10 +394,15 @@ void OFThreadSpecificData::errorstr(OFString& description, int /* code */ )
 
 /* ------------------------------------------------------------------------- */
 
+/* Mac OS X only permits named Semaphores. The code below compiles on Mac OS X
+   but does not work. This will be corrected in the next snapshot. For now, the
+   semaphore code is completely disabled for that OS (it is not used in other
+   parts of the toolkit so far.
+ */
+#ifndef _DARWIN_C_SOURCE
+
 #ifdef WINDOWS_INTERFACE
   const int OFSemaphore::busy = -1;
-#elif defined(DARWIN_INTERFACE)
-  const int OFSemaphore::busy = EAGAIN;
 #elif defined(POSIX_INTERFACE)
   const int OFSemaphore::busy = EAGAIN;  // Posix returns EAGAIN instead of EBUSY in trywait.
 #elif defined(SOLARIS_INTERFACE)
@@ -412,7 +412,7 @@ void OFThreadSpecificData::errorstr(OFString& description, int /* code */ )
 #endif
 
 
-#if defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE) || defined(SOLARIS_INTERFACE) || defined(DARWIN_INTERFACE)
+#if defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE) || defined(SOLARIS_INTERFACE)
 OFSemaphore::OFSemaphore(unsigned int numResources)
 #else
 OFSemaphore::OFSemaphore(unsigned int /* numResources */ )
@@ -421,14 +421,6 @@ OFSemaphore::OFSemaphore(unsigned int /* numResources */ )
 {
 #ifdef WINDOWS_INTERFACE
   theSemaphore = OFstatic_cast(void *, CreateSemaphore(NULL, numResources, numResources, NULL));
-#elif defined(DARWIN_INTERFACE)
-  dispatch_semaphore_t *sem = new dispatch_semaphore_t;
-  if (sem)
-  {
-    *sem = dispatch_semaphore_create(numResources);
-    if (*sem == NULL) delete sem;
-    else theSemaphore = sem;
-  }
 #elif defined(POSIX_INTERFACE)
   sem_t *sem = new sem_t;
   if (sem)
@@ -451,8 +443,6 @@ OFSemaphore::~OFSemaphore()
 {
 #ifdef WINDOWS_INTERFACE
   CloseHandle(OFthread_cast(HANDLE, theSemaphore));
-#elif defined(DARWIN_INTERFACE)
-  delete OFthread_cast(dispatch_semaphore_t *, theSemaphore);
 #elif defined(POSIX_INTERFACE)
   if (theSemaphore) sem_destroy(OFthread_cast(sem_t *, theSemaphore));
   delete OFthread_cast(sem_t *, theSemaphore);
@@ -478,12 +468,6 @@ int OFSemaphore::wait()
 #ifdef WINDOWS_INTERFACE
   if (WaitForSingleObject(OFthread_cast(HANDLE, theSemaphore), INFINITE) == WAIT_OBJECT_0) return 0;
   else return OFstatic_cast(int, GetLastError());
-#elif defined(DARWIN_INTERFACE)
-  if (theSemaphore)
-  {
-    // Always succeeds (returns zero) if the timeout is DISPATCH_TIME_FOREVER.
-    return dispatch_semaphore_wait(*OFthread_cast(dispatch_semaphore_t *, theSemaphore), DISPATCH_TIME_FOREVER);
-  } else return EINVAL;
 #elif defined(POSIX_INTERFACE)
   if (theSemaphore)
   {
@@ -503,14 +487,6 @@ int OFSemaphore::trywait()
   if (result == WAIT_OBJECT_0) return 0;
   else if (result == WAIT_TIMEOUT) return OFSemaphore::busy;
   else return OFstatic_cast(int, GetLastError());
-#elif defined(DARWIN_INTERFACE)
-  if (theSemaphore)
-  {
-    if (dispatch_semaphore_wait(*OFthread_cast(dispatch_semaphore_t *, theSemaphore), DISPATCH_TIME_NOW) != 0)
-      return EAGAIN;
-    else
-      return 0;
-  } else return EINVAL;
 #elif defined(POSIX_INTERFACE)
   if (theSemaphore)
   {
@@ -527,13 +503,6 @@ int OFSemaphore::post()
 {
 #ifdef WINDOWS_INTERFACE
   if (ReleaseSemaphore(OFthread_cast(HANDLE, theSemaphore), 1, NULL)) return 0; else return OFstatic_cast(int, GetLastError());
-#elif defined(DARWIN_INTERFACE)
-  if (theSemaphore)
-  {
-    // Always succeeds.
-    dispatch_semaphore_signal(*OFthread_cast(dispatch_semaphore_t *, theSemaphore));
-    return 0;
-  } else return EINVAL;
 #elif defined(POSIX_INTERFACE)
   if (theSemaphore)
   {
@@ -546,7 +515,7 @@ int OFSemaphore::post()
 #endif
 }
 
-#if defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE) || defined(SOLARIS_INTERFACE) || defined(DARWIN_INTERFACE)
+#if defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE) || defined(SOLARIS_INTERFACE)
 void OFSemaphore::errorstr(OFString& description, int code)
 #else
 void OFSemaphore::errorstr(OFString& description, int /* code */ )
@@ -563,7 +532,7 @@ void OFSemaphore::errorstr(OFString& description, int /* code */ )
     if (buf) description = OFreinterpret_cast(const char *, buf);
     LocalFree(buf);
   }
-#elif defined(POSIX_INTERFACE) || defined(SOLARIS_INTERFACE) || defined(DARWIN_INTERFACE)
+#elif defined(POSIX_INTERFACE) || defined(SOLARIS_INTERFACE)
   char buf[256];
   const char *str = OFStandard::strerror(code, buf, sizeof(buf));
   if (str) description = str; else description.clear();
@@ -572,6 +541,8 @@ void OFSemaphore::errorstr(OFString& description, int /* code */ )
 #endif
   return;
 }
+
+#endif // _DARWIN_C_SOURCE
 
 /* ------------------------------------------------------------------------- */
 
@@ -588,13 +559,7 @@ OFMutex::OFMutex()
 : theMutex(NULL)
 {
 #ifdef WINDOWS_INTERFACE
-#ifdef USE_WIN32_CREATE_MUTEX
   theMutex = OFstatic_cast(void *, CreateMutex(NULL, FALSE, NULL));
-#else
-  CRITICAL_SECTION *critSec = new CRITICAL_SECTION;
-  InitializeCriticalSection(critSec);
-  theMutex = OFstatic_cast(void *, critSec);
-#endif
 #elif defined(POSIX_INTERFACE)
   pthread_mutex_t *mtx = new pthread_mutex_t;
   if (mtx)
@@ -617,13 +582,7 @@ OFMutex::OFMutex()
 OFMutex::~OFMutex()
 {
 #ifdef WINDOWS_INTERFACE
-#ifdef USE_WIN32_CREATE_MUTEX
   CloseHandle(OFthread_cast(HANDLE, theMutex));
-#else
-  CRITICAL_SECTION *critSec = OFthread_cast(CRITICAL_SECTION *, theMutex);
-  DeleteCriticalSection(critSec);
-  delete critSec;
-#endif
 #elif defined(POSIX_INTERFACE)
   if (theMutex) pthread_mutex_destroy(OFthread_cast(pthread_mutex_t *, theMutex));
   delete OFthread_cast(pthread_mutex_t *, theMutex);
@@ -649,13 +608,8 @@ OFBool OFMutex::initialized() const
 int OFMutex::lock()
 {
 #ifdef WINDOWS_INTERFACE
-#ifdef USE_WIN32_CREATE_MUTEX
   if (WaitForSingleObject(OFthread_cast(HANDLE, theMutex), INFINITE) == WAIT_OBJECT_0) return 0;
   else return OFstatic_cast(int, GetLastError());
-#else
-  EnterCriticalSection(OFthread_cast(CRITICAL_SECTION *, theMutex));
-  return 0;
-#endif
 #elif defined(POSIX_INTERFACE)
   if (theMutex) return pthread_mutex_lock(OFthread_cast(pthread_mutex_t *, theMutex)); else return EINVAL;
 #elif defined(SOLARIS_INTERFACE)
@@ -668,15 +622,10 @@ int OFMutex::lock()
 int OFMutex::trylock()
 {
 #ifdef WINDOWS_INTERFACE
-#ifdef USE_WIN32_CREATE_MUTEX
   DWORD result = WaitForSingleObject(OFthread_cast(HANDLE, theMutex), 0);
   if (result == WAIT_OBJECT_0) return 0;
   else if (result == WAIT_TIMEOUT) return OFMutex::busy;
   else return OFstatic_cast(int, GetLastError());
-#else
-  if (TryEnterCriticalSection(OFthread_cast(CRITICAL_SECTION *, theMutex))) return 0;
-  else return OFMutex::busy;
-#endif
 #elif defined(POSIX_INTERFACE)
   if (theMutex) return pthread_mutex_trylock(OFthread_cast(pthread_mutex_t *, theMutex)); else return EINVAL; // may return EBUSY.
 #elif defined(SOLARIS_INTERFACE)
@@ -689,12 +638,7 @@ int OFMutex::trylock()
 int OFMutex::unlock()
 {
 #ifdef WINDOWS_INTERFACE
-#ifdef USE_WIN32_CREATE_MUTEX
   if (ReleaseMutex(OFthread_cast(HANDLE, theMutex))) return 0; else return OFstatic_cast(int, GetLastError());
-#else
-  LeaveCriticalSection(OFthread_cast(CRITICAL_SECTION *, theMutex));
-  return 0;
-#endif
 #elif defined(POSIX_INTERFACE)
   if (theMutex) return pthread_mutex_unlock(OFthread_cast(pthread_mutex_t *, theMutex)); else return EINVAL;
 #elif defined(SOLARIS_INTERFACE)
@@ -711,7 +655,7 @@ void OFMutex::errorstr(OFString& description, int /* code */ )
 #endif
 {
 #ifdef WINDOWS_INTERFACE
-  if (code == OFMutex::busy) description = "mutex is already locked"; else
+  if (code == OFSemaphore::busy) description = "mutex is already locked"; else
   {
     LPVOID buf;
     FormatMessage(
@@ -731,18 +675,10 @@ void OFMutex::errorstr(OFString& description, int /* code */ )
   return;
 }
 
-/* ------------------------------------------------------------------------- */
-
-// On Windows, use the slim read/write lock interface (SRW locks) if
-// both function and prototype are present (which is not the case for some MinGW versions)
-// and we have not explicitly been instructed to use the old implementation
-#if (defined(WINDOWS_INTERFACE)) && (defined(HAVE_PROTOTYPE_TRYACQUIRESRWLOCKSHARED)) && (! defined(USE_WIN32_READ_WRITE_LOCK_HELPER))
-#define USE_WIN32_SRW_INTERFACE
-#endif
 
 /* ------------------------------------------------------------------------- */
 
-#if (defined(WINDOWS_INTERFACE) && (! defined(USE_WIN32_SRW_INTERFACE))) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
+#if defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
 
 class OFReadWriteLockHelper
 {
@@ -774,11 +710,7 @@ private:
 OFReadWriteLock::OFReadWriteLock()
 : theLock(NULL)
 {
-#ifdef USE_WIN32_SRW_INTERFACE
-   SRWLOCK *srwLock = new SRWLOCK;
-   InitializeSRWLock(srwLock);
-   theLock = srwLock;
-#elif defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
+#if defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
    OFReadWriteLockHelper *rwl = new OFReadWriteLockHelper();
    if ((rwl->accessMutex.initialized()) && (rwl->usageSemaphore.initialized())) theLock=rwl;
    else delete rwl;
@@ -802,9 +734,7 @@ OFReadWriteLock::OFReadWriteLock()
 
 OFReadWriteLock::~OFReadWriteLock()
 {
-#ifdef USE_WIN32_SRW_INTERFACE
-  delete OFthread_cast(SRWLOCK *, theLock);
-#elif defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
+#if defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
   delete OFthread_cast(OFReadWriteLockHelper *, theLock);
 #elif defined(POSIX_INTERFACE)
   if (theLock) pthread_rwlock_destroy(OFthread_cast(pthread_rwlock_t *, theLock));
@@ -828,13 +758,7 @@ OFBool OFReadWriteLock::initialized() const
 
 int OFReadWriteLock::rdlock()
 {
-#ifdef USE_WIN32_SRW_INTERFACE
-  if (theLock)
-  {
-    AcquireSRWLockShared(OFthread_cast(SRWLOCK *, theLock));
-    return 0;
-  } else return EINVAL;
-#elif defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
+#if defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
   if (theLock)
   {
     OFReadWriteLockHelper *rwl = OFthread_cast(OFReadWriteLockHelper *, theLock);
@@ -872,13 +796,7 @@ int OFReadWriteLock::rdlock()
 
 int OFReadWriteLock::wrlock()
 {
-#ifdef USE_WIN32_SRW_INTERFACE
-  if (theLock)
-  {
-    AcquireSRWLockExclusive(OFthread_cast(SRWLOCK *, theLock));
-    return 0;
-  } else return EINVAL;
-#elif defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
+#if defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
   if (theLock)
   {
     OFReadWriteLockHelper *rwl = OFthread_cast(OFReadWriteLockHelper *, theLock);
@@ -915,12 +833,7 @@ int OFReadWriteLock::wrlock()
 
 int OFReadWriteLock::tryrdlock()
 {
-#ifdef USE_WIN32_SRW_INTERFACE
-  if (theLock)
-  {
-    return TryAcquireSRWLockShared(OFthread_cast(SRWLOCK *, theLock)) ? 0 : OFReadWriteLock::busy;
-  } else return EINVAL;
-#elif defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
+#if defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
   if (theLock)
   {
     OFReadWriteLockHelper *rwl = OFthread_cast(OFReadWriteLockHelper *, theLock);
@@ -953,12 +866,7 @@ int OFReadWriteLock::tryrdlock()
 
 int OFReadWriteLock::trywrlock()
 {
-#ifdef USE_WIN32_SRW_INTERFACE
-  if (theLock)
-  {
-    return TryAcquireSRWLockExclusive(OFthread_cast(SRWLOCK *, theLock)) ? 0 : OFReadWriteLock::busy;
-  } else return EINVAL;
-#elif defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
+#if defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
   if (theLock)
   {
     OFReadWriteLockHelper *rwl = OFthread_cast(OFReadWriteLockHelper *, theLock);
@@ -987,46 +895,9 @@ int OFReadWriteLock::trywrlock()
 }
 
 
-int OFReadWriteLock::rdunlock()
+int OFReadWriteLock::unlock()
 {
-#ifdef USE_WIN32_SRW_INTERFACE
-  if (theLock)
-  {
-    ReleaseSRWLockShared(OFthread_cast(SRWLOCK *, theLock));
-    return 0;
-  } else return EINVAL;
-#elif defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
-  if (theLock)
-  {
-    OFReadWriteLockHelper *rwl = OFthread_cast(OFReadWriteLockHelper *, theLock);
-    int result =0;
-    if (0 != (result = rwl->accessMutex.lock())) return result; // lock mutex
-    if (rwl->numReaders == -1) rwl->numReaders = 0; else (rwl->numReaders)--;
-    if ((rwl->numReaders == 0) && (0 != (result = rwl->usageSemaphore.post())))
-    {
-      rwl->accessMutex.unlock();
-      return result;
-    }
-    return rwl->accessMutex.unlock();
-  } else return EINVAL;
-#elif defined(POSIX_INTERFACE)
-  if (theLock) return pthread_rwlock_unlock(OFthread_cast(pthread_rwlock_t *, theLock)); else return EINVAL;
-#elif defined(SOLARIS_INTERFACE)
-  if (theLock) return rw_unlock(OFthread_cast(rwlock_t *, theLock)); else return EINVAL;
-#else
-  return -1;
-#endif
-}
-
-int OFReadWriteLock::wrunlock()
-{
-#ifdef USE_WIN32_SRW_INTERFACE
-  if (theLock)
-  {
-    ReleaseSRWLockExclusive(OFthread_cast(SRWLOCK *, theLock));
-    return 0;
-  } else return EINVAL;
-#elif defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
+#if defined(WINDOWS_INTERFACE) || defined(POSIX_INTERFACE_WITHOUT_RWLOCK)
   if (theLock)
   {
     OFReadWriteLockHelper *rwl = OFthread_cast(OFReadWriteLockHelper *, theLock);
@@ -1078,18 +949,14 @@ void OFReadWriteLock::errorstr(OFString& description, int /* code */ )
 
 
 OFReadWriteLocker::OFReadWriteLocker(OFReadWriteLock& lock)
-: theLock(lock)
-, locked(OFFalse)
-, isWriteLock(OFFalse)
+    : theLock(lock), locked(OFFalse)
 {
 }
 
 OFReadWriteLocker::~OFReadWriteLocker()
 {
   if (locked)
-  {
-    if (isWriteLock) theLock.wrunlock(); else theLock.rdunlock();
-  }
+    theLock.unlock();
 }
 
 #ifdef DEBUG
@@ -1103,53 +970,20 @@ OFReadWriteLocker::~OFReadWriteLocker()
 #define lockWarn(name, locked)
 #endif
 
-int OFReadWriteLocker::rdlock()
-{
-  lockWarn("rdlock", locked);
-  int ret = theLock.rdlock();
-  if (ret == 0)
-  {
-    locked = OFTrue;
-    isWriteLock = OFFalse;
-  }
-  return ret;
+#define OFReadWriteLockerFunction(name) \
+int OFReadWriteLocker::name()           \
+{                                       \
+  lockWarn(#name, locked);              \
+  int ret = theLock. name ();           \
+  if (ret == 0)                         \
+    locked = OFTrue;                    \
+  return ret;                           \
 }
 
-int OFReadWriteLocker::wrlock()
-{
-  lockWarn("wrlock", locked);
-  int ret = theLock.wrlock();
-  if (ret == 0)
-  {
-    locked = OFTrue;
-    isWriteLock = OFTrue;
-  }
-  return ret;
-}
-
-int OFReadWriteLocker::tryrdlock()
-{
-  lockWarn("tryrdlock", locked);
-  int ret = theLock.tryrdlock();
-  if (ret == 0)
-  {
-    locked = OFTrue;
-    isWriteLock = OFFalse;
-  }
-  return ret;
-}
-
-int OFReadWriteLocker::trywrlock()
-{
-  lockWarn("trywrlock", locked);
-  int ret = theLock.trywrlock();
-  if (ret == 0)
-  {
-    locked = OFTrue;
-    isWriteLock = OFTrue;
-  }
-  return ret;
-}
+OFReadWriteLockerFunction(rdlock)
+OFReadWriteLockerFunction(wrlock)
+OFReadWriteLockerFunction(tryrdlock)
+OFReadWriteLockerFunction(trywrlock)
 
 int OFReadWriteLocker::unlock()
 {
@@ -1161,10 +995,8 @@ int OFReadWriteLocker::unlock()
   }
 #endif
 
-  int ret = 0;
-  if (isWriteLock) ret = theLock.wrunlock(); else ret = theLock.rdunlock();
+  int ret = theLock.unlock();
   if (ret == 0)
     locked = OFFalse;
   return ret;
 }
-

@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Source file for class DRTReferencedSetupImageSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -343,7 +343,7 @@ OFBool DRTReferencedSetupImageSequence::isValid() const
 }
 
 
-size_t DRTReferencedSetupImageSequence::getNumberOfItems() const
+unsigned long DRTReferencedSetupImageSequence::getNumberOfItems() const
 {
     return SequenceOfItems.size();
 }
@@ -373,12 +373,12 @@ OFCondition DRTReferencedSetupImageSequence::gotoNextItem()
 }
 
 
-OFCondition DRTReferencedSetupImageSequence::gotoItem(const size_t num, OFListIterator(Item *) &iterator)
+OFCondition DRTReferencedSetupImageSequence::gotoItem(const unsigned long num, OFListIterator(Item *) &iterator)
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -393,12 +393,12 @@ OFCondition DRTReferencedSetupImageSequence::gotoItem(const size_t num, OFListIt
 }
 
 
-OFCondition DRTReferencedSetupImageSequence::gotoItem(const size_t num, OFListConstIterator(Item *) &iterator) const
+OFCondition DRTReferencedSetupImageSequence::gotoItem(const unsigned long num, OFListConstIterator(Item *) &iterator) const
 {
     OFCondition result = EC_IllegalCall;
     if (!SequenceOfItems.empty())
     {
-        size_t idx = num + 1;
+        unsigned long idx = num + 1;
         iterator = SequenceOfItems.begin();
         const OFListConstIterator(Item *) last = SequenceOfItems.end();
         while ((--idx > 0) && (iterator != last))
@@ -413,7 +413,7 @@ OFCondition DRTReferencedSetupImageSequence::gotoItem(const size_t num, OFListCo
 }
 
 
-OFCondition DRTReferencedSetupImageSequence::gotoItem(const size_t num)
+OFCondition DRTReferencedSetupImageSequence::gotoItem(const unsigned long num)
 {
     return gotoItem(num, CurrentItem);
 }
@@ -449,7 +449,7 @@ const DRTReferencedSetupImageSequence::Item &DRTReferencedSetupImageSequence::ge
 }
 
 
-OFCondition DRTReferencedSetupImageSequence::getItem(const size_t num, Item *&item)
+OFCondition DRTReferencedSetupImageSequence::getItem(const unsigned long num, Item *&item)
 {
     OFListIterator(Item *) iterator;
     OFCondition result = gotoItem(num, iterator);
@@ -459,7 +459,7 @@ OFCondition DRTReferencedSetupImageSequence::getItem(const size_t num, Item *&it
 }
 
 
-DRTReferencedSetupImageSequence::Item &DRTReferencedSetupImageSequence::getItem(const size_t num)
+DRTReferencedSetupImageSequence::Item &DRTReferencedSetupImageSequence::getItem(const unsigned long num)
 {
     OFListIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -469,7 +469,7 @@ DRTReferencedSetupImageSequence::Item &DRTReferencedSetupImageSequence::getItem(
 }
 
 
-const DRTReferencedSetupImageSequence::Item &DRTReferencedSetupImageSequence::getItem(const size_t num) const
+const DRTReferencedSetupImageSequence::Item &DRTReferencedSetupImageSequence::getItem(const unsigned long num) const
 {
     OFListConstIterator(Item *) iterator;
     if (gotoItem(num, iterator).good())
@@ -479,13 +479,13 @@ const DRTReferencedSetupImageSequence::Item &DRTReferencedSetupImageSequence::ge
 }
 
 
-DRTReferencedSetupImageSequence::Item &DRTReferencedSetupImageSequence::operator[](const size_t num)
+DRTReferencedSetupImageSequence::Item &DRTReferencedSetupImageSequence::operator[](const unsigned long num)
 {
     return getItem(num);
 }
 
 
-const DRTReferencedSetupImageSequence::Item &DRTReferencedSetupImageSequence::operator[](const size_t num) const
+const DRTReferencedSetupImageSequence::Item &DRTReferencedSetupImageSequence::operator[](const unsigned long num) const
 {
     return getItem(num);
 }
@@ -508,7 +508,7 @@ OFCondition DRTReferencedSetupImageSequence::addItem(Item *&item)
 }
 
 
-OFCondition DRTReferencedSetupImageSequence::insertItem(const size_t pos, Item *&item)
+OFCondition DRTReferencedSetupImageSequence::insertItem(const unsigned long pos, Item *&item)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)
@@ -531,7 +531,7 @@ OFCondition DRTReferencedSetupImageSequence::insertItem(const size_t pos, Item *
 }
 
 
-OFCondition DRTReferencedSetupImageSequence::removeItem(const size_t pos)
+OFCondition DRTReferencedSetupImageSequence::removeItem(const unsigned long pos)
 {
     OFCondition result = EC_IllegalCall;
     if (!EmptyDefaultSequence)

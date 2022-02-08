@@ -1,13 +1,13 @@
 /*
  *
  *  Copyright (C) 2008-2012, OFFIS e.V. and ICSMED AG, Oldenburg, Germany
- *  Copyright (C) 2013-2017, J. Riesmeier, Oldenburg, Germany
+ *  Copyright (C) 2013-2014, J. Riesmeier, Oldenburg, Germany
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  Header file for class DRTContentItemModifierSequence
  *
- *  Generated automatically from DICOM PS 3.3-2017e
- *  File created on 2017-12-05 09:30:54
+ *  Generated automatically from DICOM PS 3.3-2007
+ *  File created on 2014-03-15 16:58:36
  *
  */
 
@@ -22,7 +22,6 @@
 #include "dcmtk/dcmrt/seq/drtccs.h"    // for ConceptCodeSequence
 #include "dcmtk/dcmrt/seq/drtcncs.h"   // for ConceptNameCodeSequence
 #include "dcmtk/dcmrt/seq/drtmucs.h"   // for MeasurementUnitsCodeSequence
-#include "dcmtk/dcmrt/seq/drtrsos.h"   // for ReferencedSOPSequence
 
 
 /** Interface class for ContentItemModifierSequence (0040,0441)
@@ -59,7 +58,6 @@ class DCMTK_DCMRT_EXPORT DRTContentItemModifierSequence
 
         /** assigment operator
          *  @param copy item object to be copied
-         *  @return reference to this object
          */
         Item &operator=(const Item &copy);
 
@@ -109,13 +107,6 @@ class DCMTK_DCMRT_EXPORT DRTContentItemModifierSequence
          */
         OFCondition getDateTime(OFString &value, const signed long pos = 0) const;
 
-        /** get FloatingPointValue (0040,a161)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getFloatingPointValue(Float64 &value, const unsigned long pos = 0) const;
-
         /** get NumericValue (0040,a30a)
          *  @param  value  reference to variable in which the value should be stored
          *  @param  pos    index of the value to get (0..vm-1), -1 for all components
@@ -136,33 +127,12 @@ class DCMTK_DCMRT_EXPORT DRTContentItemModifierSequence
          */
         OFCondition getNumericValue(OFVector<Float64> &value) const;
 
-        /** get ObservationDateTime (0040,a032)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1), -1 for all components
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getObservationDateTime(OFString &value, const signed long pos = 0) const;
-
         /** get PersonName (0040,a123)
          *  @param  value  reference to variable in which the value should be stored
          *  @param  pos    index of the value to get (0..vm-1), -1 for all components
          *  @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition getPersonName(OFString &value, const signed long pos = 0) const;
-
-        /** get RationalDenominatorValue (0040,a163)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getRationalDenominatorValue(Uint32 &value, const unsigned long pos = 0) const;
-
-        /** get RationalNumeratorValue (0040,a162)
-         *  @param  value  reference to variable in which the value should be stored
-         *  @param  pos    index of the value to get (0..vm-1)
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition getRationalNumeratorValue(Sint32 &value, const unsigned long pos = 0) const;
 
         /** get TextValue (0040,a160)
          *  @param  value  reference to variable in which the value should be stored
@@ -230,18 +200,6 @@ class DCMTK_DCMRT_EXPORT DRTContentItemModifierSequence
         const DRTMeasurementUnitsCodeSequence &getMeasurementUnitsCodeSequence() const
             { return MeasurementUnitsCodeSequence; }
 
-        /** get ReferencedSOPSequence (0008,1199)
-         *  @return reference to sequence element
-         */
-        DRTReferencedSOPSequence &getReferencedSOPSequence()
-            { return ReferencedSOPSequence; }
-
-        /** get ReferencedSOPSequence (0008,1199)
-         *  @return const reference to sequence element
-         */
-        const DRTReferencedSOPSequence &getReferencedSOPSequence() const
-            { return ReferencedSOPSequence; }
-
       // --- set DICOM attribute values ---
 
         /** set Date (0040,a121)
@@ -258,13 +216,6 @@ class DCMTK_DCMRT_EXPORT DRTContentItemModifierSequence
          */
         OFCondition setDateTime(const OFString &value, const OFBool check = OFTrue);
 
-        /** set FloatingPointValue (0040,a161)
-         *  @param  value  value to be set (should be valid for this VR)
-         *  @param  pos    index of the value to be set (0..vm-1), vm=1-n
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setFloatingPointValue(const Float64 value, const unsigned long pos = 0);
-
         /** set NumericValue (0040,a30a)
          *  @param  value  value to be set (possibly multi-valued) or "" for no value
          *  @param  check  check 'value' for conformance with VR (DS) and VM (1-n) if enabled
@@ -272,33 +223,12 @@ class DCMTK_DCMRT_EXPORT DRTContentItemModifierSequence
          */
         OFCondition setNumericValue(const OFString &value, const OFBool check = OFTrue);
 
-        /** set ObservationDateTime (0040,a032)
-         *  @param  value  value to be set (single value only) or "" for no value
-         *  @param  check  check 'value' for conformance with VR (DT) and VM (1) if enabled
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setObservationDateTime(const OFString &value, const OFBool check = OFTrue);
-
         /** set PersonName (0040,a123)
          *  @param  value  value to be set (single value only) or "" for no value
          *  @param  check  check 'value' for conformance with VR (PN) and VM (1) if enabled
          *  @return status, EC_Normal if successful, an error code otherwise
          */
         OFCondition setPersonName(const OFString &value, const OFBool check = OFTrue);
-
-        /** set RationalDenominatorValue (0040,a163)
-         *  @param  value  value to be set (should be valid for this VR)
-         *  @param  pos    index of the value to be set (0..vm-1), vm=1-n
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setRationalDenominatorValue(const Uint32 value, const unsigned long pos = 0);
-
-        /** set RationalNumeratorValue (0040,a162)
-         *  @param  value  value to be set (should be valid for this VR)
-         *  @param  pos    index of the value to be set (0..vm-1), vm=1-n
-         *  @return status, EC_Normal if successful, an error code otherwise
-         */
-        OFCondition setRationalNumeratorValue(const Sint32 value, const unsigned long pos = 0);
 
         /** set TextValue (0040,a160)
          *  @param  value  value to be set (single value only) or "" for no value
@@ -341,22 +271,12 @@ class DCMTK_DCMRT_EXPORT DRTContentItemModifierSequence
         DcmDate Date;
         /// DateTime (0040,a120) vr=DT, vm=1, type=1C
         DcmDateTime DateTime;
-        /// FloatingPointValue (0040,a161) vr=FD, vm=1-n, type=1C
-        DcmFloatingPointDouble FloatingPointValue;
         /// MeasurementUnitsCodeSequence (0040,08ea) vr=SQ, vm=1, type=1C
         DRTMeasurementUnitsCodeSequence MeasurementUnitsCodeSequence;
         /// NumericValue (0040,a30a) vr=DS, vm=1-n, type=1C
         DcmDecimalString NumericValue;
-        /// ObservationDateTime (0040,a032) vr=DT, vm=1, type=3
-        DcmDateTime ObservationDateTime;
         /// PersonName (0040,a123) vr=PN, vm=1, type=1C
         DcmPersonName PersonName;
-        /// RationalDenominatorValue (0040,a163) vr=UL, vm=1-n, type=1C
-        DcmUnsignedLong RationalDenominatorValue;
-        /// RationalNumeratorValue (0040,a162) vr=SL, vm=1-n, type=1C
-        DcmSignedLong RationalNumeratorValue;
-        /// ReferencedSOPSequence (0008,1199) vr=SQ, vm=1, type=1C
-        DRTReferencedSOPSequence ReferencedSOPSequence;
         /// TextValue (0040,a160) vr=UT, vm=1, type=1C
         DcmUnlimitedText TextValue;
         /// Time (0040,a122) vr=TM, vm=1, type=1C
@@ -386,7 +306,6 @@ class DCMTK_DCMRT_EXPORT DRTContentItemModifierSequence
 
     /** assigment operator
      *  @param copy sequence object to be copied
-     *  @return reference to this object
      */
     DRTContentItemModifierSequence &operator=(const DRTContentItemModifierSequence &copy);
 
@@ -409,7 +328,7 @@ class DCMTK_DCMRT_EXPORT DRTContentItemModifierSequence
     /** get number of items in the sequence
      *  @return number of items
      */
-    size_t getNumberOfItems() const;
+    unsigned long getNumberOfItems() const;
 
     /** goto first item in the sequence
      *  @return status, EC_Normal if successful, an error code otherwise
@@ -425,7 +344,7 @@ class DCMTK_DCMRT_EXPORT DRTContentItemModifierSequence
      *  @param  num  number of the item to be selected (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num);
+    OFCondition gotoItem(const unsigned long num);
 
     /** get current item in the sequence
      *  @param  item  reference to item pointer (result variable)
@@ -448,31 +367,31 @@ class DCMTK_DCMRT_EXPORT DRTContentItemModifierSequence
      *  @param  item  reference to item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition getItem(const size_t num, Item *&item);
+    OFCondition getItem(const unsigned long num, Item *&item);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &getItem(const size_t num);
+    Item &getItem(const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &getItem(const size_t num) const;
+    const Item &getItem(const unsigned long num) const;
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return reference to specified item if successful, empty default item otherwise
      */
-    Item &operator[](const size_t num);
+    Item &operator[](const unsigned long num);
 
     /** get particular item in the sequence
      *  @param  num  number of the item to be retrieved (0..num-1)
      *  @return const reference to specified item if successful, empty default item otherwise
      */
-    const Item &operator[](const size_t num) const;
+    const Item &operator[](const unsigned long num) const;
 
     /** add new item to the end of this sequence
      *  @param  item  reference to new item pointer (result variable)
@@ -485,13 +404,13 @@ class DCMTK_DCMRT_EXPORT DRTContentItemModifierSequence
      *  @param  item  reference to new item pointer (result variable)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition insertItem(const size_t pos, Item *&item);
+    OFCondition insertItem(const unsigned long pos, Item *&item);
 
     /** remove particular item from the sequence
      *  @param  pos  position of the item to be removed (0..num-1)
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition removeItem(const size_t pos);
+    OFCondition removeItem(const unsigned long pos);
 
   // --- input/output methods ---
 
@@ -526,7 +445,7 @@ class DCMTK_DCMRT_EXPORT DRTContentItemModifierSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListIterator(Item *) &iterator);
 
     /** goto particular item in the sequence
@@ -534,7 +453,7 @@ class DCMTK_DCMRT_EXPORT DRTContentItemModifierSequence
      *  @param  iterator  list iterator storing the position of the item
      *  @return status, EC_Normal if successful, an error code otherwise
      */
-    OFCondition gotoItem(const size_t num,
+    OFCondition gotoItem(const unsigned long num,
                          OFListConstIterator(Item *) &iterator) const;
 
   private:
